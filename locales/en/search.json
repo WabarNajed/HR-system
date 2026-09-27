@@ -17,5 +17,20 @@
   "pages": "Pages",
   "hintNavigate": "Navigate",
   "hintOpen": "Open",
-  "hintClose": "Close"
+  "hintClose": "Close",
+  "recent": "Recent",
+  "clearRecent": "Clear recent results",
+  "actions": {
+    "newRequest": "New HR request",
+    "requestLeave": "Request leave",
+    "requestCertificate": "Request a certificate",
+    "addEmployee": "Add employee",
+    "profile": "My profile"
+  },
+  "searchAll": {
+    "heading": "More",
+    "employees": "Search all employees for “{query}”",
+    "requests": "Search requests for “{query}”"
+  },
+  "scopeHint": "Results only include records you can access"
 }

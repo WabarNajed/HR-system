@@ -10,13 +10,79 @@
     "emptyTitle": "You're all caught up",
     "emptyDescription": "Updates on your requests, approvals and alerts will appear here.",
     "error": "Couldn't load notifications.",
-    "loading": "Loading notifications"
+    "loading": "Loading notifications",
+    "tabAll": "All",
+    "tabUnread": "Unread",
+    "unreadEmptyTitle": "No unread notifications",
+    "unreadEmptyDescription": "You've read everything. Switch to All to see earlier updates."
+  },
+  "tabs": {
+    "all": "All",
+    "unread": "Unread"
+  },
+  "filters": {
+    "type": "Type",
+    "allTypes": "All types",
+    "categories": {
+      "approvals": "Approvals & assignments",
+      "requests": "Request updates",
+      "registrations": "Registrations",
+      "certificates": "Certificates",
+      "leave": "Leave balance",
+      "expiry": "Expiry alerts",
+      "account": "Account"
+    }
+  },
+  "groups": {
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "earlier": "Earlier"
+  },
+  "actions": {
+    "markRead": "Mark as read",
+    "markUnread": "Mark as unread",
+    "markAllRead": "Mark all as read",
+    "markAllReadCategory": "Mark these as read",
+    "open": "Open",
+    "noLink": "This notification has no linked record"
+  },
+  "empty": {
+    "allTitle": "No notifications yet",
+    "allDescription": "Updates on your requests, approvals and alerts will appear here.",
+    "unreadTitle": "You're all caught up",
+    "unreadDescription": "There are no unread notifications. Earlier updates stay under All.",
+    "filteredTitle": "No notifications of this type",
+    "filteredDescription": "Try another type or clear the filter.",
+    "clearFilter": "Clear filter"
+  },
+  "summary": {
+    "title": "Overview",
+    "unread": "Unread",
+    "total": "All notifications",
+    "byType": "By type",
+    "unreadOfTotal": "{unread} of {total} unread",
+    "hint": "Notifications are kept for your account only. Opening one marks it as read."
+  },
+  "list": {
+    "unreadLabel": "Unread",
+    "showing": "{from}–{to} of {total}"
+  },
+  "toast": {
+    "markedRead": "Marked as read",
+    "markedUnread": "Marked as unread",
+    "markedAllRead": "All notifications marked as read",
+    "nothingToMark": "There's nothing unread"
   },
   "fallback": {
+    "title": "Notification",
     "actor": "HR",
     "employee": "an employee",
     "requestType": "request",
-    "document": "A document"
+    "document": "A document",
+    "number": "draft",
+    "applicant": "A new user",
+    "certificate": "Certificate",
+    "leaveType": "Leave"
   },
   "expiryKinds": {
     "iqama": "Iqama",
@@ -43,8 +109,8 @@
       "body": "{requestType} was rejected by {actor}."
     },
     "request_returned": {
-      "title": "Request {number} returned",
-      "body": "{actor} needs more information on your {requestType}."
+      "title": "Request {number} returned for changes",
+      "body": "{actor} returned your {requestType}. Update it and submit it again."
     },
     "request_assigned": {
       "title": "Request {number} assigned to you",
@@ -52,11 +118,11 @@
     },
     "request_in_progress": {
       "title": "Request {number} in progress",
-      "body": "HR started working on your {requestType}."
+      "body": "{actor} started working on your {requestType}."
     },
     "request_completed": {
       "title": "Request {number} completed",
-      "body": "Your {requestType} is complete."
+      "body": "Your {requestType} has been completed."
     },
     "request_cancelled": {
       "title": "Request {number} cancelled",
@@ -67,8 +133,8 @@
       "body": "{actor} commented on {requestType}."
     },
     "registration_submitted": {
-      "title": "New registration awaiting review",
-      "body": "{name} registered and is waiting for approval."
+      "title": "{resubmitted, select, yes {Registration updated: {name}} other {New registration: {name}}}",
+      "body": "{resubmitted, select, yes {{name} answered your information request and is waiting for review.} other {{name} registered and is waiting for approval.}}"
     },
     "registration_approved": {
       "title": "Your account is active",
@@ -80,19 +146,19 @@
     },
     "registration_info_requested": {
       "title": "HR needs more information",
-      "body": "Open the portal to see what HR needs to complete your registration."
+      "body": "Open your registration to see what HR needs and update your details."
     },
     "certificate_issued": {
-      "title": "Certificate ready",
-      "body": "{certificateNumber} has been issued and is ready to download."
+      "title": "{certificateType} issued",
+      "body": "Certificate {certificateNumber} is ready to download."
     },
     "leave_balance_adjusted": {
       "title": "Leave balance updated",
-      "body": "Your {leaveType} balance was adjusted."
+      "body": "{leaveType} {year}: {direction, select, down {−{amount}} other {+{amount}}} days by {actor} · new balance {newRemaining} days."
     },
     "expiry_alert": {
-      "title": "{document} expiring soon",
-      "body": "{employee} · expires on {date}."
+      "title": "{state, select, expired {{document} expired} today {{document} expires today} other {{document} expires in {days, plural, one {# day} other {# days}}}}",
+      "body": "{employee} · {state, select, expired {expired on {date}} other {expires on {date}}}"
     },
     "account_invited": {
       "title": "You're invited to the HR portal",

@@ -63,9 +63,10 @@ export const ROUTE_ACCESS = {
   '/leave': ANY_ACTIVE,
   '/documents': ANY_ACTIVE,
   '/certificates': ANY_ACTIVE,
-  '/reports': { anyOf: ['reports.view'] },
-  '/reports/[reportKey]': { anyOf: ['reports.view'] },
-  '/reports/builder': { anyOf: ['reports.view'] },
+  /** Managers get team-scoped reports (RLS limits rows to themselves + direct reports). */
+  '/reports': { anyOf: ['reports.view'], managers: true },
+  '/reports/[reportKey]': { anyOf: ['reports.view'], managers: true },
+  '/reports/builder': { anyOf: ['reports.view'], managers: true },
   '/notifications': ANY_ACTIVE,
   '/profile': ANY_ACTIVE,
   '/setup': { anyOf: ['settings.administer'] },

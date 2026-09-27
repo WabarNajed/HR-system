@@ -17,5 +17,20 @@
   "pages": "الصفحات",
   "hintNavigate": "تنقّل",
   "hintOpen": "فتح",
-  "hintClose": "إغلاق"
+  "hintClose": "إغلاق",
+  "recent": "الأخيرة",
+  "clearRecent": "مسح النتائج الأخيرة",
+  "actions": {
+    "newRequest": "طلب موارد بشرية جديد",
+    "requestLeave": "طلب إجازة",
+    "requestCertificate": "طلب شهادة",
+    "addEmployee": "إضافة موظف",
+    "profile": "ملفي الشخصي"
+  },
+  "searchAll": {
+    "heading": "المزيد",
+    "employees": "البحث في كل الموظفين عن «{query}»",
+    "requests": "البحث في الطلبات عن «{query}»"
+  },
+  "scopeHint": "تشمل النتائج السجلات المتاحة لك فقط"
 }

@@ -64,11 +64,94 @@ function flatten(obj, prefix, out, file) {
   return out;
 }
 
-/** ICU argument names + rich-text tag names used by a message. */
+/**
+ * ICU argument names + rich-text tag names used by a message. A small ICU MessageFormat walker:
+ * only real argument positions count (`{name}`, `{n, number}`, `{count, plural, =0 {Today} …}`),
+ * so text inside plural/select branches (`{Today}`) is not mistaken for an argument, and branch
+ * contents are scanned recursively. Apostrophe-quoted literals (`'{'`) are skipped.
+ */
 function messageTokens(message) {
   const tokens = new Set();
-  for (const m of message.matchAll(/\{\s*([A-Za-z_][A-Za-z0-9_]*)\s*[,}]/g)) tokens.add(`{${m[1]}}`);
-  for (const m of message.matchAll(/<\/?([A-Za-z][A-Za-z0-9_-]*)>/g)) tokens.add(`<${m[1]}>`);
+  let i = 0;
+  const ws = () => {
+    while (i < message.length && /\s/.test(message[i])) i++;
+  };
+  const word = () => {
+    const start = i;
+    while (i < message.length && !/[\s{},]/.test(message[i])) i++;
+    return message.slice(start, i);
+  };
+  const skipBalanced = () => {
+    // positioned after an opening brace: skip to its matching close brace
+    let depth = 1;
+    while (i < message.length && depth > 0) {
+      if (message[i] === '{') depth++;
+      else if (message[i] === '}') depth--;
+      i++;
+    }
+  };
+  function text(nested) {
+    while (i < message.length) {
+      const c = message[i];
+      if (c === "'" && message[i + 1] === "'") i += 2;
+      else if (c === "'" && /[{}<#|]/.test(message[i + 1] ?? '')) {
+        const end = message.indexOf("'", i + 1);
+        i = end === -1 ? message.length : end + 1;
+      } else if (c === '{') {
+        i++;
+        argument();
+      } else if (c === '}') {
+        if (nested) {
+          i++;
+          return;
+        }
+        i++;
+      } else if (c === '<') {
+        const m = /^<\/?([A-Za-z][A-Za-z0-9_-]*)>/.exec(message.slice(i));
+        if (m) {
+          tokens.add(`<${m[1]}>`);
+          i += m[0].length;
+        } else i++;
+      } else i++;
+    }
+  }
+  function argument() {
+    ws();
+    const name = word();
+    if (/^[A-Za-z_][A-Za-z0-9_]*$/.test(name)) tokens.add(`{${name}}`);
+    ws();
+    if (message[i] === '}') {
+      i++;
+      return;
+    }
+    if (message[i] !== ',') return skipBalanced();
+    i++;
+    ws();
+    const type = word();
+    ws();
+    if (message[i] === '}') {
+      i++;
+      return;
+    }
+    if (message[i] !== ',') return skipBalanced();
+    i++;
+    if (!['plural', 'select', 'selectordinal'].includes(type)) return skipBalanced();
+    // options: selector {message} …
+    for (;;) {
+      ws();
+      if (i >= message.length) return;
+      if (message[i] === '}') {
+        i++;
+        return;
+      }
+      word();
+      ws();
+      if (message[i] !== '{') return skipBalanced();
+      i++;
+      text(true);
+    }
+  }
+  text(false);
   return [...tokens].sort();
 }
 

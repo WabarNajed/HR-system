@@ -1,4 +1,275 @@
 {
   "title": "Documents",
-  "description": "Employee documents and expiry monitoring."
+  "description": "Employee documents, expiry monitoring and compliance.",
+  "myTitle": "My documents",
+  "myDescription": "Your documents on file, their review status and upcoming expiry dates.",
+  "actions": {
+    "upload": "Upload document",
+    "runCheck": "Run expiry check",
+    "viewDetails": "View details",
+    "open": "Open file",
+    "download": "Download",
+    "edit": "Edit details",
+    "replace": "Replace file",
+    "approve": "Approve",
+    "reject": "Reject",
+    "archive": "Archive",
+    "restore": "Restore",
+    "delete": "Delete",
+    "withdraw": "Withdraw upload",
+    "openProfile": "Open employee profile",
+    "uploadMissing": "Upload",
+    "review": "Review",
+    "viewAll": "View all documents"
+  },
+  "kpi": {
+    "expiringSoon": "Expiring within 30 days",
+    "expiringSoonHint": "{count, plural, =0 {None within 7 days} other {# within 7 days}}",
+    "expired": "Expired",
+    "expiredHint": "Needs renewal now",
+    "missing": "Missing documents",
+    "missingHint": "{count, plural, =0 {All employees complete} one {# employee affected} other {# employees affected}}",
+    "uploaded": "Documents on file",
+    "uploadedHint": "{count, plural, =0 {None uploaded this month} other {# uploaded this month}}",
+    "pending": "Pending review",
+    "pendingHint": "Awaiting HR review",
+    "myTotal": "My documents",
+    "myTotalHint": "{count, plural, =0 {Nothing pending review} other {# pending review}}",
+    "myExpiring": "Expiring within 30 days",
+    "myExpiringHint": "Across your records and documents",
+    "myExpired": "Expired",
+    "myExpiredHint": "Renew and upload the new copy",
+    "myRejected": "Rejected uploads",
+    "myRejectedHint": "See the reason and upload again"
+  },
+  "tabs": {
+    "documents": "Documents",
+    "expiry": "Expiry monitor",
+    "missing": "Missing documents",
+    "review": "Review queue"
+  },
+  "fields": {
+    "employee": "Employee",
+    "documentType": "Document type",
+    "document": "Document",
+    "documentNumber": "Document number",
+    "issueDate": "Issue date",
+    "expiryDate": "Expiry date",
+    "expiry": "Expiry",
+    "status": "Status",
+    "file": "File",
+    "notes": "Notes",
+    "confidential": "Confidential",
+    "uploadedBy": "Uploaded by",
+    "uploadedAt": "Uploaded",
+    "reviewedBy": "Reviewed by",
+    "reviewedAt": "Reviewed",
+    "reviewNote": "Review note",
+    "rejectionReason": "Rejection reason",
+    "fileSize": "Size",
+    "department": "Department",
+    "item": "Item",
+    "holder": "Holder",
+    "reference": "Reference",
+    "remaining": "Remaining",
+    "idType": "ID type",
+    "nationality": "Nationality",
+    "missing": "Missing",
+    "awaitingReview": "In review",
+    "hijri": "Hijri: {date}"
+  },
+  "placeholders": {
+    "selectType": "Select a document type",
+    "selectEmployee": "Search by name or employee ID",
+    "notes": "Optional context for HR…",
+    "rejectReason": "Explain what needs to be corrected…",
+    "approveNote": "Optional note for the record…",
+    "searchDocuments": "Search employee, document number or file…",
+    "searchExpiry": "Search employee, dependent or reference…",
+    "searchMissing": "Search employee…"
+  },
+  "filters": {
+    "type": "Type",
+    "status": "Status",
+    "bucket": "Expiry",
+    "department": "Department",
+    "confidential": "Confidentiality",
+    "confidentialYes": "Confidential",
+    "confidentialNo": "Not confidential",
+    "uploaded": "Uploaded",
+    "kind": "Source",
+    "subject": "Holder",
+    "missing": "Missing type"
+  },
+  "bands": {
+    "expired": "Expired",
+    "d7": "0–7 days",
+    "d14": "8–14 days",
+    "d30": "15–30 days",
+    "d60": "31–60 days",
+    "d90": "61–90 days",
+    "later": "More than 90 days",
+    "none": "No expiry date"
+  },
+  "expiry": {
+    "daysLeft": "{count, plural, =0 {Expires today} one {# day left} other {# days left}}",
+    "expiredAgo": "{count, plural, one {Expired # day ago} other {Expired # days ago}}",
+    "kinds": {
+      "iqama": "Iqama",
+      "nationalId": "National ID",
+      "passport": "Passport",
+      "contract": "Employment contract",
+      "insurance": "Medical insurance",
+      "document": "Document"
+    },
+    "subjects": {
+      "employee": "Employee",
+      "dependent": "Dependent"
+    },
+    "dependentLabel": "Dependent: {name}",
+    "lastRun": "Last check {time}",
+    "lastRunAlerts": "{count, plural, =0 {no new alerts} one {# item alerted} other {# items alerted}}",
+    "neverRun": "No expiry check has run yet",
+    "schedule": "Checked automatically every day. HR and the employee are alerted {days} days before expiry.",
+    "scheduleShort": "Daily automatic check"
+  },
+  "missing": {
+    "ruleTitle": "How missing documents are determined",
+    "rule": "Every active employee needs an employment contract and the ID document matching their ID type (Iqama or National ID). Non-Saudi employees also need a passport. Uploads waiting for review count as submitted.",
+    "count": "{count, plural, one {# missing} other {# missing}}"
+  },
+  "review": {
+    "approveTitle": "Approve this document?",
+    "approveDescription": "The document is added to {name}'s file.",
+    "rejectTitle": "Reject this document?",
+    "rejectDescription": "{name} will see your reason and can upload a corrected copy.",
+    "reasonLabel": "Reason",
+    "noteLabel": "Note",
+    "selfReview": "You can't review your own upload.",
+    "bannerTitle": "{count, plural, one {# document is waiting for review} other {# documents are waiting for review}}",
+    "bannerDescription": "Employees' uploads are added to their files once HR approves them.",
+    "openQueue": "Open review queue",
+    "submittedBy": "Submitted by the employee"
+  },
+  "upload": {
+    "title": "Upload document",
+    "titleFor": "Upload document · {name}",
+    "description": "Attach the file and its details. PDF, JPG, PNG or WebP up to 10 MB.",
+    "selfNotice": "HR reviews your document before it's added to your file.",
+    "fileLabel": "File",
+    "confidentialHint": "Only HR can see confidential documents. Medical reports are always confidential.",
+    "submit": "Upload",
+    "submitSelf": "Submit for review",
+    "uploading": "Uploading… {progress}%",
+    "noAccess": "You can't upload documents for this employee.",
+    "notLinked": "Your account isn't linked to an employee record yet. Contact HR to upload documents.",
+    "loadFailed": "Couldn't prepare the upload. Please try again.",
+    "expiryHint": "Used for expiry alerts and the expiry monitor."
+  },
+  "replace": {
+    "title": "Replace file",
+    "description": "Upload a new file for this document. The current file is removed once the new one is saved.",
+    "current": "Current file",
+    "submit": "Replace file"
+  },
+  "edit": {
+    "title": "Edit document details",
+    "description": "Update the document's details. The file stays the same.",
+    "statusLabel": "Status",
+    "statusHint": "Set from the expiry date automatically. Change it only to correct a record."
+  },
+  "details": {
+    "title": "Document details",
+    "fileSection": "File",
+    "reviewSection": "Review",
+    "previewUnavailable": "Preview isn't available for this file type.",
+    "noFile": "No file attached",
+    "selfUploaded": "Uploaded by the employee",
+    "notReviewed": "Not reviewed yet",
+    "confidentialNotice": "Confidential — visible to HR only."
+  },
+  "delete": {
+    "title": "Delete this document?",
+    "description": "The document and its file are permanently removed. This can't be undone.",
+    "withdrawTitle": "Withdraw this upload?",
+    "withdrawDescription": "Your upload is removed before HR reviews it. You can upload it again later."
+  },
+  "archive": {
+    "title": "Archive this document?",
+    "description": "Archived documents are hidden from lists, the expiry monitor and alerts. You can restore them later."
+  },
+  "runCheck": {
+    "title": "Run the expiry check now?",
+    "description": "Alerts HR and the employees concerned about items that reached a new alert threshold since the last check, by notification and email. Items already alerted are skipped.",
+    "confirm": "Run check",
+    "result": "{items, plural, =0 {No new alerts — everything is up to date.} one {Alerts sent for # item.} other {Alerts sent for # items.}}"
+  },
+  "toast": {
+    "uploaded": "Document uploaded",
+    "submittedForReview": "Document submitted for HR review",
+    "updated": "Document details updated",
+    "fileReplaced": "File replaced",
+    "approved": "Document approved",
+    "rejected": "Document rejected",
+    "archived": "Document archived",
+    "restored": "Document restored",
+    "deleted": "Document deleted",
+    "withdrawn": "Upload withdrawn"
+  },
+  "validation": {
+    "expiryBeforeIssue": "The expiry date can't be before the issue date.",
+    "reasonRequired": "Enter the reason for the rejection.",
+    "employeeRequired": "Select an employee.",
+    "fileRequired": "Attach a file."
+  },
+  "errors": {
+    "archived": "Archived documents can't be changed. Restore the document first."
+  },
+  "empty": {
+    "documentsTitle": "No documents yet",
+    "documentsDescription": "Employee documents appear here once they're uploaded.",
+    "expiryTitle": "No expiry dates recorded",
+    "expiryDescription": "Iqama, passport, contract, insurance and document expiry dates appear here once they're recorded.",
+    "missingTitle": "All required documents are on file",
+    "missingDescription": "Every active employee has their ID document, passport (when required) and employment contract.",
+    "reviewTitle": "Nothing to review",
+    "reviewDescription": "Documents uploaded by employees appear here for approval.",
+    "myTitle": "No documents yet",
+    "myDescription": "Upload your Iqama, passport, certificates and other documents for HR to keep on file.",
+    "myExpiryTitle": "No expiry dates on file",
+    "myExpiryDescription": "Your Iqama, passport, insurance and document expiry dates will appear here."
+  },
+  "my": {
+    "expiryTitle": "My expiry dates",
+    "expiryDescription": "From your employee record, insurance, dependents and documents.",
+    "guideTitle": "How uploads work",
+    "guide1": "Upload a clear scan or photo — PDF, JPG, PNG or WebP up to 10 MB.",
+    "guide2": "HR reviews each upload and adds approved documents to your file.",
+    "guide3": "If a document is rejected, you'll see the reason and can upload a corrected copy.",
+    "rejectedReason": "Reason: {reason}"
+  },
+  "profileTab": {
+    "complianceTitle": "Compliance",
+    "complianceDescription": "Required documents and the next expiry dates.",
+    "requiredTitle": "Required documents",
+    "onFile": "On file",
+    "missingBadge": "Missing",
+    "inReviewBadge": "In review",
+    "notRequired": "Not required",
+    "upcomingTitle": "Expiry dates",
+    "noUpcoming": "No expiry dates recorded.",
+    "documentsTitle": "Documents",
+    "documentsCount": "{count, plural, =0 {No documents} one {# document} other {# documents}}",
+    "restrictedTitle": "Documents are restricted",
+    "restrictedDescription": "Only HR and the employee can see an employee's documents."
+  },
+  "export": {
+    "documents": "Employee documents",
+    "expiries": "Expiry monitor",
+    "daysLeft": "Days left",
+    "band": "Expiry band",
+    "employeeNumber": "Employee ID",
+    "dependent": "Dependent",
+    "fileName": "File name"
+  }
 }

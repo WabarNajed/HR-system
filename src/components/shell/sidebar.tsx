@@ -83,6 +83,7 @@ export function SidebarContent({
                   <Link
                     href={item.href}
                     onClick={onNavigate}
+                    data-nav-id={item.id}
                     aria-current={active ? 'page' : undefined}
                     className={cn(
                       'group relative flex h-9 items-center gap-3 rounded-md text-[0.875rem] font-medium outline-none transition-colors',

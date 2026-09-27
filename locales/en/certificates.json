@@ -1,4 +1,179 @@
 {
   "title": "Certificates",
-  "description": "Certificate requests, issued certificates and templates."
+  "description": "Certificate requests, issued certificates and templates.",
+  "employeeDescription": "Request certificates and download the ones issued to you.",
+  "requestCertificate": "Request certificate",
+  "manageTemplates": "Manage templates",
+  "tabs": {
+    "requests": "Requests",
+    "issued": "Issued",
+    "templates": "Templates"
+  },
+  "kpi": {
+    "issuedThisMonth": "Issued this month",
+    "issuedThisMonthHint": "Certificates generated since the 1st",
+    "awaiting": "Awaiting issue",
+    "awaitingHint": "Open certificate requests",
+    "valid": "Valid certificates",
+    "validHint": "Currently verifiable",
+    "revoked": "Revoked",
+    "revokedHint": "No longer valid",
+    "myCertificates": "My certificates",
+    "myCertificatesHint": "Ready to download",
+    "myOpenRequests": "Requests in progress",
+    "myOpenRequestsHint": "Being prepared by HR"
+  },
+  "fields": {
+    "number": "Certificate #",
+    "employee": "Employee",
+    "employeeNumber": "Employee ID",
+    "type": "Certificate type",
+    "template": "Template",
+    "language": "Language",
+    "addressedTo": "Addressed to",
+    "purpose": "Purpose",
+    "issueDate": "Issue date",
+    "status": "Status",
+    "revokedAt": "Revoked on",
+    "revokeReason": "Revocation reason",
+    "request": "Request",
+    "requestNumber": "Request #",
+    "submitted": "Submitted",
+    "requestStatus": "Request status",
+    "sla": "SLA",
+    "certificate": "Certificate",
+    "includeSalary": "Include salary",
+    "includeAllowances": "Allowances breakdown",
+    "comments": "Employee comments",
+    "issuedBy": "Issued by"
+  },
+  "filters": {
+    "type": "Type",
+    "language": "Language",
+    "status": "Status",
+    "issueDate": "Issue date",
+    "requestStatus": "Status",
+    "submitted": "Submitted",
+    "searchIssued": "Search by certificate # or employee…",
+    "searchRequests": "Search by request # or employee…"
+  },
+  "actions": {
+    "download": "Download PDF",
+    "openVerification": "Open verification page",
+    "copyVerifyLink": "Copy verification link",
+    "revoke": "Revoke",
+    "openRequest": "Open request",
+    "issue": "Issue",
+    "issueCertificate": "Issue certificate",
+    "view": "View"
+  },
+  "issuedCount": "{count, plural, =0 {Not issued} one {# issued} other {# issued}}",
+  "notIssued": "Not issued",
+  "empty": {
+    "issuedTitle": "No certificates issued yet",
+    "issuedDescription": "Certificates generated from requests will appear here.",
+    "myIssuedTitle": "You have no certificates yet",
+    "myIssuedDescription": "Request a certificate and HR will issue it here for you to download.",
+    "requestsTitle": "No certificate requests",
+    "requestsDescription": "Certificate requests submitted by employees will appear here.",
+    "myRequestsTitle": "You haven’t requested a certificate",
+    "myRequestsDescription": "Salary, employment and experience certificates are prepared by HR.",
+    "templatesTitle": "No templates yet",
+    "templatesDescription": "Create a certificate template to start issuing certificates."
+  },
+  "templatesTab": {
+    "description": "Templates used when issuing certificates. Published versions are used for new certificates.",
+    "openEditor": "Open editor",
+    "versionShort": "v{version}",
+    "default": "Default",
+    "issued": "{count, plural, =0 {Not used yet} one {Used once} other {Used # times}}"
+  },
+  "revoke": {
+    "title": "Revoke certificate {number}?",
+    "description": "The verification page will show it as revoked and the employee will no longer be able to download it. This can’t be undone.",
+    "reason": "Reason",
+    "reasonPlaceholder": "e.g. issued with incorrect details",
+    "confirm": "Revoke certificate"
+  },
+  "toast": {
+    "issued": "Certificate generated and saved.",
+    "revoked": "Certificate revoked.",
+    "requestCompleted": "Request completed.",
+    "linkCopied": "Verification link copied."
+  },
+  "errors": {
+    "issueFirst": "Issue the certificate before completing the request."
+  },
+  "export": {
+    "title": "Issued certificates"
+  },
+  "sheet": {
+    "title": "Certificate request",
+    "openFullRequest": "Open full request"
+  },
+  "panel": {
+    "title": "Certificate",
+    "descriptionHr": "Generate the certificate from a published template, then complete the request.",
+    "descriptionEmployee": "Your certificate will be available here once HR issues it.",
+    "requested": "Requested",
+    "yes": "Yes",
+    "no": "No",
+    "issuedList": "Issued certificates",
+    "issueTitle": "Issue certificate",
+    "template": "Template",
+    "templatePlaceholder": "Choose a template",
+    "matchingTemplates": "Matching the request",
+    "otherTemplates": "Other templates",
+    "noTemplates": "No published template supports this language. Publish one in Document templates.",
+    "language": "Certificate language",
+    "addressedTo": "Addressed to",
+    "addressedToPlaceholder": "To whom it may concern",
+    "purpose": "Purpose",
+    "purposePlaceholder": "e.g. opening a bank account",
+    "salaryIncluded": "Salary included as requested",
+    "allowancesIncluded": "Allowances breakdown included as requested",
+    "salaryNotRequested": "Salary not requested — salary details are left out",
+    "salaryHidden": "Salary details aren’t available for this employee, so salary figures will be empty.",
+    "preview": "Preview",
+    "previewPdf": "Preview PDF",
+    "generate": "Generate certificate",
+    "generating": "Generating…",
+    "complete": "Complete request",
+    "completeHint": "Notifies the employee that the request is complete.",
+    "completeDisabled": "Issue a valid certificate first.",
+    "issuedHeadline": "Certificate {number} is ready",
+    "issuedDescription": "Saved to the employee’s certificates. You can download it or complete the request.",
+    "cannotIssueStatus": "Certificates can be issued once the request reaches HR review.",
+    "noPermission": "You can view certificates but don’t have permission to issue them.",
+    "employeeWaiting": "HR is preparing your certificate.",
+    "employeeClosed": "This request is closed without a certificate.",
+    "employeeReady": "Your certificate is ready to download.",
+    "requestClosed": "This request is {status}.",
+    "reissue": "Issue another",
+    "revokedNote": "Revoked"
+  },
+  "preview": {
+    "title": "Certificate preview",
+    "description": "Preview with the employee’s real data. The number is assigned when you generate.",
+    "page": "Page",
+    "pdf": "PDF",
+    "loading": "Rendering preview…",
+    "failed": "The preview couldn’t be rendered.",
+    "openInNewTab": "Open in new tab",
+    "download": "Download"
+  },
+  "employeeTab": {
+    "title": "Certificates",
+    "description": "Certificates issued to this employee.",
+    "emptyTitle": "No certificates issued",
+    "emptyDescription": "Certificates issued from certificate requests appear here."
+  },
+  "pdf": {
+    "cr": "C.R.",
+    "vat": "VAT No.",
+    "phone": "Tel.",
+    "verifyCaption": "Scan to verify this certificate",
+    "authorizedSignatory": "Authorized signatory",
+    "watermark": "PREVIEW"
+  }
 }

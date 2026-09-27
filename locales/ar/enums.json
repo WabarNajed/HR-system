@@ -86,7 +86,10 @@
   "certificateVariant": {
     "general": "عام",
     "bank": "للبنك",
-    "embassy": "للسفارة"
+    "embassy": "للسفارة",
+    "government": "للجهات الحكومية",
+    "university": "للجامعات",
+    "other": "أخرى"
   },
   "certificateLanguage": {
     "ar": "العربية",
@@ -127,7 +130,8 @@
     "complete": "تم الإكمال",
     "cancel": "تم الإلغاء",
     "comment": "أضاف تعليقًا",
-    "skip": "تم تخطي المرحلة"
+    "skip": "تم تخطي المرحلة",
+    "certificate_issued": "صدرت الشهادة"
   },
   "skipReason": {
     "no_manager": "لا يوجد مدير مباشر معيّن",

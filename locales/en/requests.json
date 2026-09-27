@@ -1,4 +1,383 @@
 {
   "title": "Requests",
-  "description": "Submit and track HR requests."
+  "description": "Submit and track HR requests.",
+  "descriptionHr": "Every HR request across the organization — track progress, SLAs and ownership.",
+  "descriptionManager": "Your requests and your team's requests, with their approval progress.",
+  "descriptionEmployee": "Submit HR requests and follow each one until it's completed.",
+  "newRequest": "New request",
+  "unknownType": "Request",
+  "draftNumber": "Draft",
+  "unassigned": "Unassigned",
+  "kpi": {
+    "open": "Open requests",
+    "openHint": "{count, plural, =0 {None due within 24 hours} one {# due within 24 hours} other {# due within 24 hours}}",
+    "awaiting": "Awaiting my action",
+    "awaitingHint": "{approvals, plural, one {# approval} other {# approvals}} · {returned, plural, one {# returned} other {# returned}}",
+    "overdue": "Overdue",
+    "overdueHint": "Past the SLA due date",
+    "overdueNone": "Everything is within SLA",
+    "completedMonth": "Completed this month",
+    "completedMonthHint": "Closed since the 1st"
+  },
+  "tabs": {
+    "label": "Request status",
+    "all": "All",
+    "pending": "Pending",
+    "inProgress": "In progress",
+    "completed": "Completed",
+    "rejected": "Rejected",
+    "returned": "Returned",
+    "drafts": "Drafts"
+  },
+  "columns": {
+    "number": "Request #",
+    "employee": "Employee",
+    "type": "Type",
+    "created": "Created",
+    "step": "Workflow step",
+    "status": "Status",
+    "assigned": "Assigned",
+    "sla": "SLA"
+  },
+  "filters": {
+    "type": "Request type",
+    "status": "Status",
+    "sla": "SLA",
+    "employee": "Employee",
+    "department": "Department",
+    "assigned": "Assigned HR",
+    "assignedToMe": "Assigned to me",
+    "created": "Created",
+    "searchPlaceholder": "Search number, title or employee…",
+    "searchOwnPlaceholder": "Search number or title…"
+  },
+  "empty": {
+    "all": { "title": "No requests yet", "description": "Submitted requests appear here with their status and SLA." },
+    "pending": { "title": "Nothing pending", "description": "Requests waiting for a manager or HR decision appear here." },
+    "in_progress": { "title": "Nothing in progress", "description": "Approved requests that HR is fulfilling appear here." },
+    "completed": { "title": "No completed requests", "description": "Requests closed by HR appear here." },
+    "rejected": { "title": "No rejected requests", "description": "Rejected requests appear here with the reason." },
+    "returned": { "title": "Nothing returned", "description": "Requests sent back for more information appear here." },
+    "drafts": { "title": "No drafts", "description": "Requests you save without submitting stay here." }
+  },
+  "rowActions": {
+    "view": "View details",
+    "continueDraft": "Continue editing",
+    "editResubmit": "Edit & resubmit",
+    "return": "Return for information",
+    "cancel": "Cancel request",
+    "deleteDraft": "Delete draft"
+  },
+  "deleteDraft": {
+    "title": "Delete this draft?",
+    "description": "The draft and its attachments will be permanently removed.",
+    "confirm": "Delete draft"
+  },
+  "toast": {
+    "draftSaved": "Draft saved",
+    "draftDeleted": "Draft deleted",
+    "submitted": "Request submitted",
+    "submittedNumber": "Request {number} submitted",
+    "resubmitted": "Request {number} resubmitted",
+    "changesSaved": "Changes saved",
+    "approve": "Request {number} approved",
+    "reject": "Request {number} rejected",
+    "return": "Request {number} returned for information",
+    "reassign": "Request {number} reassigned",
+    "start": "Request {number} marked in progress",
+    "complete": "Request {number} completed",
+    "cancel": "Request {number} cancelled",
+    "commentAdded": "Comment posted",
+    "internalNoteAdded": "Internal note added",
+    "attachmentAdded": "Attachment uploaded",
+    "attachmentRemoved": "Attachment removed"
+  },
+  "categories": {
+    "time_off": "Time off",
+    "documents": "Letters & certificates",
+    "government": "Government services",
+    "benefits": "Benefits",
+    "payroll": "Payroll",
+    "attendance": "Attendance & time",
+    "personal_data": "Personal data",
+    "travel": "Travel",
+    "separation": "Separation",
+    "general": "General"
+  },
+  "step": {
+    "notSubmitted": "Not submitted",
+    "withRequester": "With the requester",
+    "fulfilment": "HR fulfilment"
+  },
+  "priority": {
+    "low": "Low priority",
+    "normal": "Normal priority",
+    "high": "High priority",
+    "urgent": "Urgent"
+  },
+  "form": {
+    "optional": "(optional)",
+    "calculatedAutomatically": "Calculated automatically",
+    "noLeaveTypes": "No leave types available",
+    "noDependents": "No dependents on record for this employee",
+    "month": "Month",
+    "year": "Year",
+    "time": "Time",
+    "searchEmployee": "Search by name or number…",
+    "attachmentsDisabled": "This request type doesn't accept attachments.",
+    "download": "Download",
+    "removeAttachment": "Remove attachment",
+    "unavailable": "Not available",
+    "notProvided": "Not provided",
+    "noData": "No details were provided."
+  },
+  "leave": {
+    "title": "Leave summary",
+    "pickType": "Choose a leave type to see the day count and your balance.",
+    "pickDates": "Pick dates",
+    "requested": "Requested",
+    "afterRequest": "Balance after",
+    "balance": "Balance",
+    "daysUnit": "days",
+    "noDeduction": "Not deducted",
+    "noDeductionHint": "This leave type doesn't deduct from your balance.",
+    "availableNow": "Available now: {days} days",
+    "usedOf": "{used} of {total} used",
+    "pendingHold": "{days} days are on hold for other pending requests.",
+    "noWorkingDays": "The selected period has no working days.",
+    "insufficient": "Insufficient balance: {available} days available, {requested} requested.",
+    "maxDays": "This leave type allows at most {max} days per request.",
+    "overlap": "These dates overlap another leave request:",
+    "attachmentRequired": "A supporting document is required for this leave type.",
+    "calendarDays": "calendar days",
+    "workingDays": "working days"
+  },
+  "wizard": {
+    "title": "New request",
+    "continueDraftTitle": "Continue draft",
+    "description": "Choose a request type, fill in the details, then review and submit.",
+    "steps": {
+      "label": "Request steps",
+      "type": "Request type",
+      "typeHint": "What do you need?",
+      "details": "Details",
+      "detailsHint": "Fill in the form",
+      "review": "Review",
+      "reviewHint": "Check and submit"
+    },
+    "searchTypes": "Search request types…",
+    "allCategories": "All",
+    "noTypesTitle": "No matching request types",
+    "noTypesDescription": "Try another search term or category.",
+    "slaDays": "{count, plural, =0 {Same day} one {# business day} other {# business days}}",
+    "typeLocked": "The type of a saved draft can't be changed. Start a new request instead.",
+    "requestFor": "Request for",
+    "requestForHint": "HR can submit on behalf of an employee.",
+    "myself": "Myself",
+    "anotherEmployee": "Another employee",
+    "pickEmployee": "Select an employee",
+    "searchEmployee": "Search by name, number or email…",
+    "pickTypeFirst": "Choose a request type first",
+    "pickEmployeeFirst": "Choose the employee first",
+    "changeType": "Change type",
+    "reviewTitle": "Review your request",
+    "reviewDescription": "Make sure everything is correct before you submit.",
+    "forEmployee": "For {name}",
+    "summaryTitle": "Summary",
+    "employee": "Employee",
+    "onBehalf": "On behalf",
+    "sla": "Expected handling",
+    "approvalPath": "Approval path",
+    "whatNext": "After you submit, each approver is notified by email and in the portal. You can follow progress from the request page.",
+    "stepOf": "Step {step} of {total}",
+    "saveDraft": "Save draft",
+    "submit": "Submit request",
+    "uploadFailed": "Couldn't upload {name}",
+    "notLinkedTitle": "Your account isn't linked to an employee record",
+    "notLinkedDescription": "Ask HR to link your account to your employee profile before submitting requests."
+  },
+  "attachments": {
+    "title": "Attachments",
+    "hint": "PDF, images, Word or Excel files up to 10 MB each.",
+    "general": "Other attachments",
+    "none": "No attachments yet.",
+    "uploaded": "{count, plural, one {# file uploaded} other {# files uploaded}}",
+    "upload": "{count, plural, one {Upload # file} other {Upload # files}}"
+  },
+  "path": {
+    "submission": "Submission",
+    "submissionHint": "You submit the request",
+    "noManager": "No manager on record — step will be skipped",
+    "completion": "Completion",
+    "completionHint": "HR completes and notifies you"
+  },
+  "decision": {
+    "commentOptional": "Comment (optional)",
+    "commentPlaceholder": "Add a note for the requester…",
+    "approve": {
+      "title": "Approve request",
+      "description": "The request moves to the next approval step, or is approved if this is the last one.",
+      "confirm": "Approve"
+    },
+    "reject": {
+      "title": "Reject request",
+      "description": "The request is closed and the employee is notified with your reason.",
+      "confirm": "Reject",
+      "commentLabel": "Reason for rejection",
+      "commentPlaceholder": "Explain why the request is rejected…"
+    },
+    "return": {
+      "title": "Return for information",
+      "description": "The requester can edit the request and resubmit it; it will come back to this step.",
+      "confirm": "Return request",
+      "commentLabel": "What's needed",
+      "commentPlaceholder": "Describe the information or documents required…",
+      "hint": "Any leave hold is released until the request is resubmitted."
+    },
+    "reassign": {
+      "title": "Reassign request",
+      "description": "Hand the request over to another person. They are notified immediately.",
+      "confirm": "Reassign",
+      "approverLabel": "New approver",
+      "handlerLabel": "Assign to",
+      "placeholder": "Select a person",
+      "search": "Search by name or email…",
+      "empty": "No eligible people found"
+    },
+    "start": {
+      "title": "Start working on this request",
+      "description": "The request is marked in progress and assigned to you if it has no owner yet.",
+      "confirm": "Mark in progress"
+    },
+    "complete": {
+      "title": "Complete request",
+      "description": "The request is closed as completed and the employee is notified.",
+      "confirm": "Complete"
+    },
+    "cancel": {
+      "title": "Cancel request",
+      "description": "The request stops here. Any leave hold or deduction is reversed.",
+      "confirm": "Cancel request"
+    }
+  },
+  "actions": {
+    "title": "Actions",
+    "description": "Available to you at this stage.",
+    "approve": "Approve",
+    "return": "Return for information",
+    "reject": "Reject",
+    "start": "Mark in progress",
+    "complete": "Complete",
+    "editResubmit": "Edit & resubmit",
+    "continueDraft": "Continue editing",
+    "submitDraft": "Submit",
+    "reassign": "Reassign",
+    "cancel": "Cancel request",
+    "deleteDraft": "Delete draft",
+    "submitConfirmTitle": "Submit this request?",
+    "submitConfirmDescription": "The request is sent to the first approver and can no longer be edited unless it is returned.",
+    "none": {
+      "completed": "This request is completed. No further actions are needed.",
+      "rejected": "This request was rejected and is closed.",
+      "cancelled": "This request was cancelled and is closed.",
+      "pending": "Waiting for the current approver. You'll be notified of any update.",
+      "approved": "Approved — HR is fulfilling the request.",
+      "returned": "Waiting for the requester to update and resubmit.",
+      "generic": "No actions are available to you right now."
+    }
+  },
+  "workflow": {
+    "title": "Workflow",
+    "submitted": "Submitted",
+    "skipped": "Skipped",
+    "current": "Current",
+    "completed": "Completed",
+    "inProgress": "In progress",
+    "completion": "Completion",
+    "completedHint": "Closed by HR",
+    "fulfilmentHint": "HR is fulfilling the request",
+    "completionHint": "After final approval"
+  },
+  "timeline": {
+    "title": "Activity",
+    "description": "Every action on this request, newest first.",
+    "empty": "No activity yet.",
+    "system": "System",
+    "reassignedTo": "Assigned to {name}",
+    "balanceEffect": "Leave balance: {from} → {to} ({days} days)",
+    "skipReasons": {
+      "no_manager": "No direct manager on record",
+      "manager_without_active_account": "The manager has no active account",
+      "approver_is_requester": "The approver is the requester",
+      "approver_inactive": "The approver is inactive",
+      "no_role_members": "Nobody holds the approver role"
+    }
+  },
+  "comments": {
+    "title": "Comments",
+    "discussion": "Discussion",
+    "internal": "Internal notes",
+    "internalHint": "Only HR can see internal notes. The employee is never notified of them.",
+    "emptyTitle": "No comments yet",
+    "emptyDescription": "Questions and updates about this request appear here.",
+    "emptyInternalTitle": "No internal notes",
+    "emptyInternalDescription": "Notes for the HR team stay private to HR.",
+    "unknownAuthor": "Former user",
+    "you": "(you)",
+    "placeholder": "Write a comment…",
+    "internalPlaceholder": "Write an internal note for HR…",
+    "shortcut": "Ctrl + Enter to post",
+    "post": "Post comment",
+    "postInternal": "Add internal note"
+  },
+  "edit": {
+    "title": "Edit request",
+    "descriptionReturned": "Update the details or add documents, then resubmit. The request resumes at the step that returned it.",
+    "descriptionDraft": "Update the draft, then submit it for approval.",
+    "discard": "Discard changes",
+    "save": "Save changes",
+    "resubmit": "Resubmit",
+    "submit": "Submit",
+    "confirmTitle": "Resubmit this request?",
+    "confirmDescription": "It goes back to the approver who returned it.",
+    "confirmSubmitTitle": "Submit this request?",
+    "confirmSubmitDescription": "It is sent to the first approver.",
+    "noteLabel": "Note to the approver (optional)",
+    "notePlaceholder": "Summarize what you changed…"
+  },
+  "details": {
+    "createdOn": "Created {date}",
+    "employee": "Employee",
+    "submitted": "Submitted",
+    "notSubmitted": "Not submitted yet",
+    "sla": "SLA",
+    "dueOn": "Due {date}",
+    "currentStep": "Current step",
+    "assigned": "Assigned HR",
+    "filedBy": "Filed by {name}",
+    "dataTitle": "Request details",
+    "daysValue": "{count, plural, one {# day} other {# days}}"
+  },
+  "returned": {
+    "title": "Returned for more information",
+    "titleRequester": "Action needed: this request was returned to you",
+    "by": "Returned by {name} on {date}",
+    "editResubmit": "Edit & resubmit"
+  },
+  "employeeTab": {
+    "title": "Requests",
+    "summary": "{total, plural, =0 {No requests} one {# request} other {# requests}} · {open} open",
+    "viewAll": "Open in Request Center",
+    "newRequest": "New request",
+    "emptyTitle": "No requests yet",
+    "emptyDescription": "Requests submitted by or for this employee appear here."
+  },
+  "export": {
+    "title": "HR requests",
+    "employeeNumber": "Employee #",
+    "subtype": "Subtype",
+    "dueAt": "Due",
+    "completedAt": "Completed",
+    "tab": "View"
+  }
 }

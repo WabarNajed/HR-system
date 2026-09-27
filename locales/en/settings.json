@@ -1,4 +1,314 @@
 {
   "title": "Settings",
-  "description": "Configure your organization and the portal."
+  "description": "Configure your organization and the portal.",
+  "home": {
+    "continueSetup": "Continue setup",
+    "snapshot": {
+      "title": "Organization summary",
+      "unnamed": "Organization name not set",
+      "incomplete": "Incomplete",
+      "portal": "Portal: {name}",
+      "workWeek": "Work week",
+      "hours": "Working hours",
+      "currency": "Currency",
+      "timezone": "Time zone",
+      "edit": "Edit profile"
+    },
+    "status": {
+      "empty": {
+        "departments": "No departments yet",
+        "jobTitles": "No job titles yet",
+        "locations": "No locations yet",
+        "costCenters": "No cost centers yet"
+      },
+      "counted": "{total} total · {inactive} inactive",
+      "orgWithCr": "{name} · CR {cr}",
+      "orgMissingName": "Company name not set",
+      "customColors": "Custom colors",
+      "defaultColors": "Default colors",
+      "logoUploaded": "Logo uploaded",
+      "logoMissing": "Logo not uploaded",
+      "users": "{active} active · {disabled} disabled",
+      "roles": "{total} roles · {custom} custom",
+      "pending": "{count, plural, one {# registration awaiting review} other {# registrations awaiting review}}",
+      "noPending": "No registrations awaiting review",
+      "leaveTypes": "{active, plural, =0 {No active leave types} one {# active leave type} other {# active leave types}}",
+      "holidays": "{count} this year · {upcoming} upcoming",
+      "noHolidays": "No holidays for {year} yet",
+      "requestTypes": "{active} active · {inactive} inactive",
+      "fields": "{count, plural, one {# active form field} other {# active form fields}}",
+      "withoutWorkflow": "{count, plural, one {# active request type has no workflow} other {# active request types have no workflow}}",
+      "workflows": "{count, plural, one {# workflow configured} other {# workflows configured}}",
+      "sla": "{count} of {total} request types have an SLA",
+      "templates": "{total} templates · {inactive} inactive",
+      "notifications": "{total} events · {email} with email",
+      "session": "Session timeout {hours} h",
+      "selfRegistrationOn": "Self-registration on",
+      "selfRegistrationOff": "Self-registration off",
+      "imports": "{count, plural, one {# import} other {# imports}} · last on {date}",
+      "noImports": "No imports yet",
+      "audit": "{count, plural, =0 {No events in the last 7 days} one {# event in the last 7 days} other {# events in the last 7 days}}"
+    },
+    "health": {
+      "title": "Configuration health",
+      "summary": "{passed} of {total} checks passed",
+      "allGood": "Everything is configured. Nice work!",
+      "passed": "{count, plural, one {# passed check} other {# passed checks}}",
+      "checks": {
+        "companyName": {
+          "title": "Company name",
+          "ok": "Set in Arabic or English.",
+          "issue": "Add the company name used on the portal, letters and emails."
+        },
+        "logo": {
+          "title": "Company logo",
+          "ok": "Uploaded and shown across the portal.",
+          "issue": "Upload a logo for the sidebar, sign-in page and certificates."
+        },
+        "hrEmail": {
+          "title": "HR contact email",
+          "ok": "Shown to employees who need help.",
+          "issue": "Add an HR email so pending or locked-out users know whom to contact."
+        },
+        "legal": {
+          "title": "Commercial registration",
+          "ok": "Printed on the letterhead.",
+          "issue": "Add the commercial registration number for official letters."
+        },
+        "certificateAssets": {
+          "title": "Stamp & signature",
+          "ok": "Ready for certificates.",
+          "issue": "Upload the company stamp and authorized signature, and name the signatory."
+        },
+        "departments": {
+          "title": "Departments",
+          "ok": "At least one active department.",
+          "issue": "Create departments before adding or importing employees."
+        },
+        "jobTitles": {
+          "title": "Job titles",
+          "ok": "At least one active job title.",
+          "issue": "Create job titles before adding or importing employees."
+        },
+        "locations": {
+          "title": "Locations",
+          "ok": "At least one active location.",
+          "issue": "Add your offices or sites to track where employees work."
+        },
+        "hrAdmin": {
+          "title": "HR Admin assigned",
+          "ok": "At least one active HR Admin.",
+          "issue": "No active user holds the HR Admin role. Assign one so HR work doesn’t depend on the Super Admin."
+        },
+        "workflows": {
+          "title": "Approval workflows",
+          "ok": "Every active request type has a workflow.",
+          "issue": "{count, plural, one {# active request type has} other {# active request types have}} no approval workflow."
+        },
+        "holidays": {
+          "title": "Public holidays {year}",
+          "ok": "Holidays are set for leave and SLA calculations.",
+          "issue": "Add this year’s public holidays so leave days and SLAs are counted correctly."
+        },
+        "email": {
+          "title": "Email delivery",
+          "ok": "An email provider is configured.",
+          "issue": "No email provider is configured. Emails are logged but not sent — set RESEND_API_KEY or SMTP settings."
+        },
+        "setup": {
+          "title": "Setup wizard",
+          "ok": "Initial setup is complete.",
+          "issue": "The guided setup hasn’t been completed yet."
+        }
+      },
+      "actions": {
+        "companyName": "Add company name",
+        "logo": "Upload logo",
+        "hrEmail": "Add HR email",
+        "legal": "Add registration details",
+        "certificateAssets": "Open branding",
+        "departments": "Add departments",
+        "jobTitles": "Add job titles",
+        "locations": "Add locations",
+        "hrAdmin": "Manage users",
+        "workflows": "Review workflows",
+        "holidays": "Add public holidays",
+        "email": "Configure email",
+        "setup": "Continue setup"
+      }
+    }
+  },
+  "organization": {
+    "title": "Organization",
+    "description": "Company identity, contact details, legal information, regional settings and the working schedule.",
+    "lastUpdated": "Last updated {date}",
+    "readOnly": "You can view these settings but not change them.",
+    "logoLocked": "Only administrators with full settings access can change the logo.",
+    "footerHint": "Changes apply across the portal as soon as you save.",
+    "sections": {
+      "identity": "Identity",
+      "identityHint": "How the company appears on the portal, letters and emails.",
+      "contact": "Contact",
+      "contactHint": "Address and the contact details shown to employees.",
+      "legal": "Legal",
+      "legalHint": "Registration details printed on official documents.",
+      "regional": "Regional settings",
+      "regionalHint": "Currency, time zone, default language and fiscal year.",
+      "schedule": "Working schedule",
+      "scheduleHint": "Used to count leave days and request SLAs in business days."
+    },
+    "fields": {
+      "logo": "Company logo",
+      "logoHint": "Shown in the sidebar, sign-in page and certificates. A square image with a transparent background works best.",
+      "nameAr": "Company name (Arabic)",
+      "nameEn": "Company name (English)",
+      "legalNameAr": "Legal name (Arabic)",
+      "legalNameEn": "Legal name (English)",
+      "namesHint": "Enter the name in at least one language; the other language falls back to it.",
+      "addressAr": "Address (Arabic)",
+      "addressEn": "Address (English)",
+      "city": "City",
+      "country": "Country",
+      "countryPlaceholder": "Select a country",
+      "countrySearch": "Search countries…",
+      "website": "Website",
+      "phone": "Phone",
+      "hrEmail": "HR email",
+      "hrEmailHint": "Shown to users who need help, e.g. while their account awaits approval.",
+      "commercialRegistration": "Commercial registration (CR)",
+      "commercialRegistrationHint": "As printed on the CR certificate.",
+      "vatNumber": "VAT number",
+      "vatNumberHint": "15-digit VAT registration number, if registered.",
+      "currency": "Currency",
+      "currencySearch": "Search currencies…",
+      "timezone": "Time zone",
+      "timezoneSearch": "Search time zones…",
+      "timezoneHint": "Used for dates, SLA deadlines and scheduled alerts.",
+      "defaultLanguage": "Default language",
+      "defaultLanguageHint": "For users who haven’t chosen a language yet.",
+      "fiscalYearStart": "Fiscal year starts in",
+      "fiscalYearStartHint": "Used by reports that follow the fiscal year.",
+      "workingDays": "Working days",
+      "weekendDays": "Weekend days",
+      "weekendDaysHint": "A day can be a working day or a weekend day, not both.",
+      "workStart": "Workday starts",
+      "workEnd": "Workday ends"
+    },
+    "summary": {
+      "workingDays": "{count, plural, one {<b>#</b> working day} other {<b>#</b> working days}}",
+      "weekendDays": "{count, plural, one {<b>#</b> weekend day} other {<b>#</b> weekend days}}",
+      "weeklyHours": "<b>{hours}</b> hours per week"
+    },
+    "validation": {
+      "phone": "Enter a valid phone number, e.g. +966 11 000 0000",
+      "registration": "Use 4–30 letters, digits or hyphens",
+      "vat": "Use 5–30 letters, digits or hyphens",
+      "workingDays": "Select at least one working day",
+      "dayOverlap": "A day can’t be both a working day and a weekend day",
+      "workHours": "The workday must end after it starts"
+    },
+    "toast": {
+      "saved": "Organization settings saved."
+    }
+  },
+  "branding": {
+    "title": "Branding",
+    "description": "Portal name, logo, colors, sign-in page, company stamp and authorized signature.",
+    "lastUpdated": "Last updated {date}",
+    "readOnly": "You can view the branding but not change it.",
+    "adminOnly": "Only administrators with full settings access can change public images.",
+    "footerHint": "Saved colors apply to everyone immediately. Images apply as soon as they’re uploaded.",
+    "sections": {
+      "identity": "Portal identity",
+      "identityHint": "The name and logo shown in the sidebar, browser tab and emails.",
+      "colors": "Colors",
+      "colorsHint": "Primary color for buttons, links and highlights; secondary color for accents.",
+      "login": "Sign-in page",
+      "loginHint": "The brand panel users see before signing in.",
+      "certificates": "Certificates & letters",
+      "certificatesHint": "Stamp, signature and signatory printed on certificates and HR letters."
+    },
+    "fields": {
+      "portalNameAr": "Portal name (Arabic)",
+      "portalNameEn": "Portal name (English)",
+      "logo": "Logo",
+      "logoHint": "Square PNG or SVG with a transparent background works best.",
+      "primaryColor": "Primary color",
+      "primaryColorHint": "Buttons, links, active navigation and focus rings.",
+      "secondaryColor": "Secondary color",
+      "secondaryColorHint": "Accents, highlights and the active navigation indicator.",
+      "loginImage": "Sign-in background image",
+      "loginImageHint": "Landscape photo behind the brand panel; it’s darkened automatically for legibility.",
+      "loginTitleAr": "Title (Arabic)",
+      "loginTitleEn": "Title (English)",
+      "loginSubtitleAr": "Subtitle (Arabic)",
+      "loginSubtitleEn": "Subtitle (English)",
+      "stamp": "Company stamp",
+      "stampHint": "PNG with a transparent background.",
+      "signature": "Authorized signature",
+      "signatureHint": "PNG with a transparent background.",
+      "privateHint": "The stamp and signature are stored privately and are only used when HR issues documents.",
+      "signatoryNameAr": "Signatory name (Arabic)",
+      "signatoryNameEn": "Signatory name (English)",
+      "signatoryTitleAr": "Signatory title (Arabic)",
+      "signatoryTitleEn": "Signatory title (English)"
+    },
+    "colors": {
+      "reset": "Reset to default",
+      "presets": "Curated themes",
+      "themes": {
+        "oasis": "Oasis",
+        "royal": "Royal",
+        "emerald": "Emerald",
+        "indigo": "Indigo",
+        "burgundy": "Burgundy",
+        "slate": "Slate"
+      },
+      "similarWarning": "The two colors are very similar, so accents won’t stand out. Choose a more distinct secondary color.",
+      "contrastWarning": "One of the colors has low contrast on white backgrounds. Text and icons in that color may be hard to read.",
+      "contrastTooltip": "Contrast on white: {surface}:1 · text on this color: {fill}:1",
+      "contrast": {
+        "good": "Good contrast · {ratio}:1",
+        "fair": "Fair contrast · {ratio}:1",
+        "poor": "Low contrast · {ratio}:1"
+      }
+    },
+    "preview": {
+      "title": "Live preview",
+      "unsaved": "Showing unsaved changes",
+      "saved": "Matches the saved branding",
+      "language": "Preview language",
+      "tabs": {
+        "shell": "App",
+        "login": "Sign-in",
+        "letter": "Letterhead"
+      },
+      "notes": {
+        "shell": "Sidebar, header, buttons and badges use the primary and secondary colors. Dark mode shades are derived automatically.",
+        "login": "Title and subtitle fall back to the defaults when left empty.",
+        "letter": "Company details come from Settings › Organization. Templates decide where each element appears."
+      },
+      "pending": "Pending",
+      "recent": "Recent requests",
+      "letterSubject": "To whom it may concern",
+      "letterRef": "Ref.",
+      "signatory": "Authorized signatory",
+      "cr": "CR",
+      "vat": "VAT"
+    },
+    "image": {
+      "upload": "Upload",
+      "replace": "Replace",
+      "uploading": "Uploading…",
+      "remove": "Remove",
+      "removeTitle": "Remove this image?",
+      "removeDescription": "The file is deleted and the default appearance is used instead.",
+      "limits": "{types} · up to {size} MB"
+    },
+    "toast": {
+      "saved": "Branding saved and applied.",
+      "imageUpdated": "Image updated.",
+      "imageRemoved": "Image removed."
+    }
+  }
 }

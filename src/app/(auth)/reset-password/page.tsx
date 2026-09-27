@@ -1,30 +1,36 @@
-import { LinkIcon } from 'lucide-react';
 import type { Metadata } from 'next';
-import Link from 'next/link';
-import { getTranslations } from 'next-intl/server';
-import { Button } from '@/components/ui/button';
-import { AuthHeading } from '@/features/auth/components/auth-heading';
+import { ResetLinkHandler } from '@/features/auth/components/reset-link-handler';
 import { ResetPasswordForm } from '@/features/auth/components/reset-password-form';
 import { getSessionState } from '@/lib/auth/session';
 import { pageMetadata } from '@/lib/metadata';
+import { createClient } from '@/lib/supabase/server';
 
 export const generateMetadata = (): Promise<Metadata> => pageMetadata('auth.reset.title');
 
 /**
- * Set a new password. Reached from the recovery / invitation link (`/auth/callback` or
- * `/auth/confirm` establish the session first). Without a session the link is invalid/expired.
+ * Set a password — doubles as "Set your password" for invitations.
+ * Reached from invitation / recovery links: `/auth/confirm` (token hash) or `/auth/callback` (PKCE)
+ * establish the session first; implicit-flow links carry it in the URL fragment and are completed
+ * client-side by `ResetLinkHandler`. Invitation mode: `?type=invite`, or an admin-invited account
+ * that has never set a password (`profiles.invited_at` + no `user_metadata.password_set_at`).
  */
-export default async function ResetPasswordPage() {
-  const [state, t] = await Promise.all([getSessionState(), getTranslations('auth.reset')]);
-  if (state.status !== 'authenticated') {
-    return (
-      <div>
-        <AuthHeading icon={LinkIcon} tone="warning" title={t('invalidTitle')} description={t('invalidDescription')} />
-        <Button asChild className="w-full">
-          <Link href="/forgot-password">{t('requestNew')}</Link>
-        </Button>
-      </div>
-    );
+export default async function ResetPasswordPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  const [state, params] = await Promise.all([getSessionState(), searchParams]);
+  if (state.status !== 'authenticated') return <ResetLinkHandler />;
+
+  let invite = params.type === 'invite';
+  if (!invite) {
+    try {
+      const supabase = await createClient();
+      const [{ data: claims }, { data: profile }] = await Promise.all([
+        supabase.auth.getClaims(),
+        supabase.from('profiles').select('invited_at').eq('id', state.ctx.user.id).maybeSingle(),
+      ]);
+      const meta = (claims?.claims?.user_metadata ?? {}) as { password_set_at?: string };
+      invite = Boolean((profile as { invited_at?: string | null } | null)?.invited_at) && !meta.password_set_at;
+    } catch (error) {
+      console.error('[auth] reset-password mode detection failed:', error instanceof Error ? error.message : error);
+    }
   }
-  return <ResetPasswordForm />;
+  return <ResetPasswordForm mode={invite ? 'invite' : 'recovery'} email={state.ctx.user.email} />;
 }

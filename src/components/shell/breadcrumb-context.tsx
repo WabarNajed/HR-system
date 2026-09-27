@@ -1,7 +1,7 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 
 /**
  * Dynamic breadcrumb labels. The header derives crumbs from the pathname; pages with dynamic
@@ -20,22 +20,22 @@ const BreadcrumbContext = createContext<Ctx | null>(null);
 
 export function BreadcrumbProvider({ children }: { children: ReactNode }) {
   const [labels, setLabels] = useState<Record<string, string>>({});
-  const value = useMemo<Ctx>(
-    () => ({
-      labels,
-      setLabel: (path, label) =>
-        setLabels((prev) => {
-          if (label === null) {
-            if (!(path in prev)) return prev;
-            const next = { ...prev };
-            delete next[path];
-            return next;
-          }
-          return prev[path] === label ? prev : { ...prev, [path]: label };
-        }),
-    }),
-    [labels],
+  // setLabel must keep a stable identity: consumers list it as an effect dependency, so a new
+  // function per `labels` change would re-run their cleanup/effect pair forever.
+  const setLabel = useCallback<Ctx['setLabel']>(
+    (path, label) =>
+      setLabels((prev) => {
+        if (label === null) {
+          if (!(path in prev)) return prev;
+          const next = { ...prev };
+          delete next[path];
+          return next;
+        }
+        return prev[path] === label ? prev : { ...prev, [path]: label };
+      }),
+    [],
   );
+  const value = useMemo<Ctx>(() => ({ labels, setLabel }), [labels, setLabel]);
   return <BreadcrumbContext.Provider value={value}>{children}</BreadcrumbContext.Provider>;
 }
 

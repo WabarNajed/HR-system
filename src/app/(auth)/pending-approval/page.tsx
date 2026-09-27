@@ -5,6 +5,7 @@ import { getTranslations } from 'next-intl/server';
 import { StatusBadge } from '@/components/shared/status-badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AuthHeading } from '@/features/auth/components/auth-heading';
+import { RegistrationDetailsForm } from '@/features/auth/components/registration-details-form';
 import { RefreshStatusButton, SignOutButton } from '@/features/auth/components/status-actions';
 import { requireUser } from '@/lib/auth/guards';
 import { getPublicBranding } from '@/lib/branding';
@@ -83,6 +84,16 @@ export default async function PendingApprovalPage() {
           </div>
         ) : null}
       </div>
+
+      <RegistrationDetailsForm
+        infoRequested={infoRequested}
+        defaults={{
+          fullName: ctx.profile.fullName ?? '',
+          employeeNumber: ctx.profile.registrationEmployeeNumber ?? '',
+          mobile: ctx.profile.mobile ?? '',
+          note: ctx.profile.registrationNote ?? '',
+        }}
+      />
 
       <div className="mt-5 flex flex-col gap-2 sm:flex-row">
         <RefreshStatusButton className="flex-1" />

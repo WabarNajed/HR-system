@@ -58,5 +58,9 @@
   "invalidReference": "A related record no longer exists. Refresh and try again.",
   "samePassword": "Choose a password that's different from your current one.",
   "signupDisabled": "Self-registration is currently turned off. Contact HR.",
-  "errorReference": "Reference: {id}"
+  "errorReference": "Reference: {id}",
+  "managerCycle": "An employee can't report to themselves or to one of their own reports.",
+  "changeNotesRequired": "Add a short note describing your changes before saving.",
+  "templateNotPublished": "This template isn’t published or active. Publish its latest version first.",
+  "templateLanguageMismatch": "The selected template doesn’t support the requested certificate language."
 }

@@ -1,4 +1,179 @@
 {
   "title": "الشهادات",
-  "description": "طلبات الشهادات والشهادات الصادرة والقوالب."
+  "description": "طلبات الشهادات والشهادات الصادرة والقوالب.",
+  "employeeDescription": "اطلب الشهادات وحمّل ما صدر لك منها.",
+  "requestCertificate": "طلب شهادة",
+  "manageTemplates": "إدارة القوالب",
+  "tabs": {
+    "requests": "الطلبات",
+    "issued": "الصادرة",
+    "templates": "القوالب"
+  },
+  "kpi": {
+    "issuedThisMonth": "صدرت هذا الشهر",
+    "issuedThisMonthHint": "الشهادات المُنشأة منذ بداية الشهر",
+    "awaiting": "بانتظار الإصدار",
+    "awaitingHint": "طلبات شهادات مفتوحة",
+    "valid": "شهادات سارية",
+    "validHint": "قابلة للتحقق حاليًا",
+    "revoked": "ملغاة",
+    "revokedHint": "لم تعد سارية",
+    "myCertificates": "شهاداتي",
+    "myCertificatesHint": "جاهزة للتحميل",
+    "myOpenRequests": "طلبات قيد التنفيذ",
+    "myOpenRequestsHint": "تُعدّها الموارد البشرية"
+  },
+  "fields": {
+    "number": "رقم الشهادة",
+    "employee": "الموظف",
+    "employeeNumber": "الرقم الوظيفي",
+    "type": "نوع الشهادة",
+    "template": "القالب",
+    "language": "اللغة",
+    "addressedTo": "موجّهة إلى",
+    "purpose": "الغرض",
+    "issueDate": "تاريخ الإصدار",
+    "status": "الحالة",
+    "revokedAt": "تاريخ الإلغاء",
+    "revokeReason": "سبب الإلغاء",
+    "request": "الطلب",
+    "requestNumber": "رقم الطلب",
+    "submitted": "تاريخ التقديم",
+    "requestStatus": "حالة الطلب",
+    "sla": "مستوى الخدمة",
+    "certificate": "الشهادة",
+    "includeSalary": "إظهار الراتب",
+    "includeAllowances": "تفاصيل البدلات",
+    "comments": "ملاحظات الموظف",
+    "issuedBy": "أصدرها"
+  },
+  "filters": {
+    "type": "النوع",
+    "language": "اللغة",
+    "status": "الحالة",
+    "issueDate": "تاريخ الإصدار",
+    "requestStatus": "الحالة",
+    "submitted": "تاريخ التقديم",
+    "searchIssued": "ابحث برقم الشهادة أو اسم الموظف…",
+    "searchRequests": "ابحث برقم الطلب أو اسم الموظف…"
+  },
+  "actions": {
+    "download": "تحميل PDF",
+    "openVerification": "فتح صفحة التحقق",
+    "copyVerifyLink": "نسخ رابط التحقق",
+    "revoke": "إلغاء الشهادة",
+    "openRequest": "فتح الطلب",
+    "issue": "إصدار",
+    "issueCertificate": "إصدار الشهادة",
+    "view": "عرض"
+  },
+  "issuedCount": "{count, plural, =0 {لم تصدر} one {صدرت شهادة} two {صدرت شهادتان} few {صدرت # شهادات} many {صدرت # شهادة} other {صدرت # شهادة}}",
+  "notIssued": "لم تصدر",
+  "empty": {
+    "issuedTitle": "لم تصدر أي شهادات بعد",
+    "issuedDescription": "ستظهر هنا الشهادات المُنشأة من الطلبات.",
+    "myIssuedTitle": "لا توجد لديك شهادات بعد",
+    "myIssuedDescription": "اطلب شهادة وستُصدرها الموارد البشرية هنا لتتمكن من تحميلها.",
+    "requestsTitle": "لا توجد طلبات شهادات",
+    "requestsDescription": "ستظهر هنا طلبات الشهادات المقدّمة من الموظفين.",
+    "myRequestsTitle": "لم تطلب أي شهادة بعد",
+    "myRequestsDescription": "تُعدّ الموارد البشرية شهادات الراتب والتعريف بالعمل والخبرة.",
+    "templatesTitle": "لا توجد قوالب بعد",
+    "templatesDescription": "أنشئ قالب شهادة لتبدأ بإصدار الشهادات."
+  },
+  "templatesTab": {
+    "description": "القوالب المعتمدة عند إصدار الشهادات. تُستخدم الإصدارات المنشورة للشهادات الجديدة.",
+    "openEditor": "فتح المحرر",
+    "versionShort": "إ{version}",
+    "default": "افتراضي",
+    "issued": "{count, plural, =0 {لم يُستخدم بعد} one {استُخدم مرة واحدة} two {استُخدم مرتين} few {استُخدم # مرات} many {استُخدم # مرة} other {استُخدم # مرة}}"
+  },
+  "revoke": {
+    "title": "إلغاء الشهادة {number}؟",
+    "description": "ستظهر الشهادة كملغاة في صفحة التحقق ولن يتمكن الموظف من تحميلها. لا يمكن التراجع عن ذلك.",
+    "reason": "السبب",
+    "reasonPlaceholder": "مثال: صدرت ببيانات غير صحيحة",
+    "confirm": "إلغاء الشهادة"
+  },
+  "toast": {
+    "issued": "تم إنشاء الشهادة وحفظها.",
+    "revoked": "تم إلغاء الشهادة.",
+    "requestCompleted": "تم إكمال الطلب.",
+    "linkCopied": "تم نسخ رابط التحقق."
+  },
+  "errors": {
+    "issueFirst": "أصدر الشهادة قبل إكمال الطلب."
+  },
+  "export": {
+    "title": "الشهادات الصادرة"
+  },
+  "sheet": {
+    "title": "طلب شهادة",
+    "openFullRequest": "فتح الطلب كاملًا"
+  },
+  "panel": {
+    "title": "الشهادة",
+    "descriptionHr": "أنشئ الشهادة من قالب منشور، ثم أكمل الطلب.",
+    "descriptionEmployee": "ستظهر شهادتك هنا فور إصدارها من الموارد البشرية.",
+    "requested": "المطلوب",
+    "yes": "نعم",
+    "no": "لا",
+    "issuedList": "الشهادات الصادرة",
+    "issueTitle": "إصدار الشهادة",
+    "template": "القالب",
+    "templatePlaceholder": "اختر قالبًا",
+    "matchingTemplates": "مطابقة للطلب",
+    "otherTemplates": "قوالب أخرى",
+    "noTemplates": "لا يوجد قالب منشور يدعم هذه اللغة. انشر قالبًا من قوالب المستندات.",
+    "language": "لغة الشهادة",
+    "addressedTo": "موجّهة إلى",
+    "addressedToPlaceholder": "إلى من يهمه الأمر",
+    "purpose": "الغرض",
+    "purposePlaceholder": "مثال: فتح حساب بنكي",
+    "salaryIncluded": "الراتب مُضمَّن بناءً على الطلب",
+    "allowancesIncluded": "تفاصيل البدلات مُضمَّنة بناءً على الطلب",
+    "salaryNotRequested": "لم يُطلب إظهار الراتب — لن تظهر بيانات الراتب",
+    "salaryHidden": "بيانات الراتب غير متاحة لهذا الموظف، لذا ستظهر قيم الراتب فارغة.",
+    "preview": "معاينة",
+    "previewPdf": "معاينة PDF",
+    "generate": "إنشاء الشهادة",
+    "generating": "جارٍ الإنشاء…",
+    "complete": "إكمال الطلب",
+    "completeHint": "يُشعِر الموظف باكتمال الطلب.",
+    "completeDisabled": "أصدر شهادة سارية أولًا.",
+    "issuedHeadline": "الشهادة {number} جاهزة",
+    "issuedDescription": "حُفظت ضمن شهادات الموظف. يمكنك تحميلها أو إكمال الطلب.",
+    "cannotIssueStatus": "يمكن إصدار الشهادة بعد وصول الطلب إلى مراجعة الموارد البشرية.",
+    "noPermission": "يمكنك عرض الشهادات دون صلاحية إصدارها.",
+    "employeeWaiting": "تعمل الموارد البشرية على إعداد شهادتك.",
+    "employeeClosed": "أُغلق هذا الطلب دون إصدار شهادة.",
+    "employeeReady": "شهادتك جاهزة للتحميل.",
+    "requestClosed": "حالة هذا الطلب: {status}.",
+    "reissue": "إصدار شهادة أخرى",
+    "revokedNote": "ملغاة"
+  },
+  "preview": {
+    "title": "معاينة الشهادة",
+    "description": "معاينة ببيانات الموظف الفعلية. يُخصَّص الرقم عند الإنشاء.",
+    "page": "الصفحة",
+    "pdf": "PDF",
+    "loading": "جارٍ إعداد المعاينة…",
+    "failed": "تعذّر إعداد المعاينة.",
+    "openInNewTab": "فتح في علامة تبويب جديدة",
+    "download": "تحميل"
+  },
+  "employeeTab": {
+    "title": "الشهادات",
+    "description": "الشهادات الصادرة لهذا الموظف.",
+    "emptyTitle": "لا توجد شهادات صادرة",
+    "emptyDescription": "تظهر هنا الشهادات الصادرة من طلبات الشهادات."
+  },
+  "pdf": {
+    "cr": "س.ت",
+    "vat": "الرقم الضريبي",
+    "phone": "هاتف",
+    "verifyCaption": "امسح الرمز للتحقق من صحة الشهادة",
+    "authorizedSignatory": "المفوّض بالتوقيع",
+    "watermark": "معاينة"
+  }
 }

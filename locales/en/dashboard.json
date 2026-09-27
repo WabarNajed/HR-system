@@ -1,4 +1,282 @@
 {
   "title": "Dashboard",
-  "description": "Your workspace at a glance."
+  "description": "Your workspace at a glance.",
+  "hijriDate": "{date} AH",
+  "greeting": {
+    "morning": "Good morning, {name}",
+    "afternoon": "Good afternoon, {name}",
+    "evening": "Good evening, {name}"
+  },
+  "actions": {
+    "viewAll": "View all",
+    "newRequest": "New HR request",
+    "addEmployee": "Add employee",
+    "requestQueue": "Request queue",
+    "manageUsers": "Manage users",
+    "setupWizard": "Setup wizard",
+    "auditLog": "Audit log",
+    "reviewApprovals": "Review approvals",
+    "requestLeave": "Request leave",
+    "requestCertificate": "Request certificate"
+  },
+  "states": {
+    "widgetError": "Couldn't load this section."
+  },
+  "sections": {
+    "administration": {
+      "title": "Administration",
+      "description": "System health, access and data"
+    },
+    "organization": {
+      "title": "Organization",
+      "description": "Workforce, requests and compliance"
+    },
+    "team": {
+      "title": "My team",
+      "description": "Approvals and your direct reports"
+    },
+    "workspace": {
+      "title": "My workspace",
+      "titleSingle": "Overview",
+      "description": "Your own requests, leave and updates",
+      "notLinkedTitle": "Your account isn't linked to an employee record",
+      "notLinkedDescription": "Personal widgets such as leave balance and requests appear once HR links your account."
+    }
+  },
+  "rows": {
+    "untitledRequest": "Request",
+    "draft": "Draft",
+    "days": "{count, plural, one {# day} other {# days}}",
+    "onLeaveNow": "On leave now"
+  },
+  "kpi": {
+    "annualLeave": "Annual leave balance",
+    "annualLeaveNotSet": "Balance not set up yet",
+    "annualLeavePending": "{days} days awaiting approval",
+    "annualLeaveUsed": "{days} days used in {year}",
+    "openRequests": "Open requests",
+    "openRequestsReturned": "{count, plural, one {# returned for changes} other {# returned for changes}}",
+    "openRequestsDrafts": "{count, plural, one {# draft not submitted} other {# drafts not submitted}}",
+    "openRequestsHint": "In review or being processed",
+    "documentsExpiring": "Documents expiring",
+    "documentsExpiringHint": "Iqama, passport, contract and files · 90 days",
+    "certificates": "Certificates",
+    "certificatesHint": "Valid certificates issued to you",
+    "pendingApprovals": "Pending approvals",
+    "pendingApprovalsHint": "Waiting for your decision",
+    "pendingApprovalsClear": "Nothing waiting for you",
+    "directReports": "Direct reports",
+    "teamOpenRequests": "{count, plural, =0 {No open team requests} one {# open team request} other {# open team requests}}",
+    "teamOnLeave": "Team on leave today",
+    "teamOnLeaveHint": "{count, plural, one {# at work today} other {# at work today}}",
+    "upcomingTeamLeave": "Upcoming team leave",
+    "upcomingTeamLeaveHint": "Starting within the next 14 days",
+    "totalEmployees": "Total employees",
+    "totalEmployeesHint": "Active workforce",
+    "newJoiners": "{count, plural, one {+# joined in the last 30 days} other {+# joined in the last 30 days}}",
+    "pendingRequests": "Open requests",
+    "pendingHrReview": "{count, plural, =0 {None awaiting HR review} one {# awaiting HR review} other {# awaiting HR review}}",
+    "hrPendingApprovals": "Awaiting HR action",
+    "hrPendingApprovalsHint": "Unassigned or assigned to you",
+    "inProgress": "{count, plural, one {# approved, being processed} other {# approved, being processed}}",
+    "onLeaveToday": "On leave today",
+    "upcomingLeave7d": "{count, plural, =0 {No leave starting this week} one {# starting within 7 days} other {# starting within 7 days}}",
+    "overdueRequests": "Overdue requests",
+    "overdueRequestsHint": "All open requests within SLA",
+    "dueSoon": "{count, plural, one {# more due within 24 hours} other {# more due within 24 hours}}",
+    "documentsExpired": "{count, plural, one {# already expired} other {# already expired}}"
+  },
+  "widgets": {
+    "recentRequests": {
+      "title": "My recent requests",
+      "emptyTitle": "No requests yet",
+      "emptyDescription": "Requests you submit to HR will appear here with their status.",
+      "emptyAction": "New request"
+    },
+    "upcomingLeave": {
+      "title": "My leave",
+      "daysAvailable": "days available",
+      "emptyTitle": "No upcoming leave",
+      "emptyDescription": "Approved and pending leave will show here.",
+      "emptyAction": "Request leave"
+    },
+    "notifications": {
+      "title": "Latest notifications",
+      "emptyTitle": "You're all caught up",
+      "emptyDescription": "Updates on your requests and approvals will appear here."
+    },
+    "approvalQueue": {
+      "title": "Approval queue",
+      "description": "{count, plural, one {# request waiting for you} other {# requests waiting for you}}",
+      "open": "Open approvals",
+      "emptyTitle": "No approvals waiting",
+      "emptyDescription": "Requests that need your decision will appear here."
+    },
+    "teamRequests": {
+      "title": "Team requests",
+      "emptyTitle": "No team requests",
+      "emptyDescription": "Requests from your direct reports will appear here."
+    },
+    "teamCalendar": {
+      "title": "Team leave",
+      "description": "{from}",
+      "member": "Team member",
+      "legendApproved": "Approved",
+      "legendPending": "Awaiting approval",
+      "legendWeekend": "Weekend",
+      "emptyTitle": "Everyone is available",
+      "emptyDescription": "No team leave is planned for the next 14 days."
+    },
+    "compliance": {
+      "expired": "Expired",
+      "within30": "≤ 30 days",
+      "within90": "≤ 90 days",
+      "allClear": "All clear",
+      "kinds": {
+        "iqama": "Iqama",
+        "passport": "Passport",
+        "contract": "Contract",
+        "insurance": "Medical insurance"
+      }
+    },
+    "requestQueue": {
+      "title": "Request queue",
+      "description": "{open} open · {overdue} overdue",
+      "emptyTitle": "The queue is clear",
+      "emptyDescription": "Submitted requests that need review will appear here."
+    },
+    "expiryAlerts": {
+      "title": "Expiry alerts",
+      "description": "Expired and next 90 days",
+      "emptyTitle": "Nothing expiring",
+      "emptyDescription": "No Iqama, passport, contract, insurance or document expires in the next 90 days.",
+      "expiredAgo": "{count, plural, one {Expired # day ago} other {Expired # days ago}}",
+      "expiresToday": "Expires today",
+      "expiresIn": "{count, plural, one {In # day} other {In # days}}",
+      "kinds": {
+        "iqama": "Iqama",
+        "passport": "Passport",
+        "contract": "Contract end",
+        "insurance": "Medical insurance",
+        "document": "Document"
+      }
+    },
+    "overview": {
+      "byDepartment": "Headcount by department",
+      "byNationality": "Nationality mix",
+      "byDepartmentAria": "{count, plural, one {Bar chart of headcount across # department} other {Bar chart of headcount across # departments}}",
+      "byNationalityAria": "{count, plural, one {Stacked bar of # nationality group} other {Stacked bar of # nationality groups}}",
+      "employees": "active employees",
+      "departmentsCount": "{count, plural, one {# department} other {# departments}}",
+      "nationalities": "nationalities recorded",
+      "unassigned": "No department",
+      "other": "Other",
+      "unknownNationality": "Not recorded",
+      "emptyTitle": "No employees yet",
+      "emptyDescription": "Charts appear once employees are added or imported."
+    },
+    "recentActivity": {
+      "title": "Recent activity",
+      "system": "System",
+      "emptyTitle": "No activity yet",
+      "emptyDescription": "Audited actions will appear here."
+    },
+    "orgHealth": {
+      "title": "Organization health",
+      "openSetup": "Setup wizard",
+      "progress": "{passed} of {total} checks passed",
+      "setupCompleted": "Setup completed",
+      "setupPending": "Setup in progress",
+      "statusOk": "Configured",
+      "statusIssue": "Needs attention",
+      "checks": {
+        "organization": {
+          "label": "Organization profile",
+          "ok": "Names and HR email are set",
+          "issue": "Add the Arabic and English names and the HR email"
+        },
+        "branding": {
+          "label": "Logo & branding",
+          "ok": "Logo uploaded",
+          "issue": "Upload the organization logo"
+        },
+        "departments": {
+          "label": "Departments",
+          "ok": "{count, plural, one {# active department} other {# active departments}}",
+          "issue": "No active departments yet"
+        },
+        "jobTitles": {
+          "label": "Job titles",
+          "ok": "{count, plural, one {# active job title} other {# active job titles}}",
+          "issue": "No active job titles yet"
+        },
+        "locations": {
+          "label": "Locations",
+          "ok": "{count, plural, one {# active location} other {# active locations}}",
+          "issue": "No active locations yet"
+        },
+        "employees": {
+          "label": "Employee records",
+          "ok": "{count, plural, one {# active employee} other {# active employees}}",
+          "issue": "Import or add your employees"
+        },
+        "employeeDepartments": {
+          "label": "Department assignment",
+          "ok": "Every employee has a department",
+          "issue": "{count, plural, one {# employee without a department} other {# employees without a department}}"
+        },
+        "leaveBalances": {
+          "label": "Leave balances this year",
+          "ok": "Set up for all employees",
+          "issue": "{count, plural, one {# employee without balances} other {# employees without balances}}"
+        },
+        "publicHolidays": {
+          "label": "Public holidays",
+          "ok": "{count, plural, one {# holiday this year} other {# holidays this year}}",
+          "issue": "No holidays defined for this year"
+        },
+        "workflows": {
+          "label": "Approval workflows",
+          "ok": "Every active request type has a workflow",
+          "issue": "{count, plural, one {# active request type without a workflow} other {# active request types without a workflow}}"
+        },
+        "hrAdmin": {
+          "label": "HR administrator",
+          "ok": "{count, plural, one {# active HR admin} other {# active HR admins}}",
+          "issue": "Assign at least one HR admin"
+        },
+        "email": {
+          "label": "Email delivery",
+          "ok": "Email provider configured",
+          "issue": "No provider — emails are only logged"
+        }
+      }
+    },
+    "users": {
+      "title": "Users",
+      "total": "portal accounts"
+    },
+    "roles": {
+      "title": "Roles",
+      "custom": "Custom"
+    },
+    "pendingRegistrations": {
+      "title": "Pending registrations",
+      "review": "Review",
+      "emptyTitle": "No pending registrations",
+      "emptyDescription": "New self-registrations will wait here for review."
+    },
+    "imports": {
+      "title": "Imports",
+      "rows": "{imported} of {total} rows imported",
+      "emptyTitle": "No imports yet",
+      "emptyDescription": "Employee and master-data imports will appear here."
+    },
+    "auditActivity": {
+      "title": "Audit activity",
+      "events": "events in the last 24 hours",
+      "emptyTitle": "No events in the last 24 hours",
+      "emptyDescription": "Audited actions from the last day will be summarized here."
+    }
+  }
 }

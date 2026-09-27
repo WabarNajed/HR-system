@@ -1,0 +1,62 @@
+{
+  "title": "Security",
+  "description": "Registration, sessions, password policy and account ownership.",
+  "access": {
+    "title": "Access & sessions",
+    "description": "Who can create an account and how long an idle session stays signed in.",
+    "selfRegistration": "Allow employee self-registration",
+    "selfRegistrationOn": "Employees can register from the sign-in page. Every registration waits for HR approval.",
+    "selfRegistrationOff": "The registration page is closed. HR invites users from Users or an employee's profile.",
+    "sessionTimeout": "Idle session timeout",
+    "sessionTimeoutHint": "Signed-in users are signed out after this period without activity.",
+    "minutes": "{count, plural, one {# minute} other {# minutes}}",
+    "hours": "{count, plural, one {# hour} other {# hours}}",
+    "days": "{count, plural, one {# day} other {# days}}",
+    "readOnly": "Changing these settings requires the Settings › Edit permission."
+  },
+  "activity": {
+    "title": "Recent sign-in activity",
+    "description": "The latest 20 sign-ins and sign-outs across the portal.",
+    "viewAll": "Open audit log",
+    "noPermission": "Viewing sign-in activity requires the Audit › View permission.",
+    "empty": "No sign-in activity recorded yet.",
+    "login": "signed in",
+    "logout": "signed out",
+    "noDevice": "Device not recorded"
+  },
+  "owners": {
+    "title": "Super Admin owners",
+    "description": "{count, plural, =0 {No active owners} one {# active owner} other {# active owners}}",
+    "noPermission": "Viewing owners requires the Users › View permission.",
+    "you": "You",
+    "singleOwner": "Only one active Super Admin. Add a second owner so the organization never loses administrative access.",
+    "hint": "Super Admins control every setting. The last active Super Admin can never be removed or disabled."
+  },
+  "password": {
+    "title": "Password policy",
+    "minLength": "At least {count} characters",
+    "upper": "An uppercase letter (A–Z)",
+    "lower": "A lowercase letter (a–z)",
+    "digit": "A number (0–9)",
+    "managed": "Enforced by the authentication service for every new password. To change it, update the password requirements in the Supabase Auth settings (Authentication › Providers › Email)."
+  },
+  "email": {
+    "title": "Email delivery",
+    "provider": "Provider",
+    "resend": "Resend",
+    "smtp": "SMTP",
+    "notConfigured": "Not configured",
+    "from": "Sender",
+    "configuredHint": "Invitations, password resets and notifications are sent from this address. Delivery is recorded in the email log.",
+    "notConfiguredHint": "Emails aren’t sent until RESEND_API_KEY or SMTP settings and EMAIL_FROM are configured on the server. Attempts are recorded as skipped."
+  },
+  "timeout": {
+    "title": "Are you still there?",
+    "description": "For your security you’ll be signed out in {seconds, plural, one {# second} other {# seconds}} because of inactivity.",
+    "stay": "Stay signed in",
+    "signOut": "Sign out now"
+  },
+  "toast": {
+    "saved": "Security settings saved."
+  }
+}

@@ -34,6 +34,7 @@ import ar_statuses from '../../../locales/ar/statuses.json';
 import ar_enums from '../../../locales/ar/enums.json';
 import ar_errors from '../../../locales/ar/errors.json';
 import ar_validation from '../../../locales/ar/validation.json';
+import ar_security from '../../../locales/ar/security.json';
 
 import en_common from '../../../locales/en/common.json';
 import en_nav from '../../../locales/en/nav.json';
@@ -64,6 +65,7 @@ import en_statuses from '../../../locales/en/statuses.json';
 import en_enums from '../../../locales/en/enums.json';
 import en_errors from '../../../locales/en/errors.json';
 import en_validation from '../../../locales/en/validation.json';
+import en_security from '../../../locales/en/security.json';
 
 export const namespaces = [
   'common',
@@ -95,6 +97,7 @@ export const namespaces = [
   'enums',
   'errors',
   'validation',
+  'security',
 ] as const;
 
 export type Namespace = (typeof namespaces)[number];
@@ -129,6 +132,7 @@ const arMessages = {
   enums: ar_enums,
   errors: ar_errors,
   validation: ar_validation,
+  security: ar_security,
 };
 
 const enMessages = {
@@ -161,6 +165,7 @@ const enMessages = {
   enums: en_enums,
   errors: en_errors,
   validation: en_validation,
+  security: en_security,
 };
 
 /** Shape of the full message tree (English is the reference for types). */

@@ -17,6 +17,9 @@ const nextConfig: NextConfig = {
       './node_modules/@fontsource/ibm-plex-sans-arabic/files/*-{arabic,latin}-{400,500,600,700}-normal.woff2',
     ],
   },
+  // No floating Next.js dev-tools badge: it overlapped the collapsed sidebar's expand button in LTR
+  // and blocked automated clicks. Build/runtime errors still show in the dev overlay.
+  devIndicators: false,
   // Never echo Server Action arguments (e.g. sign-in passwords) into the dev server log.
   logging: { serverFunctions: false },
   experimental: {

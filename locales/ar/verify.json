@@ -1,4 +1,28 @@
 {
   "title": "التحقق من الشهادة",
-  "description": "تحقّق من صحة شهادة صادرة."
+  "description": "تحقّق من صحة شهادة صادرة.",
+  "validTitle": "شهادة صحيحة",
+  "validDescription": "صدرت هذه الشهادة من {company} وهي سارية حاليًا.",
+  "revokedTitle": "شهادة ملغاة",
+  "revokedDescription": "صدرت هذه الشهادة من {company} ثم أُلغيت، ولم تعد سارية.",
+  "notFoundTitle": "لم يُعثر على الشهادة",
+  "notFoundDescription": "لا توجد شهادة بهذا الرقم. تأكد من الرقم المطبوع على الشهادة وحاول مرة أخرى.",
+  "theOrganization": "الجهة",
+  "fields": {
+    "number": "رقم الشهادة",
+    "employee": "صدرت باسم",
+    "type": "نوع الشهادة",
+    "issueDate": "تاريخ الإصدار",
+    "status": "الحالة"
+  },
+  "lookup": {
+    "title": "التحقق من شهادة أخرى",
+    "label": "رقم الشهادة",
+    "placeholder": "CERT-2026-000001",
+    "submit": "تحقق"
+  },
+  "privacyNote": "حرصًا على الخصوصية، تعرض هذه الصفحة البيانات اللازمة للتحقق فقط.",
+  "checkedAt": "تم التحقق في {date}",
+  "poweredBy": "خدمة التحقق التابعة لـ{portal}",
+  "backToPortal": "تسجيل الدخول إلى البوابة"
 }

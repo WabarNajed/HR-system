@@ -14,6 +14,7 @@
     "lint": "eslint .",
     "check:i18n": "node scripts/check-i18n.mjs",
     "db:types": "node scripts/gen-db-types.mjs",
+    "db:test": "bash supabase/tests/run.sh",
     "e2e": "playwright test",
     "bootstrap:super-admin": "tsx scripts/bootstrap-super-admin.ts",
     "analyze:workbook": "tsx scripts/analyze-workbook.ts",

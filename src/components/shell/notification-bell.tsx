@@ -2,135 +2,178 @@
 
 import { BellIcon, BellOffIcon, CheckCheckIcon, RotateCwIcon } from 'lucide-react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useLocale, useTranslations } from 'next-intl';
+import { usePathname, useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useCallback, useEffect, useRef, useState, useTransition } from 'react';
 import { toast } from 'sonner';
+import { SegmentedTabs } from '@/components/shared/link-tabs';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SimpleTooltip } from '@/components/ui/tooltip';
-import { formatRelative } from '@/lib/dates';
+import { NOTIFICATIONS_CHANGED_EVENT } from '@/features/notifications/categories';
+import { NotificationItem } from '@/features/notifications/components/notification-item';
 import { createClient } from '@/lib/supabase/client';
-import { cn } from '@/lib/utils';
-import {
-  DEFAULT_NOTIFICATION_VISUAL,
-  NOTIFICATION_TONE_CLASS,
-  NOTIFICATION_VISUALS,
-  useNotificationText,
-  type NotificationRecord,
-} from './notification-text';
+import type { NotificationRecord } from './notification-visuals';
 
 const POLL_MS = 60_000;
 const TIMEOUT_MS = 8_000;
+const LIMIT = 8;
 
 type ListState = { status: 'idle' | 'loading' | 'ready' | 'error'; items: NotificationRecord[] };
+type Filter = 'all' | 'unread';
+
+/** Routes whose server-rendered content shows read state (refreshed after a bell mutation). */
+const REFRESH_PATHS = ['/notifications', '/dashboard'];
 
 /**
- * Header notification bell: unread badge (polled every 60 s and on window focus), popover with the
- * latest 10 notifications (fetched on open), mark-as-read on click then navigate, mark all read.
- * Reads/writes go through the browser Supabase client (RLS: own rows only) with 8 s timeouts.
+ * Header notification bell: unread badge (server-rendered initial value, polled every 60 s, on window
+ * focus and on `hr:notifications-changed`), popover with All / Unread tabs and the latest items
+ * (fetched on open, 8 s timeout, retry on error), mark all read, open → mark read + navigate.
+ * Reads/writes go through the browser Supabase client (RLS: own rows only; only `read_at` updatable).
  */
 export function NotificationBell({ initialUnread }: { initialUnread: number | null }) {
   const t = useTranslations('notifications.bell');
   const tHeader = useTranslations('nav.header');
   const tErrors = useTranslations('errors');
   const tCommon = useTranslations('common');
-  const locale = useLocale();
   const router = useRouter();
-  const render = useNotificationText();
+  const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const [filter, setFilter] = useState<Filter>('all');
   const [unread, setUnread] = useState<number>(initialUnread ?? 0);
   const [list, setList] = useState<ListState>({ status: 'idle', items: [] });
   const [markingAll, startMarkAll] = useTransition();
   const loadSeq = useRef(0);
 
+  // The layout re-renders with a fresh server count after router.refresh() — adopt it.
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (typeof initialUnread === 'number') setUnread(initialUnread);
+  }, [initialUnread]);
+
   const refreshCount = useCallback(async () => {
     const supabase = createClient();
     if (!supabase) return;
-    const { count, error } = await supabase
-      .from('notifications')
-      .select('id', { count: 'exact', head: true })
-      .is('read_at', null)
-      .abortSignal(AbortSignal.timeout(TIMEOUT_MS));
-    if (!error && typeof count === 'number') setUnread(count);
+    try {
+      const { count, error } = await supabase
+        .from('notifications')
+        .select('id', { count: 'exact', head: true })
+        .is('read_at', null)
+        .abortSignal(AbortSignal.timeout(TIMEOUT_MS));
+      if (!error && typeof count === 'number') setUnread(count);
+    } catch {
+      // Network/timeout: keep the last known count; the next poll retries.
+    }
   }, []);
 
-  const loadList = useCallback(async () => {
-    const seq = ++loadSeq.current;
-    setList((prev) => ({ status: 'loading', items: prev.items }));
-    const supabase = createClient();
-    if (!supabase) {
-      setList({ status: 'error', items: [] });
-      return;
-    }
-    const { data, error } = await supabase
-      .from('notifications')
-      .select('id, type, params, link, read_at, created_at')
-      .order('created_at', { ascending: false })
-      .limit(10)
-      .abortSignal(AbortSignal.timeout(TIMEOUT_MS));
-    if (seq !== loadSeq.current) return;
-    if (error) {
-      setList({ status: 'error', items: [] });
-      return;
-    }
-    setList({ status: 'ready', items: (data ?? []) as NotificationRecord[] });
-    void refreshCount();
-  }, [refreshCount]);
+  const loadList = useCallback(
+    async (which: Filter) => {
+      const seq = ++loadSeq.current;
+      setList((prev) => ({ status: 'loading', items: prev.items }));
+      const supabase = createClient();
+      if (!supabase) {
+        setList({ status: 'error', items: [] });
+        return;
+      }
+      try {
+        let query = supabase
+          .from('notifications')
+          .select('id, type, params, link, read_at, created_at')
+          .order('created_at', { ascending: false })
+          .limit(LIMIT);
+        if (which === 'unread') query = query.is('read_at', null);
+        const { data, error } = await query.abortSignal(AbortSignal.timeout(TIMEOUT_MS));
+        if (seq !== loadSeq.current) return;
+        if (error) {
+          setList({ status: 'error', items: [] });
+          return;
+        }
+        setList({ status: 'ready', items: (data ?? []) as NotificationRecord[] });
+        void refreshCount();
+      } catch {
+        if (seq === loadSeq.current) setList({ status: 'error', items: [] });
+      }
+    },
+    [refreshCount],
+  );
 
-  // Poll unread count + refresh on focus.
+  // Poll the unread count, refresh on focus and when another view changes read state.
   useEffect(() => {
     const id = window.setInterval(() => {
       if (document.visibilityState === 'visible') void refreshCount();
     }, POLL_MS);
     const onFocus = () => void refreshCount();
+    const onChanged = () => void refreshCount();
     window.addEventListener('focus', onFocus);
+    window.addEventListener(NOTIFICATIONS_CHANGED_EVENT, onChanged);
     return () => {
       window.clearInterval(id);
       window.removeEventListener('focus', onFocus);
+      window.removeEventListener(NOTIFICATIONS_CHANGED_EVENT, onChanged);
     };
   }, [refreshCount]);
 
+  const refreshPageIfNeeded = useCallback(() => {
+    if (REFRESH_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`))) router.refresh();
+  }, [pathname, router]);
+
   const onOpenChange = (next: boolean) => {
     setOpen(next);
-    if (next) void loadList();
+    if (next) void loadList(filter);
+  };
+
+  const onFilterChange = (value: string) => {
+    const next = value === 'unread' ? 'unread' : 'all';
+    setFilter(next);
+    void loadList(next);
   };
 
   const openItem = async (n: NotificationRecord) => {
     setOpen(false);
     if (!n.read_at) {
-      setList((prev) => ({ ...prev, items: prev.items.map((i) => (i.id === n.id ? { ...i, read_at: new Date().toISOString() } : i)) }));
+      const readAt = new Date().toISOString();
+      setList((prev) => ({ ...prev, items: prev.items.map((i) => (i.id === n.id ? { ...i, read_at: readAt } : i)) }));
       setUnread((c) => Math.max(0, c - 1));
       const supabase = createClient();
       if (supabase) {
-        const { error } = await supabase
-          .from('notifications')
-          .update({ read_at: new Date().toISOString() })
-          .eq('id', n.id)
-          .abortSignal(AbortSignal.timeout(TIMEOUT_MS));
-        if (error) void refreshCount();
+        try {
+          const { error } = await supabase
+            .from('notifications')
+            .update({ read_at: readAt })
+            .eq('id', n.id)
+            .abortSignal(AbortSignal.timeout(TIMEOUT_MS));
+          if (error) void refreshCount();
+        } catch {
+          void refreshCount();
+        }
       }
     }
-    if (n.link) router.push(n.link);
+    if (n.link && n.link.startsWith('/')) router.push(n.link);
   };
 
   const markAllRead = () =>
     startMarkAll(async () => {
       const supabase = createClient();
       if (!supabase) return;
-      const { error } = await supabase
-        .from('notifications')
-        .update({ read_at: new Date().toISOString() })
-        .is('read_at', null)
-        .abortSignal(AbortSignal.timeout(TIMEOUT_MS));
-      if (error) {
+      try {
+        const readAt = new Date().toISOString();
+        const { error } = await supabase
+          .from('notifications')
+          .update({ read_at: readAt })
+          .is('read_at', null)
+          .abortSignal(AbortSignal.timeout(TIMEOUT_MS));
+        if (error) throw error;
+        setUnread(0);
+        setList((prev) => ({
+          ...prev,
+          items: filter === 'unread' ? [] : prev.items.map((i) => ({ ...i, read_at: i.read_at ?? readAt })),
+        }));
+        toast.success(t('markedAllRead'));
+        refreshPageIfNeeded();
+      } catch {
         toast.error(tErrors('generic'));
-        return;
       }
-      setUnread(0);
-      setList((prev) => ({ ...prev, items: prev.items.map((i) => ({ ...i, read_at: i.read_at ?? new Date().toISOString() })) }));
-      toast.success(t('markedAllRead'));
     });
 
   const badge = unread > 99 ? '99+' : String(unread);
@@ -157,8 +200,8 @@ export function NotificationBell({ initialUnread }: { initialUnread: number | nu
           </Button>
         </PopoverTrigger>
       </SimpleTooltip>
-      <PopoverContent align="end" className="w-[min(24rem,calc(100vw-1rem))] p-0">
-        <div className="flex items-center justify-between gap-2 border-b border-border px-4 py-3">
+      <PopoverContent align="end" className="w-[min(25rem,calc(100vw-1rem))] p-0">
+        <div className="flex items-center justify-between gap-2 px-4 pt-3 pb-2">
           <div className="flex min-w-0 items-center gap-2">
             <h2 className="text-card-title">{t('title')}</h2>
             {unread > 0 ? (
@@ -167,13 +210,26 @@ export function NotificationBell({ initialUnread }: { initialUnread: number | nu
               </span>
             ) : null}
           </div>
-          <Button variant="ghost" size="sm" onClick={markAllRead} loading={markingAll} disabled={unread === 0 || markingAll} className="h-7 px-2">
+          <Button variant="ghost" size="sm" onClick={markAllRead} loading={markingAll} disabled={unread === 0 || markingAll} className="-me-2 h-7 px-2">
             {!markingAll ? <CheckCheckIcon /> : null}
             {t('markAllRead')}
           </Button>
         </div>
+        <div className="border-b border-border px-4 pb-2.5">
+          <SegmentedTabs
+            size="sm"
+            value={filter}
+            onValueChange={onFilterChange}
+            aria-label={t('title')}
+            className="w-full [&>*]:flex-1"
+            items={[
+              { value: 'all', label: t('tabAll') },
+              { value: 'unread', label: t('tabUnread'), count: unread || null },
+            ]}
+          />
+        </div>
 
-        <div className="max-h-[min(26rem,65dvh)] overflow-y-auto" aria-busy={list.status === 'loading'}>
+        <div className="max-h-[min(26rem,62dvh)] overflow-y-auto" aria-busy={list.status === 'loading'}>
           {list.status === 'loading' && !list.items.length ? (
             <div className="flex flex-col" aria-label={t('loading')}>
               {Array.from({ length: 4 }).map((_, i) => (
@@ -189,58 +245,35 @@ export function NotificationBell({ initialUnread }: { initialUnread: number | nu
           ) : list.status === 'error' ? (
             <div className="flex flex-col items-center gap-3 px-6 py-8 text-center">
               <p className="text-sm text-muted-foreground">{t('error')}</p>
-              <Button variant="outline" size="sm" onClick={() => void loadList()}>
+              <Button variant="outline" size="sm" onClick={() => void loadList(filter)}>
                 <RotateCwIcon />
                 {tCommon('tryAgain')}
               </Button>
             </div>
           ) : list.items.length === 0 ? (
-            <div className="flex flex-col items-center px-6 py-10 text-center">
+            <div className="flex flex-col items-center px-6 py-9 text-center">
               <span className="mb-3 flex size-10 items-center justify-center rounded-xl bg-muted text-muted-foreground">
                 <BellOffIcon className="size-5" strokeWidth={1.75} />
               </span>
-              <p className="text-sm font-semibold">{t('emptyTitle')}</p>
-              <p className="mt-1 max-w-64 text-meta text-muted-foreground">{t('emptyDescription')}</p>
+              <p className="text-sm font-semibold">{filter === 'unread' ? t('unreadEmptyTitle') : t('emptyTitle')}</p>
+              <p className="mt-1 max-w-64 text-meta text-muted-foreground">
+                {filter === 'unread' ? t('unreadEmptyDescription') : t('emptyDescription')}
+              </p>
             </div>
           ) : (
-            <ul className="divide-y divide-border">
-              {list.items.map((n) => {
-                const { title, body } = render(n);
-                const visual = NOTIFICATION_VISUALS[n.type] ?? DEFAULT_NOTIFICATION_VISUAL;
-                const Icon = visual.icon;
-                const unreadItem = !n.read_at;
-                return (
-                  <li key={n.id}>
-                    <button
-                      type="button"
-                      onClick={() => void openItem(n)}
-                      className={cn(
-                        'relative flex w-full gap-3 px-4 py-3 text-start outline-none transition-colors hover:bg-accent focus-visible:bg-accent',
-                        unreadItem && 'bg-primary-soft/40',
-                      )}
-                    >
-                      {unreadItem ? <span aria-hidden className="absolute top-4 start-1.5 size-1.5 rounded-full bg-primary" /> : null}
-                      <span className={cn('mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full', NOTIFICATION_TONE_CLASS[visual.tone])}>
-                        <Icon className="size-4" strokeWidth={1.9} aria-hidden />
-                      </span>
-                      <span className="min-w-0 flex-1">
-                        <span className={cn('block text-[0.8125rem] leading-5', unreadItem ? 'font-semibold text-foreground' : 'font-medium text-foreground/90')}>
-                          {title}
-                        </span>
-                        {body ? <span className="mt-0.5 line-clamp-2 block text-xs leading-5 text-muted-foreground">{body}</span> : null}
-                        <span className="mt-1 block text-[0.6875rem] text-faint-foreground">{formatRelative(n.created_at, locale)}</span>
-                      </span>
-                    </button>
-                  </li>
-                );
-              })}
+            <ul className={`divide-y divide-border transition-opacity ${list.status === 'loading' ? 'opacity-60' : ''}`}>
+              {list.items.map((n) => (
+                <li key={n.id}>
+                  <NotificationItem notification={n} onOpen={(item) => void openItem(item)} density="compact" />
+                </li>
+              ))}
             </ul>
           )}
         </div>
 
         <div className="border-t border-border p-1.5">
           <Button asChild variant="ghost" size="sm" className="w-full justify-center text-primary hover:text-primary">
-            <Link href="/notifications" onClick={() => setOpen(false)}>
+            <Link href={filter === 'unread' ? '/notifications?tab=unread' : '/notifications'} onClick={() => setOpen(false)}>
               {t('viewAll')}
             </Link>
           </Button>

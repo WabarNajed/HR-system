@@ -42,9 +42,36 @@ function safeNext(value: string | null): string | null {
 
 type PendingCookie = { name: string; value: string; options: CookieOptions };
 
+/**
+ * Query parameters that must never live in a URL. A form submitted before hydration falls back to a
+ * native GET, which would put the typed password into the address bar, history and Referer. Such a
+ * request is answered with a redirect to the same URL without them (the form is simply shown again).
+ */
+const SECRET_PARAMS = ['password', 'confirmPassword', 'newPassword', 'currentPassword', 'passwordConfirm'];
+
+export function stripSecretParams(url: URL): URL | null {
+  const leaked = SECRET_PARAMS.filter((p) => url.searchParams.has(p));
+  if (!leaked.length) return null;
+  const clean = new URL(url);
+  for (const p of leaked) clean.searchParams.delete(p);
+  // Other fields of the same form (e.g. the e-mail address) are dropped as well.
+  for (const p of ['email', 'fullName', 'full_name', 'mobile']) clean.searchParams.delete(p);
+  return clean;
+}
+
 export async function updateSession(request: NextRequest): Promise<NextResponse> {
   const { pathname, search } = request.nextUrl;
   const env = getSupabaseEnv();
+
+  if (request.method === 'GET' && !isApiPath(pathname) && !pathname.startsWith('/auth/')) {
+    const clean = stripSecretParams(request.nextUrl);
+    if (clean) {
+      const response = NextResponse.redirect(clean, 303);
+      response.headers.set('Cache-Control', 'no-store');
+      response.headers.set('Referrer-Policy', 'no-referrer');
+      return response;
+    }
+  }
 
   const forwardHeaders = () => {
     const headers = new Headers(request.headers);

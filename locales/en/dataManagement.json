@@ -1,4 +1,546 @@
 {
   "title": "Data management",
-  "description": "Import, export and data templates."
+  "description": "Import employees and master data, download templates and export data.",
+  "hub": {
+    "newImport": "New import",
+    "templates": "Templates",
+    "kpi": {
+      "imports": "Imports (30 days)",
+      "importsHint": "{count} in total",
+      "records": "Records imported (30 days)",
+      "recordsHint": "Created or updated",
+      "errors": "Rows with errors (30 days)",
+      "errorsHint": "Not imported — see error reports",
+      "lastImport": "Last import",
+      "never": "No imports yet"
+    },
+    "cards": {
+      "importEmployees": {
+        "title": "Import employees",
+        "description": "Upload the employee workbook (XLSX or CSV) with Iqama, passport and leave data."
+      },
+      "importMasterData": {
+        "title": "Import master data",
+        "description": "Departments, job titles, locations, cost centers, holidays and employee records."
+      },
+      "exportData": {
+        "title": "Export data",
+        "description": "Download any dataset you can access as Excel, CSV or PDF."
+      },
+      "downloadTemplates": {
+        "title": "Download templates",
+        "description": "Ready-made XLSX templates with instructions and drop-down lists."
+      },
+      "importHistory": {
+        "title": "Import history",
+        "description": "Every import with its totals, status and row-level results."
+      },
+      "errorReports": {
+        "title": "Error reports",
+        "description": "Imports with rejected rows — download the rows and fix them."
+      }
+    },
+    "tabs": {
+      "history": "Import history",
+      "export": "Export data",
+      "templates": "Templates"
+    }
+  },
+  "types": {
+    "employees": {
+      "title": "Employees",
+      "description": "Employee profiles: identity, Iqama, passport, employment and leave balance.",
+      "fileName": "employees-template"
+    },
+    "departments": {
+      "title": "Departments",
+      "description": "Department codes and names, parent department and head.",
+      "fileName": "departments-template"
+    },
+    "job_titles": {
+      "title": "Job titles",
+      "description": "Job title codes and names.",
+      "fileName": "job-titles-template"
+    },
+    "locations": {
+      "title": "Locations",
+      "description": "Work locations with city and country.",
+      "fileName": "locations-template"
+    },
+    "cost_centers": {
+      "title": "Cost centers",
+      "description": "Cost center codes and names.",
+      "fileName": "cost-centers-template"
+    },
+    "leave_balances": {
+      "title": "Leave balances",
+      "description": "Opening balance and entitlement per employee, leave type and year.",
+      "fileName": "leave-balances-template"
+    },
+    "dependents": {
+      "title": "Dependents",
+      "description": "Family members of employees with Iqama and insurance details.",
+      "fileName": "dependents-template"
+    },
+    "insurance": {
+      "title": "Insurance",
+      "description": "Medical insurance policies of employees and dependents.",
+      "fileName": "insurance-template"
+    },
+    "documents": {
+      "title": "Documents metadata",
+      "description": "Document records (type, number, dates) without files.",
+      "fileName": "documents-metadata-template"
+    },
+    "public_holidays": {
+      "title": "Public holidays",
+      "description": "Official holidays excluded from leave and SLA working days.",
+      "fileName": "public-holidays-template"
+    }
+  },
+  "groups": {
+    "people": "People",
+    "records": "Employee records",
+    "masterData": "Master data"
+  },
+  "fields": {
+    "employee_number": "Employee number",
+    "employeeNameAr": "Employee name (Arabic)",
+    "employeeNameEn": "Employee name (English)",
+    "national_id": "Iqama / ID number",
+    "id_type": "ID type",
+    "gender": "Gender",
+    "nationality": "Nationality",
+    "date_of_birth": "Date of birth",
+    "marital_status": "Marital status",
+    "company_email": "Email",
+    "personal_email": "Personal email",
+    "mobile": "Mobile",
+    "alt_mobile": "Alternate mobile",
+    "address": "Address",
+    "department": "Department",
+    "division": "Division",
+    "section": "Section",
+    "job_title": "Job title",
+    "iqama_profession": "Profession (Iqama)",
+    "grade": "Grade",
+    "manager": "Manager (employee number)",
+    "employment_type": "Employment type",
+    "employment_status": "Employment status",
+    "joining_date": "Joining date",
+    "probation_end_date": "Probation end date",
+    "contract_start_date": "Contract start date",
+    "contract_end_date": "Contract end date",
+    "location": "Location",
+    "cost_center": "Cost center",
+    "iqama_issue_date": "Iqama issue date",
+    "iqama_expiry_date": "Iqama expiry date",
+    "iqama_expiry_hijri": "Iqama expiry (Hijri)",
+    "passport_number": "Passport number",
+    "passport_expiry_date": "Passport expiry date",
+    "employer_number": "Employer number",
+    "is_outside_kingdom": "Outside the Kingdom",
+    "insideKingdom": "Inside the Kingdom",
+    "leave_balance": "Leave balance",
+    "emergency_contact_name": "Emergency contact name",
+    "emergency_contact_relationship": "Emergency contact relationship",
+    "emergency_contact_mobile": "Emergency contact mobile",
+    "code": "Code",
+    "name_ar": "Name (Arabic)",
+    "name_en": "Name (English)",
+    "parent": "Parent department",
+    "head": "Department head (employee number)",
+    "is_active": "Active",
+    "city": "City",
+    "country": "Country",
+    "employee_national_id": "Employee Iqama / ID",
+    "employee_name": "Employee name",
+    "leave_type": "Leave type",
+    "year": "Year",
+    "opening_balance": "Opening balance",
+    "entitlement": "Entitlement",
+    "dependentNameAr": "Dependent name (Arabic)",
+    "dependentNameEn": "Dependent name (English)",
+    "relationship": "Relationship",
+    "dependentNationalId": "Dependent Iqama / ID",
+    "insurance_status": "Insurance status",
+    "insurance_member_number": "Insurance member number",
+    "notes": "Notes",
+    "dependent_name": "Dependent (name)",
+    "provider": "Insurance provider",
+    "policy_number": "Policy number",
+    "class": "Class",
+    "member_number": "Member number",
+    "start_date": "Start date",
+    "expiry_date": "Expiry date",
+    "status": "Status",
+    "document_type": "Document type",
+    "document_number": "Document number",
+    "issue_date": "Issue date",
+    "end_date": "End date"
+  },
+  "issues": {
+    "nameRequired": "Name is missing — enter the Arabic or English name.",
+    "required": "{field} is required.",
+    "employeeRefRequired": "Enter the employee number or the Iqama / ID number.",
+    "scientificNotation": "{field} “{value}” was shortened by Excel (scientific notation). Format the column as text and re-enter it.",
+    "invalidDate": "{field}: “{value}” is not a valid date — left empty.",
+    "hijriOutOfRange": "{field}: the Hijri date “{value}” is outside the supported range (1343–1500 AH).",
+    "futureDate": "{field}: “{value}” is in the future — left empty.",
+    "implausibleDate": "{field}: “{value}” is not a plausible date — left empty.",
+    "hijriConverted": "{field}: converted from the Hijri date “{value}” to {date}.",
+    "invalidNumber": "{field}: “{value}” is not a number.",
+    "invalidBoolean": "{field}: “{value}” is not Yes or No — left empty.",
+    "invalidEmail": "{field}: “{value}” is not a valid email — left empty.",
+    "invalidPhone": "{field}: “{value}” is not a valid phone number — left empty.",
+    "invalidOption": "{field}: “{value}” is not an accepted value — left empty.",
+    "invalidGender": "Gender “{value}” is not recognized — left empty.",
+    "willCreate": "{field} “{value}” does not exist yet and will be created.",
+    "unknownReference": "{field} “{value}” was not found — left empty.",
+    "duplicateInFileFirst": "{field} “{value}” also appears on row(s) {rows}.",
+    "duplicateInFile": "Duplicate {field} “{value}” — it is already on row {row}.",
+    "selfReference": "{field} “{value}” points to the same record — ignored.",
+    "referenceInFile": "{field} “{value}” is on row {row} of this file and will be linked after the import.",
+    "unknownEmployee": "{field}: no employee matches “{value}” — left empty.",
+    "matchConflict": "Employee number {number} and ID {nationalId} belong to two different employees.",
+    "employeeNotFound": "No employee matches “{value}”.",
+    "archivedEmployee": "{name} is archived.",
+    "unusualNationalId": "Iqama / ID number “{value}” is not 10 digits — please check it.",
+    "implausibleAge": "Date of birth {value} means an age under 14 — please check it.",
+    "endBeforeStart": "{field} “{value}” is earlier than the start date.",
+    "invalidHijri": "“{value}” is not a valid Hijri date.",
+    "notHijri": "“{value}” looks like a Gregorian date, not Hijri — kept as written.",
+    "hijriMismatch": "The Hijri expiry “{value}” ({converted}) does not match the Gregorian expiry {date}.",
+    "invalidOutsideKingdom": "Outside the Kingdom value “{value}” is not recognized — left empty and kept in additional data.",
+    "leaveBalanceNoPermission": "You can't set leave balances — the leave balance is not imported.",
+    "annualLeaveTypeMissing": "The annual leave type does not exist — the leave balance is not imported.",
+    "negativeBalance": "{field} is negative ({value}).",
+    "existingWillUpdate": "Existing record {name} will be updated.",
+    "existingWillSkip": "Existing record {name} will be skipped.",
+    "personalDataNotUpdated": "You can't change identity data, so identity fields of this employee may not be updated.",
+    "unknownLeaveType": "Leave type “{value}” was not found.",
+    "invalidYear": "Year “{value}” is not valid.",
+    "unknownDependent": "Dependent “{value}” was not found for this employee — the policy is saved for the employee.",
+    "exampleRow": "Template example row — skipped.",
+    "writeFailed": "Could not be saved: {reason}",
+    "leaveBalanceFailed": "The employee was saved, but the leave balance could not be set: {reason}"
+  },
+  "wizard": {
+    "title": "Import data",
+    "description": "Upload a spreadsheet, map its columns, review every row and import.",
+    "resumeTitle": "Import · {file}",
+    "steps": {
+      "type": "Data type",
+      "upload": "Upload",
+      "sheet": "Sheet & header",
+      "mapping": "Column mapping",
+      "review": "Review",
+      "run": "Import"
+    },
+    "stepOf": "Step {current} of {total}",
+    "back": "Back",
+    "next": "Continue",
+    "cancelImport": "Cancel import",
+    "cancelConfirmTitle": "Cancel this import?",
+    "cancelConfirmDescription": "The uploaded file and the validation results are discarded. Nothing has been imported yet.",
+    "type": {
+      "title": "What are you importing?",
+      "description": "Choose the kind of data in your file. Each type has its own template and checks.",
+      "noPermission": "You don't have permission to import this data.",
+      "template": "Template",
+      "selected": "Selected"
+    },
+    "upload": {
+      "title": "Upload the file",
+      "description": "Excel (.xlsx) or CSV, up to 10 MB and 20,000 rows. Arabic or English headers, in any order.",
+      "hint": "Tip: start from the template — its columns are recognized automatically.",
+      "downloadTemplate": "Download the {type} template",
+      "parsing": "Reading the file…",
+      "reading": "Reading “{file}”…",
+      "failed": "The file could not be read."
+    },
+    "sheet": {
+      "title": "Sheet and header row",
+      "description": "We picked the sheet and the header row that look like {type} data. Change them if needed.",
+      "sheet": "Sheet",
+      "sheetRows": "{count} rows",
+      "hidden": "Hidden",
+      "headerRow": "Header row",
+      "rowLabel": "Row {row}",
+      "preview": "First rows of the sheet",
+      "previewHint": "The highlighted row is used as column headers; rows above it are ignored.",
+      "twoRowHeader": "Two-row header detected — group and sub-headers are combined.",
+      "records": "{count} data rows below the header",
+      "skipped": "{blank} blank and {repeated} repeated header rows skipped",
+      "updating": "Updating…"
+    },
+    "mapping": {
+      "title": "Map the columns",
+      "description": "Each column in your file is matched to a field. Check the suggestions and change any that are wrong.",
+      "column": "Column in file",
+      "samples": "Sample values",
+      "field": "Imported as",
+      "confidence": "Match",
+      "ignore": "Don't import",
+      "extra": "Keep as additional data",
+      "extraHint": "Unmapped columns are kept unchanged in the employee's additional data.",
+      "confidenceExact": "Exact",
+      "confidenceHigh": "Strong",
+      "confidenceMedium": "Likely",
+      "confidenceLow": "Check",
+      "confidenceValues": "By values",
+      "manual": "Manual",
+      "none": "—",
+      "summary": "{mapped} of {total} columns mapped",
+      "requiredMissing": "Map these required fields to continue: {fields}",
+      "reset": "Reset suggestions",
+      "searchField": "Search fields…",
+      "usedElsewhere": "Already mapped to “{column}”",
+      "fieldGroups": {
+        "required": "Required",
+        "fields": "Fields",
+        "other": "Other"
+      },
+      "empty": "No values"
+    },
+    "options": {
+      "title": "Import options",
+      "existing": "Existing records",
+      "existingHint": "Matched by employee number or Iqama (employees), code or name (master data).",
+      "existingSkip": "Skip them",
+      "existingUpdate": "Update them",
+      "createMissing": "Create missing departments, job titles and locations",
+      "createMissingHint": "Names in the file that don't exist yet are added to master data.",
+      "createMissingDenied": "Requires permission to edit settings.",
+      "professionAsJobTitle": "Use the Iqama profession as job title",
+      "professionAsJobTitleHint": "When the job title is empty, the profession is matched to (or added as) a job title.",
+      "defaultStatus": "Status of new employees",
+      "defaultStatusHint": "Used when the file has no status column.",
+      "leaveMode": "The leave balance column is",
+      "leaveModeAvailable": "The current balance",
+      "leaveModeAvailableHint": "Opening balance = the value, this year's entitlement = 0.",
+      "leaveModeCarryover": "Carried-over days",
+      "leaveModeCarryoverHint": "Opening balance = the value, plus the leave type's yearly entitlement.",
+      "leaveYear": "Leave year",
+      "apply": "Apply and re-check"
+    },
+    "review": {
+      "title": "Review the rows",
+      "description": "Every row was checked against the rules and the existing data. Rows with errors are not imported.",
+      "validating": "Checking {count} rows…",
+      "total": "Total rows",
+      "valid": "Valid",
+      "warnings": "Warnings",
+      "errors": "Errors",
+      "willCreate": "New",
+      "willUpdate": "Updated",
+      "willSkip": "Skipped",
+      "tabs": {
+        "all": "All",
+        "valid": "Valid",
+        "warning": "Warnings",
+        "error": "Errors",
+        "skipped": "Skipped"
+      },
+      "columns": {
+        "row": "Row",
+        "status": "Status",
+        "action": "Action",
+        "record": "Record",
+        "messages": "Messages"
+      },
+      "actions": {
+        "create": "New",
+        "update": "Update",
+        "skip": "Skip"
+      },
+      "noMessages": "No issues",
+      "moreMessages": "+{count} more",
+      "rowDetails": "Row {row}",
+      "originalValues": "Values in the file",
+      "importedValues": "Values to import",
+      "additionalData": "Additional data",
+      "emptyTab": "No rows in this group.",
+      "downloadReport": "Download error report",
+      "startImport": "Import {count} rows",
+      "nothingToImport": "No rows can be imported — fix the errors in the file and upload it again.",
+      "confirmTitle": "Import {count} rows?",
+      "confirmDescription": "{create} new and {update} updated records will be saved. {errors} rows with errors and {skip} skipped rows are not imported.",
+      "confirmNoLogins": "No login accounts are created for imported employees.",
+      "confirm": "Start import",
+      "recheck": "Re-check",
+      "search": "Search rows…"
+    },
+    "run": {
+      "title": "Importing",
+      "description": "Keep this page open until the import finishes.",
+      "progress": "{done} of {total} rows",
+      "batchFailed": "The import stopped because of a connection problem. Nothing was lost — continue from where it stopped.",
+      "resume": "Continue import",
+      "doneTitle": "Import complete",
+      "doneDescription": "{file} · {type}",
+      "failedTitle": "Import finished with errors",
+      "created": "Created",
+      "updated": "Updated",
+      "skipped": "Skipped",
+      "failed": "Not imported",
+      "masterCreated": "Master data created",
+      "masterCreatedItem": "{count} {table}",
+      "linked": "{count} references linked (managers / parent departments)",
+      "viewEmployees": "View employees",
+      "viewRecords": "Open {type}",
+      "downloadReport": "Download error report",
+      "viewHistory": "Import history",
+      "newImport": "New import"
+    }
+  },
+  "history": {
+    "title": "Import history",
+    "description": "Imports from the app and the command line, newest first.",
+    "columns": {
+      "type": "Type",
+      "file": "File",
+      "by": "By",
+      "at": "Date",
+      "rows": "Rows",
+      "result": "Result",
+      "status": "Status"
+    },
+    "resultSummary": "{imported} imported · {errors} errors",
+    "rowsSummary": "{total} rows",
+    "cli": "Command line",
+    "filters": {
+      "type": "Type",
+      "status": "Status",
+      "errorsOnly": "With errors"
+    },
+    "empty": {
+      "title": "No imports yet",
+      "description": "Imported files and their results appear here.",
+      "action": "Start an import"
+    },
+    "errorsEmpty": {
+      "title": "No error reports",
+      "description": "Imports with rejected rows appear here with a downloadable report."
+    },
+    "actions": {
+      "details": "View details",
+      "continue": "Continue",
+      "downloadReport": "Download error report",
+      "cancel": "Cancel import"
+    },
+    "details": {
+      "title": "Import details",
+      "file": "File",
+      "type": "Type",
+      "by": "Imported by",
+      "at": "Started",
+      "completed": "Completed",
+      "sheet": "Sheet",
+      "sheetValue": "{sheet} · header row {row}",
+      "options": "Options",
+      "rows": "Rows",
+      "loading": "Loading rows…",
+      "noRows": "No rows in this group.",
+      "loadMore": "Show more",
+      "source": "Source",
+      "sourceApp": "Web app",
+      "sourceCli": "Command line"
+    }
+  },
+  "export": {
+    "title": "Export data",
+    "description": "Datasets you are allowed to export. Files include every row you can access; open a list page to export with filters.",
+    "empty": {
+      "title": "Nothing to export yet",
+      "description": "Export datasets appear here when you have export permission for them."
+    },
+    "formats": "Formats"
+  },
+  "templates": {
+    "title": "Import templates",
+    "description": "XLSX templates with the recognized columns, an example row, drop-down lists and bilingual instructions.",
+    "download": "Download",
+    "otherLanguage": "Arabic headers",
+    "import": "Import",
+    "columnsCount": "{count} columns",
+    "requiredCount": "{count} required",
+    "noPermission": "You don't have permission to import this data.",
+    "instructionsSheet": "Instructions",
+    "instructionsTitle": "{type} import template",
+    "requiredMark": "Required",
+    "exampleNote": "Example row — replace or delete it. It is skipped automatically when importing.",
+    "oneOf": "At least one of: {fields}",
+    "columnAr": "Column (Arabic)",
+    "columnEn": "Column (English)",
+    "required": "Required",
+    "format": "Format / accepted values",
+    "rules": {
+      "rule1": "Keep the header row. Columns can be in any order; Arabic or English headers are accepted.",
+      "rule2": "The grey row is an example — it is skipped automatically.",
+      "rule3": "Dates: yyyy-mm-dd, dd/mm/yyyy or Excel dates. Hijri dates (e.g. 1447/05/12) are converted.",
+      "rule4": "Refer to employees by employee number or Iqama / ID number, and to departments by code or name — never by internal IDs.",
+      "rule5": "Nothing is imported until you review the validation results and confirm.",
+      "ruleEmployees1": "Arabic names are imported exactly as written. Blank emails stay empty.",
+      "ruleEmployees2": "Columns that don't match a field are kept unchanged in the employee's additional data.",
+      "ruleEmployees3": "Importing employees does not create login accounts."
+    },
+    "formats": {
+      "text": "Text",
+      "identifier": "Text (kept exactly, format the column as text)",
+      "date": "Date",
+      "hijri": "Hijri date as written (e.g. 1447/05/12)",
+      "number": "Number",
+      "integer": "Whole number",
+      "boolean": "Yes / No",
+      "gender": "One of",
+      "email": "Email address",
+      "phone": "Phone number (digits, optional +)",
+      "enum": "One of",
+      "outsideKingdom": "Yes / No (or Inside / Outside the Kingdom)",
+      "insideKingdom": "Yes / No",
+      "reference": "Code or name"
+    }
+  },
+  "report": {
+    "sheet": "Rows to fix",
+    "summarySheet": "Summary",
+    "title": "Import error report",
+    "row": "Row",
+    "status": "Status",
+    "messages": "Messages",
+    "file": "File",
+    "type": "Data type",
+    "createdAt": "Date",
+    "total": "Total rows",
+    "valid": "Valid",
+    "warnings": "Warnings",
+    "errors": "Errors",
+    "imported": "Imported",
+    "listed": "Rows in this report",
+    "howToFix": "Fix the rows in the original file (row numbers match the spreadsheet) and import it again with “Update existing records”.",
+    "fileName": "import-errors"
+  },
+  "errors": {
+    "unsupportedFormat": "Upload an Excel (.xlsx) or CSV file.",
+    "legacyXls": "Old Excel files (.xls) are not supported. Save the file as .xlsx and upload it again.",
+    "emptyFile": "The file is empty.",
+    "corruptFile": "The file could not be opened. It may be damaged or password-protected.",
+    "tooManyRows": "The file has more than 20,000 rows. Split it into smaller files.",
+    "tooLarge": "The file is larger than 10 MB.",
+    "importNotFound": "This import no longer exists.",
+    "importBusy": "This import is already running in another window.",
+    "importNotEditable": "This import has already been completed or cancelled.",
+    "missingRequired": "Map the required fields before continuing.",
+    "sourceExpired": "The uploaded file is no longer available. Upload it again.",
+    "nothingToImport": "There are no valid rows to import."
+  },
+  "toast": {
+    "uploaded": "“{file}” uploaded — {count} rows found.",
+    "validated": "Rows checked.",
+    "imported": "Import complete: {count} records saved.",
+    "importedWithErrors": "Import complete with {count} rows not saved.",
+    "cancelled": "Import cancelled.",
+    "templateReady": "Template downloaded."
+  }
 }

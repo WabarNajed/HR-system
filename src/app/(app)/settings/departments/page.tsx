@@ -1,15 +1,10 @@
 import type { Metadata } from 'next';
-import { getTranslations } from 'next-intl/server';
-import { ScaffoldPlaceholder } from '@/components/shared/scaffold-placeholder';
-import { ROUTE_ACCESS } from '@/components/shell/nav-config';
-import { requireAccess } from '@/lib/auth/guards';
+import { MasterDataPage } from '@/features/master-data/components/master-data-page';
 import { pageMetadata } from '@/lib/metadata';
 
 export const generateMetadata = (): Promise<Metadata> => pageMetadata('nav.settings.items.departments');
 
-/** Route scaffold — replaced by the module implementation. */
-export default async function SettingsDepartmentsPage() {
-  await requireAccess(ROUTE_ACCESS['/settings/departments']);
-  const t = await getTranslations();
-  return <ScaffoldPlaceholder module="settings.departments" title={t('nav.settings.items.departments')} description={t('nav.settings.descriptions.departments')} />;
+/** Settings › HR setup › Departments (master data pattern, see features/master-data). */
+export default function SettingsDepartmentsPage() {
+  return <MasterDataPage entity="departments" />;
 }

@@ -51,6 +51,7 @@ export function LanguageSwitch({ variant = 'icon', className }: LanguageSwitchPr
         onClick={switchLanguage}
         disabled={pending}
         aria-label={t('switchLanguage')}
+        data-testid="language-switch"
       >
         {pending ? <Loader2Icon className="animate-spin" /> : <LanguagesIcon />}
         <span lang={target}>{targetName}</span>
@@ -67,6 +68,7 @@ export function LanguageSwitch({ variant = 'icon', className }: LanguageSwitchPr
         onClick={switchLanguage}
         disabled={pending}
         aria-label={t('switchLanguage')}
+        data-testid="language-switch"
       >
         {pending ? (
           <Loader2Icon className="animate-spin" />

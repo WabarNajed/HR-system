@@ -1,4 +1,90 @@
 {
   "title": "Roles & permissions",
-  "description": "Define what each role can see and do."
+  "description": "Define what each role can see and do.",
+  "pageDescription": "Control what each role can see and do. A user's access is the combination of all their roles.",
+  "noDescription": "No description.",
+  "list": {
+    "title": "Roles",
+    "system": "System role",
+    "custom": "Custom role",
+    "members": "{count, plural, =0 {No members} one {# member} other {# members}}"
+  },
+  "scope": {
+    "own": "Own records",
+    "team": "Own + direct reports",
+    "organization": "Whole organization"
+  },
+  "scopeHelp": {
+    "own": "Permissions apply to the user's own records only.",
+    "team": "Permissions apply to the user's own records and their direct reports.",
+    "organization": "Permissions apply to every record in the organization (HR roles)."
+  },
+  "modules": {
+    "employees": "Employee directory, profiles and employment details.",
+    "personal_data": "Identity documents, Iqama, passport, family and emergency contacts.",
+    "bank": "Salary, allowances and bank account (IBAN) details.",
+    "insurance": "Medical insurance policies and member cards.",
+    "documents": "Employee documents, uploads and expiry tracking.",
+    "requests": "HR requests: submitting, viewing and processing.",
+    "approvals": "Approval queues and approve / reject / return decisions.",
+    "leave": "Leave requests, balances, adjustments and calendars.",
+    "certificates": "Certificate generation, templates and issued letters.",
+    "reports": "Operational and compliance reports and their exports.",
+    "settings": "Organization settings, master data and configuration.",
+    "audit": "Audit log and email log (read-only history).",
+    "users": "Portal accounts, registrations, roles and permissions."
+  },
+  "matrix": {
+    "title": "Permissions",
+    "summary": "{granted} of {total} permissions granted",
+    "grantAll": "Grant all",
+    "clearAll": "Clear all",
+    "superAdminLocked": "Super Admin always has every permission. This role can't be edited.",
+    "readOnly": "You can view the permissions but not change them (requires Users › Administer).",
+    "unsaved": "{count, plural, one {# unsaved change} other {# unsaved changes}}",
+    "module": "Module",
+    "toggleColumn": "Toggle {action} for all modules",
+    "toggleRow": "Toggle all permissions for {module}"
+  },
+  "members": {
+    "title": "Members",
+    "viewAll": "View in Users",
+    "empty": "No users have this role yet."
+  },
+  "edit": {
+    "open": "Edit details",
+    "title": "Edit role",
+    "description": "Update the role's names, description and data scope."
+  },
+  "create": {
+    "open": "New role",
+    "title": "New custom role",
+    "description": "Create a role, then choose its permissions in the matrix.",
+    "keyHint": "The role's internal key is derived from the English name.",
+    "copyFrom": "Start from",
+    "copyFromHint": "Copy the permissions of an existing role as a starting point.",
+    "startEmpty": "No permissions",
+    "submit": "Create role",
+    "noPermission": "Managing roles requires the Users › Administer permission."
+  },
+  "delete": {
+    "title": "Delete the role “{name}”?",
+    "description": "The role and its permissions are removed permanently. This can't be undone.",
+    "inUse": "{count, plural, one {Remove the role from its # member before deleting it.} other {Remove the role from its # members before deleting it.}}"
+  },
+  "fields": {
+    "dataScope": "Data scope",
+    "dataScopeLocked": "Only a Super Admin can change the data scope."
+  },
+  "toast": {
+    "created": "Role created.",
+    "updated": "Role updated.",
+    "deleted": "Role deleted.",
+    "permissionsSaved": "Permissions saved."
+  },
+  "errors": {
+    "organizationScope": "Only a Super Admin can create organization-wide roles or change a role's data scope.",
+    "superAdminLocked": "The Super Admin role can't be changed.",
+    "inUse": "This role is still assigned to users. Remove it from them first."
+  }
 }

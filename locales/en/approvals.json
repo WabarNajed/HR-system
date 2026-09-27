@@ -1,4 +1,44 @@
 {
   "title": "Approvals",
-  "description": "Requests awaiting your decision."
+  "description": "Requests awaiting your decision.",
+  "descriptionHr": "Requests waiting for your decision or the HR review queue, most urgent first.",
+  "descriptionManager": "Your team's requests waiting for your decision, most urgent first.",
+  "kpi": {
+    "pending": "Awaiting my decision",
+    "pendingHint": "Manager steps and review queues",
+    "overdue": "Overdue",
+    "overdueHint": "Past the SLA due date — act first",
+    "overdueNone": "Nothing overdue",
+    "dueSoon": "Due within 24 hours",
+    "dueSoonHint": "Approaching the SLA due date",
+    "decidedMonth": "Decided this month",
+    "decidedMonthHint": "Approved, rejected or returned by you"
+  },
+  "tabs": {
+    "label": "Approval views",
+    "pending": "Pending",
+    "approved": "Approved",
+    "rejected": "Rejected & returned"
+  },
+  "columns": {
+    "step": "Step",
+    "submitted": "Submitted",
+    "actions": "Quick actions",
+    "decision": "My decision",
+    "comment": "Comment",
+    "decidedAt": "Decided",
+    "currentStatus": "Current status"
+  },
+  "quick": {
+    "approve": "Approve",
+    "return": "Return for information",
+    "returnDisabled": "This step doesn't allow returning",
+    "reject": "Reject",
+    "open": "Open request"
+  },
+  "empty": {
+    "pending": { "title": "You're all caught up", "description": "Requests that need your decision will appear here." },
+    "approved": { "title": "No approvals yet", "description": "Requests you approve are listed here." },
+    "rejected": { "title": "No rejected or returned requests", "description": "Requests you reject or send back are listed here." }
+  }
 }

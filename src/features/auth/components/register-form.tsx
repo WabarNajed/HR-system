@@ -3,29 +3,33 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { AlertCircleIcon, BadgeCheckIcon, IdCardIcon, MailCheckIcon, MailIcon, PhoneIcon, UserRoundIcon } from 'lucide-react';
 import Link from 'next/link';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useState, useTransition } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage, useErrorMessage } from '@/components/ui/form';
 import { InputGroup } from '@/components/ui/input-group';
+import { SegmentedTabs } from '@/components/shared/link-tabs';
 import { signUp } from '../actions';
 import { registerSchema, type RegisterInput } from '../schemas';
 import { AuthHeading } from './auth-heading';
 import { PasswordInput } from './password-input';
+import { PasswordRules } from './password-rules';
 
-const FIELDS = ['fullName', 'employeeNumber', 'email', 'mobile', 'password', 'confirmPassword'] as const;
+const FIELDS = ['fullName', 'employeeNumber', 'email', 'mobile', 'password', 'confirmPassword', 'language'] as const;
 
 export function RegisterForm() {
   const t = useTranslations('auth.register');
+  const tc = useTranslations('common');
+  const locale = useLocale() as 'ar' | 'en';
   const resolveError = useErrorMessage();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [sentTo, setSentTo] = useState<string | null>(null);
   const form = useForm<RegisterInput>({
     resolver: zodResolver(registerSchema),
-    defaultValues: { fullName: '', employeeNumber: '', email: '', mobile: '', password: '', confirmPassword: '' },
+    defaultValues: { fullName: '', employeeNumber: '', email: '', mobile: '', password: '', confirmPassword: '', language: locale },
   });
 
   const onSubmit = (values: RegisterInput) =>
@@ -42,6 +46,8 @@ export function RegisterForm() {
       }
       setSentTo(result.data?.email ?? values.email);
     });
+
+  const password = useWatch({ control: form.control, name: 'password' });
 
   if (sentTo) {
     return (
@@ -134,9 +140,9 @@ export function RegisterForm() {
             <FormItem>
               <FormLabel required>{t('password')}</FormLabel>
               <FormControl>
-                <PasswordInput {...field} autoComplete="new-password" disabled={pending} />
+                <PasswordInput {...field} autoComplete="new-password" disabled={pending} aria-describedby="register-password-rules" />
               </FormControl>
-              <FormDescription>{t('passwordHint')}</FormDescription>
+              <PasswordRules id="register-password-rules" value={password} className="pt-1" />
               <FormMessage />
             </FormItem>
           )}
@@ -151,6 +157,28 @@ export function RegisterForm() {
                 <PasswordInput {...field} autoComplete="new-password" disabled={pending} />
               </FormControl>
               <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="language"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{t('language')}</FormLabel>
+              <div>
+                <SegmentedTabs
+                  size="sm"
+                  value={field.value}
+                  onValueChange={(v) => field.onChange(v)}
+                  items={[
+                    { value: 'ar', label: tc('arabic') },
+                    { value: 'en', label: tc('english') },
+                  ]}
+                  aria-label={t('language')}
+                />
+              </div>
+              <FormDescription>{t('languageHint')}</FormDescription>
             </FormItem>
           )}
         />

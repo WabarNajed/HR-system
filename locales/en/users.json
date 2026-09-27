@@ -1,4 +1,259 @@
 {
   "title": "Users",
-  "description": "Portal accounts and access."
+  "description": "Portal accounts and access.",
+  "pageDescription": "Manage who can sign in to the portal, their roles and the employee record each account is linked to.",
+  "you": "You",
+  "never": "Never",
+  "noRoles": "No roles",
+  "notLinked": "Not linked",
+  "notLinkedHint": "This account isn’t linked to an employee record. Link it so the user can see their own data and submit requests.",
+  "invitedAt": "Invited",
+  "searchPlaceholder": "Search by name, email or mobile…",
+  "actionsLabel": "Portal access actions",
+  "columns": {
+    "user": "User",
+    "email": "Email",
+    "employee": "Employee",
+    "roles": "Roles",
+    "lastLogin": "Last sign-in",
+    "created": "Created"
+  },
+  "filters": {
+    "role": "Role"
+  },
+  "statusFilter": {
+    "active": "Active",
+    "disabled": "Disabled",
+    "pending": "Pending approval",
+    "info_requested": "Information requested",
+    "rejected": "Rejected"
+  },
+  "status": {
+    "invited": "Invitation pending"
+  },
+  "stats": {
+    "total": "Portal accounts",
+    "totalHint": "{active} active",
+    "invited": "Invitations pending",
+    "invitedHint": "Invited, not signed in yet",
+    "pendingRegistrations": "Registrations to review",
+    "pendingHint": "Self-registrations awaiting HR",
+    "disabled": "Disabled accounts",
+    "disabledHint": "Sign-in turned off"
+  },
+  "empty": {
+    "title": "No portal accounts yet",
+    "description": "Invite employees to the portal or approve their self-registrations."
+  },
+  "actions": {
+    "viewDetails": "View details",
+    "editRoles": "Edit roles",
+    "linkEmployee": "Link employee",
+    "unlinkEmployee": "Unlink employee",
+    "resendInvitation": "Resend invitation",
+    "sendPasswordReset": "Send password reset",
+    "enable": "Enable sign-in",
+    "disable": "Disable sign-in",
+    "reviewRegistration": "Review registration"
+  },
+  "reasons": {
+    "superAdminOnly": "Only a Super Admin can change a Super Admin account.",
+    "self": "You can’t disable your own account.",
+    "cannotInvite": "Inviting users requires the Users › Create and Users › Administer permissions."
+  },
+  "confirm": {
+    "disableTitle": "Disable sign-in for {name}?",
+    "disableDescription": "The user loses access to all portal data immediately and can’t sign in until the account is enabled again. Their records are kept.",
+    "enableTitle": "Enable sign-in for {name}?",
+    "enableDescription": "The user will be able to sign in again with their existing password and roles.",
+    "unlinkTitle": "Unlink employee record?",
+    "unlinkDescription": "{name} keeps the portal account but will no longer see this employee’s data or be able to submit requests for it."
+  },
+  "invite": {
+    "open": "Invite user",
+    "title": "Invite a user",
+    "description": "The user receives an email to activate the account and set a password.",
+    "email": "Email",
+    "fullName": "Full name",
+    "employee": "Employee record",
+    "employeeHint": "Link the account to an employee so they can see their own data and submit requests.",
+    "roles": "Roles",
+    "language": "Invitation language",
+    "languageHint": "Used for the invitation email and as the user’s default portal language.",
+    "submit": "Send invitation",
+    "sending": "Sending…",
+    "emailPlaceholder": "name@company.com"
+  },
+  "editRoles": {
+    "title": "Edit roles",
+    "description": "Choose what {name} can see and do in the portal.",
+    "superAdminProtected": "This is a Super Admin account. Only a Super Admin can change its roles.",
+    "selfWarning": "You’re editing your own roles. Removing an administrative role takes effect immediately.",
+    "noRoles": "Without any role the user can sign in but won’t see any module."
+  },
+  "link": {
+    "title": "Link employee record",
+    "description": "Connect {name} to the employee record it belongs to.",
+    "employee": "Employee",
+    "hint": "Employees already linked to another account can’t be selected.",
+    "submit": "Link employee"
+  },
+  "picker": {
+    "placeholder": "Search employees…",
+    "search": "Name, employee ID or email",
+    "empty": "No employees found",
+    "linked": "Already has an account"
+  },
+  "roles": {
+    "custom": "Custom",
+    "superAdminLocked": "Only a Super Admin can grant or remove this role."
+  },
+  "toast": {
+    "invited": "Invitation sent.",
+    "invitedNoEmail": "Account created, but the invitation email couldn’t be sent. Check the email settings, then resend the invitation.",
+    "invitationResent": "Invitation sent again.",
+    "resetSent": "Password reset email sent.",
+    "linked": "Employee record linked.",
+    "unlinked": "Employee record unlinked.",
+    "disabled": "Sign-in disabled.",
+    "enabled": "Sign-in enabled.",
+    "rolesUpdated": "Roles updated.",
+    "approved": "Registration approved. The applicant has been notified.",
+    "approvedWithoutManager": "Registration approved, but the Manager role couldn’t be added. Add it from Users.",
+    "rejected": "Registration rejected. The applicant has been notified.",
+    "infoRequested": "Information requested. The applicant has been notified."
+  },
+  "errors": {
+    "superAdminOnly": "Only a Super Admin can grant the Super Admin role or change a Super Admin account.",
+    "emailInUse": "A portal account with this email already exists.",
+    "notActive": "This action is only available for active accounts.",
+    "invitationAccepted": "This user has already activated their account. Send a password reset instead.",
+    "emailNotConfigured": "Email delivery isn’t configured, so the email couldn’t be sent.",
+    "cannotChangeSelf": "You can’t change the sign-in status of your own account."
+  },
+  "email": {
+    "activate": "Activate account",
+    "setPassword": "Set a new password",
+    "inviteSubject": "You are invited to join {portal}",
+    "resetSubject": "Reset your {portal} password",
+    "inviteFallback": "You have been invited to {portal}. Use the button below to activate your account and set your password.",
+    "resetFallback": "Use the button below to set a new password for your {portal} account."
+  },
+  "export": {
+    "title": "Portal users",
+    "employeeNumber": "Employee ID"
+  },
+  "portalAccess": {
+    "title": "Portal access",
+    "description": "Whether this employee can sign in to the portal.",
+    "linkedDescription": "The portal account linked to this employee.",
+    "loadError": "Portal access details couldn’t be loaded.",
+    "noAccess": "No portal access",
+    "noAccessHint": "This employee can’t sign in to the portal yet.",
+    "linkExisting": "Link existing user",
+    "invite": "Invite to portal",
+    "manageInUsers": "Manage in Users",
+    "linkTitle": "Link an existing account",
+    "linkDescription": "Choose the portal account that belongs to {name}.",
+    "account": "Portal account",
+    "accountPlaceholder": "Search accounts without an employee…",
+    "noAccounts": "No unlinked accounts found",
+    "linkHint": "Only active or disabled accounts that aren’t linked to an employee are listed.",
+    "linkSubmit": "Link account"
+  },
+  "registrations": {
+    "title": "Pending registrations",
+    "description": "Review employee self-registrations, link each one to the right employee record and activate access.",
+    "searchPlaceholder": "Search by name, email, mobile or ID…",
+    "tabs": {
+      "pending": "Pending",
+      "info_requested": "Information requested",
+      "rejected": "Rejected (last {days} days)"
+    },
+    "stats": {
+      "pending": "Awaiting review",
+      "pendingHint": "Registrations that need a decision",
+      "infoRequested": "Waiting for applicants",
+      "infoRequestedHint": "More information requested",
+      "oldest": "Longest wait",
+      "days": "{count, plural, =0 {Today} one {# day} other {# days}}",
+      "oldestHint": "Oldest registration awaiting review",
+      "oldestNone": "Nothing is waiting",
+      "approved30d": "Approved (30 days)",
+      "rejected30d": "{count, plural, =0 {None rejected} one {# rejected} other {# rejected}}"
+    },
+    "columns": {
+      "applicant": "Applicant",
+      "enteredId": "ID entered",
+      "match": "Suggested employee",
+      "submitted": "Submitted",
+      "reviewed": "Reviewed"
+    },
+    "match": {
+      "number": "Employee ID match",
+      "nationalId": "Iqama / ID match",
+      "none": "No match",
+      "linked": "Already linked",
+      "noDepartment": "No department"
+    },
+    "empty": {
+      "pending": {
+        "title": "No registrations waiting",
+        "description": "New self-registrations will appear here for review."
+      },
+      "info_requested": {
+        "title": "No pending information requests",
+        "description": "Registrations waiting for the applicant’s reply will appear here."
+      },
+      "rejected": {
+        "title": "No recent rejections",
+        "description": "Registrations rejected recently will appear here."
+      }
+    },
+    "actions": {
+      "review": "Review",
+      "approve": "Approve",
+      "reject": "Reject",
+      "requestInfo": "Request information"
+    },
+    "sheet": {
+      "submittedOn": "Submitted {date}",
+      "rejectionReason": "Rejection reason",
+      "infoNote": "Information requested",
+      "applicant": "Applicant details",
+      "note": "Applicant’s note",
+      "updated": "Last updated",
+      "suggested": "Suggested employee record",
+      "matchLinked": "This employee is already linked to another portal account. Pick a different employee when approving.",
+      "noSuggestion": "No employee record matches the ID entered. You can still pick the right employee when approving."
+    },
+    "approve": {
+      "title": "Approve registration",
+      "description": "Activate {name}’s account and link it to their employee record.",
+      "employee": "Employee record",
+      "employeeSuggested": "Pre-selected from the ID the applicant entered. Change it if it’s not the right person.",
+      "employeeHint": "Search by name, employee ID or company email.",
+      "noEmployeeWarning": "Without an employee link the user can sign in but can’t see personal data or submit requests. You can link it later.",
+      "role": "Role",
+      "alsoManager": "Also grant the Manager role",
+      "alsoManagerHint": "For line managers who approve their team’s requests.",
+      "submit": "Approve & activate"
+    },
+    "reject": {
+      "title": "Reject registration",
+      "description": "{name} will be notified by email with the reason below.",
+      "label": "Reason",
+      "placeholder": "Explain why the registration can’t be approved…",
+      "visibility": "The applicant sees this reason.",
+      "submit": "Reject registration"
+    },
+    "info": {
+      "title": "Request more information",
+      "description": "Tell {name} what to correct or add. They can update their details and resubmit.",
+      "label": "Message to the applicant",
+      "placeholder": "For example: please enter your employee ID exactly as it appears on your contract…",
+      "visibility": "The applicant sees this message and receives it by email.",
+      "submit": "Send request"
+    }
+  }
 }

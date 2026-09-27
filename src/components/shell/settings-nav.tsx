@@ -1,13 +1,16 @@
 'use client';
 
+import { LayoutGridIcon } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectSeparator, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { SETTINGS_ITEMS_BY_KEY, type SettingsItemKey, type SettingsNavGroup } from './nav-config';
 
 export type VisibleSettingsGroup = { key: SettingsNavGroup['key']; items: SettingsItemKey[] };
+
+const HOME = '__home';
 
 function useActiveKey(groups: VisibleSettingsGroup[]): SettingsItemKey | null {
   const pathname = usePathname();
@@ -20,11 +23,24 @@ function useActiveKey(groups: VisibleSettingsGroup[]): SettingsItemKey | null {
   return null;
 }
 
+function CountBadge({ count, active }: { count: number; active?: boolean }) {
+  return (
+    <span
+      className={cn(
+        'ms-auto inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full px-1.5 text-[0.6875rem] font-semibold numeric',
+        active ? 'bg-primary text-primary-foreground' : 'bg-warning-soft text-warning-soft-foreground',
+      )}
+    >
+      {count > 99 ? '99+' : count}
+    </span>
+  );
+}
+
 /**
  * Settings console navigation: grouped vertical nav on the logical start side (desktop, sticky)
  * and a section picker on mobile. Hidden on the console home (`/settings`), whose cards navigate.
  */
-export function SettingsNav({ groups }: { groups: VisibleSettingsGroup[] }) {
+export function SettingsNav({ groups, badges = {} }: { groups: VisibleSettingsGroup[]; badges?: Partial<Record<SettingsItemKey, number>> }) {
   const t = useTranslations('nav.settings');
   const pathname = usePathname();
   const router = useRouter();
@@ -35,19 +51,33 @@ export function SettingsNav({ groups }: { groups: VisibleSettingsGroup[] }) {
     <>
       {/* Mobile / tablet: section picker */}
       <div className="lg:hidden">
-        <Select value={active ?? undefined} onValueChange={(key) => router.push(SETTINGS_ITEMS_BY_KEY[key as SettingsItemKey].href)}>
+        <Select
+          value={active ?? undefined}
+          onValueChange={(key) => router.push(key === HOME ? '/settings' : SETTINGS_ITEMS_BY_KEY[key as SettingsItemKey].href)}
+        >
           <SelectTrigger className="h-10 w-full bg-card" aria-label={t('jumpTo')}>
             <SelectValue placeholder={t('jumpTo')} />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="max-h-[70dvh]">
+            <SelectItem value={HOME}>
+              <LayoutGridIcon aria-hidden />
+              {t('title')}
+            </SelectItem>
+            <SelectSeparator />
             {groups.map((g) => (
               <SelectGroup key={g.key}>
                 <SelectLabel>{t(`groups.${g.key}`)}</SelectLabel>
-                {g.items.map((key) => (
-                  <SelectItem key={key} value={key}>
-                    {t(`items.${key}`)}
-                  </SelectItem>
-                ))}
+                {g.items.map((key) => {
+                  const Icon = SETTINGS_ITEMS_BY_KEY[key].icon;
+                  const count = badges[key];
+                  return (
+                    <SelectItem key={key} value={key}>
+                      <Icon aria-hidden />
+                      {t(`items.${key}`)}
+                      {count ? <span className="text-xs font-semibold text-warning numeric">({count})</span> : null}
+                    </SelectItem>
+                  );
+                })}
               </SelectGroup>
             ))}
           </SelectContent>
@@ -55,8 +85,12 @@ export function SettingsNav({ groups }: { groups: VisibleSettingsGroup[] }) {
       </div>
 
       {/* Desktop: grouped vertical nav */}
-      <nav aria-label={t('sections')} className="sticky top-[4.75rem] hidden max-h-[calc(100dvh-6rem)] w-60 shrink-0 overflow-y-auto pe-1 lg:block">
-        <Link href="/settings" className="mb-3 block px-2.5 text-card-title text-foreground hover:text-primary">
+      <nav aria-label={t('sections')} className="sticky top-[4.75rem] hidden max-h-[calc(100dvh-6rem)] w-56 shrink-0 overflow-y-auto pe-1 pb-4 lg:block xl:w-60">
+        <Link
+          href="/settings"
+          className="mb-3 flex items-center gap-2 rounded-md px-2.5 py-1 text-card-title text-foreground outline-none hover:text-primary focus-visible:ring-2 focus-visible:ring-ring/50"
+        >
+          <LayoutGridIcon className="size-4 text-faint-foreground" aria-hidden />
           {t('title')}
         </Link>
         <div className="flex flex-col gap-4">
@@ -68,6 +102,7 @@ export function SettingsNav({ groups }: { groups: VisibleSettingsGroup[] }) {
                   const item = SETTINGS_ITEMS_BY_KEY[key];
                   const Icon = item.icon;
                   const isActive = key === active;
+                  const count = badges[key];
                   return (
                     <li key={key}>
                       <Link
@@ -81,6 +116,7 @@ export function SettingsNav({ groups }: { groups: VisibleSettingsGroup[] }) {
                         {isActive ? <span aria-hidden className="absolute inset-y-1.5 start-0 w-[3px] rounded-e-full bg-primary" /> : null}
                         <Icon className={cn('size-4 shrink-0', isActive ? 'text-primary' : 'text-faint-foreground')} strokeWidth={1.85} aria-hidden />
                         <span className="truncate">{t(`items.${key}`)}</span>
+                        {count ? <CountBadge count={count} active={isActive} /> : null}
                       </Link>
                     </li>
                   );
@@ -93,4 +129,3 @@ export function SettingsNav({ groups }: { groups: VisibleSettingsGroup[] }) {
     </>
   );
 }
-

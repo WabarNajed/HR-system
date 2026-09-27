@@ -1,0 +1,37 @@
+import type { LucideIcon } from 'lucide-react';
+import type { ReactNode } from 'react';
+import { daysBetween, todayIso } from '@/lib/dates';
+import { cn } from '@/lib/utils';
+
+/** Icon + text item for the profile header meta row. */
+export function MetaItem({ icon: Icon, children, className }: { icon: LucideIcon; children: ReactNode; className?: string }) {
+  return (
+    <span className={cn('inline-flex min-w-0 items-center gap-1.5', className)}>
+      <Icon className="size-4 shrink-0 text-faint-foreground" aria-hidden />
+      <span className="min-w-0 truncate">{children}</span>
+    </span>
+  );
+}
+
+/** Whole years + remaining months of service from `start` to today (null when not started). */
+export function serviceLength(start: string | null, today: string = todayIso()): { years: number; months: number } | null {
+  if (!start) return null;
+  if (start > today) return null;
+  const [sy, sm, sd] = start.split('-').map(Number) as [number, number, number];
+  const [ty, tm, td] = today.split('-').map(Number) as [number, number, number];
+  let months = (ty - sy) * 12 + (tm - sm);
+  if (td < sd) months -= 1;
+  months = Math.max(0, months);
+  return { years: Math.floor(months / 12), months: months % 12 };
+}
+
+/** Age in whole years (null without a date of birth). */
+export function ageFrom(dob: string | null, today: string = todayIso()): number | null {
+  if (!dob) return null;
+  const s = serviceLength(dob, today);
+  return s ? s.years : null;
+}
+
+export function daysLeft(date: string | null, today: string = todayIso()): number | null {
+  return date ? daysBetween(today, date) : null;
+}

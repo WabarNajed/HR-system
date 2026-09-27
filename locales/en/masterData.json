@@ -1,4 +1,141 @@
 {
   "title": "Master data",
-  "description": "Departments, job titles, locations and cost centers."
+  "description": "Departments, job titles, locations and cost centers.",
+  "readOnly": "You have view-only access to this list.",
+  "entities": {
+    "departments": {
+      "title": "Departments",
+      "description": "Organizational units, their hierarchy and department heads.",
+      "add": "Add department",
+      "createTitle": "New department",
+      "createDescription": "Add an organizational unit and place it in the hierarchy.",
+      "editTitle": "Edit department",
+      "codePlaceholder": "e.g. HR",
+      "searchPlaceholder": "Search by code, name, parent or head…",
+      "emptyTitle": "No departments yet",
+      "emptyDescription": "Add your first department or import the structure from a spreadsheet.",
+      "kpiTotal": "Departments",
+      "unassignedHint": "Active employees without a department"
+    },
+    "jobTitles": {
+      "title": "Job titles",
+      "description": "Job titles used across employee records, reports and certificates.",
+      "add": "Add job title",
+      "createTitle": "New job title",
+      "createDescription": "Add a job title that can be assigned to employees.",
+      "editTitle": "Edit job title",
+      "codePlaceholder": "e.g. HRM",
+      "searchPlaceholder": "Search by code or name…",
+      "emptyTitle": "No job titles yet",
+      "emptyDescription": "Add job titles one by one or import them from a spreadsheet.",
+      "kpiTotal": "Job titles",
+      "unassignedHint": "Active employees without a job title"
+    },
+    "locations": {
+      "title": "Locations",
+      "description": "Offices, sites and branches where employees work.",
+      "add": "Add location",
+      "createTitle": "New location",
+      "createDescription": "Add an office, site or branch.",
+      "editTitle": "Edit location",
+      "codePlaceholder": "e.g. RUH-HQ",
+      "searchPlaceholder": "Search by code, name, city or country…",
+      "emptyTitle": "No locations yet",
+      "emptyDescription": "Add your offices and sites or import them from a spreadsheet.",
+      "kpiTotal": "Locations",
+      "unassignedHint": "Active employees without a location"
+    },
+    "costCenters": {
+      "title": "Cost centers",
+      "description": "Cost centers used for reporting, business trips and budgeting.",
+      "add": "Add cost center",
+      "createTitle": "New cost center",
+      "createDescription": "Add a cost center for reporting and allocations.",
+      "editTitle": "Edit cost center",
+      "codePlaceholder": "e.g. CC-100",
+      "searchPlaceholder": "Search by code or name…",
+      "emptyTitle": "No cost centers yet",
+      "emptyDescription": "Add cost centers one by one or import them from a spreadsheet.",
+      "kpiTotal": "Cost centers",
+      "unassignedHint": "Active employees without a cost center"
+    }
+  },
+  "sheet": {
+    "identity": "Identification",
+    "structure": "Structure",
+    "place": "Address",
+    "description": "Description",
+    "timestamps": "Created {created} · Last updated {updated}"
+  },
+  "fields": {
+    "code": "Code",
+    "codeHint": "Short unique reference used in imports and reports.",
+    "namesHint": "Enter the name in at least one language; the other language falls back to it.",
+    "parent": "Parent department",
+    "parentPlaceholder": "Top-level department",
+    "parentSearch": "Search departments…",
+    "parentHint": "Leave empty for a top-level department.",
+    "head": "Department head",
+    "headPlaceholder": "Select an employee",
+    "headSearch": "Search by name or employee ID…",
+    "city": "City",
+    "country": "Country",
+    "active": "Active",
+    "activeHint": "Inactive items stay on existing employee records but can’t be selected for new assignments."
+  },
+  "columns": {
+    "parent": "Parent department",
+    "topLevel": "Top level",
+    "head": "Department head",
+    "noHead": "Not assigned",
+    "place": "City / country",
+    "employees": "Employees",
+    "subUnits": "{count, plural, one {# sub-department} other {# sub-departments}}",
+    "employeesCount": "{count, plural, =0 {No employees} one {# employee} other {# employees}}"
+  },
+  "filters": {
+    "hasHead": "Has a head",
+    "noHead": "No head assigned"
+  },
+  "kpis": {
+    "totalHint": "{active} active · {inactive} inactive",
+    "assigned": "Assigned employees",
+    "assignedHint": "Active employee records linked",
+    "unassigned": "Unassigned employees",
+    "inactive": "Inactive",
+    "inactiveHint": "Hidden from new assignments",
+    "withoutHead": "Without a head",
+    "withoutHeadHint": "Active departments with no head assigned",
+    "unused": "Not in use",
+    "unusedHint": "No employee records linked"
+  },
+  "toast": {
+    "created": "Created successfully.",
+    "updated": "Changes saved.",
+    "activated": "Activated.",
+    "deactivated": "Deactivated.",
+    "deleted": "Deleted.",
+    "bulkActivated": "{count, plural, one {# item activated.} other {# items activated.}}",
+    "bulkDeactivated": "{count, plural, one {# item deactivated.} other {# items deactivated.}}"
+  },
+  "confirm": {
+    "deleteTitle": "Delete “{name}”?",
+    "deleteDescription": "It isn’t used by any employee record. Deleting it is permanent and can’t be undone.",
+    "deactivateTitle": "Deactivate “{name}”?",
+    "bulkDeactivateTitle": "Deactivate {count, plural, one {# item} other {# items}}?",
+    "deactivateDescription": "It will no longer be offered for new assignments. {count, plural, =0 {No active employees are linked to it.} one {The # linked employee keeps it on their record.} other {The # linked employees keep it on their records.}}"
+  },
+  "inUse": {
+    "title": "“{name}” can’t be deleted",
+    "description": "It’s still referenced by:",
+    "employees": "{count, plural, one {# employee record} other {# employee records}} (including archived)",
+    "children": "{count, plural, one {# sub-department} other {# sub-departments}}",
+    "hint": "Deactivate it instead: it stays on existing records but won’t be offered for new ones.",
+    "alreadyInactive": "It’s already inactive, so it isn’t offered for new assignments. Reassign the linked records first if you need to delete it.",
+    "deactivate": "Deactivate instead"
+  },
+  "errors": {
+    "nameTaken": "Another record already uses this name.",
+    "parentCycle": "A department can’t be placed under itself or one of its sub-departments."
+  }
 }

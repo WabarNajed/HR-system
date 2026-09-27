@@ -1,15 +1,199 @@
+import { BriefcaseBusinessIcon, Building2Icon, ShieldCheckIcon, UserRoundIcon, UsersIcon } from 'lucide-react';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
-import { ScaffoldPlaceholder } from '@/components/shared/scaffold-placeholder';
+import { Suspense } from 'react';
 import { ROUTE_ACCESS } from '@/components/shell/nav-config';
+import { DashboardHeader } from '@/features/dashboard/components/dashboard-header';
+import { DashboardSection, WidgetSkeleton } from '@/features/dashboard/components/widget-parts';
+import { ApprovalQueueWidget } from '@/features/dashboard/widgets/approval-queue';
+import { AuditActivityWidget } from '@/features/dashboard/widgets/audit-activity';
+import { ComplianceRow } from '@/features/dashboard/widgets/compliance-row';
+import { EmployeeKpis, KpiRowSkeleton } from '@/features/dashboard/widgets/employee-kpis';
+import { DepartmentHeadcountWidget, NationalityMixWidget } from '@/features/dashboard/widgets/employee-overview';
+import { ExpiryAlertsWidget } from '@/features/dashboard/widgets/expiry-alerts';
+import { HrKpis } from '@/features/dashboard/widgets/hr-kpis';
+import { LatestNotificationsWidget } from '@/features/dashboard/widgets/latest-notifications';
+import { ManagerKpis } from '@/features/dashboard/widgets/manager-kpis';
+import { OrgHealthWidget } from '@/features/dashboard/widgets/org-health';
+import { PendingRegistrationsWidget } from '@/features/dashboard/widgets/pending-registrations';
+import { RecentActivityWidget } from '@/features/dashboard/widgets/recent-activity';
+import { RecentImportsWidget } from '@/features/dashboard/widgets/recent-imports';
+import { RecentRequestsWidget } from '@/features/dashboard/widgets/recent-requests';
+import { RequestQueueWidget } from '@/features/dashboard/widgets/request-queue';
+import { RolesSummaryWidget } from '@/features/dashboard/widgets/roles-summary';
+import { TeamLeaveCalendarWidget } from '@/features/dashboard/widgets/team-leave-calendar';
+import { TeamRequestsWidget } from '@/features/dashboard/widgets/team-requests';
+import { UpcomingLeaveWidget } from '@/features/dashboard/widgets/upcoming-leave';
+import { UsersSummaryWidget } from '@/features/dashboard/widgets/users-summary';
 import { requireAccess } from '@/lib/auth/guards';
+import { todayIso } from '@/lib/i18n/date-format';
 import { pageMetadata } from '@/lib/metadata';
+import { can, checkAccess } from '@/lib/permissions';
 
 export const generateMetadata = (): Promise<Metadata> => pageMetadata('dashboard.title');
 
-/** Route scaffold — replaced by the module implementation. */
+function ComplianceSkeleton() {
+  return (
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:gap-4 xl:grid-cols-4">
+      {Array.from({ length: 4 }).map((_, i) => (
+        <WidgetSkeleton key={i} rows={0} className="min-h-[6.5rem]" />
+      ))}
+    </div>
+  );
+}
+
+/**
+ * Role-aware dashboard (PRODUCT-SPEC §16). Sections appear by the caller's scope:
+ * super admin → Administration; HR (org employees/requests view) → Organization; managers (with
+ * direct reports) → My team; anyone linked to an employee → My workspace. Every widget streams in
+ * its own Suspense boundary, and numbers come from `dashboard_stats()` + targeted RLS queries.
+ */
 export default async function DashboardPage() {
-  await requireAccess(ROUTE_ACCESS['/dashboard']);
-  const t = await getTranslations();
-  return <ScaffoldPlaceholder module="dashboard" title={t('dashboard.title')} description={t('dashboard.description')} showHomeLink={false} />;
+  const ctx = await requireAccess(ROUTE_ACCESS['/dashboard']);
+  const t = await getTranslations('dashboard');
+  const today = todayIso();
+  const year = Number(today.slice(0, 4));
+  const nowIso = new Date().toISOString();
+
+  const view = {
+    admin: ctx.isSuperAdmin,
+    hr: ctx.isHR && (can(ctx, 'employees.view') || can(ctx, 'requests.view')),
+    manager: Boolean(ctx.employee) && ctx.directReportsCount > 0,
+    employee: Boolean(ctx.employee),
+  };
+  const canAudit = can(ctx, 'audit.view');
+  const multi = [view.admin, view.hr, view.manager].filter(Boolean).length + (view.employee ? 1 : 0) > 1;
+
+  return (
+    <div className="flex min-w-0 flex-col gap-6 pb-4">
+      <DashboardHeader ctx={ctx} today={today} view={view} />
+
+      {view.admin ? (
+        <DashboardSection title={t('sections.administration.title')} description={t('sections.administration.description')} icon={ShieldCheckIcon}>
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+            <div className="lg:col-span-2">
+              <Suspense fallback={<WidgetSkeleton rows={6} />}>
+                <OrgHealthWidget year={year} canSetup={checkAccess(ctx, ROUTE_ACCESS['/setup'])} />
+              </Suspense>
+            </div>
+            <Suspense fallback={<WidgetSkeleton rows={4} chart />}>
+              <UsersSummaryWidget />
+            </Suspense>
+          </div>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <Suspense fallback={<WidgetSkeleton rows={4} />}>
+              <PendingRegistrationsWidget />
+            </Suspense>
+            <Suspense fallback={<WidgetSkeleton rows={4} />}>
+              <RolesSummaryWidget />
+            </Suspense>
+            <Suspense fallback={<WidgetSkeleton rows={4} />}>
+              <RecentImportsWidget />
+            </Suspense>
+            {canAudit ? (
+              <Suspense fallback={<WidgetSkeleton rows={4} chart />}>
+                <AuditActivityWidget />
+              </Suspense>
+            ) : null}
+          </div>
+        </DashboardSection>
+      ) : null}
+
+      {view.hr ? (
+        <DashboardSection
+          title={t('sections.organization.title')}
+          description={multi ? t('sections.organization.description') : undefined}
+          icon={Building2Icon}
+        >
+          <Suspense fallback={<KpiRowSkeleton count={5} />}>
+            <HrKpis />
+          </Suspense>
+          <Suspense fallback={<ComplianceSkeleton />}>
+            <ComplianceRow />
+          </Suspense>
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+            <div className="lg:col-span-2">
+              <Suspense fallback={<WidgetSkeleton rows={6} />}>
+                <RequestQueueWidget />
+              </Suspense>
+            </div>
+            <Suspense fallback={<WidgetSkeleton rows={6} />}>
+              <ExpiryAlertsWidget />
+            </Suspense>
+          </div>
+          <div className={canAudit ? 'grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3' : 'grid grid-cols-1 gap-4 md:grid-cols-2'}>
+            <Suspense fallback={<WidgetSkeleton rows={4} chart />}>
+              <DepartmentHeadcountWidget />
+            </Suspense>
+            <Suspense fallback={<WidgetSkeleton rows={3} chart />}>
+              <NationalityMixWidget />
+            </Suspense>
+            {canAudit ? (
+              <div className="md:col-span-2 xl:col-span-1">
+                <Suspense fallback={<WidgetSkeleton rows={6} />}>
+                  <RecentActivityWidget />
+                </Suspense>
+              </div>
+            ) : null}
+          </div>
+        </DashboardSection>
+      ) : null}
+
+      {view.manager && ctx.employee ? (
+        <DashboardSection title={t('sections.team.title')} description={multi ? t('sections.team.description') : undefined} icon={UsersIcon}>
+          <Suspense fallback={<KpiRowSkeleton />}>
+            <ManagerKpis />
+          </Suspense>
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+            <div className="lg:col-span-2">
+              <Suspense fallback={<WidgetSkeleton rows={5} />}>
+                <ApprovalQueueWidget userId={ctx.user.id} />
+              </Suspense>
+            </div>
+            <Suspense fallback={<WidgetSkeleton rows={5} />}>
+              <TeamRequestsWidget employeeId={ctx.employee.id} />
+            </Suspense>
+          </div>
+          <Suspense fallback={<WidgetSkeleton rows={3} chart />}>
+            <TeamLeaveCalendarWidget employeeId={ctx.employee.id} today={today} />
+          </Suspense>
+        </DashboardSection>
+      ) : null}
+
+      {view.employee && ctx.employee ? (
+        <DashboardSection
+          title={multi ? t('sections.workspace.title') : t('sections.workspace.titleSingle')}
+          description={multi ? t('sections.workspace.description') : undefined}
+          icon={multi ? UserRoundIcon : BriefcaseBusinessIcon}
+        >
+          <Suspense fallback={<KpiRowSkeleton />}>
+            <EmployeeKpis employeeId={ctx.employee.id} />
+          </Suspense>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <Suspense fallback={<WidgetSkeleton rows={5} />}>
+              <RecentRequestsWidget employeeId={ctx.employee.id} userId={ctx.user.id} />
+            </Suspense>
+            <Suspense fallback={<WidgetSkeleton rows={4} />}>
+              <UpcomingLeaveWidget employeeId={ctx.employee.id} today={today} />
+            </Suspense>
+            <div className="md:col-span-2 xl:col-span-1">
+              <Suspense fallback={<WidgetSkeleton rows={5} />}>
+                <LatestNotificationsWidget nowIso={nowIso} />
+              </Suspense>
+            </div>
+          </div>
+        </DashboardSection>
+      ) : null}
+
+      {!view.employee && !view.admin && !view.hr ? (
+        <DashboardSection title={t('sections.workspace.titleSingle')} icon={BriefcaseBusinessIcon}>
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <Suspense fallback={<WidgetSkeleton rows={5} />}>
+              <LatestNotificationsWidget nowIso={nowIso} />
+            </Suspense>
+          </div>
+        </DashboardSection>
+      ) : null}
+    </div>
+  );
 }

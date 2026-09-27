@@ -125,6 +125,7 @@ export type Database = {
           name_ar: string
           name_en: string
           published_at: string | null
+          published_version: number | null
           show_logo: boolean
           show_qr: boolean
           show_signature: boolean
@@ -150,6 +151,7 @@ export type Database = {
           name_ar: string
           name_en: string
           published_at?: string | null
+          published_version?: number | null
           show_logo?: boolean
           show_qr?: boolean
           show_signature?: boolean
@@ -175,6 +177,7 @@ export type Database = {
           name_ar?: string
           name_en?: string
           published_at?: string | null
+          published_version?: number | null
           show_logo?: boolean
           show_qr?: boolean
           show_signature?: boolean
@@ -697,6 +700,9 @@ export type Database = {
           issue_date: string | null
           mime_type: string | null
           notes: string | null
+          review_note: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
           status: string
           storage_path: string | null
           updated_at: string
@@ -717,6 +723,9 @@ export type Database = {
           issue_date?: string | null
           mime_type?: string | null
           notes?: string | null
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           status?: string
           storage_path?: string | null
           updated_at?: string
@@ -737,6 +746,9 @@ export type Database = {
           issue_date?: string | null
           mime_type?: string | null
           notes?: string | null
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           status?: string
           storage_path?: string | null
           updated_at?: string
@@ -749,6 +761,13 @@ export type Database = {
             columns: ["employee_id"]
             isOneToOne: false
             referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employee_documents_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
           {
@@ -874,6 +893,7 @@ export type Database = {
           passport_number: string | null
           personal_email: string | null
           probation_end_date: string | null
+          search_norm: string | null
           search_text: string | null
           section: string | null
           termination_date: string | null
@@ -927,6 +947,7 @@ export type Database = {
           passport_number?: string | null
           personal_email?: string | null
           probation_end_date?: string | null
+          search_norm?: never
           search_text?: never
           section?: string | null
           termination_date?: string | null
@@ -980,6 +1001,7 @@ export type Database = {
           passport_number?: string | null
           personal_email?: string | null
           probation_end_date?: string | null
+          search_norm?: never
           search_text?: never
           section?: string | null
           termination_date?: string | null
@@ -1027,6 +1049,113 @@ export type Database = {
             columns: ["manager_id"]
             isOneToOne: false
             referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      expiry_alert_log: {
+        Row: {
+          created_at: string
+          days_left: number
+          employee_id: string
+          entity_id: string
+          expiry_date: string
+          id: string
+          item_key: string
+          kind: string
+          notification_ids: string[]
+          recipients: number
+          run_id: string | null
+          source_table: string
+          subject: string
+          threshold_days: number
+        }
+        Insert: {
+          created_at?: string
+          days_left: number
+          employee_id: string
+          entity_id: string
+          expiry_date: string
+          id?: string
+          item_key: string
+          kind: string
+          notification_ids?: string[]
+          recipients?: number
+          run_id?: string | null
+          source_table: string
+          subject: string
+          threshold_days: number
+        }
+        Update: {
+          created_at?: string
+          days_left?: number
+          employee_id?: string
+          entity_id?: string
+          expiry_date?: string
+          id?: string
+          item_key?: string
+          kind?: string
+          notification_ids?: string[]
+          recipients?: number
+          run_id?: string | null
+          source_table?: string
+          subject?: string
+          threshold_days?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expiry_alert_log_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "expiry_alert_log_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "expiry_alert_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      expiry_alert_runs: {
+        Row: {
+          created_at: string
+          documents_expired: number
+          id: string
+          items_alerted: number
+          notifications_created: number
+          run_date: string
+          source: string
+          triggered_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          documents_expired?: number
+          id?: string
+          items_alerted?: number
+          notifications_created?: number
+          run_date: string
+          source: string
+          triggered_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          documents_expired?: number
+          id?: string
+          items_alerted?: number
+          notifications_created?: number
+          run_date?: string
+          source?: string
+          triggered_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expiry_alert_runs_triggered_by_fkey"
+            columns: ["triggered_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -1229,6 +1358,41 @@ export type Database = {
             foreignKeyName: "import_rows_import_id_fkey"
             columns: ["import_id"]
             isOneToOne: false
+            referencedRelation: "imports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      import_sources: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          file_kind: string
+          file_size: number
+          import_id: string
+          sheets: Json
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          file_kind: string
+          file_size?: number
+          import_id: string
+          sheets?: Json
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          file_kind?: string
+          file_size?: number
+          import_id?: string
+          sheets?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "import_sources_import_id_fkey"
+            columns: ["import_id"]
+            isOneToOne: true
             referencedRelation: "imports"
             referencedColumns: ["id"]
           },
@@ -2684,7 +2848,252 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      employee_document_gaps: {
+        Row: {
+          awaiting_review_types: string[] | null
+          department_id: string | null
+          department_name_ar: string | null
+          department_name_en: string | null
+          employee_avatar_path: string | null
+          employee_id: string | null
+          employee_name_ar: string | null
+          employee_name_en: string | null
+          employee_number: string | null
+          employment_status: string | null
+          id_type: string | null
+          is_saudi: boolean | null
+          joining_date: string | null
+          missing_count: number | null
+          missing_types: string[] | null
+          nationality: string | null
+          required_types: string[] | null
+          search_text: string | null
+        }
+        Insert: {
+          awaiting_review_types?: string[] | null
+          department_id?: string | null
+          department_name_ar?: string | null
+          department_name_en?: string | null
+          employee_avatar_path?: string | null
+          employee_id?: string | null
+          employee_name_ar?: string | null
+          employee_name_en?: string | null
+          employee_number?: string | null
+          employment_status?: string | null
+          id_type?: string | null
+          is_saudi?: boolean | null
+          joining_date?: string | null
+          missing_count?: number | null
+          missing_types?: string[] | null
+          nationality?: string | null
+          required_types?: string[] | null
+          search_text?: string | null
+        }
+        Update: {
+          awaiting_review_types?: string[] | null
+          department_id?: string | null
+          department_name_ar?: string | null
+          department_name_en?: string | null
+          employee_avatar_path?: string | null
+          employee_id?: string | null
+          employee_name_ar?: string | null
+          employee_name_en?: string | null
+          employee_number?: string | null
+          employment_status?: string | null
+          id_type?: string | null
+          is_saudi?: boolean | null
+          joining_date?: string | null
+          missing_count?: number | null
+          missing_types?: string[] | null
+          nationality?: string | null
+          required_types?: string[] | null
+          search_text?: string | null
+        }
+        Relationships: []
+      }
+      employee_document_list: {
+        Row: {
+          created_at: string | null
+          department_id: string | null
+          department_name_ar: string | null
+          department_name_en: string | null
+          document_number: string | null
+          document_type: string | null
+          employee_archived_at: string | null
+          employee_avatar_path: string | null
+          employee_id: string | null
+          employee_name_ar: string | null
+          employee_name_en: string | null
+          employee_number: string | null
+          employment_status: string | null
+          expiry_date: string | null
+          file_name: string | null
+          file_size: number | null
+          id: string | null
+          is_confidential: boolean | null
+          issue_date: string | null
+          mime_type: string | null
+          notes: string | null
+          review_note: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          reviewed_by_name: string | null
+          search_text: string | null
+          self_uploaded: boolean | null
+          status: string | null
+          storage_path: string | null
+          updated_at: string | null
+          uploaded_by: string | null
+          uploaded_by_name: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          department_id?: string | null
+          department_name_ar?: string | null
+          department_name_en?: string | null
+          document_number?: string | null
+          document_type?: string | null
+          employee_archived_at?: string | null
+          employee_avatar_path?: string | null
+          employee_id?: string | null
+          employee_name_ar?: string | null
+          employee_name_en?: string | null
+          employee_number?: string | null
+          employment_status?: string | null
+          expiry_date?: string | null
+          file_name?: string | null
+          file_size?: number | null
+          id?: string | null
+          is_confidential?: boolean | null
+          issue_date?: string | null
+          mime_type?: string | null
+          notes?: string | null
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          reviewed_by_name?: string | null
+          search_text?: string | null
+          self_uploaded?: boolean | null
+          status?: string | null
+          storage_path?: string | null
+          updated_at?: string | null
+          uploaded_by?: string | null
+          uploaded_by_name?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          department_id?: string | null
+          department_name_ar?: string | null
+          department_name_en?: string | null
+          document_number?: string | null
+          document_type?: string | null
+          employee_archived_at?: string | null
+          employee_avatar_path?: string | null
+          employee_id?: string | null
+          employee_name_ar?: string | null
+          employee_name_en?: string | null
+          employee_number?: string | null
+          employment_status?: string | null
+          expiry_date?: string | null
+          file_name?: string | null
+          file_size?: number | null
+          id?: string | null
+          is_confidential?: boolean | null
+          issue_date?: string | null
+          mime_type?: string | null
+          notes?: string | null
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          reviewed_by_name?: string | null
+          search_text?: string | null
+          self_uploaded?: boolean | null
+          status?: string | null
+          storage_path?: string | null
+          updated_at?: string | null
+          uploaded_by?: string | null
+          uploaded_by_name?: string | null
+        }
+        Relationships: []
+      }
+      expiry_items: {
+        Row: {
+          department_id: string | null
+          department_name_ar: string | null
+          department_name_en: string | null
+          dependent_id: string | null
+          dependent_name_ar: string | null
+          dependent_name_en: string | null
+          dependent_relationship: string | null
+          document_type: string | null
+          employee_avatar_path: string | null
+          employee_id: string | null
+          employee_name_ar: string | null
+          employee_name_en: string | null
+          employee_number: string | null
+          entity_id: string | null
+          expiry_date: string | null
+          id_type: string | null
+          is_confidential: boolean | null
+          item_key: string | null
+          kind: string | null
+          reference: string | null
+          search_text: string | null
+          source_table: string | null
+          subject: string | null
+        }
+        Insert: {
+          department_id?: string | null
+          department_name_ar?: string | null
+          department_name_en?: string | null
+          dependent_id?: string | null
+          dependent_name_ar?: string | null
+          dependent_name_en?: string | null
+          dependent_relationship?: string | null
+          document_type?: string | null
+          employee_avatar_path?: string | null
+          employee_id?: string | null
+          employee_name_ar?: string | null
+          employee_name_en?: string | null
+          employee_number?: string | null
+          entity_id?: string | null
+          expiry_date?: string | null
+          id_type?: string | null
+          is_confidential?: boolean | null
+          item_key?: string | null
+          kind?: string | null
+          reference?: string | null
+          search_text?: string | null
+          source_table?: string | null
+          subject?: string | null
+        }
+        Update: {
+          department_id?: string | null
+          department_name_ar?: string | null
+          department_name_en?: string | null
+          dependent_id?: string | null
+          dependent_name_ar?: string | null
+          dependent_name_en?: string | null
+          dependent_relationship?: string | null
+          document_type?: string | null
+          employee_avatar_path?: string | null
+          employee_id?: string | null
+          employee_name_ar?: string | null
+          employee_name_en?: string | null
+          employee_number?: string | null
+          entity_id?: string | null
+          expiry_date?: string | null
+          id_type?: string | null
+          is_confidential?: boolean | null
+          item_key?: string | null
+          kind?: string | null
+          reference?: string | null
+          search_text?: string | null
+          source_table?: string | null
+          subject?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       act_on_request: {
@@ -2734,6 +3143,10 @@ export type Database = {
         Args: { p_end: string; p_leave_type_id: string; p_start: string }
         Returns: number
       }
+      create_certificate_template: {
+        Args: { p_change_notes?: string; p_data: Json }
+        Returns: string
+      }
       create_request_draft: {
         Args: { p_employee_id?: string; p_request_type_id: string; p_subtype?: string; p_values: Json }
         Returns: string
@@ -2743,7 +3156,7 @@ export type Database = {
         Returns: Json
       }
       dashboard_expiry_items: {
-        Args: { p_days?: number; p_limit?: number }
+        Args: { p_days?: number; p_employee_id?: string; p_limit?: number }
         Returns: {
             days_left: number
             document_type: string
@@ -2759,6 +3172,25 @@ export type Database = {
       dashboard_stats: {
         Args: never
         Returns: Json
+      }
+      employee_directory_stats: {
+        Args: { p_manager_id?: string }
+        Returns: Json
+      }
+      employee_filter_options: {
+        Args: never
+        Returns: Json
+      }
+      employee_manager_candidates: {
+        Args: { p_employee_id?: string; p_limit?: number; p_query?: string }
+        Returns: {
+            employee_number: string
+            id: string
+            job_title_ar: string
+            job_title_en: string
+            name_ar: string
+            name_en: string
+          }[]
       }
       generate_expiry_alerts: {
         Args: never
@@ -2809,6 +3241,10 @@ export type Database = {
         Args: { p_employee_id?: string; p_year: number }
         Returns: number
       }
+      issue_certificate: {
+        Args: { p_addressed_to?: string; p_certificate_number: string; p_employee_id: string; p_language: string; p_purpose?: string; p_request_id: string; p_template_id: string; p_template_version: number }
+        Returns: string
+      }
       list_request_assignees: {
         Args: { p_limit?: number; p_query?: string; p_request_id: string }
         Returns: {
@@ -2857,6 +3293,10 @@ export type Database = {
         Args: { p_change_notes?: string; p_template_id: string }
         Returns: number
       }
+      publish_certificate_template_draft: {
+        Args: { p_template_id: string }
+        Returns: number
+      }
       record_login: {
         Args: never
         Returns: undefined
@@ -2864,6 +3304,262 @@ export type Database = {
       reject_registration: {
         Args: { p_profile_id: string; p_reason: string }
         Returns: undefined
+      }
+      report_audit_events: {
+        Args: { p_filters?: Json }
+        Returns: {
+            action: string
+            actor_email: string
+            actor_id: string
+            category: string
+            created_at: string
+            event_date: string
+            id: number
+          }[]
+      }
+      report_catalog_stats: {
+        Args: never
+        Returns: Json
+      }
+      report_certificate_rows: {
+        Args: { p_filters?: Json }
+        Returns: {
+            addressed_to: string
+            certificate_number: string
+            certificate_type: string
+            department_ar: string
+            department_en: string
+            employee_id: string
+            employee_number: string
+            id: string
+            issue_date: string
+            language: string
+            name_ar: string
+            name_en: string
+            request_id: string
+            request_number: string
+            revoked_at: string
+            status: string
+          }[]
+      }
+      report_employee_breakdown: {
+        Args: { p_dimension: string; p_filters?: Json }
+        Returns: {
+            active: number
+            avg_tenure_years: number
+            female: number
+            group_key: string
+            headcount: number
+            label_ar: string
+            label_en: string
+            male: number
+            on_leave: number
+            probation: number
+            share: number
+          }[]
+      }
+      report_employee_rows: {
+        Args: { p_filters?: Json }
+        Returns: {
+            company_email: string
+            contract_end_date: string
+            department_ar: string
+            department_en: string
+            department_id: string
+            employee_number: string
+            employment_status: string
+            employment_type: string
+            gender: string
+            id: string
+            id_type: string
+            iqama_expiry_date: string
+            iqama_expiry_hijri: string
+            is_archived: boolean
+            job_title_ar: string
+            job_title_en: string
+            job_title_id: string
+            joining_date: string
+            location_ar: string
+            location_en: string
+            location_id: string
+            manager_id: string
+            manager_name_ar: string
+            manager_name_en: string
+            mobile: string
+            name_ar: string
+            name_en: string
+            national_id: string
+            nationality: string
+            passport_expiry_date: string
+            passport_number: string
+            probation_end_date: string
+            tenure_years: number
+            termination_date: string
+          }[]
+      }
+      report_expiry_rows: {
+        Args: { p_filters?: Json; p_kind: string }
+        Returns: {
+            bucket: string
+            days_left: number
+            department_ar: string
+            department_en: string
+            dependent_name_ar: string
+            dependent_name_en: string
+            dependent_relationship: string
+            employee_id: string
+            employee_number: string
+            employment_type: string
+            expiry_date: string
+            expiry_hijri: string
+            insurance_class: string
+            job_title_ar: string
+            job_title_en: string
+            name_ar: string
+            name_en: string
+            nationality: string
+            provider: string
+            reference: string
+            row_id: string
+          }[]
+      }
+      report_headcount_trend: {
+        Args: { p_filters?: Json }
+        Returns: {
+            headcount: number
+            joiners: number
+            leavers: number
+            month: string
+            net_change: number
+          }[]
+      }
+      report_leave_balance_rows: {
+        Args: { p_filters?: Json }
+        Returns: {
+            adjustment: number
+            department_ar: string
+            department_en: string
+            employee_id: string
+            employee_number: string
+            entitlement: number
+            id: string
+            leave_type_ar: string
+            leave_type_code: string
+            leave_type_en: string
+            leave_type_id: string
+            leave_type_sort: number
+            name_ar: string
+            name_en: string
+            opening_balance: number
+            pending: number
+            remaining: number
+            total_available: number
+            used: number
+            utilization: number
+            year: number
+          }[]
+      }
+      report_leave_rows: {
+        Args: { p_filters?: Json }
+        Returns: {
+            balance_effect: string
+            days: number
+            department_ar: string
+            department_en: string
+            department_id: string
+            employee_id: string
+            employee_number: string
+            end_date: string
+            id: string
+            is_pending: boolean
+            is_taken: boolean
+            leave_type_ar: string
+            leave_type_code: string
+            leave_type_en: string
+            leave_type_id: string
+            name_ar: string
+            name_en: string
+            request_id: string
+            request_number: string
+            return_date: string
+            start_date: string
+            status: string
+            submitted_at: string
+          }[]
+      }
+      report_request_rows: {
+        Args: { p_filters?: Json }
+        Returns: {
+            age_days: number
+            category: string
+            current_step_type: string
+            decision_by: string
+            decision_comment: string
+            department_ar: string
+            department_en: string
+            due_at: string
+            employee_id: string
+            employee_number: string
+            id: string
+            is_open: boolean
+            is_overdue: boolean
+            name_ar: string
+            name_en: string
+            on_time: boolean
+            overdue_days: number
+            priority: string
+            request_number: string
+            request_type_id: string
+            request_type_key: string
+            resolution_business_days: number
+            resolved_at: string
+            sla_business_days: number
+            sla_state: string
+            status: string
+            submitted_at: string
+            title: string
+            type_ar: string
+            type_en: string
+          }[]
+      }
+      report_sla_rows: {
+        Args: { p_filters?: Json }
+        Returns: {
+            avg_resolution_days: number
+            closed: number
+            late: number
+            on_time: number
+            on_time_rate: number
+            open: number
+            overdue: number
+            request_type_id: string
+            sla_business_days: number
+            total: number
+            type_ar: string
+            type_en: string
+          }[]
+      }
+      report_summary: {
+        Args: { p_filters?: Json; p_report: string }
+        Returns: Json
+      }
+      report_user_activity_rows: {
+        Args: { p_filters?: Json }
+        Returns: {
+            active_days: number
+            actor_email: string
+            actor_id: string
+            actor_key: string
+            actor_name: string
+            changes: number
+            employee_number: string
+            events: number
+            exports: number
+            last_activity: string
+            logins: number
+            requests: number
+            top_category: string
+          }[]
       }
       request_registration_info: {
         Args: { p_note: string; p_profile_id: string }
@@ -2873,8 +3569,40 @@ export type Database = {
         Args: { p_confirmation: string }
         Returns: undefined
       }
+      restore_certificate_template_draft: {
+        Args: { p_change_notes?: string; p_template_id: string; p_version: number }
+        Returns: number
+      }
       restore_certificate_template_version: {
         Args: { p_template_id: string; p_version: number }
+        Returns: undefined
+      }
+      review_employee_document: {
+        Args: { p_decision: string; p_document_id: string; p_note?: string }
+        Returns: string
+      }
+      revoke_certificate: {
+        Args: { p_certificate_id: string; p_reason: string }
+        Returns: undefined
+      }
+      run_expiry_alerts: {
+        Args: { p_source?: string }
+        Returns: Json
+      }
+      save_certificate_template: {
+        Args: { p_change_notes: string; p_data: Json; p_expected_version?: number; p_template_id: string }
+        Returns: number
+      }
+      save_employee: {
+        Args: { p_bank?: Json; p_compensation?: Json; p_employee: Json; p_employee_id: string }
+        Returns: string
+      }
+      set_certificate_template_active: {
+        Args: { p_active: boolean; p_template_id: string }
+        Returns: undefined
+      }
+      set_default_certificate_template: {
+        Args: { p_template_id: string }
         Returns: undefined
       }
       set_leave_balance: {

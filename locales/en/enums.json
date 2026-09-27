@@ -86,7 +86,10 @@
   "certificateVariant": {
     "general": "General",
     "bank": "Bank",
-    "embassy": "Embassy"
+    "embassy": "Embassy",
+    "government": "Government",
+    "university": "University",
+    "other": "Other"
   },
   "certificateLanguage": {
     "ar": "Arabic",
@@ -127,7 +130,8 @@
     "complete": "Completed",
     "cancel": "Cancelled",
     "comment": "Commented",
-    "skip": "Step skipped"
+    "skip": "Step skipped",
+    "certificate_issued": "Certificate issued"
   },
   "skipReason": {
     "no_manager": "No direct manager is assigned",

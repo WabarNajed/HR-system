@@ -102,6 +102,7 @@ function UserMenuContent({ user, compactExtras, align }: { user: ShellUser; comp
       <DropdownMenuSeparator />
       <DropdownMenuItem
         variant="destructive"
+        data-testid="logout"
         disabled={signingOut}
         onSelect={(e) => {
           e.preventDefault();
@@ -123,7 +124,7 @@ export function UserMenu({ user }: { user: ShellUser }) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="rounded-full p-0 active:scale-100" aria-label={t('userMenu')}>
+        <Button variant="ghost" size="icon" className="rounded-full p-0 active:scale-100" aria-label={t('userMenu')} data-testid="user-menu">
           <EmployeeAvatar name={user.name} seed={user.seed} src={user.avatarUrl} size="sm" />
         </Button>
       </DropdownMenuTrigger>

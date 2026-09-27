@@ -2,9 +2,11 @@ import 'server-only';
 
 import { datasets as auditDatasets } from '@/features/audit/export-datasets';
 import { datasets as certificatesDatasets } from '@/features/certificates/export-datasets';
+import { datasets as dataManagementDatasets } from '@/features/data-management/export-datasets';
 import { datasets as documentsDatasets } from '@/features/documents/export-datasets';
 import { datasets as employeesDatasets } from '@/features/employees/export-datasets';
 import { datasets as leaveDatasets } from '@/features/leave/export-datasets';
+import { datasets as masterDataDatasets } from '@/features/master-data/export-datasets';
 import { datasets as reportsDatasets } from '@/features/reports/export-datasets';
 import { datasets as requestsDatasets } from '@/features/requests/export-datasets';
 import { datasets as usersDatasets } from '@/features/users/export-datasets';
@@ -23,6 +25,8 @@ const ALL: AnyExportDataset[] = [
   ...usersDatasets,
   ...reportsDatasets,
   ...auditDatasets,
+  ...masterDataDatasets,
+  ...dataManagementDatasets,
 ];
 
 const byKey = new Map<string, AnyExportDataset>();

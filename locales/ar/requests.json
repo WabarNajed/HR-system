@@ -1,4 +1,383 @@
 {
   "title": "الطلبات",
-  "description": "تقديم طلبات الموارد البشرية ومتابعتها."
+  "description": "تقديم طلبات الموارد البشرية ومتابعتها.",
+  "descriptionHr": "جميع طلبات الموارد البشرية في المنشأة — تابع سير العمل ومؤشرات مستوى الخدمة والمسؤولين.",
+  "descriptionManager": "طلباتك وطلبات فريقك مع مراحل اعتمادها.",
+  "descriptionEmployee": "قدّم طلباتك وتابع كل طلب حتى إنجازه.",
+  "newRequest": "طلب جديد",
+  "unknownType": "طلب",
+  "draftNumber": "مسودة",
+  "unassigned": "غير مُسنَد",
+  "kpi": {
+    "open": "الطلبات المفتوحة",
+    "openHint": "{count, plural, =0 {لا طلبات مستحقة خلال 24 ساعة} one {طلب واحد مستحق خلال 24 ساعة} two {طلبان مستحقان خلال 24 ساعة} few {# طلبات مستحقة خلال 24 ساعة} many {# طلبًا مستحقًا خلال 24 ساعة} other {# طلب مستحق خلال 24 ساعة}}",
+    "awaiting": "بانتظار إجرائي",
+    "awaitingHint": "{approvals, plural, =0 {لا موافقات} one {موافقة واحدة} two {موافقتان} few {# موافقات} many {# موافقة} other {# موافقة}} · {returned, plural, =0 {لا طلبات معادة} one {طلب معاد} two {طلبان معادان} few {# طلبات معادة} many {# طلبًا معادًا} other {# طلب معاد}}",
+    "overdue": "المتأخرة",
+    "overdueHint": "تجاوزت موعد مستوى الخدمة",
+    "overdueNone": "جميع الطلبات ضمن مستوى الخدمة",
+    "completedMonth": "المنجزة هذا الشهر",
+    "completedMonthHint": "أُغلقت منذ بداية الشهر"
+  },
+  "tabs": {
+    "label": "حالة الطلب",
+    "all": "الكل",
+    "pending": "قيد الاعتماد",
+    "inProgress": "قيد التنفيذ",
+    "completed": "المنجزة",
+    "rejected": "المرفوضة",
+    "returned": "المعادة",
+    "drafts": "المسودات"
+  },
+  "columns": {
+    "number": "رقم الطلب",
+    "employee": "الموظف",
+    "type": "النوع",
+    "created": "تاريخ الإنشاء",
+    "step": "مرحلة الاعتماد",
+    "status": "الحالة",
+    "assigned": "المسؤول",
+    "sla": "مستوى الخدمة"
+  },
+  "filters": {
+    "type": "نوع الطلب",
+    "status": "الحالة",
+    "sla": "مستوى الخدمة",
+    "employee": "الموظف",
+    "department": "الإدارة",
+    "assigned": "مسؤول الموارد البشرية",
+    "assignedToMe": "المسندة إليّ",
+    "created": "تاريخ الإنشاء",
+    "searchPlaceholder": "ابحث برقم الطلب أو العنوان أو الموظف…",
+    "searchOwnPlaceholder": "ابحث برقم الطلب أو العنوان…"
+  },
+  "empty": {
+    "all": { "title": "لا توجد طلبات بعد", "description": "تظهر هنا الطلبات المقدَّمة مع حالتها ومستوى الخدمة." },
+    "pending": { "title": "لا طلبات قيد الاعتماد", "description": "تظهر هنا الطلبات التي تنتظر قرار المدير أو الموارد البشرية." },
+    "in_progress": { "title": "لا طلبات قيد التنفيذ", "description": "تظهر هنا الطلبات المعتمدة التي تعمل عليها الموارد البشرية." },
+    "completed": { "title": "لا طلبات منجزة", "description": "تظهر هنا الطلبات التي أغلقتها الموارد البشرية." },
+    "rejected": { "title": "لا طلبات مرفوضة", "description": "تظهر هنا الطلبات المرفوضة مع سبب الرفض." },
+    "returned": { "title": "لا طلبات معادة", "description": "تظهر هنا الطلبات المعادة لاستكمال المعلومات." },
+    "drafts": { "title": "لا توجد مسودات", "description": "تبقى هنا الطلبات التي تحفظها دون إرسال." }
+  },
+  "rowActions": {
+    "view": "عرض التفاصيل",
+    "continueDraft": "متابعة التعديل",
+    "editResubmit": "تعديل وإعادة إرسال",
+    "return": "إعادة لاستكمال المعلومات",
+    "cancel": "إلغاء الطلب",
+    "deleteDraft": "حذف المسودة"
+  },
+  "deleteDraft": {
+    "title": "حذف هذه المسودة؟",
+    "description": "ستُحذف المسودة ومرفقاتها نهائيًا.",
+    "confirm": "حذف المسودة"
+  },
+  "toast": {
+    "draftSaved": "تم حفظ المسودة",
+    "draftDeleted": "تم حذف المسودة",
+    "submitted": "تم إرسال الطلب",
+    "submittedNumber": "تم إرسال الطلب {number}",
+    "resubmitted": "أعيد إرسال الطلب {number}",
+    "changesSaved": "تم حفظ التعديلات",
+    "approve": "تمت الموافقة على الطلب {number}",
+    "reject": "تم رفض الطلب {number}",
+    "return": "أعيد الطلب {number} لاستكمال المعلومات",
+    "reassign": "أعيد إسناد الطلب {number}",
+    "start": "بدأ تنفيذ الطلب {number}",
+    "complete": "تم إنجاز الطلب {number}",
+    "cancel": "تم إلغاء الطلب {number}",
+    "commentAdded": "تمت إضافة التعليق",
+    "internalNoteAdded": "تمت إضافة الملاحظة الداخلية",
+    "attachmentAdded": "تم رفع المرفق",
+    "attachmentRemoved": "تم حذف المرفق"
+  },
+  "categories": {
+    "time_off": "الإجازات",
+    "documents": "الخطابات والشهادات",
+    "government": "الخدمات الحكومية",
+    "benefits": "المزايا",
+    "payroll": "الرواتب",
+    "attendance": "الحضور والدوام",
+    "personal_data": "البيانات الشخصية",
+    "travel": "السفر",
+    "separation": "انتهاء الخدمة",
+    "general": "عام"
+  },
+  "step": {
+    "notSubmitted": "لم يُرسل بعد",
+    "withRequester": "لدى مقدّم الطلب",
+    "fulfilment": "التنفيذ لدى الموارد البشرية"
+  },
+  "priority": {
+    "low": "أولوية منخفضة",
+    "normal": "أولوية عادية",
+    "high": "أولوية عالية",
+    "urgent": "عاجل"
+  },
+  "form": {
+    "optional": "(اختياري)",
+    "calculatedAutomatically": "يُحتسب تلقائيًا",
+    "noLeaveTypes": "لا توجد أنواع إجازات متاحة",
+    "noDependents": "لا يوجد تابعون مسجلون لهذا الموظف",
+    "month": "الشهر",
+    "year": "السنة",
+    "time": "الوقت",
+    "searchEmployee": "ابحث بالاسم أو الرقم الوظيفي…",
+    "attachmentsDisabled": "لا يقبل هذا النوع من الطلبات مرفقات.",
+    "download": "تنزيل",
+    "removeAttachment": "حذف المرفق",
+    "unavailable": "غير متاح",
+    "notProvided": "لم يُحدَّد",
+    "noData": "لم تُدخل أي تفاصيل."
+  },
+  "leave": {
+    "title": "ملخص الإجازة",
+    "pickType": "اختر نوع الإجازة لعرض عدد الأيام والرصيد المتاح.",
+    "pickDates": "اختر التواريخ",
+    "requested": "المطلوب",
+    "afterRequest": "الرصيد بعد الطلب",
+    "balance": "الرصيد",
+    "daysUnit": "يوم",
+    "noDeduction": "لا يُخصم",
+    "noDeductionHint": "لا يُخصم هذا النوع من رصيد الإجازات.",
+    "availableNow": "المتاح حاليًا: {days} يوم",
+    "usedOf": "المستخدم {used} من {total}",
+    "pendingHold": "{days} يوم محجوزة لطلبات أخرى قيد الاعتماد.",
+    "noWorkingDays": "لا تتضمن الفترة المحددة أيام عمل.",
+    "insufficient": "الرصيد غير كافٍ: المتاح {available} يوم والمطلوب {requested}.",
+    "maxDays": "الحد الأقصى لهذا النوع {max} يوم في الطلب الواحد.",
+    "overlap": "تتداخل هذه التواريخ مع طلب إجازة آخر:",
+    "attachmentRequired": "يتطلب هذا النوع من الإجازات مستندًا داعمًا.",
+    "calendarDays": "أيام تقويمية",
+    "workingDays": "أيام عمل"
+  },
+  "wizard": {
+    "title": "طلب جديد",
+    "continueDraftTitle": "متابعة المسودة",
+    "description": "اختر نوع الطلب، ثم أدخل التفاصيل، وراجعها قبل الإرسال.",
+    "steps": {
+      "label": "خطوات الطلب",
+      "type": "نوع الطلب",
+      "typeHint": "ما الذي تحتاجه؟",
+      "details": "التفاصيل",
+      "detailsHint": "تعبئة النموذج",
+      "review": "المراجعة",
+      "reviewHint": "التحقق والإرسال"
+    },
+    "searchTypes": "ابحث في أنواع الطلبات…",
+    "allCategories": "الكل",
+    "noTypesTitle": "لا توجد أنواع طلبات مطابقة",
+    "noTypesDescription": "جرّب كلمة بحث أو فئة أخرى.",
+    "slaDays": "{count, plural, =0 {في اليوم نفسه} one {يوم عمل واحد} two {يوما عمل} few {# أيام عمل} many {# يوم عمل} other {# يوم عمل}}",
+    "typeLocked": "لا يمكن تغيير نوع مسودة محفوظة. ابدأ طلبًا جديدًا بدلًا من ذلك.",
+    "requestFor": "الطلب لصالح",
+    "requestForHint": "يمكن للموارد البشرية تقديم الطلب نيابة عن الموظف.",
+    "myself": "لنفسي",
+    "anotherEmployee": "موظف آخر",
+    "pickEmployee": "اختر الموظف",
+    "searchEmployee": "ابحث بالاسم أو الرقم الوظيفي أو البريد…",
+    "pickTypeFirst": "اختر نوع الطلب أولًا",
+    "pickEmployeeFirst": "اختر الموظف أولًا",
+    "changeType": "تغيير النوع",
+    "reviewTitle": "راجع طلبك",
+    "reviewDescription": "تأكد من صحة جميع البيانات قبل الإرسال.",
+    "forEmployee": "لصالح {name}",
+    "summaryTitle": "الملخص",
+    "employee": "الموظف",
+    "onBehalf": "نيابة عنه",
+    "sla": "مدة المعالجة المتوقعة",
+    "approvalPath": "مسار الاعتماد",
+    "whatNext": "بعد الإرسال يُبلَّغ كل معتمِد عبر البريد الإلكتروني والبوابة، ويمكنك متابعة التقدم من صفحة الطلب.",
+    "stepOf": "الخطوة {step} من {total}",
+    "saveDraft": "حفظ كمسودة",
+    "submit": "إرسال الطلب",
+    "uploadFailed": "تعذر رفع الملف {name}",
+    "notLinkedTitle": "حسابك غير مرتبط بسجل موظف",
+    "notLinkedDescription": "اطلب من الموارد البشرية ربط حسابك بملفك الوظيفي قبل تقديم الطلبات."
+  },
+  "attachments": {
+    "title": "المرفقات",
+    "hint": "ملفات PDF أو صور أو Word أو Excel بحد أقصى 10 ميجابايت لكل ملف.",
+    "general": "مرفقات أخرى",
+    "none": "لا توجد مرفقات بعد.",
+    "uploaded": "{count, plural, one {تم رفع ملف واحد} two {تم رفع ملفين} few {تم رفع # ملفات} many {تم رفع # ملفًا} other {تم رفع # ملف}}",
+    "upload": "{count, plural, one {رفع ملف واحد} two {رفع ملفين} few {رفع # ملفات} many {رفع # ملفًا} other {رفع # ملف}}"
+  },
+  "path": {
+    "submission": "تقديم الطلب",
+    "submissionHint": "تقدّم الطلب",
+    "noManager": "لا يوجد مدير مسجل — ستُتخطى هذه المرحلة",
+    "completion": "الإنجاز",
+    "completionHint": "تُنجز الموارد البشرية الطلب وتُبلغك"
+  },
+  "decision": {
+    "commentOptional": "تعليق (اختياري)",
+    "commentPlaceholder": "أضف ملاحظة لمقدّم الطلب…",
+    "approve": {
+      "title": "الموافقة على الطلب",
+      "description": "ينتقل الطلب إلى مرحلة الاعتماد التالية، أو يُعتمد نهائيًا إذا كانت هذه المرحلة الأخيرة.",
+      "confirm": "موافقة"
+    },
+    "reject": {
+      "title": "رفض الطلب",
+      "description": "يُغلق الطلب ويُبلَّغ الموظف بسبب الرفض.",
+      "confirm": "رفض",
+      "commentLabel": "سبب الرفض",
+      "commentPlaceholder": "وضّح سبب رفض الطلب…"
+    },
+    "return": {
+      "title": "إعادة لاستكمال المعلومات",
+      "description": "يمكن لمقدّم الطلب تعديله وإعادة إرساله، ليعود إلى هذه المرحلة.",
+      "confirm": "إعادة الطلب",
+      "commentLabel": "المطلوب استكماله",
+      "commentPlaceholder": "صف المعلومات أو المستندات المطلوبة…",
+      "hint": "يُلغى حجز رصيد الإجازة إلى أن يُعاد إرسال الطلب."
+    },
+    "reassign": {
+      "title": "إعادة إسناد الطلب",
+      "description": "سلّم الطلب لشخص آخر، وسيُبلَّغ فورًا.",
+      "confirm": "إعادة الإسناد",
+      "approverLabel": "المعتمِد الجديد",
+      "handlerLabel": "إسناد إلى",
+      "placeholder": "اختر شخصًا",
+      "search": "ابحث بالاسم أو البريد…",
+      "empty": "لا يوجد أشخاص مؤهلون"
+    },
+    "start": {
+      "title": "بدء العمل على الطلب",
+      "description": "تتغير حالة الطلب إلى قيد التنفيذ ويُسند إليك إن لم يكن له مسؤول.",
+      "confirm": "بدء التنفيذ"
+    },
+    "complete": {
+      "title": "إنجاز الطلب",
+      "description": "يُغلق الطلب بحالة منجز ويُبلَّغ الموظف.",
+      "confirm": "إنجاز"
+    },
+    "cancel": {
+      "title": "إلغاء الطلب",
+      "description": "يتوقف الطلب عند هذه المرحلة، ويُعكس أي حجز أو خصم من رصيد الإجازة.",
+      "confirm": "إلغاء الطلب"
+    }
+  },
+  "actions": {
+    "title": "الإجراءات",
+    "description": "المتاحة لك في هذه المرحلة.",
+    "approve": "موافقة",
+    "return": "إعادة لاستكمال المعلومات",
+    "reject": "رفض",
+    "start": "بدء التنفيذ",
+    "complete": "إنجاز",
+    "editResubmit": "تعديل وإعادة إرسال",
+    "continueDraft": "متابعة التعديل",
+    "submitDraft": "إرسال",
+    "reassign": "إعادة إسناد",
+    "cancel": "إلغاء الطلب",
+    "deleteDraft": "حذف المسودة",
+    "submitConfirmTitle": "إرسال هذا الطلب؟",
+    "submitConfirmDescription": "يُرسل الطلب إلى المعتمِد الأول، ولا يمكن تعديله إلا إذا أُعيد إليك.",
+    "none": {
+      "completed": "تم إنجاز هذا الطلب ولا يتطلب أي إجراء.",
+      "rejected": "رُفض هذا الطلب وأُغلق.",
+      "cancelled": "أُلغي هذا الطلب وأُغلق.",
+      "pending": "بانتظار المعتمِد الحالي، وستصلك إشعارات بأي تحديث.",
+      "approved": "تم الاعتماد — تعمل الموارد البشرية على تنفيذ الطلب.",
+      "returned": "بانتظار تعديل مقدّم الطلب وإعادة إرساله.",
+      "generic": "لا توجد إجراءات متاحة لك حاليًا."
+    }
+  },
+  "workflow": {
+    "title": "مسار الاعتماد",
+    "submitted": "تقديم الطلب",
+    "skipped": "تم التخطي",
+    "current": "الحالية",
+    "completed": "منجز",
+    "inProgress": "قيد التنفيذ",
+    "completion": "الإنجاز",
+    "completedHint": "أغلقته الموارد البشرية",
+    "fulfilmentHint": "تعمل الموارد البشرية على التنفيذ",
+    "completionHint": "بعد الاعتماد النهائي"
+  },
+  "timeline": {
+    "title": "سجل النشاط",
+    "description": "جميع الإجراءات على هذا الطلب، الأحدث أولًا.",
+    "empty": "لا يوجد نشاط بعد.",
+    "system": "النظام",
+    "reassignedTo": "أُسند إلى {name}",
+    "balanceEffect": "رصيد الإجازة: {from} ← {to} ({days} يوم)",
+    "skipReasons": {
+      "no_manager": "لا يوجد مدير مباشر مسجل",
+      "manager_without_active_account": "لا يملك المدير حسابًا نشطًا",
+      "approver_is_requester": "المعتمِد هو مقدّم الطلب",
+      "approver_inactive": "حساب المعتمِد غير نشط",
+      "no_role_members": "لا يوجد من يحمل دور المعتمِد"
+    }
+  },
+  "comments": {
+    "title": "التعليقات",
+    "discussion": "النقاش",
+    "internal": "ملاحظات داخلية",
+    "internalHint": "الملاحظات الداخلية مرئية للموارد البشرية فقط، ولا يُبلَّغ بها الموظف.",
+    "emptyTitle": "لا توجد تعليقات بعد",
+    "emptyDescription": "تظهر هنا الاستفسارات والتحديثات المتعلقة بالطلب.",
+    "emptyInternalTitle": "لا توجد ملاحظات داخلية",
+    "emptyInternalDescription": "تبقى ملاحظات فريق الموارد البشرية خاصة به.",
+    "unknownAuthor": "مستخدم سابق",
+    "you": "(أنت)",
+    "placeholder": "اكتب تعليقًا…",
+    "internalPlaceholder": "اكتب ملاحظة داخلية لفريق الموارد البشرية…",
+    "shortcut": "Ctrl + Enter للنشر",
+    "post": "نشر التعليق",
+    "postInternal": "إضافة ملاحظة داخلية"
+  },
+  "edit": {
+    "title": "تعديل الطلب",
+    "descriptionReturned": "حدّث البيانات أو أضف المستندات ثم أعد الإرسال، ليستأنف الطلب من المرحلة التي أعادته.",
+    "descriptionDraft": "حدّث المسودة ثم أرسلها للاعتماد.",
+    "discard": "تجاهل التعديلات",
+    "save": "حفظ التعديلات",
+    "resubmit": "إعادة الإرسال",
+    "submit": "إرسال",
+    "confirmTitle": "إعادة إرسال هذا الطلب؟",
+    "confirmDescription": "سيعود الطلب إلى المعتمِد الذي أعاده.",
+    "confirmSubmitTitle": "إرسال هذا الطلب؟",
+    "confirmSubmitDescription": "سيُرسل الطلب إلى المعتمِد الأول.",
+    "noteLabel": "ملاحظة للمعتمِد (اختياري)",
+    "notePlaceholder": "لخّص التعديلات التي أجريتها…"
+  },
+  "details": {
+    "createdOn": "أُنشئ في {date}",
+    "employee": "الموظف",
+    "submitted": "تاريخ الإرسال",
+    "notSubmitted": "لم يُرسل بعد",
+    "sla": "مستوى الخدمة",
+    "dueOn": "الاستحقاق {date}",
+    "currentStep": "المرحلة الحالية",
+    "assigned": "مسؤول الموارد البشرية",
+    "filedBy": "قدّمه {name}",
+    "dataTitle": "تفاصيل الطلب",
+    "daysValue": "{count, plural, =0 {لا أيام} one {يوم واحد} two {يومان} few {# أيام} many {# يومًا} other {# يوم}}"
+  },
+  "returned": {
+    "title": "أعيد لاستكمال المعلومات",
+    "titleRequester": "مطلوب إجراء: أعيد هذا الطلب إليك",
+    "by": "أعاده {name} في {date}",
+    "editResubmit": "تعديل وإعادة إرسال"
+  },
+  "employeeTab": {
+    "title": "الطلبات",
+    "summary": "{total, plural, =0 {لا توجد طلبات} one {طلب واحد} two {طلبان} few {# طلبات} many {# طلبًا} other {# طلب}} · {open} مفتوح",
+    "viewAll": "فتح في مركز الطلبات",
+    "newRequest": "طلب جديد",
+    "emptyTitle": "لا توجد طلبات بعد",
+    "emptyDescription": "تظهر هنا الطلبات المقدَّمة من هذا الموظف أو لصالحه."
+  },
+  "export": {
+    "title": "طلبات الموارد البشرية",
+    "employeeNumber": "الرقم الوظيفي",
+    "subtype": "النوع الفرعي",
+    "dueAt": "تاريخ الاستحقاق",
+    "completedAt": "تاريخ الإنجاز",
+    "tab": "العرض"
+  }
 }

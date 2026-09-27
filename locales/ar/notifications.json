@@ -10,13 +10,79 @@
     "emptyTitle": "لا جديد لديك",
     "emptyDescription": "ستظهر هنا التحديثات على طلباتك وموافقاتك والتنبيهات.",
     "error": "تعذر تحميل الإشعارات.",
-    "loading": "جارٍ تحميل الإشعارات"
+    "loading": "جارٍ تحميل الإشعارات",
+    "tabAll": "الكل",
+    "tabUnread": "غير المقروءة",
+    "unreadEmptyTitle": "لا توجد إشعارات غير مقروءة",
+    "unreadEmptyDescription": "قرأت كل إشعاراتك. انتقل إلى «الكل» لعرض التحديثات السابقة."
+  },
+  "tabs": {
+    "all": "الكل",
+    "unread": "غير المقروءة"
+  },
+  "filters": {
+    "type": "النوع",
+    "allTypes": "كل الأنواع",
+    "categories": {
+      "approvals": "الموافقات والإسناد",
+      "requests": "تحديثات الطلبات",
+      "registrations": "طلبات التسجيل",
+      "certificates": "الشهادات",
+      "leave": "رصيد الإجازات",
+      "expiry": "تنبيهات الانتهاء",
+      "account": "الحساب"
+    }
+  },
+  "groups": {
+    "today": "اليوم",
+    "yesterday": "أمس",
+    "earlier": "أقدم"
+  },
+  "actions": {
+    "markRead": "تعليم كمقروء",
+    "markUnread": "تعليم كغير مقروء",
+    "markAllRead": "تعليم الكل كمقروء",
+    "markAllReadCategory": "تعليم هذه كمقروءة",
+    "open": "فتح",
+    "noLink": "لا يرتبط هذا الإشعار بسجل"
+  },
+  "empty": {
+    "allTitle": "لا توجد إشعارات بعد",
+    "allDescription": "ستظهر هنا التحديثات على طلباتك وموافقاتك والتنبيهات.",
+    "unreadTitle": "لا جديد لديك",
+    "unreadDescription": "لا توجد إشعارات غير مقروءة. تبقى التحديثات السابقة ضمن «الكل».",
+    "filteredTitle": "لا توجد إشعارات من هذا النوع",
+    "filteredDescription": "جرّب نوعًا آخر أو امسح عامل التصفية.",
+    "clearFilter": "مسح عامل التصفية"
+  },
+  "summary": {
+    "title": "نظرة عامة",
+    "unread": "غير المقروءة",
+    "total": "كل الإشعارات",
+    "byType": "حسب النوع",
+    "unreadOfTotal": "{unread} غير مقروءة من أصل {total}",
+    "hint": "الإشعارات خاصة بحسابك فقط. فتح الإشعار يعلّمه كمقروء."
+  },
+  "list": {
+    "unreadLabel": "غير مقروء",
+    "showing": "{from}–{to} من {total}"
+  },
+  "toast": {
+    "markedRead": "تم التعليم كمقروء",
+    "markedUnread": "تم التعليم كغير مقروء",
+    "markedAllRead": "تم تعليم جميع الإشعارات كمقروءة",
+    "nothingToMark": "لا توجد إشعارات غير مقروءة"
   },
   "fallback": {
+    "title": "إشعار",
     "actor": "الموارد البشرية",
     "employee": "أحد الموظفين",
     "requestType": "الطلب",
-    "document": "مستند"
+    "document": "مستند",
+    "number": "مسودة",
+    "applicant": "مستخدم جديد",
+    "certificate": "شهادة",
+    "leaveType": "الإجازة"
   },
   "expiryKinds": {
     "iqama": "الإقامة",
@@ -32,7 +98,7 @@
     },
     "approval_required": {
       "title": "مطلوب موافقتك: {number}",
-      "body": "{requestType} من {employee} بانتظار قرارك."
+      "body": "{requestType} المقدَّم من {employee} بانتظار قرارك."
     },
     "request_approved": {
       "title": "تمت الموافقة على الطلب {number}",
@@ -43,8 +109,8 @@
       "body": "رفض {actor} {requestType}."
     },
     "request_returned": {
-      "title": "أُعيد الطلب {number}",
-      "body": "يحتاج {actor} إلى معلومات إضافية بخصوص {requestType}."
+      "title": "أُعيد الطلب {number} للتعديل",
+      "body": "أعاد {actor} {requestType} الخاص بك. حدّثه ثم أرسله مجددًا."
     },
     "request_assigned": {
       "title": "تم إسناد الطلب {number} إليك",
@@ -52,7 +118,7 @@
     },
     "request_in_progress": {
       "title": "الطلب {number} قيد التنفيذ",
-      "body": "بدأت الموارد البشرية العمل على {requestType}."
+      "body": "بدأ {actor} العمل على {requestType} الخاص بك."
     },
     "request_completed": {
       "title": "اكتمل الطلب {number}",
@@ -67,8 +133,8 @@
       "body": "علّق {actor} على {requestType}."
     },
     "registration_submitted": {
-      "title": "تسجيل جديد بانتظار المراجعة",
-      "body": "سجّل {name} وينتظر الموافقة."
+      "title": "{resubmitted, select, yes {تحديث طلب تسجيل: {name}} other {طلب تسجيل جديد: {name}}}",
+      "body": "{resubmitted, select, yes {استجاب {name} لطلب المعلومات وينتظر المراجعة.} other {سجّل {name} وينتظر الموافقة.}}"
     },
     "registration_approved": {
       "title": "تم تفعيل حسابك",
@@ -80,19 +146,19 @@
     },
     "registration_info_requested": {
       "title": "الموارد البشرية بحاجة إلى معلومات إضافية",
-      "body": "افتح البوابة للاطلاع على ما تحتاجه الموارد البشرية لإكمال تسجيلك."
+      "body": "افتح طلب تسجيلك للاطلاع على المطلوب وتحديث بياناتك."
     },
     "certificate_issued": {
-      "title": "الشهادة جاهزة",
-      "body": "تم إصدار الشهادة {certificateNumber} وهي جاهزة للتنزيل."
+      "title": "تم إصدار {certificateType}",
+      "body": "الشهادة {certificateNumber} جاهزة للتنزيل."
     },
     "leave_balance_adjusted": {
       "title": "تم تحديث رصيد الإجازة",
-      "body": "تم تعديل رصيد {leaveType} الخاص بك."
+      "body": "{leaveType} {year}: {direction, select, down {−{amount}} other {+{amount}}} يوم بواسطة {actor} · الرصيد الجديد {newRemaining} يوم."
     },
     "expiry_alert": {
-      "title": "{document} على وشك الانتهاء",
-      "body": "{employee} · تنتهي في {date}."
+      "title": "{state, select, expired {انتهت صلاحية {document}} today {تنتهي صلاحية {document} اليوم} other {تنتهي صلاحية {document} خلال {days, plural, one {يوم واحد} two {يومين} few {# أيام} many {# يومًا} other {# يوم}}}}",
+      "body": "{employee} · {state, select, expired {انتهت في {date}} other {تنتهي في {date}}}"
     },
     "account_invited": {
       "title": "تمت دعوتك إلى بوابة الموارد البشرية",

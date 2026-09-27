@@ -1,4 +1,282 @@
 {
-  "title": "لوحة التحكم",
-  "description": "نظرة شاملة على مساحة عملك."
+  "title": "لوحة المعلومات",
+  "description": "نظرة سريعة على مساحة عملك.",
+  "hijriDate": "{date} هـ",
+  "greeting": {
+    "morning": "صباح الخير، {name}",
+    "afternoon": "مساء الخير، {name}",
+    "evening": "مساء الخير، {name}"
+  },
+  "actions": {
+    "viewAll": "عرض الكل",
+    "newRequest": "طلب موارد بشرية جديد",
+    "addEmployee": "إضافة موظف",
+    "requestQueue": "قائمة الطلبات",
+    "manageUsers": "إدارة المستخدمين",
+    "setupWizard": "معالج الإعداد",
+    "auditLog": "سجل التدقيق",
+    "reviewApprovals": "مراجعة الموافقات",
+    "requestLeave": "طلب إجازة",
+    "requestCertificate": "طلب شهادة"
+  },
+  "states": {
+    "widgetError": "تعذر تحميل هذا القسم."
+  },
+  "sections": {
+    "administration": {
+      "title": "الإدارة",
+      "description": "سلامة النظام والصلاحيات والبيانات"
+    },
+    "organization": {
+      "title": "المنشأة",
+      "description": "القوى العاملة والطلبات والامتثال"
+    },
+    "team": {
+      "title": "فريقي",
+      "description": "الموافقات والموظفون التابعون لك"
+    },
+    "workspace": {
+      "title": "مساحتي",
+      "titleSingle": "نظرة عامة",
+      "description": "طلباتك وإجازاتك وتحديثاتك",
+      "notLinkedTitle": "حسابك غير مرتبط بسجل موظف",
+      "notLinkedDescription": "تظهر العناصر الشخصية مثل رصيد الإجازات والطلبات بعد أن تربط الموارد البشرية حسابك."
+    }
+  },
+  "rows": {
+    "untitledRequest": "طلب",
+    "draft": "مسودة",
+    "days": "{count, plural, zero {# يوم} one {يوم واحد} two {يومان} few {# أيام} many {# يومًا} other {# يوم}}",
+    "onLeaveNow": "في إجازة الآن"
+  },
+  "kpi": {
+    "annualLeave": "رصيد الإجازة السنوية",
+    "annualLeaveNotSet": "لم يُعدّ الرصيد بعد",
+    "annualLeavePending": "{days} يوم بانتظار الموافقة",
+    "annualLeaveUsed": "{days} يوم مستخدم في {year}",
+    "openRequests": "الطلبات المفتوحة",
+    "openRequestsReturned": "{count, plural, one {طلب واحد معاد للتعديل} two {طلبان معادان للتعديل} few {# طلبات معادة للتعديل} many {# طلبًا معادًا للتعديل} other {# طلب معاد للتعديل}}",
+    "openRequestsDrafts": "{count, plural, one {مسودة واحدة لم تُرسل} two {مسودتان لم تُرسلا} few {# مسودات لم تُرسل} many {# مسودة لم تُرسل} other {# مسودة لم تُرسل}}",
+    "openRequestsHint": "قيد المراجعة أو التنفيذ",
+    "documentsExpiring": "مستندات قاربت على الانتهاء",
+    "documentsExpiringHint": "الإقامة والجواز والعقد والملفات · 90 يومًا",
+    "certificates": "الشهادات",
+    "certificatesHint": "الشهادات السارية الصادرة لك",
+    "pendingApprovals": "الموافقات المعلقة",
+    "pendingApprovalsHint": "بانتظار قرارك",
+    "pendingApprovalsClear": "لا شيء بانتظارك",
+    "directReports": "الموظفون التابعون",
+    "teamOpenRequests": "{count, plural, =0 {لا توجد طلبات مفتوحة للفريق} one {طلب مفتوح واحد للفريق} two {طلبان مفتوحان للفريق} few {# طلبات مفتوحة للفريق} many {# طلبًا مفتوحًا للفريق} other {# طلب مفتوح للفريق}}",
+    "teamOnLeave": "في إجازة اليوم من الفريق",
+    "teamOnLeaveHint": "{count, plural, zero {لا أحد على رأس العمل اليوم} one {موظف واحد على رأس العمل} two {موظفان على رأس العمل} few {# موظفين على رأس العمل} many {# موظفًا على رأس العمل} other {# موظف على رأس العمل}}",
+    "upcomingTeamLeave": "إجازات الفريق القادمة",
+    "upcomingTeamLeaveHint": "تبدأ خلال 14 يومًا القادمة",
+    "totalEmployees": "إجمالي الموظفين",
+    "totalEmployeesHint": "القوى العاملة النشطة",
+    "newJoiners": "{count, plural, one {+موظف واحد انضم خلال 30 يومًا} two {+موظفان انضما خلال 30 يومًا} few {+# موظفين انضموا خلال 30 يومًا} many {+# موظفًا انضموا خلال 30 يومًا} other {+# موظف انضموا خلال 30 يومًا}}",
+    "pendingRequests": "الطلبات المفتوحة",
+    "pendingHrReview": "{count, plural, =0 {لا شيء بانتظار مراجعة الموارد البشرية} one {طلب واحد بانتظار مراجعة الموارد البشرية} two {طلبان بانتظار مراجعة الموارد البشرية} few {# طلبات بانتظار مراجعة الموارد البشرية} many {# طلبًا بانتظار مراجعة الموارد البشرية} other {# طلب بانتظار مراجعة الموارد البشرية}}",
+    "hrPendingApprovals": "بانتظار إجراء الموارد البشرية",
+    "hrPendingApprovalsHint": "غير مسندة أو مسندة إليك",
+    "inProgress": "{count, plural, one {طلب واحد معتمد قيد التنفيذ} two {طلبان معتمدان قيد التنفيذ} few {# طلبات معتمدة قيد التنفيذ} many {# طلبًا معتمدًا قيد التنفيذ} other {# طلب معتمد قيد التنفيذ}}",
+    "onLeaveToday": "في إجازة اليوم",
+    "upcomingLeave7d": "{count, plural, =0 {لا إجازات تبدأ هذا الأسبوع} one {إجازة واحدة تبدأ خلال 7 أيام} two {إجازتان تبدآن خلال 7 أيام} few {# إجازات تبدأ خلال 7 أيام} many {# إجازة تبدأ خلال 7 أيام} other {# إجازة تبدأ خلال 7 أيام}}",
+    "overdueRequests": "الطلبات المتأخرة",
+    "overdueRequestsHint": "جميع الطلبات المفتوحة ضمن مستوى الخدمة",
+    "dueSoon": "{count, plural, one {طلب آخر يستحق خلال 24 ساعة} two {طلبان آخران يستحقان خلال 24 ساعة} few {# طلبات أخرى تستحق خلال 24 ساعة} many {# طلبًا آخر يستحق خلال 24 ساعة} other {# طلب آخر يستحق خلال 24 ساعة}}",
+    "documentsExpired": "{count, plural, one {مستند واحد منتهٍ} two {مستندان منتهيان} few {# مستندات منتهية} many {# مستندًا منتهيًا} other {# مستند منتهٍ}}"
+  },
+  "widgets": {
+    "recentRequests": {
+      "title": "طلباتي الأخيرة",
+      "emptyTitle": "لا توجد طلبات بعد",
+      "emptyDescription": "ستظهر هنا الطلبات التي ترسلها إلى الموارد البشرية مع حالتها.",
+      "emptyAction": "طلب جديد"
+    },
+    "upcomingLeave": {
+      "title": "إجازاتي",
+      "daysAvailable": "يوم متاح",
+      "emptyTitle": "لا توجد إجازات قادمة",
+      "emptyDescription": "ستظهر هنا الإجازات المعتمدة وتلك التي بانتظار الموافقة.",
+      "emptyAction": "طلب إجازة"
+    },
+    "notifications": {
+      "title": "أحدث الإشعارات",
+      "emptyTitle": "لا جديد لديك",
+      "emptyDescription": "ستظهر هنا التحديثات على طلباتك وموافقاتك."
+    },
+    "approvalQueue": {
+      "title": "قائمة الموافقات",
+      "description": "{count, plural, one {طلب واحد بانتظارك} two {طلبان بانتظارك} few {# طلبات بانتظارك} many {# طلبًا بانتظارك} other {# طلب بانتظارك}}",
+      "open": "فتح الموافقات",
+      "emptyTitle": "لا توجد موافقات معلقة",
+      "emptyDescription": "ستظهر هنا الطلبات التي تحتاج إلى قرارك."
+    },
+    "teamRequests": {
+      "title": "طلبات الفريق",
+      "emptyTitle": "لا توجد طلبات للفريق",
+      "emptyDescription": "ستظهر هنا طلبات الموظفين التابعين لك."
+    },
+    "teamCalendar": {
+      "title": "إجازات الفريق",
+      "description": "{from}",
+      "member": "عضو الفريق",
+      "legendApproved": "معتمدة",
+      "legendPending": "بانتظار الموافقة",
+      "legendWeekend": "عطلة نهاية الأسبوع",
+      "emptyTitle": "الفريق متاح بالكامل",
+      "emptyDescription": "لا توجد إجازات مخطط لها للفريق خلال 14 يومًا القادمة."
+    },
+    "compliance": {
+      "expired": "منتهية",
+      "within30": "≤ 30 يومًا",
+      "within90": "≤ 90 يومًا",
+      "allClear": "لا توجد ملاحظات",
+      "kinds": {
+        "iqama": "الإقامة",
+        "passport": "جواز السفر",
+        "contract": "العقد",
+        "insurance": "التأمين الطبي"
+      }
+    },
+    "requestQueue": {
+      "title": "قائمة الطلبات",
+      "description": "{open} مفتوح · {overdue} متأخر",
+      "emptyTitle": "القائمة خالية",
+      "emptyDescription": "ستظهر هنا الطلبات المرسلة التي تحتاج إلى مراجعة."
+    },
+    "expiryAlerts": {
+      "title": "تنبيهات الانتهاء",
+      "description": "المنتهية وخلال 90 يومًا",
+      "emptyTitle": "لا شيء قارب على الانتهاء",
+      "emptyDescription": "لا تنتهي أي إقامة أو جواز أو عقد أو تأمين أو مستند خلال 90 يومًا القادمة.",
+      "expiredAgo": "{count, plural, zero {انتهت اليوم} one {انتهت منذ يوم} two {انتهت منذ يومين} few {انتهت منذ # أيام} many {انتهت منذ # يومًا} other {انتهت منذ # يوم}}",
+      "expiresToday": "تنتهي اليوم",
+      "expiresIn": "{count, plural, one {خلال يوم} two {خلال يومين} few {خلال # أيام} many {خلال # يومًا} other {خلال # يوم}}",
+      "kinds": {
+        "iqama": "الإقامة",
+        "passport": "جواز السفر",
+        "contract": "انتهاء العقد",
+        "insurance": "التأمين الطبي",
+        "document": "مستند"
+      }
+    },
+    "overview": {
+      "byDepartment": "الموظفون حسب الإدارة",
+      "byNationality": "توزيع الجنسيات",
+      "byDepartmentAria": "{count, plural, one {مخطط أعمدة لعدد الموظفين في إدارة واحدة} two {مخطط أعمدة لعدد الموظفين في إدارتين} few {مخطط أعمدة لعدد الموظفين في # إدارات} many {مخطط أعمدة لعدد الموظفين في # إدارة} other {مخطط أعمدة لعدد الموظفين في # إدارة}}",
+      "byNationalityAria": "{count, plural, one {عمود مكدس لفئة جنسية واحدة} two {عمود مكدس لفئتي جنسية} few {عمود مكدس لـ # فئات جنسية} many {عمود مكدس لـ # فئة جنسية} other {عمود مكدس لـ # فئة جنسية}}",
+      "employees": "موظف نشط",
+      "departmentsCount": "{count, plural, zero {لا إدارات} one {إدارة واحدة} two {إدارتان} few {# إدارات} many {# إدارة} other {# إدارة}}",
+      "nationalities": "جنسيات مسجلة",
+      "unassigned": "بدون إدارة",
+      "other": "أخرى",
+      "unknownNationality": "غير مسجلة",
+      "emptyTitle": "لا يوجد موظفون بعد",
+      "emptyDescription": "تظهر المخططات بعد إضافة الموظفين أو استيرادهم."
+    },
+    "recentActivity": {
+      "title": "آخر النشاطات",
+      "system": "النظام",
+      "emptyTitle": "لا توجد نشاطات بعد",
+      "emptyDescription": "ستظهر هنا الإجراءات المسجلة في سجل التدقيق."
+    },
+    "orgHealth": {
+      "title": "جاهزية المنشأة",
+      "openSetup": "معالج الإعداد",
+      "progress": "اجتاز {passed} من {total} فحصًا",
+      "setupCompleted": "اكتمل الإعداد",
+      "setupPending": "الإعداد قيد الاستكمال",
+      "statusOk": "مكتمل",
+      "statusIssue": "يحتاج إلى متابعة",
+      "checks": {
+        "organization": {
+          "label": "ملف المنشأة",
+          "ok": "الاسمان والبريد الإلكتروني للموارد البشرية مسجلة",
+          "issue": "أضف الاسم بالعربية والإنجليزية وبريد الموارد البشرية"
+        },
+        "branding": {
+          "label": "الشعار والهوية",
+          "ok": "تم رفع الشعار",
+          "issue": "ارفع شعار المنشأة"
+        },
+        "departments": {
+          "label": "الإدارات",
+          "ok": "{count, plural, one {إدارة واحدة نشطة} two {إدارتان نشطتان} few {# إدارات نشطة} many {# إدارة نشطة} other {# إدارة نشطة}}",
+          "issue": "لا توجد إدارات نشطة بعد"
+        },
+        "jobTitles": {
+          "label": "المسميات الوظيفية",
+          "ok": "{count, plural, one {مسمى وظيفي واحد نشط} two {مسميان وظيفيان نشطان} few {# مسميات وظيفية نشطة} many {# مسمى وظيفيًا نشطًا} other {# مسمى وظيفي نشط}}",
+          "issue": "لا توجد مسميات وظيفية نشطة بعد"
+        },
+        "locations": {
+          "label": "المواقع",
+          "ok": "{count, plural, one {موقع واحد نشط} two {موقعان نشطان} few {# مواقع نشطة} many {# موقعًا نشطًا} other {# موقع نشط}}",
+          "issue": "لا توجد مواقع نشطة بعد"
+        },
+        "employees": {
+          "label": "سجلات الموظفين",
+          "ok": "{count, plural, one {موظف واحد نشط} two {موظفان نشطان} few {# موظفين نشطين} many {# موظفًا نشطًا} other {# موظف نشط}}",
+          "issue": "استورد موظفيك أو أضفهم"
+        },
+        "employeeDepartments": {
+          "label": "ربط الموظفين بالإدارات",
+          "ok": "لكل موظف إدارة",
+          "issue": "{count, plural, one {موظف واحد بدون إدارة} two {موظفان بدون إدارة} few {# موظفين بدون إدارة} many {# موظفًا بدون إدارة} other {# موظف بدون إدارة}}"
+        },
+        "leaveBalances": {
+          "label": "أرصدة الإجازات لهذا العام",
+          "ok": "مُعدّة لجميع الموظفين",
+          "issue": "{count, plural, one {موظف واحد بدون أرصدة} two {موظفان بدون أرصدة} few {# موظفين بدون أرصدة} many {# موظفًا بدون أرصدة} other {# موظف بدون أرصدة}}"
+        },
+        "publicHolidays": {
+          "label": "العطلات الرسمية",
+          "ok": "{count, plural, one {عطلة واحدة هذا العام} two {عطلتان هذا العام} few {# عطلات هذا العام} many {# عطلة هذا العام} other {# عطلة هذا العام}}",
+          "issue": "لم تُحدَّد عطلات لهذا العام"
+        },
+        "workflows": {
+          "label": "مسارات الموافقة",
+          "ok": "لكل نوع طلب نشط مسار موافقة",
+          "issue": "{count, plural, one {نوع طلب نشط واحد بدون مسار} two {نوعا طلب نشطان بدون مسار} few {# أنواع طلبات نشطة بدون مسار} many {# نوع طلب نشطًا بدون مسار} other {# نوع طلب نشط بدون مسار}}"
+        },
+        "hrAdmin": {
+          "label": "مسؤول الموارد البشرية",
+          "ok": "{count, plural, one {مسؤول موارد بشرية نشط واحد} two {مسؤولا موارد بشرية نشطان} few {# مسؤولين نشطين} many {# مسؤولًا نشطًا} other {# مسؤول نشط}}",
+          "issue": "عيّن مسؤول موارد بشرية واحدًا على الأقل"
+        },
+        "email": {
+          "label": "إرسال البريد الإلكتروني",
+          "ok": "تم إعداد مزود البريد",
+          "issue": "لا يوجد مزود — تُسجَّل الرسائل فقط"
+        }
+      }
+    },
+    "users": {
+      "title": "المستخدمون",
+      "total": "حساب في البوابة"
+    },
+    "roles": {
+      "title": "الأدوار",
+      "custom": "مخصص"
+    },
+    "pendingRegistrations": {
+      "title": "طلبات التسجيل المعلقة",
+      "review": "مراجعة",
+      "emptyTitle": "لا توجد طلبات تسجيل معلقة",
+      "emptyDescription": "تنتظر طلبات التسجيل الذاتي الجديدة هنا للمراجعة."
+    },
+    "imports": {
+      "title": "عمليات الاستيراد",
+      "rows": "استيراد {imported} من {total} صف",
+      "emptyTitle": "لا توجد عمليات استيراد بعد",
+      "emptyDescription": "ستظهر هنا عمليات استيراد الموظفين والبيانات الأساسية."
+    },
+    "auditActivity": {
+      "title": "نشاط التدقيق",
+      "events": "حدث خلال 24 ساعة الماضية",
+      "emptyTitle": "لا أحداث خلال 24 ساعة الماضية",
+      "emptyDescription": "سيُلخَّص هنا ما سُجّل من إجراءات خلال اليوم الأخير."
+    }
+  }
 }

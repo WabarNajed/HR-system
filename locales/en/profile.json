@@ -1,4 +1,58 @@
 {
   "title": "My profile",
-  "description": "Your personal information and preferences."
+  "description": "Your personal information and preferences.",
+  "tabs": {
+    "info": "My information",
+    "security": "Account & security",
+    "preferences": "Preferences"
+  },
+  "notLinked": {
+    "title": "Your account isn’t linked to an employee record",
+    "description": "Contact HR to link your portal account to your employee record so you can see your details and submit requests.",
+    "adminDescription": "This administrative account isn’t linked to an employee record. Link it from Settings › Users if you also need employee self-service."
+  },
+  "account": {
+    "title": "Account details",
+    "description": "How your name and mobile number appear across the portal.",
+    "fullName": "Full name",
+    "emailHint": "Your sign-in email. Contact HR to change it."
+  },
+  "security": {
+    "title": "Change password",
+    "description": "For your security, enter your current password first.",
+    "current": "Current password",
+    "new": "New password",
+    "confirm": "Confirm new password",
+    "submit": "Update password",
+    "updating": "Updating…",
+    "currentIncorrect": "The current password is incorrect."
+  },
+  "sessions": {
+    "title": "Sign-in & sessions",
+    "description": "Sign out on this device, or everywhere you’re signed in.",
+    "lastSignIn": "Last sign-in",
+    "signOut": "Sign out",
+    "signOutEverywhere": "Sign out everywhere",
+    "signOutEverywhereTitle": "Sign out of all devices?",
+    "signOutEverywhereDescription": "Every session of your account, including this one, will be signed out. You’ll need to sign in again."
+  },
+  "preferences": {
+    "title": "Display preferences",
+    "description": "Saved to your account and applied whenever you sign in.",
+    "language": "Language",
+    "languageHint": "The portal’s language and the language of your emails.",
+    "theme": "Theme",
+    "themeHint": "Choose how the portal looks on this and your other devices.",
+    "themes": {
+      "light": "Light",
+      "dark": "Dark",
+      "system": "System",
+      "systemHint": "Follows your device"
+    }
+  },
+  "toast": {
+    "detailsSaved": "Account details saved.",
+    "passwordChanged": "Your password has been changed.",
+    "preferencesSaved": "Preferences saved."
+  }
 }

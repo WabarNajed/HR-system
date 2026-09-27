@@ -2,6 +2,8 @@
 
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { after } from 'next/server';
+import { deliverRegistrationEmails } from '@/features/users/registration-emails';
 import { ActionError, fail, ok, withAction } from '@/lib/action';
 import { logAuditEvent } from '@/lib/audit';
 import { safeNextPath } from '@/lib/auth/guards';
@@ -81,7 +83,7 @@ export async function signOut(): Promise<void> {
 
 export const signUp = withAction(
   registerSchema,
-  async ({ fullName, employeeNumber, email, mobile, password }) => {
+  async ({ fullName, employeeNumber, email, mobile, password, language }) => {
     const branding = await getPublicBranding();
     if (!branding.isFallback && !branding.allowSelfRegistration) throw new ActionError('errors.signupDisabled');
     const supabase = await createClient();
@@ -89,11 +91,16 @@ export const signUp = withAction(
       email,
       password,
       options: {
-        data: { full_name: fullName, mobile, employee_number: employeeNumber },
+        // Untrusted metadata: copied into the pending profile's registration fields only (DATABASE §15).
+        data: { full_name: fullName, mobile, employee_number: employeeNumber, preferred_language: language },
         emailRedirectTo: `${siteUrl()}/auth/confirm?next=/pending-approval`,
       },
     });
     if (error) throw error;
+    await writeLocaleCookie(language);
+    // The sign-up trigger notified the registration reviewers; e-mail them (service role, idempotent).
+    const newUserId = data.user?.identities?.length ? data.user.id : null;
+    if (newUserId) after(() => deliverRegistrationEmails(newUserId, ['registration_submitted']));
     // Email confirmation disabled → a session exists → go straight to the status page.
     if (data.session) redirect('/pending-approval');
     // Supabase returns a user without identities for an existing (confirmed) email — don't leak it.
@@ -127,10 +134,49 @@ export const updatePassword = withAction(
     const { data: claims } = await supabase.auth.getClaims();
     const uid = claims?.claims?.sub;
     if (typeof uid !== 'string') throw new ActionError('errors.tokenExpired');
-    const { error } = await supabase.auth.updateUser({ password });
+    // `password_set_at` lets /reset-password tell a first-time invitation from a later reset.
+    const { error } = await supabase.auth.updateUser({ password, data: { password_set_at: new Date().toISOString() } });
     if (error) throw error;
     await logAuditEvent({ action: 'auth.password_changed', entityType: 'profile', entityId: uid }, supabase);
     return ok(undefined, 'auth.reset.success');
   },
   { auth: 'none', scope: 'auth.updatePassword' },
 );
+
+/** Idle-timeout sign-out (SessionTimeoutGuard): audits `auth.logout` and shows "session ended" on /login. */
+export async function signOutForInactivity(): Promise<void> {
+  try {
+    const supabase = await createClient();
+    const { data } = await supabase.auth.getClaims();
+    const uid = data?.claims?.sub;
+    if (typeof uid === 'string') {
+      await logAuditEvent({ action: 'auth.logout', entityType: 'profile', entityId: uid, summary: 'idle_timeout' }, supabase);
+    }
+    const { error } = await supabase.auth.signOut({ scope: 'local' });
+    if (error) console.error('[auth] idle sign-out failed:', error.message);
+  } catch (error) {
+    console.error('[auth] idle sign-out failed:', error instanceof Error ? error.message : error);
+  }
+  redirect('/login?error=session_expired');
+}
+
+/**
+ * After an e-mail link established the session in the browser (implicit-flow links such as GoTrue's
+ * default invitation e-mail land on /reset-password#access_token=…): remember the profile language
+ * and record the login, like `/auth/confirm` does for token-hash links.
+ */
+export async function completeLinkSignIn(): Promise<void> {
+  try {
+    const supabase = await createClient();
+    const { data: claims } = await supabase.auth.getClaims();
+    const uid = claims?.claims?.sub;
+    if (typeof uid !== 'string') return;
+    const { data } = await supabase.from('profiles').select('preferred_language').eq('id', uid).maybeSingle();
+    const lang = (data as { preferred_language?: string | null } | null)?.preferred_language;
+    if (isLocale(lang)) await writeLocaleCookie(lang);
+    const { error } = await supabase.rpc('record_login');
+    if (error) console.error('[auth] record_login failed:', error.code, error.message);
+  } catch (error) {
+    console.error('[auth] completing link sign-in failed:', error instanceof Error ? error.message : error);
+  }
+}

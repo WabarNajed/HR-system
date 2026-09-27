@@ -1,4 +1,28 @@
 {
   "title": "Certificate verification",
-  "description": "Confirm the authenticity of an issued certificate."
+  "description": "Confirm the authenticity of an issued certificate.",
+  "validTitle": "Valid certificate",
+  "validDescription": "This certificate was issued by {company} and is currently valid.",
+  "revokedTitle": "Certificate revoked",
+  "revokedDescription": "This certificate was issued by {company} but has since been revoked and is no longer valid.",
+  "notFoundTitle": "Certificate not found",
+  "notFoundDescription": "No certificate matches this number. Check the number printed on the certificate and try again.",
+  "theOrganization": "the organization",
+  "fields": {
+    "number": "Certificate number",
+    "employee": "Issued to",
+    "type": "Certificate type",
+    "issueDate": "Issue date",
+    "status": "Status"
+  },
+  "lookup": {
+    "title": "Verify another certificate",
+    "label": "Certificate number",
+    "placeholder": "CERT-2026-000001",
+    "submit": "Verify"
+  },
+  "privacyNote": "For privacy, this page shows only the details needed to confirm authenticity.",
+  "checkedAt": "Checked on {date}",
+  "poweredBy": "Verification service of {portal}",
+  "backToPortal": "Sign in to the portal"
 }
