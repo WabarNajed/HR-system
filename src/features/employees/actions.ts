@@ -93,6 +93,10 @@ export const saveEmployee = withAction(
           other_allowance: Number(values.other_allowance || 0),
           effective_date: toNullable(values.compensation_effective_date),
         };
+      } else if (id) {
+        // Every salary field emptied on an existing record: remove the compensation row (the
+        // profile would otherwise keep showing the old salary after a "successful" save).
+        compensation = { clear: true };
       }
       const hasBank = Boolean(values.bank_name || values.iban || values.account_holder);
       if (hasBank || id) {
