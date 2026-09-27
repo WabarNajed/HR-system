@@ -68,6 +68,7 @@ export default async function RequestDetailsPage({ params, searchParams }: Props
   const summary = [typeName, employeeName].filter(Boolean).join(' · ');
   const fieldLabels = Object.fromEntries(detail.fields.map((f) => [f.key, localized(f, 'label', locale)]));
   const daysValue = typeof detail.values.days === 'number' ? detail.values.days : null;
+  const hasAttachmentField = detail.fields.some((f) => f.field_type === 'attachment' && f.is_active !== false);
   const onBehalf = detail.filedOnBehalf && detail.requesterName;
 
   const hasActions =
@@ -213,12 +214,14 @@ export default async function RequestDetailsPage({ params, searchParams }: Props
               <RequestTypePanel requestTypeKey={typeDef?.key ?? row.type?.key ?? ''} requestId={row.id} />
             </Suspense>
 
-            {!editing || detail.attachments.some((a) => !a.fieldKey) ? (
+            {/* While editing, field-bound files live in the form; general files (types without an
+                attachment field, e.g. certificates) stay here so the requester can still add them. */}
+            {!editing || detail.attachments.some((a) => !a.fieldKey) || !hasAttachmentField ? (
               <RequestAttachmentsCard
                 requestId={row.id}
                 items={editing ? detail.attachments.filter((a) => !a.fieldKey) : detail.attachments}
                 fieldLabels={fieldLabels}
-                canAttach={caps.can_attach && !editing}
+                canAttach={caps.can_attach && (!editing || !hasAttachmentField)}
                 allowAttachments={typeDef?.allow_attachments ?? true}
               />
             ) : null}
