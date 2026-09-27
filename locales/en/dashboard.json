@@ -47,7 +47,8 @@
     "untitledRequest": "Request",
     "draft": "Draft",
     "days": "{count, plural, one {# day} other {# days}}",
-    "onLeaveNow": "On leave now"
+    "onLeaveNow": "On leave now",
+    "awaitingApproval": "Awaiting approval"
   },
   "kpi": {
     "annualLeave": "Annual leave balance",
@@ -75,14 +76,14 @@
     "totalEmployeesHint": "Active workforce",
     "newJoiners": "{count, plural, one {+# joined in the last 30 days} other {+# joined in the last 30 days}}",
     "pendingRequests": "Open requests",
-    "pendingHrReview": "{count, plural, =0 {None awaiting HR review} one {# awaiting HR review} other {# awaiting HR review}}",
-    "hrPendingApprovals": "Awaiting HR action",
+    "pendingHrReview": "{count, plural, =0 {None in HR review} one {# in HR review} other {# in HR review}}",
+    "hrPendingApprovals": "My HR queue",
     "hrPendingApprovalsHint": "Unassigned or assigned to you",
-    "inProgress": "{count, plural, one {# approved, being processed} other {# approved, being processed}}",
+    "inProgress": "{count, plural, one {# approved, in progress} other {# approved, in progress}}",
     "onLeaveToday": "On leave today",
     "upcomingLeave7d": "{count, plural, =0 {No leave starting this week} one {# starting within 7 days} other {# starting within 7 days}}",
     "overdueRequests": "Overdue requests",
-    "overdueRequestsHint": "All open requests within SLA",
+    "overdueRequestsHint": "All within SLA",
     "dueSoon": "{count, plural, one {# more due within 24 hours} other {# more due within 24 hours}}",
     "documentsExpired": "{count, plural, one {# already expired} other {# already expired}}"
   },

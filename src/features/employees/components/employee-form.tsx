@@ -32,7 +32,9 @@ import {
   BANK_FIELDS,
   COMPENSATION_FIELDS,
   employeeFormSchema,
+  hasValidIbanChecksum,
   identityNumberWarning,
+  isValidSaudiIbanFormat,
   PERSONAL_FIELDS,
   type EmployeeFormValues,
 } from '../schemas';
@@ -419,15 +421,7 @@ export function EmployeeForm({ mode, employeeId, defaultValues, options, current
                     <TextField name="bank_name" label={t('fields.bankName')} disabled={pending} />
                     <TextField name="account_holder" label={t('fields.accountHolder')} disabled={pending} />
                     <FormFullRow>
-                      <TextField
-                        name="iban"
-                        label={t('fields.iban')}
-                        placeholder={t('form.placeholders.iban')}
-                        description={t('form.hints.iban')}
-                        dir="ltr"
-                        disabled={pending}
-                        className="font-mono tracking-wide uppercase"
-                      />
+                      <IbanField disabled={pending} />
                     </FormFullRow>
                   </FormGrid>
                 </FormSection>
@@ -501,7 +495,7 @@ function SectionIndex({ sections, errors }: { sections: SectionDef[]; errors: Re
                   )}
                 >
                   <Icon className={cn('size-3.5 shrink-0', isActive ? 'text-primary' : 'text-faint-foreground')} aria-hidden />
-                  <span className="min-w-0 flex-1 truncate">{s.title}</span>
+                  <span className="min-w-0 flex-1 leading-snug">{s.title}</span>
                   {count > 0 ? (
                     <span className="min-w-4.5 rounded-full bg-danger px-1 text-center text-[0.6875rem] leading-4.5 font-semibold text-danger-foreground tabular-nums">
                       {count}
@@ -876,5 +870,45 @@ function TotalSalary({ currency }: { currency: string }) {
       <span className="mt-0.5 text-lg font-semibold text-foreground tabular-nums">{formatCurrency(total, locale, currency)}</span>
       <span className="text-xs text-muted-foreground">{t('form.hints.totalSalary')}</span>
     </div>
+  );
+}
+
+function IbanField({ disabled }: { disabled?: boolean }) {
+  const { control } = useFormContext<EmployeeFormValues>();
+  const t = useTranslations('employees');
+  return (
+    <FormField
+      control={control}
+      name="iban"
+      render={({ field }) => {
+        const value = field.value ?? '';
+        const checksumWarning = value && isValidSaudiIbanFormat(value) && !hasValidIbanChecksum(value);
+        return (
+          <FormItem>
+            <FormLabel>{t('fields.iban')}</FormLabel>
+            <FormControl>
+              <Input
+                {...field}
+                dir="ltr"
+                placeholder={t('form.placeholders.iban')}
+                disabled={disabled}
+                autoComplete="off"
+                spellCheck={false}
+                className="text-start font-mono tracking-wide uppercase"
+              />
+            </FormControl>
+            {checksumWarning ? (
+              <p className="flex items-start gap-1.5 text-xs text-warning">
+                <CircleAlertIcon className="mt-px size-3.5 shrink-0" aria-hidden />
+                {t('form.warnings.ibanChecksum')}
+              </p>
+            ) : (
+              <FormDescription>{t('form.hints.iban')}</FormDescription>
+            )}
+            <FormMessage />
+          </FormItem>
+        );
+      }}
+    />
   );
 }

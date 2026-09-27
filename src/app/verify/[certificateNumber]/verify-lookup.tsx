@@ -29,7 +29,7 @@ export function VerifyLookup({ defaultValue }: { defaultValue?: string }) {
         {t('label')}
       </Label>
       <div className="flex gap-2">
-        <div className="relative min-w-0 flex-1">
+        <div className="relative min-w-0 flex-1" dir="ltr">
           <SearchIcon className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-faint-foreground" aria-hidden />
           <Input
             id="verify-number"

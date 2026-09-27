@@ -12,7 +12,6 @@ import {
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import { EmployeeCell } from '@/components/shared/employee-cell';
-import { EmptyState } from '@/components/shared/empty-state';
 import { KeyValueGrid } from '@/components/shared/key-value-grid';
 import { SectionCard } from '@/components/shared/section-card';
 import { SplitLayout } from '@/components/shared/responsive-grid';
@@ -165,9 +164,18 @@ export async function OverviewTab({
               ))}
             </ul>
           ) : (
-            <EmptyState icon={FileTextIcon} tone="neutral" title={t('profile.overview.requestsEmpty')} className="min-h-32 py-6" />
+            <p className="px-5 py-4 text-meta text-muted-foreground">{t('profile.overview.requestsEmpty')}</p>
           )}
         </SectionCard>
+      ) : null}
+      {caps.portal ? (
+        <div id="portal-access" className="scroll-mt-20">
+          <PortalAccessCard
+            employeeId={employee.id}
+            employeeEmail={employee.company_email ?? employee.personal_email}
+            employeeName={employeeDisplayName(employee, locale)}
+          />
+        </div>
       ) : null}
     </>
   );
@@ -241,15 +249,6 @@ export async function OverviewTab({
         </div>
       </SectionCard>
 
-      {caps.portal ? (
-        <div id="portal-access" className="scroll-mt-20">
-          <PortalAccessCard
-            employeeId={employee.id}
-            employeeEmail={employee.company_email ?? employee.personal_email}
-            employeeName={employeeDisplayName(employee, locale)}
-          />
-        </div>
-      ) : null}
     </>
   );
 
@@ -275,18 +274,21 @@ function ComplianceRow({
 }) {
   const left = daysLeft(date, today);
   return (
-    <li className="flex items-center gap-3 px-5 py-3">
+    <li className="flex items-start gap-3 px-5 py-3">
       <span
         className={cn(
-          'flex size-8 shrink-0 items-center justify-center rounded-md',
+          'mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-md',
           left === null ? 'bg-muted text-faint-foreground' : left < 0 ? 'bg-danger-soft text-danger' : left <= 30 ? 'bg-warning-soft text-warning' : 'bg-success-soft text-success',
         )}
       >
         <Icon className="size-4" aria-hidden />
       </span>
       <div className="min-w-0 flex-1">
-        <div className="text-sm font-medium text-foreground">{label}</div>
-        <div className="mt-0.5 truncate text-xs text-muted-foreground">
+        <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
+          <span className="text-sm font-medium text-foreground">{label}</span>
+          <ExpiryBadge date={date} today={today} />
+        </div>
+        <div className="mt-0.5 text-xs text-muted-foreground">
           {date ? (
             <>
               <span className="tabular-nums">{formatDate(date, locale)}</span>
@@ -296,14 +298,13 @@ function ComplianceRow({
                   {left < 0 ? t('profile.overview.expiredAgo', { count: -left }) : t('profile.overview.expiresIn', { count: left })}
                 </>
               ) : null}
-              {hint ? <span className="block truncate">{t('profile.personal.hijri', { date: hint })}</span> : null}
+              {hint ? <span className="mt-0.5 block">{t('profile.personal.hijri', { date: hint })}</span> : null}
             </>
           ) : (
             t('profile.overview.notRecorded')
           )}
         </div>
       </div>
-      <ExpiryBadge date={date} today={today} />
     </li>
   );
 }

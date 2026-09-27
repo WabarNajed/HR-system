@@ -131,7 +131,7 @@ export function DocumentsTable({ variant, rows, total, departments = [], exportE
         );
       },
       enableHiding: false,
-      meta: { label: t('fields.document'), width: showEmployee ? '15rem' : '17rem' },
+      meta: { label: t('fields.document'), width: showEmployee ? '15rem' : '14rem' },
     });
 
     cols.push({
@@ -154,7 +154,7 @@ export function DocumentsTable({ variant, rows, total, departments = [], exportE
         accessorKey: 'issue_date',
         header: ({ column }) => <DataTableColumnHeader column={column} title={t('fields.issueDate')} />,
         cell: ({ row }) => (row.original.issue_date ? <span className="numeric">{fmt.date(row.original.issue_date)}</span> : <span className="text-faint-foreground">—</span>),
-        meta: { label: t('fields.issueDate'), defaultHidden: variant === 'center' },
+        meta: { label: t('fields.issueDate'), defaultHidden: true },
       });
     }
 
@@ -333,7 +333,7 @@ export function DocumentsTable({ variant, rows, total, departments = [], exportE
       filters={filters}
       moreFilters={moreFilters}
       searchable={variant !== 'profile' || rows.length > 8}
-      searchPlaceholder={t('placeholders.searchDocuments')}
+      searchPlaceholder={showEmployee ? t('placeholders.searchDocuments') : t('placeholders.searchMyDocuments')}
       searchText={(r) => [typeLabel(r.document_type), r.document_number, r.file_name, r.notes].filter(Boolean).join(' ')}
       exportDataset={exportEnabled ? 'documents' : undefined}
       defaultSort={{ id: 'created_at', desc: true }}

@@ -85,6 +85,7 @@
     "rejectReason": "Explain what needs to be corrected…",
     "approveNote": "Optional note for the record…",
     "searchDocuments": "Search employee, document number or file…",
+    "searchMyDocuments": "Search type, number or file…",
     "searchExpiry": "Search employee, dependent or reference…",
     "searchMissing": "Search employee…"
   },

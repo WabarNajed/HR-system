@@ -112,7 +112,7 @@ export default async function EmployeeProfilePage({
   const tabItems: LinkTabItem[] = PROFILE_TABS.filter((k) => visible[k]).map((k) => ({
     value: k,
     label: t(`profile.tabs.${k}`),
-    count: k === 'dependents' ? counts.dependents : k === 'insurance' ? counts.insurance : undefined,
+    count: k === 'dependents' && counts.dependents ? counts.dependents : k === 'insurance' && counts.insurance ? counts.insurance : undefined,
   }));
 
   const requestHref = org && oc('requests.create') ? `/requests/new?employee=${id}` : self ? '/requests/new' : null;

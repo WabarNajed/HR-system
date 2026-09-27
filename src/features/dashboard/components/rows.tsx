@@ -3,7 +3,8 @@ import type { CSSProperties } from 'react';
 import { EmployeeAvatar } from '@/components/shared/employee-avatar';
 import { DynamicIcon } from '@/components/shared/icon-picker';
 import { SlaBadge } from '@/components/shared/sla-badge';
-import { StatusBadge } from '@/components/shared/status-badge';
+import { statusTone } from '@/components/shared/status-badge';
+import { Badge, type BadgeVariant } from '@/components/ui/badge';
 import { formatRelative, slaStatus } from '@/lib/dates';
 import { formatDate, formatDateRange } from '@/lib/i18n/date-format';
 import { employeeDisplayName, localized } from '@/lib/i18n/localized';
@@ -22,6 +23,30 @@ export function tintStyle(color: string | null | undefined): CSSProperties | und
 
 export function avatarUrl(path: string | null | undefined): string | null {
   return path ? fileRouteUrl('employee-documents', path) : null;
+}
+
+const DOT: Record<BadgeVariant, string> = {
+  default: 'bg-primary',
+  solid: 'bg-primary',
+  secondary: 'bg-secondary',
+  outline: 'bg-muted-foreground',
+  success: 'bg-success',
+  warning: 'bg-warning',
+  danger: 'bg-danger',
+  info: 'bg-info',
+  neutral: 'bg-border-strong',
+};
+
+/** Compact status (colored dot + label) for dense rows — never squeezes the row title. */
+export function StatusText({ status }: { status: string }) {
+  const t = useTranslations('statuses.request');
+  const tt = t as unknown as { has: (k: string) => boolean; (k: string): string };
+  return (
+    <span className="inline-flex shrink-0 items-center gap-1 font-medium text-foreground/80">
+      <span className={`size-1.5 shrink-0 rounded-full ${DOT[statusTone('request', status)]}`} aria-hidden />
+      {tt.has(status) ? tt(status) : status}
+    </span>
+  );
 }
 
 type RequestRowProps = {
@@ -53,27 +78,24 @@ export function RequestRow({ request: r, showEmployee = false, trailing = 'statu
             {r.request_number ?? t('draft')}
           </span>
         </div>
-        <div className="mt-1 truncate text-xs text-muted-foreground">
-          {showEmployee && employee ? (
-            <>
-              <span className="text-foreground/80">{employee}</span>
-              <span aria-hidden> · </span>
-            </>
-          ) : null}
-          {formatRelative(when, locale)}
+        <div className="mt-1 flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
+          {trailing === 'status' ? <StatusText status={r.status} /> : null}
+          <span className="min-w-0 truncate">
+            {showEmployee && employee ? (
+              <>
+                <span className="text-foreground/80">{employee}</span>
+                <span aria-hidden> · </span>
+              </>
+            ) : null}
+            {formatRelative(when, locale)}
+          </span>
         </div>
       </div>
-      <div className="shrink-0">
-        {trailing === 'sla' ? (
-          sla ? (
-            <SlaBadge state={sla} size="sm" dueLabel={formatDate(r.due_at, locale)} />
-          ) : (
-            <StatusBadge domain="request" status={r.status} size="sm" />
-          )
-        ) : (
-          <StatusBadge domain="request" status={r.status} size="sm" />
-        )}
-      </div>
+      {trailing === 'sla' ? (
+        <div className="shrink-0">
+          {sla ? <SlaBadge state={sla} size="sm" dueLabel={formatDate(r.due_at, locale)} /> : <StatusText status={r.status} />}
+        </div>
+      ) : null}
     </WidgetRow>
   );
 }
@@ -118,7 +140,9 @@ export function LeaveRow({ leave: l, today, showEmployee = false }: LeaveRowProp
       </div>
       <div className="shrink-0">
         {pending ? (
-          <StatusBadge domain="request" status={l.status} size="sm" />
+          <Badge variant="warning" size="sm" dot>
+            {t('awaitingApproval')}
+          </Badge>
         ) : ongoing ? (
           <span className="inline-flex items-center gap-1.5 rounded-md bg-info-soft px-1.5 py-0.5 text-xs font-medium text-info-soft-foreground">
             <span className="size-1.5 rounded-full bg-info" aria-hidden />

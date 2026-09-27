@@ -22,7 +22,7 @@
   },
   "columns": {
     "step": "Step",
-    "submitted": "Submitted",
+    "submitted": "Sent",
     "actions": "Quick actions",
     "decision": "My decision",
     "comment": "Comment",
@@ -37,8 +37,17 @@
     "open": "Open request"
   },
   "empty": {
-    "pending": { "title": "You're all caught up", "description": "Requests that need your decision will appear here." },
-    "approved": { "title": "No approvals yet", "description": "Requests you approve are listed here." },
-    "rejected": { "title": "No rejected or returned requests", "description": "Requests you reject or send back are listed here." }
+    "pending": {
+      "title": "You're all caught up",
+      "description": "Requests that need your decision will appear here."
+    },
+    "approved": {
+      "title": "No approvals yet",
+      "description": "Requests you approve are listed here."
+    },
+    "rejected": {
+      "title": "No rejected or returned requests",
+      "description": "Requests you reject or send back are listed here."
+    }
   }
 }

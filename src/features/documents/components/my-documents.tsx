@@ -64,11 +64,25 @@ export async function MyDocuments({ access }: { access: DocumentAccess }) {
 
         <SplitLayout
           main={
-            documents.error ? (
-              <ErrorState />
-            ) : (
-              <DocumentsTable variant="own" rows={rows} emptyAction={<UploadDocumentDialog employeeId={employeeId} />} />
-            )
+            <>
+              {documents.error ? (
+                <ErrorState />
+              ) : (
+                <DocumentsTable variant="own" rows={rows} emptyAction={<UploadDocumentDialog employeeId={employeeId} />} />
+              )}
+              <SectionCard title={t('my.guideTitle')} icon={<InfoIcon />} dense>
+                <ol className="grid gap-3 pt-2 sm:grid-cols-3">
+                  {[t('my.guide1'), t('my.guide2'), t('my.guide3')].map((text, index) => (
+                    <li key={index} className="flex gap-2.5 text-meta text-muted-foreground">
+                      <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary-soft text-xs font-semibold text-primary numeric">
+                        {index + 1}
+                      </span>
+                      <span>{text}</span>
+                    </li>
+                  ))}
+                </ol>
+              </SectionCard>
+            </>
           }
           side={
             <>
@@ -76,13 +90,6 @@ export async function MyDocuments({ access }: { access: DocumentAccess }) {
                 <div className="pt-2">
                   <ExpiryList items={upcoming} today={today} emptyText={t('empty.myExpiryDescription')} />
                 </div>
-              </SectionCard>
-              <SectionCard title={t('my.guideTitle')} icon={<InfoIcon />} dense>
-                <ol className="flex list-decimal flex-col gap-2 ps-5 pt-2 text-meta text-muted-foreground marker:text-faint-foreground">
-                  <li>{t('my.guide1')}</li>
-                  <li>{t('my.guide2')}</li>
-                  <li>{t('my.guide3')}</li>
-                </ol>
               </SectionCard>
             </>
           }

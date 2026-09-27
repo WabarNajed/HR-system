@@ -90,14 +90,14 @@ export function EmployeesTable({
       {
         id: 'name',
         header: ({ column }) => <DataTableColumnHeader column={column} title={t('columns.employee')} />,
-        meta: { label: t('columns.employee'), width: '17rem' },
+        meta: { label: t('columns.employee'), width: '15rem' },
         cell: ({ row }) => {
           const r = row.original;
           return (
             <EmployeeCell
               employee={{ id: r.id, name_ar: r.name_ar, name_en: r.name_en, avatarUrl: avatarUrl(r.avatar_path) }}
               subtitle={r.company_email ? <bdi dir="ltr">{r.company_email}</bdi> : t('directory.noEmail')}
-              className="max-w-[16rem]"
+              className="max-w-[15rem]"
               addon={
                 r.archived_at ? (
                   <Badge variant="neutral" size="sm">
@@ -127,14 +127,14 @@ export function EmployeesTable({
         enableSorting: false,
         header: () => t('columns.jobTitle'),
         meta: { label: t('columns.jobTitle') },
-        cell: ({ row }) => <span className="block max-w-[14rem] truncate">{name(row.original.job_title) || dash}</span>,
+        cell: ({ row }) => <span className="block max-w-[11rem] truncate">{name(row.original.job_title) || dash}</span>,
       },
       {
         id: 'department',
         enableSorting: false,
         header: () => t('columns.department'),
         meta: { label: t('columns.department') },
-        cell: ({ row }) => <span className="block max-w-[12rem] truncate">{name(row.original.department) || dash}</span>,
+        cell: ({ row }) => <span className="block max-w-[10rem] truncate">{name(row.original.department) || dash}</span>,
       },
       {
         id: 'manager',
@@ -144,7 +144,7 @@ export function EmployeesTable({
         cell: ({ row }) => {
           const m = row.original.manager;
           return m ? (
-            <span className="block max-w-[12rem] truncate text-muted-foreground">{employeeDisplayName(m, locale)}</span>
+            <span className="block max-w-[10rem] truncate text-muted-foreground">{employeeDisplayName(m, locale)}</span>
           ) : (
             dash
           );
@@ -166,7 +166,7 @@ export function EmployeesTable({
           const d = row.original.iqama_expiry_date;
           if (!d) return dash;
           return (
-            <div className="flex items-center gap-2">
+            <div className="flex flex-col items-start gap-0.5 leading-tight">
               <span className="tabular-nums">{fmt.date(d)}</span>
               <ExpiryBadge date={d} today={today} hideValid />
             </div>

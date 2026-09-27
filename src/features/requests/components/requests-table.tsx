@@ -98,6 +98,7 @@ export function RequestsTable({
         cell: ({ row }) =>
           row.original.employee ? (
             <EmployeeCell
+              className="max-w-60"
               employee={{ ...row.original.employee, avatarUrl: row.original.employee.avatar_url }}
               size="sm"
               subtitle={[row.original.employee.employee_number, row.original.employee.department ? localized(row.original.employee.department, 'name', locale) : null]
@@ -115,7 +116,7 @@ export function RequestsTable({
         header: t('columns.type'),
         enableSorting: false,
         meta: { label: t('columns.type') },
-        cell: ({ row }) => <TypeCell row={row.original} />,
+        cell: ({ row }) => <TypeCell row={row.original} className="max-w-56" />,
       },
       {
         id: 'created_at',
@@ -129,7 +130,7 @@ export function RequestsTable({
         header: t('columns.step'),
         enableSorting: false,
         meta: { label: t('columns.step') },
-        cell: ({ row }) => <StepLabel row={row.original} />,
+        cell: ({ row }) => <StepLabel row={row.original} className="max-w-44" />,
       },
       {
         id: 'status',
@@ -145,7 +146,7 @@ export function RequestsTable({
         meta: { label: t('columns.assigned'), defaultHidden: !access.orgView },
         cell: ({ row }) =>
           row.original.assignee_name ? (
-            <span className="text-sm text-foreground">{row.original.assignee_name}</span>
+            <span className="block max-w-36 truncate text-sm text-foreground">{row.original.assignee_name}</span>
           ) : (
             <span className="text-meta text-faint-foreground">{t('unassigned')}</span>
           ),
@@ -155,7 +156,7 @@ export function RequestsTable({
         accessorKey: 'due_at',
         header: ({ column }) => <DataTableColumnHeader column={column} title={t('columns.sla')} />,
         meta: { label: t('columns.sla') },
-        cell: ({ row }) => <RequestSlaBadge row={row.original} />,
+        cell: ({ row }) => <RequestSlaBadge row={row.original} compact />,
       },
       actionsColumn<RequestListRow>((row) => {
         const caps = rowCapabilities(row, access);
