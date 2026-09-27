@@ -73,7 +73,6 @@ function MatchCell({ row }: { row: RegistrationRow }) {
 
 export function RegistrationsView({ tab, rows, total, roles, canApprove, canAdminister, isSuperAdmin, initialReview }: RegistrationsViewProps) {
   const t = useTranslations('users.registrations');
-  const tc = useTranslations('common');
   const fmt = useDateFormat();
   const router = useRouter();
   const pathname = usePathname();
@@ -135,7 +134,7 @@ export function RegistrationsView({ tab, rows, total, roles, canApprove, canAdmi
             </div>
           );
         },
-        meta: { label: t('columns.applicant'), width: '16rem' },
+        meta: { label: t('columns.applicant'), width: '15rem' },
         enableHiding: false,
       },
       {
@@ -155,7 +154,7 @@ export function RegistrationsView({ tab, rows, total, roles, canApprove, canAdmi
         header: t('columns.match'),
         enableSorting: false,
         cell: ({ row }) => <MatchCell row={row.original} />,
-        meta: { label: t('columns.match'), width: '17rem' },
+        meta: { label: t('columns.match') },
       },
       {
         id: 'submitted',
@@ -172,17 +171,10 @@ export function RegistrationsView({ tab, rows, total, roles, canApprove, canAdmi
         },
         meta: { label: t('columns.submitted') },
       },
-      {
-        id: 'status',
-        header: tc('status'),
-        enableSorting: false,
-        cell: ({ row }) => <StatusBadge domain="profile" status={row.original.status} />,
-        meta: { label: tc('status') },
-      },
       actionsColumn<RegistrationRow>(actionsFor),
     ],
     // eslint-disable-next-line react-hooks/exhaustive-deps -- dialog setters are stable
-    [t, tc, tab, fmt, canApprove],
+    [t, tab, fmt, canApprove],
   );
 
   const emptyCopy = {

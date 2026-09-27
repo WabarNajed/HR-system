@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { useId, useMemo, useState, useTransition, type ReactNode } from 'react';
 import { toast } from 'sonner';
-import { actionsColumn, DataTable, DataTableColumnHeader, type FilterDef } from '@/components/data-table';
+import { actionsColumn, DataTable, type FilterDef } from '@/components/data-table';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog';
 import { DatePicker } from '@/components/shared/date-picker';
 import { StatusBadge } from '@/components/shared/status-badge';
@@ -28,6 +28,7 @@ import { cn } from '@/lib/utils';
 import { deletePublicHoliday, savePublicHoliday, setPublicHolidayActive } from '../actions';
 import type { HolidayRow } from '../types';
 import { UrlSelect } from './url-controls';
+import { SortHeader } from './sort-header';
 
 type FormState = { name_ar: string; name_en: string; start_date: string | null; end_date: string | null; is_active: boolean };
 
@@ -215,7 +216,7 @@ export function HolidaysManager({
       {
         id: 'name',
         accessorFn: (r) => localized(r, 'name', locale),
-        header: ({ column }) => <DataTableColumnHeader column={column} title={tc('name')} />,
+        header: ({ column }) => <SortHeader column={column} title={tc('name')} />,
         cell: ({ row }) => {
           const r = row.original;
           const upcoming = r.is_active && r.end_date >= today && r.start_date > today;
@@ -250,28 +251,28 @@ export function HolidaysManager({
       {
         id: 'start_date',
         accessorKey: 'start_date',
-        header: ({ column }) => <DataTableColumnHeader column={column} title={tc('startDate')} />,
+        header: ({ column }) => <SortHeader column={column} title={tc('startDate')} />,
         cell: ({ row }) => <span className="numeric whitespace-nowrap">{fmt.date(row.original.start_date)}</span>,
         meta: { label: tc('startDate') },
       },
       {
         id: 'end_date',
         accessorKey: 'end_date',
-        header: ({ column }) => <DataTableColumnHeader column={column} title={tc('endDate')} />,
+        header: ({ column }) => <SortHeader column={column} title={tc('endDate')} />,
         cell: ({ row }) => <span className="numeric whitespace-nowrap">{fmt.date(row.original.end_date)}</span>,
         meta: { label: tc('endDate') },
       },
       {
         id: 'days',
         accessorKey: 'days',
-        header: ({ column }) => <DataTableColumnHeader column={column} title={t('fields.days')} />,
+        header: ({ column }) => <SortHeader column={column} title={t('fields.days')} />,
         cell: ({ row }) => <span className="font-medium numeric">{formatInteger(row.original.days, locale)}</span>,
         meta: { label: t('fields.days'), align: 'end', headerClassName: 'whitespace-nowrap' },
       },
       {
         id: 'working_days',
         accessorKey: 'working_days',
-        header: ({ column }) => <DataTableColumnHeader column={column} title={t('fields.workingDays')} />,
+        header: ({ column }) => <SortHeader column={column} title={t('fields.workingDays')} />,
         cell: ({ row }) => <span className="numeric text-muted-foreground">{formatInteger(row.original.working_days, locale)}</span>,
         meta: { label: t('fields.workingDays'), align: 'end', headerClassName: 'whitespace-nowrap' },
       },

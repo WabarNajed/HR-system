@@ -142,7 +142,7 @@
     "noDeduction": "لا يُخصم",
     "noDeductionHint": "لا يُخصم هذا النوع من رصيد الإجازات.",
     "availableNow": "المتاح حاليًا: {days} يوم",
-    "usedOf": "المستخدم {used} من {total}",
+    "usedOf": "المستخدم والمحجوز {used} من {total}",
     "pendingHold": "{days} يوم محجوزة لطلبات أخرى قيد الاعتماد.",
     "noWorkingDays": "لا تتضمن الفترة المحددة أيام عمل.",
     "insufficient": "الرصيد غير كافٍ: المتاح {available} يوم والمطلوب {requested}.",

@@ -272,7 +272,8 @@
       "twoRowHeader": "Two-row header detected — group and sub-headers are combined.",
       "records": "{count} data rows below the header",
       "skipped": "{blank} blank and {repeated} repeated header rows skipped",
-      "updating": "Updating…"
+      "updating": "Updating…",
+      "recordsLabel": "Data rows"
     },
     "mapping": {
       "title": "Map the columns",
@@ -301,7 +302,8 @@
         "fields": "Fields",
         "other": "Other"
       },
-      "empty": "No values"
+      "empty": "No values",
+      "validate": "Check rows"
     },
     "options": {
       "title": "Import options",
@@ -322,7 +324,8 @@
       "leaveModeCarryover": "Carried-over days",
       "leaveModeCarryoverHint": "Opening balance = the value, plus the leave type's yearly entitlement.",
       "leaveYear": "Leave year",
-      "apply": "Apply and re-check"
+      "apply": "Apply and re-check",
+      "existingUpdateDenied": "You don't have permission to update existing records."
     },
     "review": {
       "title": "Review the rows",

@@ -142,7 +142,7 @@
     "noDeduction": "Not deducted",
     "noDeductionHint": "This leave type doesn't deduct from your balance.",
     "availableNow": "Available now: {days} days",
-    "usedOf": "{used} of {total} used",
+    "usedOf": "{used} of {total} used or on hold",
     "pendingHold": "{days} days are on hold for other pending requests.",
     "noWorkingDays": "The selected period has no working days.",
     "insufficient": "Insufficient balance: {available} days available, {requested} requested.",

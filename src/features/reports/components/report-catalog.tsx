@@ -1,9 +1,9 @@
 'use client';
 
-import { ArrowUpRightIcon, HistoryIcon, SearchXIcon, WandSparklesIcon, XIcon } from 'lucide-react';
+import { ChevronRightIcon, HistoryIcon, SearchXIcon, WandSparklesIcon, XIcon } from 'lucide-react';
 import Link from 'next/link';
 import { useLocale } from 'next-intl';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { EmptyState } from '@/components/shared/empty-state';
 import { SegmentedTabs } from '@/components/shared/link-tabs';
 import { SearchInput } from '@/components/shared/search-input';
@@ -40,7 +40,7 @@ function searchable(def: ReportDefinition, t: LooseT) {
   );
 }
 
-function ReportCard({ def, stats }: { def: ReportDefinition; stats: Record<string, number> }) {
+function ReportRow({ def, stats }: { def: ReportDefinition; stats: Record<string, number> }) {
   const t = useReportT();
   const locale = useLocale() as Locale;
   const Icon = def.icon;
@@ -48,37 +48,86 @@ function ReportCard({ def, stats }: { def: ReportDefinition; stats: Record<strin
   const hasValue = typeof value === 'number' && Number.isFinite(value);
   const alert = hasValue && value > 0 && def.preview?.tone;
   return (
-    <Link
-      href={`/reports/${def.key}`}
-      className="group/report relative flex min-h-[9.5rem] flex-col rounded-lg border border-border bg-card p-4 shadow-card transition-[border-color,box-shadow,transform] outline-none hover:border-border-strong hover:shadow-raised focus-visible:ring-[3px] focus-visible:ring-ring/40 active:scale-[0.995]"
-    >
-      <div className="flex items-start gap-3">
-        <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary-soft text-primary">
+    <li>
+      <Link
+        href={`/reports/${def.key}`}
+        className="group/report flex items-center gap-3 px-4 py-3 transition-colors outline-none hover:bg-subtle focus-visible:bg-subtle focus-visible:ring-[3px] focus-visible:ring-ring/40 focus-visible:ring-inset"
+      >
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary-soft text-primary transition-colors group-hover/report:bg-primary group-hover/report:text-primary-foreground">
           <Icon className="size-[1.125rem]" strokeWidth={1.8} aria-hidden />
         </span>
-        <div className="min-w-0 flex-1">
-          <h3 className="text-card-title leading-snug text-foreground">{t(`reports.items.${def.i18n}.title`)}</h3>
-          <p className="mt-1 line-clamp-2 text-meta text-muted-foreground">{t(`reports.items.${def.i18n}.description`)}</p>
-        </div>
-        <ArrowUpRightIcon
-          aria-hidden
-          className="size-4 shrink-0 text-faint-foreground transition-transform group-hover/report:-translate-y-0.5 group-hover/report:translate-x-0.5 group-hover/report:text-primary rtl:-scale-x-100 rtl:group-hover/report:-translate-x-0.5"
-        />
-      </div>
-      {def.preview ? (
-        <div className="mt-auto flex items-baseline gap-2 border-t border-dashed border-border pt-3">
-          <span
-            className={cn(
-              'text-[1.375rem] leading-7 font-semibold tracking-tight numeric',
-              alert ? (def.preview.tone === 'danger' ? 'text-danger' : 'text-warning') : 'text-foreground',
-            )}
-          >
-            {hasValue ? formatNumber(value, locale, { maximumFractionDigits: 0 }) : t('reports.catalog.metricUnavailable')}
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-sm font-semibold text-foreground">{t(`reports.items.${def.i18n}.title`)}</span>
+          <span className="mt-0.5 block truncate text-meta text-muted-foreground">{t(`reports.items.${def.i18n}.description`)}</span>
+        </span>
+        {def.preview ? (
+          <span className="hidden w-32 shrink-0 flex-col items-end text-end sm:flex">
+            <span
+              className={cn(
+                'text-lg leading-6 font-semibold tracking-tight numeric',
+                alert ? (def.preview.tone === 'danger' ? 'text-danger' : 'text-warning') : 'text-foreground',
+              )}
+            >
+              {hasValue ? formatNumber(value, locale, { maximumFractionDigits: 0 }) : t('reports.catalog.metricUnavailable')}
+            </span>
+            <span className="w-full truncate text-xs text-muted-foreground">{t(def.preview.labelKey)}</span>
           </span>
-          <span className="min-w-0 truncate text-xs text-muted-foreground">{t(def.preview.labelKey)}</span>
+        ) : null}
+        <ChevronRightIcon
+          aria-hidden
+          className="size-4 shrink-0 text-faint-foreground transition-transform group-hover/report:translate-x-0.5 group-hover/report:text-primary rtl:rotate-180 rtl:group-hover/report:-translate-x-0.5"
+        />
+      </Link>
+    </li>
+  );
+}
+
+function GroupPanel({ group, items, stats }: { group: ReportGroup; items: ReportDefinition[]; stats: Record<string, number> }) {
+  const t = useReportT();
+  const GroupIcon = REPORT_GROUP_ICONS[group];
+  return (
+    <section aria-labelledby={`group-${group}`} className="overflow-hidden rounded-lg border border-border bg-card shadow-card">
+      <header className="flex items-center gap-2.5 border-b border-border bg-subtle/60 px-4 py-2.5">
+        <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-secondary-soft text-secondary-soft-foreground">
+          <GroupIcon className="size-4" aria-hidden />
+        </span>
+        <h2 id={`group-${group}`} className="text-card-title text-foreground">
+          {t(`reports.groups.${group}`)}
+        </h2>
+        <Badge variant="neutral" size="sm" className="numeric">
+          {items.length}
+        </Badge>
+        <p className="ms-auto hidden min-w-0 truncate text-xs text-muted-foreground md:block">{t(`reports.groupDescriptions.${group}`)}</p>
+      </header>
+      <ul className="divide-y divide-border">
+        {items.map((d) => (
+          <ReportRow key={d.key} def={d} stats={stats} />
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+function BuilderPanel() {
+  const t = useReportT();
+  return (
+    <section className="rounded-lg border border-primary/20 bg-primary-soft/50 p-4 shadow-card">
+      <div className="flex items-start gap-3">
+        <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-xs">
+          <WandSparklesIcon className="size-5" aria-hidden />
+        </span>
+        <div className="min-w-0 flex-1">
+          <h2 className="text-card-title text-foreground">{t('reports.catalog.builderTitle')}</h2>
+          <p className="mt-0.5 text-meta text-muted-foreground">{t('reports.catalog.builderDescription')}</p>
+          <Button asChild size="sm" variant="outline" className="mt-3 bg-card">
+            <Link href="/reports/builder">
+              {t('reports.catalog.builderAction')}
+              <ChevronRightIcon className="rtl:rotate-180" />
+            </Link>
+          </Button>
         </div>
-      ) : null}
-    </Link>
+      </div>
+    </section>
   );
 }
 
@@ -171,54 +220,39 @@ export function ReportCatalog({ keys, stats, canBuild }: ReportCatalogProps) {
           }
         />
       ) : (
-        groups
-          .filter((g) => visible.some((d) => d.group === g))
-          .map((g) => {
-            const GroupIcon = REPORT_GROUP_ICONS[g];
-            const items = visible.filter((d) => d.group === g);
-            return (
-              <section key={g} aria-labelledby={`group-${g}`} className="flex flex-col gap-3">
-                <div className="flex items-center gap-2.5">
-                  <span className="flex size-7 items-center justify-center rounded-md bg-secondary-soft text-secondary-soft-foreground">
-                    <GroupIcon className="size-4" aria-hidden />
-                  </span>
-                  <h2 id={`group-${g}`} className="text-section-title text-foreground">
-                    {t(`reports.groups.${g}`)}
-                  </h2>
-                  <Badge variant="neutral" size="sm" className="numeric">
-                    {items.length}
-                  </Badge>
-                  <p className="hidden min-w-0 truncate text-meta text-muted-foreground sm:block">{t(`reports.groupDescriptions.${g}`)}</p>
-                </div>
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-                  {items.map((d) => (
-                    <ReportCard key={d.key} def={d} stats={stats} />
-                  ))}
-                </div>
-              </section>
-            );
-          })
+        <GroupColumns groups={groups.filter((g) => visible.some((d) => d.group === g))} visible={visible} stats={stats} canBuild={canBuild && !q && group === 'all'} />
       )}
-
-      {canBuild ? (
-        <section className="relative overflow-hidden rounded-lg border border-primary/20 bg-primary-soft/50 p-5 shadow-card">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-            <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-xs">
-              <WandSparklesIcon className="size-5" aria-hidden />
-            </span>
-            <div className="min-w-0 flex-1">
-              <h2 className="text-card-title text-foreground">{t('reports.catalog.builderTitle')}</h2>
-              <p className="mt-0.5 text-meta text-muted-foreground">{t('reports.catalog.builderDescription')}</p>
-            </div>
-            <Button asChild className="shrink-0">
-              <Link href="/reports/builder">
-                <WandSparklesIcon />
-                {t('reports.catalog.builderAction')}
-              </Link>
-            </Button>
-          </div>
-        </section>
-      ) : null}
     </div>
+  );
+}
+
+/**
+ * Group panels in two balanced columns on large screens (greedy by row count, order preserved
+ * within each column) — no half-empty grid rows; a single column on smaller screens.
+ */
+function GroupColumns({ groups, visible, stats, canBuild }: { groups: ReportGroup[]; visible: ReportDefinition[]; stats: Record<string, number>; canBuild: boolean }) {
+  const panels = groups.map((g) => ({ key: g, weight: visible.filter((d) => d.group === g).length + 1.2, node: <GroupPanel key={g} group={g} items={visible.filter((d) => d.group === g)} stats={stats} /> }));
+  if (canBuild) panels.push({ key: 'builder' as ReportGroup, weight: 2.2, node: <BuilderPanel key="builder" /> });
+  if (panels.length < 2) return <div className="flex flex-col gap-4">{panels.map((p) => p.node)}</div>;
+  const cols: { weight: number; nodes: ReactNode[] }[] = [
+    { weight: 0, nodes: [] },
+    { weight: 0, nodes: [] },
+  ];
+  for (const p of panels) {
+    const target = cols[0]!.weight <= cols[1]!.weight ? cols[0]! : cols[1]!;
+    target.weight += p.weight;
+    target.nodes.push(p.node);
+  }
+  return (
+    <>
+      <div className="flex flex-col gap-4 lg:hidden">{panels.map((p) => p.node)}</div>
+      <div className="hidden items-start gap-4 lg:grid lg:grid-cols-2">
+        {cols.map((c, i) => (
+          <div key={i} className="flex min-w-0 flex-col gap-4">
+            {c.nodes}
+          </div>
+        ))}
+      </div>
+    </>
   );
 }

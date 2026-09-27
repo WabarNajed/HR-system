@@ -104,7 +104,16 @@
     "import": "استيراد بيانات",
     "backup": "نسخة احتياطية",
     "auth": "تسجيل الدخول",
-    "registration": "طلب تسجيل"
+    "registration": "طلب تسجيل",
+    "document": "مستند",
+    "report": "تقرير",
+    "setup": "الإعداد",
+    "branding": "الهوية",
+    "settings": "الإعدادات",
+    "email": "بريد إلكتروني",
+    "notification": "إشعار",
+    "template": "قالب",
+    "session": "جلسة"
   },
   "verbs": {
     "create": "إنشاء",
@@ -139,7 +148,17 @@
     "download": "تنزيل",
     "start_import": "بدء",
     "commit": "اعتماد",
-    "validate": "تحقق من"
+    "validate": "تحقق من",
+    "replace_file": "استبدال ملف",
+    "review": "مراجعة",
+    "verify": "تحقق من",
+    "send": "إرسال",
+    "generate": "إنشاء",
+    "link": "ربط",
+    "unlink": "فك ربط",
+    "renew": "تجديد",
+    "rollback": "تراجع عن",
+    "complete_setup": "إكمال"
   },
   "actionLabels": {
     "auth": {
@@ -186,6 +205,12 @@
     },
     "export": {
       "any": "تصدير بيانات"
+    },
+    "document": {
+      "upload": "رفع مستند",
+      "approve": "اعتماد مستند",
+      "reject": "رفض مستند",
+      "replace_file": "استبدال ملف مستند"
     }
   },
   "activity": {

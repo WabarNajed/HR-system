@@ -62,7 +62,7 @@ export function ImportOptionsPanel({
               </Label>
             );
             return locked ? (
-              <SimpleTooltip key={v} content={t('createMissingDenied')}>
+              <SimpleTooltip key={v} content={t('existingUpdateDenied')}>
                 <span tabIndex={0}>{item}</span>
               </SimpleTooltip>
             ) : (

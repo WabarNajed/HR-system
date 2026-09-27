@@ -13,6 +13,7 @@ import {
   getBalanceYears,
   getCalendarData,
   getEmployeeBalances,
+  getEmployeeOption,
   getHolidayYears,
   listBalances,
   listDepartmentOptions,
@@ -70,13 +71,16 @@ export async function RequestsTab({ sp, access, locale }: TabProps) {
     filterKeys: REQUEST_FILTERS,
   });
   const scope = resolveScope(first(sp.scope), access);
-  const [{ rows, total }, types, departments] = await Promise.all([
+  const employeeId = params.filters.employee?.[0];
+  const [{ rows, total }, types, departments, employeeOption] = await Promise.all([
     listLeaveRequests(params, access, locale),
     listLeaveTypes(),
     scope === 'org' ? listDepartmentOptions(locale) : Promise.resolve([]),
+    employeeId ? getEmployeeOption(employeeId, locale) : Promise.resolve(null),
   ]);
   return (
     <LeaveRequestsTable
+      employeeOption={employeeOption}
       rows={rows}
       total={total}
       typeOptions={typeOptions(types, locale)}

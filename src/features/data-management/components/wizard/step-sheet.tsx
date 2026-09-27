@@ -84,7 +84,7 @@ export function StepSheet({
         </div>
         <dl className="flex flex-col gap-2 rounded-md border border-border bg-subtle/70 p-3 text-meta">
           <div className="flex items-center justify-between gap-2">
-            <dt className="text-muted-foreground">{t('wizard.sheet.records', { count: '' }).replace(/\s+/g, ' ').trim()}</dt>
+            <dt className="text-muted-foreground">{t('wizard.sheet.recordsLabel')}</dt>
             <dd className="text-base font-semibold text-foreground numeric">{inspection.records}</dd>
           </div>
           {inspection.skipped.blank + inspection.skipped.repeated + inspection.skipped.summary > 0 ? (

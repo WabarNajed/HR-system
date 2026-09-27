@@ -95,7 +95,7 @@ export function RolesConsole({ roles, selectedKey, members, canAdminister, isSup
   const granted = locked ? ALL_PERMISSIONS.length : draft.size;
 
   return (
-    <div className="grid items-start gap-4 lg:grid-cols-[17rem_minmax(0,1fr)] lg:gap-5">
+    <div className="grid items-start gap-4 lg:grid-cols-[14.5rem_minmax(0,1fr)] lg:gap-4">
       {/* Roles list */}
       <div className="lg:hidden">
         <Select value={role.key} onValueChange={selectRole}>
@@ -143,7 +143,7 @@ export function RolesConsole({ roles, selectedKey, members, canAdminister, isSup
                 <span className="min-w-0 flex-1">
                   <span className={cn('block truncate text-sm font-medium', active ? 'text-primary-soft-foreground' : 'text-foreground')}>{name(r)}</span>
                   <span className="block truncate text-xs text-muted-foreground">
-                    {r.isSystem ? t('list.system') : t('list.custom')} · {t(`scope.${r.dataScope}`)}
+                    {r.isSystem ? t(`scope.${r.dataScope}`) : `${t('list.custom')} · ${t(`scope.${r.dataScope}`)}`}
                   </span>
                 </span>
                 <span className="flex items-center gap-1 text-xs text-muted-foreground numeric" title={t('list.members', { count: r.memberCount })}>

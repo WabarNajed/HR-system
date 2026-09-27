@@ -1,8 +1,8 @@
 import { CheckCheckIcon, ClipboardCheckIcon } from 'lucide-react';
 import { getTranslations } from 'next-intl/server';
 import { RequestRow } from '../components/rows';
-import { ViewAllLink, Widget, WidgetEmpty, WidgetError, WidgetList } from '../components/widget-parts';
-import { getApprovalQueue, getDashboardStats } from '../queries';
+import { ViewAllLink, Widget, WidgetEmpty, WidgetError, WidgetList, WidgetListEnd } from '../components/widget-parts';
+import { APPROVAL_QUEUE_LIMIT, getApprovalQueue, getDashboardStats } from '../queries';
 
 /** Requests waiting for the caller's decision (current approver), earliest due first. */
 export async function ApprovalQueueWidget({ userId }: { userId: string }) {
@@ -20,11 +20,14 @@ export async function ApprovalQueueWidget({ userId }: { userId: string }) {
       ) : res.data.length === 0 ? (
         <WidgetEmpty icon={CheckCheckIcon} tone="success" title={t('emptyTitle')} description={t('emptyDescription')} />
       ) : (
-        <WidgetList>
-          {res.data.map((r) => (
-            <RequestRow key={r.id} request={r} showEmployee trailing="sla" />
-          ))}
-        </WidgetList>
+        <>
+          <WidgetList>
+            {res.data.map((r) => (
+              <RequestRow key={r.id} request={r} showEmployee trailing="sla" />
+            ))}
+          </WidgetList>
+          {res.data.length < APPROVAL_QUEUE_LIMIT ? <WidgetListEnd icon={CheckCheckIcon} label={t('endOfQueue')} /> : null}
+        </>
       )}
     </Widget>
   );

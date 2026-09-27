@@ -4,7 +4,7 @@ import type { ColumnDef } from '@tanstack/react-table';
 import { BuildingIcon, HistoryIcon, PencilLineIcon, SlidersHorizontalIcon, TagIcon, WalletCardsIcon } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useCallback, useMemo, useState, type ReactNode } from 'react';
-import { actionsColumn, DataTable, DataTableColumnHeader, type FilterDef } from '@/components/data-table';
+import { actionsColumn, DataTable, type FilterDef } from '@/components/data-table';
 import { EmployeeCell } from '@/components/shared/employee-cell';
 import { Button } from '@/components/ui/button';
 import type { Locale } from '@/lib/i18n/config';
@@ -13,6 +13,7 @@ import { formatDays } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import type { BalanceRow, Option } from '../types';
 import { AdjustBalanceDialog, BalanceHistorySheet, EditBalanceDialog, type BalanceTarget } from './balance-dialogs';
+import { SortHeader } from './sort-header';
 import { BalanceBar } from './balance-cards';
 import { LeaveTypeLabel } from './leave-type-dot';
 
@@ -44,7 +45,7 @@ export function BalancesTable({ rows, total, typeOptions, departmentOptions, can
     const num = (key: 'opening_balance' | 'entitlement' | 'adjustment' | 'used' | 'pending', label: string, hidden = false): ColumnDef<BalanceRow> => ({
       id: key,
       accessorKey: key,
-      header: ({ column }) => <DataTableColumnHeader column={column} title={label} />,
+      header: ({ column }) => <SortHeader column={column} title={label} />,
       cell: ({ row }) => {
         const v = row.original[key];
         return (
@@ -60,7 +61,7 @@ export function BalancesTable({ rows, total, typeOptions, departmentOptions, can
       {
         id: 'employee',
         accessorFn: (r) => r.employee?.name_ar ?? '',
-        header: ({ column }) => <DataTableColumnHeader column={column} title={t('fields.employee')} />,
+        header: ({ column }) => <SortHeader column={column} title={t('fields.employee')} />,
         cell: ({ row }) =>
           row.original.employee ? (
             <EmployeeCell
@@ -86,7 +87,7 @@ export function BalancesTable({ rows, total, typeOptions, departmentOptions, can
       {
         id: 'leave_type',
         accessorFn: (r) => r.leave_type.sort_order,
-        header: ({ column }) => <DataTableColumnHeader column={column} title={t('fields.leaveType')} />,
+        header: ({ column }) => <SortHeader column={column} title={t('fields.leaveType')} />,
         cell: ({ row }) => <LeaveTypeLabel type={row.original.leave_type} />,
         meta: { label: t('fields.leaveType') },
       },
@@ -98,7 +99,7 @@ export function BalancesTable({ rows, total, typeOptions, departmentOptions, can
       {
         id: 'remaining',
         accessorKey: 'remaining',
-        header: ({ column }) => <DataTableColumnHeader column={column} title={t('fields.remaining')} />,
+        header: ({ column }) => <SortHeader column={column} title={t('fields.remaining')} />,
         cell: ({ row }) => (
           <div className="flex min-w-24 flex-col items-end gap-1">
             <span className={cn('font-semibold numeric', row.original.remaining < 0 ? 'text-danger' : 'text-foreground')}>{d(row.original.remaining)}</span>

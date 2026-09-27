@@ -73,7 +73,7 @@ export function PermissionMatrix({ value, saved, onChange, readOnly }: Permissio
 
   return (
     <div className="overflow-x-auto">
-      <table className="w-full min-w-[46rem] border-separate border-spacing-0 text-sm">
+      <table className="w-full min-w-[36rem] table-fixed border-separate border-spacing-0 text-sm">
         <thead>
           <tr>
             <th scope="col" className="sticky start-0 z-10 bg-subtle px-4 py-2.5 text-start text-xs font-semibold text-muted-foreground">
@@ -83,9 +83,9 @@ export function PermissionMatrix({ value, saved, onChange, readOnly }: Permissio
               const perms = colPerms(a);
               const state = triState(countIn(perms), perms.length);
               return (
-                <th key={a} scope="col" className="w-[4.75rem] bg-subtle px-1 py-2 text-center">
+                <th key={a} scope="col" className="w-[3.75rem] bg-subtle px-0.5 py-2 text-center">
                   <label className={cn('inline-flex flex-col items-center gap-1.5', !readOnly && 'cursor-pointer')}>
-                    <span className="text-xs font-semibold text-muted-foreground">{tAction(a)}</span>
+                    <span className="max-w-full truncate text-[0.6875rem] font-semibold text-muted-foreground">{tAction(a)}</span>
                     <Checkbox
                       checked={state}
                       disabled={readOnly}
@@ -105,20 +105,20 @@ export function PermissionMatrix({ value, saved, onChange, readOnly }: Permissio
             const state = triState(countIn(perms), perms.length);
             return (
               <tr key={m} className="group">
-                <th scope="row" className="sticky start-0 z-[1] border-t border-border bg-card px-4 py-2.5 text-start font-normal group-hover:bg-subtle/60">
-                  <div className="flex items-center gap-3">
+                <th scope="row" className="sticky start-0 z-[1] border-t border-border bg-card px-4 py-2 text-start font-normal group-hover:bg-subtle">
+                  <div className="flex min-w-0 items-center gap-2.5">
                     <Checkbox
                       checked={state}
                       disabled={readOnly}
                       onCheckedChange={() => setMany(perms, state !== true)}
                       aria-label={t('toggleRow', { module: tModule(m) })}
                     />
-                    <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
-                      <Icon className="size-4" strokeWidth={1.85} aria-hidden />
+                    <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
+                      <Icon className="size-3.5" strokeWidth={1.85} aria-hidden />
                     </span>
-                    <span className="min-w-0">
-                      <span className="block text-sm font-medium text-foreground">{tModule(m)}</span>
-                      <span className="block max-w-[22rem] text-xs leading-5 text-muted-foreground">{tHelp(m)}</span>
+                    <span className="min-w-0 flex-1" title={tHelp(m)}>
+                      <span className="block truncate text-sm font-medium text-foreground">{tModule(m)}</span>
+                      <span className="mt-0.5 line-clamp-2 text-xs leading-4 text-muted-foreground">{tHelp(m)}</span>
                     </span>
                   </div>
                 </th>

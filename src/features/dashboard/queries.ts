@@ -21,6 +21,8 @@ import type {
 export type Loaded<T> = { ok: true; data: T } | { ok: false };
 
 const TIMEOUT_MS = 8000;
+export const HR_QUEUE_LIMIT = 6;
+export const APPROVAL_QUEUE_LIMIT = 6;
 
 export const OPEN_REQUEST_STATUSES = ['submitted', 'pending_manager_approval', 'pending_hr_review'] as const;
 const APPROVED_LEAVE_STATUSES = ['approved', 'in_progress', 'completed'] as const;
@@ -155,7 +157,7 @@ export const getApprovalQueue = cache(async (userId: string): Promise<Loaded<Das
       .in('status', ['pending_manager_approval', 'pending_hr_review'])
       .order('due_at', { ascending: true, nullsFirst: false })
       .order('submitted_at', { ascending: true })
-      .limit(6);
+      .limit(APPROVAL_QUEUE_LIMIT);
     if (error) throw error;
     return (data ?? []) as unknown as DashboardRequest[];
   }),
@@ -221,7 +223,7 @@ export const getHrRequestQueue = cache(async (): Promise<Loaded<DashboardRequest
       .in('status', [...OPEN_REQUEST_STATUSES])
       .order('due_at', { ascending: true, nullsFirst: false })
       .order('submitted_at', { ascending: true })
-      .limit(7);
+      .limit(HR_QUEUE_LIMIT);
     if (error) throw error;
     return (data ?? []) as unknown as DashboardRequest[];
   }),
@@ -274,7 +276,7 @@ export const getRecentAudit = cache(async (): Promise<Loaded<AuditFeedRow[]>> =>
       .from('audit_logs')
       .select('id, created_at, action, entity_type, entity_id, employee_id, summary, actor_id, actor_email')
       .order('created_at', { ascending: false })
-      .limit(7);
+      .limit(6);
     if (error) throw error;
     return (data ?? []) as AuditFeedRow[];
   }),

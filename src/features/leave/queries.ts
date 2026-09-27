@@ -168,6 +168,16 @@ export async function listDepartmentOptions(locale: Locale): Promise<Option[]> {
     .sort((a, b) => a.label.localeCompare(b.label, locale));
 }
 
+/** Label for an `?employee=` filter chip (RLS: only employees the viewer can see). */
+export async function getEmployeeOption(employeeId: string, locale: Locale): Promise<Option | null> {
+  if (!/^[0-9a-f-]{36}$/i.test(employeeId)) return null;
+  const supabase = await createClient();
+  const { data } = await supabase.from('employees').select('id, employee_number, name_ar, name_en').eq('id', employeeId).maybeSingle();
+  if (!data) return null;
+  const name = (locale === 'en' ? data.name_en || data.name_ar : data.name_ar || data.name_en) ?? '';
+  return { value: data.id, label: data.employee_number ? `${name} · ${data.employee_number}` : name };
+}
+
 /* ─── Mapping helpers ────────────────────────────────────────────────────── */
 
 type EmployeeEmbed = {

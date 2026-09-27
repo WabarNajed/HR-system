@@ -74,18 +74,18 @@ export default async function SettingsSecurityPage() {
               const login = e.action === 'auth.login';
               const agent = describeAgent(e.userAgent);
               return (
-                <li key={e.id} className="flex items-center gap-3 px-5 py-2.5">
+                <li key={e.id} className="flex items-center gap-3 px-5 py-2">
                   <span
                     className={
                       login
-                        ? 'flex size-8 shrink-0 items-center justify-center rounded-full bg-success-soft text-success'
-                        : 'flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground'
+                        ? 'flex size-7 shrink-0 items-center justify-center rounded-full bg-success-soft text-success'
+                        : 'flex size-7 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground'
                     }
                   >
                     {login ? <LogInIcon className="size-4 rtl:-scale-x-100" aria-hidden /> : <LogOutIcon className="size-4 rtl:-scale-x-100" aria-hidden />}
                   </span>
                   <div className="min-w-0 flex-1 leading-tight">
-                    <div className="flex min-w-0 flex-wrap items-center gap-x-2">
+                    <div className="flex min-w-0 flex-wrap items-baseline gap-x-2">
                       <bdi dir="ltr" className="truncate text-sm font-medium text-foreground">
                         {e.actorEmail ?? '—'}
                       </bdi>

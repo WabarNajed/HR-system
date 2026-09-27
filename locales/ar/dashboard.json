@@ -111,7 +111,8 @@
       "description": "{count, plural, one {طلب واحد بانتظارك} two {طلبان بانتظارك} few {# طلبات بانتظارك} many {# طلبًا بانتظارك} other {# طلب بانتظارك}}",
       "open": "فتح الموافقات",
       "emptyTitle": "لا توجد موافقات معلقة",
-      "emptyDescription": "ستظهر هنا الطلبات التي تحتاج إلى قرارك."
+      "emptyDescription": "ستظهر هنا الطلبات التي تحتاج إلى قرارك.",
+      "endOfQueue": "لا شيء آخر بانتظارك"
     },
     "teamRequests": {
       "title": "طلبات الفريق",
@@ -144,7 +145,12 @@
       "title": "قائمة الطلبات",
       "description": "{open} مفتوح · {overdue} متأخر",
       "emptyTitle": "القائمة خالية",
-      "emptyDescription": "ستظهر هنا الطلبات المرسلة التي تحتاج إلى مراجعة."
+      "emptyDescription": "ستظهر هنا الطلبات المرسلة التي تحتاج إلى مراجعة.",
+      "stripApproval": "بانتظار الموافقة",
+      "stripHr": "لدى الموارد البشرية",
+      "stripDueSoon": "تستحق خلال 24 ساعة",
+      "stripOverdue": "متأخرة",
+      "endOfQueue": "هذه كل الطلبات في القائمة"
     },
     "expiryAlerts": {
       "title": "تنبيهات الانتهاء",
@@ -169,12 +175,13 @@
       "byNationalityAria": "{count, plural, one {عمود مكدس لفئة جنسية واحدة} two {عمود مكدس لفئتي جنسية} few {عمود مكدس لـ # فئات جنسية} many {عمود مكدس لـ # فئة جنسية} other {عمود مكدس لـ # فئة جنسية}}",
       "employees": "موظف نشط",
       "departmentsCount": "{count, plural, zero {لا إدارات} one {إدارة واحدة} two {إدارتان} few {# إدارات} many {# إدارة} other {# إدارة}}",
-      "nationalities": "جنسيات مسجلة",
       "unassigned": "بدون إدارة",
       "other": "أخرى",
       "unknownNationality": "غير مسجلة",
       "emptyTitle": "لا يوجد موظفون بعد",
-      "emptyDescription": "تظهر المخططات بعد إضافة الموظفين أو استيرادهم."
+      "emptyDescription": "تظهر المخططات بعد إضافة الموظفين أو استيرادهم.",
+      "title": "نظرة على القوى العاملة",
+      "nationalitiesCount": "{count, plural, zero {لا جنسيات} one {جنسية واحدة} two {جنسيتان} few {# جنسيات} many {# جنسية} other {# جنسية}}"
     },
     "recentActivity": {
       "title": "آخر النشاطات",

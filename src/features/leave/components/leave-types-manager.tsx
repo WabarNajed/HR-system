@@ -17,7 +17,7 @@ import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { useId, useMemo, useState, useTransition, type ReactNode } from 'react';
 import { toast } from 'sonner';
-import { actionsColumn, DataTable, DataTableColumnHeader, type FilterDef } from '@/components/data-table';
+import { actionsColumn, DataTable, type FilterDef } from '@/components/data-table';
 import { ColorPicker } from '@/components/shared/color-picker';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog';
 import { StatusBadge } from '@/components/shared/status-badge';
@@ -38,6 +38,7 @@ import { cn } from '@/lib/utils';
 import { deleteLeaveType, saveLeaveType, setLeaveTypeActive } from '../actions';
 import type { LeaveTypeRow } from '../types';
 import { LeaveTypeDot } from './leave-type-dot';
+import { SortHeader } from './sort-header';
 
 type FormState = {
   code: string;
@@ -362,7 +363,7 @@ export function LeaveTypesManager({ rows, canEdit }: { rows: LeaveTypeRow[]; can
       {
         id: 'name',
         accessorFn: (r) => localized(r, 'name', locale),
-        header: ({ column }) => <DataTableColumnHeader column={column} title={tc('name')} />,
+        header: ({ column }) => <SortHeader column={column} title={tc('name')} />,
         cell: ({ row }) => (
           <div className="flex min-w-0 items-center gap-2.5">
             <LeaveTypeDot color={row.original.color} className="size-3" />
@@ -402,7 +403,7 @@ export function LeaveTypesManager({ rows, canEdit }: { rows: LeaveTypeRow[]; can
       {
         id: 'default_entitlement',
         accessorKey: 'default_entitlement',
-        header: ({ column }) => <DataTableColumnHeader column={column} title={t('types.fields.defaultEntitlement')} />,
+        header: ({ column }) => <SortHeader column={column} title={t('types.fields.defaultEntitlement')} />,
         cell: ({ row }) => (row.original.deducts_balance ? <span className="font-medium numeric">{formatDays(row.original.default_entitlement, locale)}</span> : no),
         meta: { label: t('types.fields.defaultEntitlement'), align: 'end', headerClassName: 'whitespace-nowrap' },
       },
@@ -453,7 +454,7 @@ export function LeaveTypesManager({ rows, canEdit }: { rows: LeaveTypeRow[]; can
       {
         id: 'sort_order',
         accessorKey: 'sort_order',
-        header: ({ column }) => <DataTableColumnHeader column={column} title={t('types.fields.sortOrder')} />,
+        header: ({ column }) => <SortHeader column={column} title={t('types.fields.sortOrder')} />,
         cell: ({ row }) => <span className="numeric text-muted-foreground">{row.original.sort_order}</span>,
         meta: { label: t('types.fields.sortOrder'), align: 'end', width: '5rem', defaultHidden: true },
       },

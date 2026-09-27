@@ -19,7 +19,7 @@ const KIND_ICON: Record<ExpiryItemKind, LucideIcon> = {
 /** Expired and soon-to-expire identity items across the organization (most urgent first). */
 export async function ExpiryAlertsWidget() {
   const [res, t, tDoc, locale] = await Promise.all([
-    getExpiryItems(7),
+    getExpiryItems(6),
     getTranslations('dashboard.widgets.expiryAlerts'),
     getTranslations('enums.documentType'),
     getLocale(),

@@ -104,7 +104,16 @@
     "import": "Data import",
     "backup": "Backup",
     "auth": "Sign-in",
-    "registration": "Registration"
+    "registration": "Registration",
+    "document": "Document",
+    "report": "Report",
+    "setup": "Setup",
+    "branding": "Branding",
+    "settings": "Settings",
+    "email": "Email",
+    "notification": "Notification",
+    "template": "Template",
+    "session": "Session"
   },
   "verbs": {
     "create": "created",
@@ -139,7 +148,17 @@
     "download": "downloaded",
     "start_import": "started",
     "commit": "committed",
-    "validate": "validated"
+    "validate": "validated",
+    "replace_file": "file replaced",
+    "review": "reviewed",
+    "verify": "verified",
+    "send": "sent",
+    "generate": "generated",
+    "link": "linked",
+    "unlink": "unlinked",
+    "renew": "renewed",
+    "rollback": "rolled back",
+    "complete_setup": "completed"
   },
   "actionLabels": {
     "auth": {
@@ -186,6 +205,12 @@
     },
     "export": {
       "any": "Data exported"
+    },
+    "document": {
+      "upload": "Document uploaded",
+      "approve": "Document approved",
+      "reject": "Document rejected",
+      "replace_file": "Document file replaced"
     }
   },
   "activity": {

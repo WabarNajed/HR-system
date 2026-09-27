@@ -70,16 +70,14 @@ export function UsersTable({ rows, total, roles, abilities }: UsersTableProps) {
                     </Badge>
                   ) : null}
                 </div>
-                {u.mobile ? (
-                  <bdi dir="ltr" className="mt-0.5 block truncate text-xs text-muted-foreground numeric">
-                    {u.mobile}
-                  </bdi>
-                ) : null}
+                <bdi dir="ltr" className="mt-0.5 block max-w-[14rem] truncate text-xs text-muted-foreground">
+                  {u.email}
+                </bdi>
               </div>
             </div>
           );
         },
-        meta: { label: t('columns.user'), width: '15rem' },
+        meta: { label: t('columns.user'), width: '14rem' },
         enableHiding: false,
       },
       {
@@ -91,7 +89,7 @@ export function UsersTable({ rows, total, roles, abilities }: UsersTableProps) {
             {row.original.email ?? '—'}
           </bdi>
         ),
-        meta: { label: t('columns.email') },
+        meta: { label: t('columns.email'), defaultHidden: true },
       },
       {
         id: 'employee',
@@ -107,7 +105,7 @@ export function UsersTable({ rows, total, roles, abilities }: UsersTableProps) {
               onClick={(ev) => ev.stopPropagation()}
               className="group flex min-w-0 flex-col leading-tight outline-none"
             >
-              <span className="truncate text-meta font-medium text-foreground group-hover:text-primary group-hover:underline group-focus-visible:underline">
+              <span className="max-w-[10rem] truncate text-meta font-medium text-foreground group-hover:text-primary group-hover:underline group-focus-visible:underline">
                 {employeeDisplayName(e, locale)}
               </span>
               {e.employee_number ? <bdi className="text-xs text-muted-foreground numeric">{e.employee_number}</bdi> : null}
@@ -120,7 +118,7 @@ export function UsersTable({ rows, total, roles, abilities }: UsersTableProps) {
         id: 'roles',
         header: t('columns.roles'),
         enableSorting: false,
-        cell: ({ row }) => <RoleBadges roles={row.original.roles} label={roleLabel} max={2} emptyLabel={t('noRoles')} />,
+        cell: ({ row }) => <RoleBadges roles={row.original.roles} label={roleLabel} max={2} emptyLabel={t('noRoles')} className="flex-nowrap" />,
         meta: { label: t('columns.roles') },
       },
       {

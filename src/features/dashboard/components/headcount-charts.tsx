@@ -40,7 +40,7 @@ export function DepartmentBarChart({ data, total }: { data: ChartDatum[]; total:
   const locale = useLocale();
   const rtl = dir(locale) === 'rtl';
   const t = useTranslations('dashboard.widgets.overview');
-  const height = Math.max(96, data.length * 32 + 8);
+  const height = Math.max(72, data.length * 34 + 6);
   const f = nf(locale);
   return (
     // SVG text anchors flip under an RTL base direction; the plot runs LTR with a reversed axis instead.
@@ -64,10 +64,29 @@ export function DepartmentBarChart({ data, total }: { data: ChartDatum[]; total:
           <Bar dataKey="value" fill={CHART_SERIES[0]} radius={rtl ? [4, 0, 0, 4] : [0, 4, 4, 0]} maxBarSize={18} isAnimationActive={false}>
             <LabelList
               dataKey="value"
-              position={rtl ? 'left' : 'right'}
-              offset={6}
-              formatter={(v: unknown) => f.format(Number(v ?? 0))}
-              style={{ fill: CHART_CHROME.text, fontSize: 12, fontWeight: 600 }}
+              content={(props) => {
+                // Place the value just past the bar's visual end — with a reversed (RTL) axis the
+                // bar grows leftwards and recharts reports a negative width, so compute the edges.
+                const x = Number(props.x ?? 0);
+                const w = Number(props.width ?? 0);
+                const y = Number(props.y ?? 0);
+                const h = Number(props.height ?? 0);
+                const left = Math.min(x, x + w);
+                const right = Math.max(x, x + w);
+                return (
+                  <text
+                    x={rtl ? left - 6 : right + 6}
+                    y={y + h / 2}
+                    dominantBaseline="central"
+                    textAnchor={rtl ? 'end' : 'start'}
+                    fill={CHART_CHROME.text}
+                    fontSize={12}
+                    fontWeight={600}
+                  >
+                    {f.format(Number(props.value ?? 0))}
+                  </text>
+                );
+              }}
             />
           </Bar>
         </BarChart>

@@ -4,7 +4,7 @@ import type { ColumnDef } from '@tanstack/react-table';
 import { FilterXIcon, TableIcon } from 'lucide-react';
 import Link from 'next/link';
 import { useLocale } from 'next-intl';
-import { useMemo, type ReactNode } from 'react';
+import { useCallback, useMemo, type ReactNode } from 'react';
 import { DataTable, DataTableColumnHeader, type SortState } from '@/components/data-table';
 import { EmployeeCell } from '@/components/shared/employee-cell';
 import { SlaBadge } from '@/components/shared/sla-badge';
@@ -206,6 +206,8 @@ export function ReportTable({ def, rows, total, filtered }: ReportTableProps) {
     [def, t, locale, render],
   );
 
+  // Stable identity: DataTable recomputes (and resets selection) whenever `searchText` changes.
+  const searchText = useCallback((row: Row) => rowSearchText(def, row, t), [def, t]);
   const defaultSort: SortState = useMemo(() => ({ id: def.defaultSort.id, desc: def.defaultSort.desc }), [def.defaultSort]);
   const firstCol = def.columns[0]!;
 
@@ -219,7 +221,7 @@ export function ReportTable({ def, rows, total, filtered }: ReportTableProps) {
       getRowId={(row, i) => String(row.__rowId ?? i)}
       defaultSort={defaultSort}
       searchPlaceholder={t('reports.view.searchPlaceholder')}
-      searchText={serverMode ? undefined : (row) => rowSearchText(def, row, t)}
+      searchText={serverMode ? undefined : searchText}
       density="compact"
       maxHeight="none"
       pageSizes={[10, 25, 50, 100]}

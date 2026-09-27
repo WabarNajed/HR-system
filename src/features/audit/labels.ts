@@ -16,7 +16,7 @@ export const AUDIT_CATEGORY_PREFIXES: Record<AuditCategory, readonly string[]> =
   employees: ['employee', 'employee_compensation', 'employee_bank_account', 'employee_insurance', 'employee_dependent'],
   requests: ['request', 'hr_request'],
   leave: ['leave_balance', 'leave_adjustment', 'leave_request'],
-  documents: ['employee_document', 'certificate'],
+  documents: ['employee_document', 'document', 'certificate'],
   configuration: [
     'organization',
     'organization_settings',

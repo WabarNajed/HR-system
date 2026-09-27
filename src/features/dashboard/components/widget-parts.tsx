@@ -51,7 +51,7 @@ export function Widget({ title, description, icon: Icon, actions, footer, flush 
       flush={flush}
       dense
       className={cn('h-full', className)}
-      bodyClassName={bodyClassName}
+      bodyClassName={cn('flex flex-col', bodyClassName)}
     >
       {children}
     </SectionCard>
@@ -82,6 +82,37 @@ export function WidgetRow({ href, children, className }: { href?: string | null;
         <div className={inner}>{children}</div>
       )}
     </li>
+  );
+}
+
+/** Fills the rest of a stretched list card with a quiet "end of list" note (queues). */
+export function WidgetListEnd({ icon: Icon, label }: { icon: LucideIcon; label: ReactNode }) {
+  return (
+    <div className="flex min-h-12 flex-1 items-center justify-center gap-1.5 border-t border-border/60 px-4 py-3 text-xs text-faint-foreground">
+      <Icon className="size-3.5" aria-hidden />
+      {label}
+    </div>
+  );
+}
+
+/** Row of small counters at the top of a widget (label under a number). */
+export function WidgetStrip({ items }: { items: { key: string; label: ReactNode; value: ReactNode; tone?: 'danger' | 'warning' | 'default' }[] }) {
+  return (
+    <div className="grid border-b border-border" style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }}>
+      {items.map((item, i) => (
+        <div key={item.key} className={cn('min-w-0 px-4 py-2.5', i > 0 && 'border-s border-border')}>
+          <div
+            className={cn(
+              'numeric text-lg leading-6 font-semibold',
+              item.tone === 'danger' ? 'text-danger' : item.tone === 'warning' ? 'text-warning' : 'text-foreground',
+            )}
+          >
+            {item.value}
+          </div>
+          <div className="truncate text-[0.6875rem] text-muted-foreground">{item.label}</div>
+        </div>
+      ))}
+    </div>
   );
 }
 

@@ -69,7 +69,12 @@ const REVALIDATE: Record<ImportType, string[]> = {
 /* ─── Sheet & header ──────────────────────────────────────────────────────── */
 
 export const inspectImportAction = withAction(
-  z.object({ importId: idSchema, sheetIndex: z.number().int().min(0).max(500), headerRow: z.number().int().min(0).max(1000), headerRows: z.union([z.literal(1), z.literal(2)]).optional() }),
+  z.object({
+    importId: idSchema,
+    sheetIndex: z.number().int().min(0).max(500),
+    headerRow: z.number().int().min(0).max(1000).optional(),
+    headerRows: z.union([z.literal(1), z.literal(2)]).optional(),
+  }),
   async (input, { ctx }) => {
     const db = await client();
     const imp = await requireImport(ctx, db, input.importId);

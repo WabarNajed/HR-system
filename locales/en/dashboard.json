@@ -111,7 +111,8 @@
       "description": "{count, plural, one {# request waiting for you} other {# requests waiting for you}}",
       "open": "Open approvals",
       "emptyTitle": "No approvals waiting",
-      "emptyDescription": "Requests that need your decision will appear here."
+      "emptyDescription": "Requests that need your decision will appear here.",
+      "endOfQueue": "You're all caught up"
     },
     "teamRequests": {
       "title": "Team requests",
@@ -144,7 +145,12 @@
       "title": "Request queue",
       "description": "{open} open · {overdue} overdue",
       "emptyTitle": "The queue is clear",
-      "emptyDescription": "Submitted requests that need review will appear here."
+      "emptyDescription": "Submitted requests that need review will appear here.",
+      "stripApproval": "Awaiting approval",
+      "stripHr": "In HR review",
+      "stripDueSoon": "Due in 24h",
+      "stripOverdue": "Overdue",
+      "endOfQueue": "That's everything in the queue"
     },
     "expiryAlerts": {
       "title": "Expiry alerts",
@@ -169,12 +175,13 @@
       "byNationalityAria": "{count, plural, one {Stacked bar of # nationality group} other {Stacked bar of # nationality groups}}",
       "employees": "active employees",
       "departmentsCount": "{count, plural, one {# department} other {# departments}}",
-      "nationalities": "nationalities recorded",
       "unassigned": "No department",
       "other": "Other",
       "unknownNationality": "Not recorded",
       "emptyTitle": "No employees yet",
-      "emptyDescription": "Charts appear once employees are added or imported."
+      "emptyDescription": "Charts appear once employees are added or imported.",
+      "title": "Workforce overview",
+      "nationalitiesCount": "{count, plural, one {# nationality} other {# nationalities}}"
     },
     "recentActivity": {
       "title": "Recent activity",

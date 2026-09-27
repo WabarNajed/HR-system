@@ -2,7 +2,7 @@ import 'server-only';
 
 import QRCode from 'qrcode';
 import { formatDate, formatHijri, todayIso } from '@/lib/dates';
-import { formatCurrency } from '@/lib/format';
+import { formatCurrency, formatNumber } from '@/lib/format';
 import type { Locale } from '@/lib/i18n/config';
 import { localized } from '@/lib/i18n/localized';
 import { getTranslator } from '@/lib/i18n/translator';
@@ -210,6 +210,18 @@ function clean(value: string | null | undefined): string {
   return typeof value === 'string' ? value.trim() : '';
 }
 
+/** `SAR 10,800.00` (English) · `10,800.00 ريال سعودي` (Arabic, formal letter style). */
+function formatMoney(value: number, lang: Locale, currency: string): string {
+  if (lang === 'en') return formatCurrency(value, 'en', currency, { display: 'code' });
+  let name = currency;
+  try {
+    name = new Intl.DisplayNames(['ar'], { type: 'currency' }).of(currency) ?? currency;
+  } catch {
+    // unknown code → keep the ISO code
+  }
+  return `${formatNumber(value, 'ar', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${name}`;
+}
+
 function gregorian(value: string | null | undefined, lang: Locale): string {
   if (!value) return '';
   const text = formatDate(value, lang, 'long');
@@ -233,7 +245,7 @@ export function variableResolver(
 ): (token: string) => string | null {
   const { employee: e, compensation: c, organization: o } = ctx;
   const currency = c?.currency || o.currency || 'SAR';
-  const money = (v: number | null | undefined) => (v === null || v === undefined ? '' : formatCurrency(v, lang, currency));
+  const money = (v: number | null | undefined) => (v === null || v === undefined ? '' : formatMoney(v, lang, currency));
   const includeSalary = Boolean(data.options.includeSalary || data.options.includeAllowances);
   const values: Record<string, string> = {
     employee_name_ar: clean(e?.name_ar) || clean(e?.name_en),
@@ -390,7 +402,7 @@ export async function buildCertificateDocument(input: BuildDocumentInput): Promi
 ${pdfBaseCss()}
 :root { --brand: ${primary}; --gold: ${secondary}; --ink: #0f1b1f; --muted: #52636a; --line: #dfe5e8; }
 html, body { background: #fff; }
-body { font-size: ${language === 'bilingual' ? '9.6pt' : '10.8pt'}; line-height: 1.75; color: var(--ink); }
+body { font-size: ${language === 'bilingual' ? '9pt' : '10.8pt'}; line-height: ${language === 'bilingual' ? '1.62' : '1.75'}; color: var(--ink); }
 .num { direction: ltr; unicode-bidi: isolate; }
 .letterhead { position: fixed; top: 0; left: 0; right: 0; height: 40mm; padding: 11mm 18mm 0; }
 .lh-inner { position: relative; min-height: 20mm; display: flex; align-items: center; }
@@ -412,31 +424,32 @@ body { font-size: ${language === 'bilingual' ? '9.6pt' : '10.8pt'}; line-height:
 .pf-contact { margin-top: 1.5mm; font-size: 7.6pt; color: var(--muted); text-align: center; }
 .pf-contact .sep { color: var(--gold); margin: 0 2.2mm; }
 table.sheet { width: 100%; border-collapse: collapse; }
-table.sheet > thead > tr > td { height: 46mm; padding: 0; }
-table.sheet > tfoot > tr > td { height: 31mm; padding: 0; }
-table.sheet > tbody > tr > td { padding: 0 20mm; vertical-align: top; }
+table.sheet > thead > tr > td { height: 45mm; padding: 0; }
+table.sheet > tfoot > tr > td { height: 30mm; padding: 0; }
+table.sheet > tbody > tr > td { padding: 0 ${language === 'bilingual' ? '17mm' : '20mm'}; vertical-align: top; }
 .body { ${language === 'bilingual' ? 'display: grid; grid-template-columns: 1fr 1px 1fr; column-gap: 7mm;' : ''} }
 .divider { background: linear-gradient(to bottom, transparent, var(--line) 8%, var(--line) 92%, transparent); }
 .content { min-width: 0; }
-.content p { margin: 0 0 2.6mm; }
-.content h1, .content h2, .content h3, .content h4 { color: var(--brand); margin: 3mm 0 4mm; line-height: 1.35; font-weight: 700; }
+.content p { margin: 0 0 ${language === 'bilingual' ? '1.8mm' : '2.6mm'}; }
+.content h1, .content h2, .content h3, .content h4 { color: var(--brand); margin: ${language === 'bilingual' ? '2mm 0 3mm' : '3mm 0 4mm'}; line-height: 1.35; font-weight: 700; }
 .content h1 { font-size: 1.75em; } .content h2 { font-size: 1.45em; } .content h3 { font-size: 1.2em; } .content h4 { font-size: 1.05em; }
 .content ul, .content ol { margin: 0 0 2.6mm; padding-inline-start: 6mm; }
 .content li p { margin: 0; }
 .content table { width: 100%; border-collapse: collapse; margin: 1mm 0 3.5mm; font-size: .95em; }
-.content th, .content td { border: .6pt solid var(--line); padding: 1.4mm 2.6mm; text-align: start; vertical-align: top; }
-.content th { background: #f3f6f7; font-weight: 600; width: 45%; }
+.content th, .content td { border: .6pt solid var(--line); padding: ${language === 'bilingual' ? '1mm 2mm' : '1.4mm 2.6mm'}; text-align: start; vertical-align: top; }
+.content th { background: #f3f6f7; font-weight: 600; }
+.content tr > th:first-child:not(:last-child) { width: ${language === 'bilingual' ? '52%' : '45%'}; }
 .content td p, .content th p { margin: 0; }
 .content strong { font-weight: 700; }
 .content blockquote { margin: 0 0 2.6mm; padding-inline-start: 4mm; border-inline-start: 2pt solid var(--gold); color: var(--muted); }
 .content hr { border: 0; border-top: .6pt solid var(--line); margin: 4mm 0; }
-.closing { display: flex; align-items: flex-end; justify-content: space-between; gap: 10mm; margin-top: 7mm; break-inside: avoid; page-break-inside: avoid; }
+.closing { display: flex; align-items: flex-end; justify-content: space-between; gap: 10mm; margin-top: ${language === 'bilingual' ? '4mm' : '7mm'}; break-inside: avoid; page-break-inside: avoid; }
 .sig { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1.5mm; }
 .sig-names { display: flex; gap: 8mm; }
 .sig-lines { min-width: 0; }
 .sig-title { font-size: 9pt; color: var(--muted); }
 .sig-name { font-weight: 700; font-size: 10pt; }
-.sig-marks { position: relative; height: 26mm; display: flex; align-items: center; gap: 4mm; }
+.sig-marks { position: relative; height: ${language === 'bilingual' ? '23mm' : '26mm'}; display: flex; align-items: center; gap: 4mm; }
 .sig-img { max-height: 20mm; max-width: 52mm; object-fit: contain; }
 .stamp-img { max-height: 26mm; max-width: 30mm; object-fit: contain; opacity: .92; }
 .sig-rule { width: 50mm; border-bottom: .8pt solid var(--ink); height: 16mm; }
@@ -460,8 +473,8 @@ ${
 }`;
 
   const lhClass = headerInner ? 'lh-inner' : 'lh-inner lh-only-logo';
-  const header = headerInner || logo ? `<div class="${lhClass}">${logo}<div class="lh-content">${headerInner}</div></div><div class="lh-rule"></div>` : '';
-  const footer = `<div class="pf-rule"></div>${footerInner ? `<div class="pf-content">${footerInner}</div>` : ''}${contact ? `<div class="pf-contact">${contact}</div>` : ''}`;
+  const header = headerInner || logo ? `<div class="${lhClass}" dir="rtl">${logo}<div class="lh-content">${headerInner}</div></div><div class="lh-rule"></div>` : '';
+  const footer = `<div class="pf-rule"></div>${footerInner ? `<div class="pf-content" dir="rtl">${footerInner}</div>` : ''}${contact ? `<div class="pf-contact">${contact}</div>` : ''}`;
   const title = escapeHtml(`${input.certificateNumber} — ${language === 'en' ? template.name_en : template.name_ar}`);
 
   return `<!doctype html>

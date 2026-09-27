@@ -36,8 +36,8 @@
     "totalHint": "{active} active",
     "invited": "Invitations pending",
     "invitedHint": "Invited, not signed in yet",
-    "pendingRegistrations": "Registrations to review",
-    "pendingHint": "Self-registrations awaiting HR",
+    "pendingRegistrations": "Registrations",
+    "pendingHint": "Awaiting HR review",
     "disabled": "Disabled accounts",
     "disabledHint": "Sign-in turned off"
   },
@@ -172,12 +172,12 @@
     },
     "stats": {
       "pending": "Awaiting review",
-      "pendingHint": "Registrations that need a decision",
-      "infoRequested": "Waiting for applicants",
-      "infoRequestedHint": "More information requested",
+      "pendingHint": "Need a decision",
+      "infoRequested": "Info requested",
+      "infoRequestedHint": "Waiting for the applicant",
       "oldest": "Longest wait",
       "days": "{count, plural, =0 {Today} one {# day} other {# days}}",
-      "oldestHint": "Oldest registration awaiting review",
+      "oldestHint": "Oldest pending registration",
       "oldestNone": "Nothing is waiting",
       "approved30d": "Approved (30 days)",
       "rejected30d": "{count, plural, =0 {None rejected} one {# rejected} other {# rejected}}"

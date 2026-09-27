@@ -1,11 +1,11 @@
 'use client';
 
 import type { ColumnDef } from '@tanstack/react-table';
-import { BuildingIcon, CalendarPlusIcon, CalendarRangeIcon, CircleDotIcon, EyeIcon, TagIcon } from 'lucide-react';
+import { BuildingIcon, CalendarPlusIcon, CalendarRangeIcon, CircleDotIcon, EyeIcon, TagIcon, UserRoundIcon } from 'lucide-react';
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import { useMemo } from 'react';
-import { actionsColumn, DataTable, DataTableColumnHeader, type FilterDef } from '@/components/data-table';
+import { actionsColumn, DataTable, type FilterDef } from '@/components/data-table';
 import { EmployeeCell } from '@/components/shared/employee-cell';
 import { StatusBadge } from '@/components/shared/status-badge';
 import { Button } from '@/components/ui/button';
@@ -16,6 +16,7 @@ import { useDateFormat } from '@/lib/i18n/use-date-format';
 import { formatDays } from '@/lib/format';
 import type { LeaveRequestListRow, LeaveScope, Option } from '../types';
 import { LeaveTypeLabel } from './leave-type-dot';
+import { SortHeader } from './sort-header';
 import { UrlSegmented } from './url-controls';
 
 const STATUS_OPTIONS = [
@@ -39,6 +40,8 @@ export type LeaveRequestsTableProps = {
   scope: LeaveScope;
   canExport: boolean;
   canRequest: boolean;
+  /** Active `?employee=` filter (from the employee profile) — shown as a removable chip. */
+  employeeOption?: Option | null;
 };
 
 export function LeaveRequestsTable({
@@ -51,6 +54,7 @@ export function LeaveRequestsTable({
   scope,
   canExport,
   canRequest,
+  employeeOption,
 }: LeaveRequestsTableProps) {
   const t = useTranslations('leave');
   const tc = useTranslations('common');
@@ -65,7 +69,7 @@ export function LeaveRequestsTable({
       cols.push({
         id: 'employee',
         accessorFn: (r) => r.employee.name_ar ?? r.employee.name_en ?? '',
-        header: ({ column }) => <DataTableColumnHeader column={column} title={t('fields.employee')} />,
+        header: ({ column }) => <SortHeader column={column} title={t('fields.employee')} />,
         cell: ({ row }) => (
           <EmployeeCell
             employee={{ id: row.original.employee.id, name_ar: row.original.employee.name_ar, name_en: row.original.employee.name_en, avatarUrl: row.original.employee.avatarUrl }}
@@ -100,7 +104,7 @@ export function LeaveRequestsTable({
       {
         id: 'start_date',
         accessorKey: 'start_date',
-        header: ({ column }) => <DataTableColumnHeader column={column} title={t('fields.period')} />,
+        header: ({ column }) => <SortHeader column={column} title={t('fields.period')} />,
         cell: ({ row }) => (
           <div className="leading-tight">
             <div className="numeric whitespace-nowrap text-foreground">{fmt.range(row.original.start_date, row.original.end_date)}</div>
@@ -116,14 +120,14 @@ export function LeaveRequestsTable({
       {
         id: 'days',
         accessorKey: 'days',
-        header: ({ column }) => <DataTableColumnHeader column={column} title={t('fields.days')} />,
+        header: ({ column }) => <SortHeader column={column} title={t('fields.days')} />,
         cell: ({ row }) => <span className="font-medium numeric">{formatDays(row.original.days, locale)}</span>,
         meta: { label: t('fields.days'), align: 'end', width: '5.5rem' },
       },
       {
         id: 'status',
         accessorKey: 'status',
-        header: ({ column }) => <DataTableColumnHeader column={column} title={tc('status')} />,
+        header: ({ column }) => <SortHeader column={column} title={tc('status')} />,
         cell: ({ row }) => <StatusBadge domain="request" status={row.original.status} />,
         meta: { label: tc('status') },
       },
@@ -148,7 +152,7 @@ export function LeaveRequestsTable({
       {
         id: 'submitted',
         accessorKey: 'submitted_at',
-        header: ({ column }) => <DataTableColumnHeader column={column} title={t('fields.submitted')} />,
+        header: ({ column }) => <SortHeader column={column} title={t('fields.submitted')} />,
         cell: ({ row }) => (row.original.submitted_at ? <span className="numeric whitespace-nowrap">{fmt.date(row.original.submitted_at)}</span> : '—'),
         meta: { label: t('fields.submitted'), defaultHidden: true },
       },
@@ -182,10 +186,10 @@ export function LeaveRequestsTable({
     },
     { type: 'dateRange', key: 'period', title: t('fields.period') },
   ];
-  const moreFilters: FilterDef<LeaveRequestListRow>[] =
-    scope !== 'mine' && departmentOptions.length
-      ? [{ key: 'department', title: tc('department'), icon: BuildingIcon, options: departmentOptions }]
-      : [];
+  const moreFilters: FilterDef<LeaveRequestListRow>[] = [
+    ...(scope !== 'mine' && departmentOptions.length ? [{ key: 'department', title: tc('department'), icon: BuildingIcon, options: departmentOptions }] : []),
+    ...(employeeOption ? [{ key: 'employee', title: t('fields.employee'), icon: UserRoundIcon, options: [employeeOption], multiple: false }] : []),
+  ];
 
   const scopeSwitch = (
     <UrlSegmented

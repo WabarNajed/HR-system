@@ -4,12 +4,12 @@ import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
 import { ROUTE_ACCESS } from '@/components/shell/nav-config';
 import { DashboardHeader } from '@/features/dashboard/components/dashboard-header';
-import { DashboardSection, WidgetSkeleton } from '@/features/dashboard/components/widget-parts';
+import { DashboardSection, Widget, WidgetEmpty, WidgetSkeleton } from '@/features/dashboard/components/widget-parts';
 import { ApprovalQueueWidget } from '@/features/dashboard/widgets/approval-queue';
 import { AuditActivityWidget } from '@/features/dashboard/widgets/audit-activity';
 import { ComplianceRow } from '@/features/dashboard/widgets/compliance-row';
 import { EmployeeKpis, KpiRowSkeleton } from '@/features/dashboard/widgets/employee-kpis';
-import { DepartmentHeadcountWidget, NationalityMixWidget } from '@/features/dashboard/widgets/employee-overview';
+import { WorkforceOverviewWidget } from '@/features/dashboard/widgets/employee-overview';
 import { ExpiryAlertsWidget } from '@/features/dashboard/widgets/expiry-alerts';
 import { HrKpis } from '@/features/dashboard/widgets/hr-kpis';
 import { LatestNotificationsWidget } from '@/features/dashboard/widgets/latest-notifications';
@@ -46,7 +46,7 @@ function ComplianceSkeleton() {
  * Role-aware dashboard (PRODUCT-SPEC §16). Sections appear by the caller's scope:
  * super admin → Administration; HR (org employees/requests view) → Organization; managers (with
  * direct reports) → My team; anyone linked to an employee → My workspace. Every widget streams in
- * its own Suspense boundary, and numbers come from `dashboard_stats()` + targeted RLS queries.
+ * its own Suspense boundary; numbers come from `dashboard_stats()` + targeted RLS queries.
  */
 export default async function DashboardPage() {
   const ctx = await requireAccess(ROUTE_ACCESS['/dashboard']);
@@ -62,7 +62,7 @@ export default async function DashboardPage() {
     employee: Boolean(ctx.employee),
   };
   const canAudit = can(ctx, 'audit.view');
-  const multi = [view.admin, view.hr, view.manager].filter(Boolean).length + (view.employee ? 1 : 0) > 1;
+  const multi = [view.admin, view.hr, view.manager, view.employee].filter(Boolean).length > 1;
 
   return (
     <div className="flex min-w-0 flex-col gap-6 pb-4">
@@ -76,14 +76,16 @@ export default async function DashboardPage() {
                 <OrgHealthWidget year={year} canSetup={checkAccess(ctx, ROUTE_ACCESS['/setup'])} />
               </Suspense>
             </div>
-            <Suspense fallback={<WidgetSkeleton rows={4} chart />}>
-              <UsersSummaryWidget />
-            </Suspense>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-1">
+              <Suspense fallback={<WidgetSkeleton rows={3} chart />}>
+                <UsersSummaryWidget />
+              </Suspense>
+              <Suspense fallback={<WidgetSkeleton rows={2} />}>
+                <PendingRegistrationsWidget />
+              </Suspense>
+            </div>
           </div>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <Suspense fallback={<WidgetSkeleton rows={4} />}>
-              <PendingRegistrationsWidget />
-            </Suspense>
+          <div className={canAudit ? 'grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3' : 'grid grid-cols-1 gap-4 md:grid-cols-2'}>
             <Suspense fallback={<WidgetSkeleton rows={4} />}>
               <RolesSummaryWidget />
             </Suspense>
@@ -91,9 +93,11 @@ export default async function DashboardPage() {
               <RecentImportsWidget />
             </Suspense>
             {canAudit ? (
-              <Suspense fallback={<WidgetSkeleton rows={4} chart />}>
-                <AuditActivityWidget />
-              </Suspense>
+              <div className="md:col-span-2 xl:col-span-1">
+                <Suspense fallback={<WidgetSkeleton rows={4} chart />}>
+                  <AuditActivityWidget />
+                </Suspense>
+              </div>
             ) : null}
           </div>
         </DashboardSection>
@@ -121,21 +125,22 @@ export default async function DashboardPage() {
               <ExpiryAlertsWidget />
             </Suspense>
           </div>
-          <div className={canAudit ? 'grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3' : 'grid grid-cols-1 gap-4 md:grid-cols-2'}>
-            <Suspense fallback={<WidgetSkeleton rows={4} chart />}>
-              <DepartmentHeadcountWidget />
-            </Suspense>
-            <Suspense fallback={<WidgetSkeleton rows={3} chart />}>
-              <NationalityMixWidget />
-            </Suspense>
-            {canAudit ? (
-              <div className="md:col-span-2 xl:col-span-1">
+          {canAudit ? (
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+              <Suspense fallback={<WidgetSkeleton rows={5} chart />}>
+                <WorkforceOverviewWidget />
+              </Suspense>
+              <div className="lg:col-span-2">
                 <Suspense fallback={<WidgetSkeleton rows={6} />}>
                   <RecentActivityWidget />
                 </Suspense>
               </div>
-            ) : null}
-          </div>
+            </div>
+          ) : (
+            <Suspense fallback={<WidgetSkeleton rows={4} chart />}>
+              <WorkforceOverviewWidget split />
+            </Suspense>
+          )}
         </DashboardSection>
       ) : null}
 
@@ -188,6 +193,9 @@ export default async function DashboardPage() {
       {!view.employee && !view.admin && !view.hr ? (
         <DashboardSection title={t('sections.workspace.titleSingle')} icon={BriefcaseBusinessIcon}>
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <Widget title={t('sections.workspace.title')} icon={UserRoundIcon}>
+              <WidgetEmpty icon={UserRoundIcon} title={t('sections.workspace.notLinkedTitle')} description={t('sections.workspace.notLinkedDescription')} />
+            </Widget>
             <Suspense fallback={<WidgetSkeleton rows={5} />}>
               <LatestNotificationsWidget nowIso={nowIso} />
             </Suspense>
