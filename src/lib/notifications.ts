@@ -21,10 +21,13 @@ import { recordEmail, sendEmail } from './email/send';
  *
  * 1. `claim_notification_emails(ids)` (as the acting user — or the service role with
  *    `{ asService: true }` for trigger-created notifications such as registrations) returns only
- *    notifications whose event has `email_enabled`, with recipient email/name/language and the
- *    template key, and stamps `emailed_at` (idempotent — a notification is never emailed twice).
- * 2. The matching active `email_templates` row is rendered in the recipient's language
- *    (`{{placeholders}}`, HTML-escaped) inside the branded layout.
+ *    notifications whose event has `email_enabled`, with recipient email/name/language, the
+ *    template key, the template subject/body already in the recipient's language and the sender
+ *    settings, and stamps `emailed_at` (idempotent — a notification is never emailed twice).
+ *    No service role is needed for user-caused notifications (migration
+ *    20260928012000_integration_rpc_fixes.sql); it is only used as a fallback to read templates
+ *    when talking to a database that predates that migration.
+ * 2. The template is rendered (`{{placeholders}}`, HTML-escaped) inside the branded layout.
  * 3. `sendEmail` (Resend | SMTP | skipped) and `log_email` for every attempt.
  * Never throws; returns a summary.
  */
@@ -50,7 +53,15 @@ type ClaimedRow = {
   params: Record<string, unknown> | null;
   link: string | null;
   template_key: string | null;
+  /** Present since migration 20260928012000 (null = template missing). */
+  template_active?: boolean | null;
+  subject?: string | null;
+  body?: string | null;
+  email_from_name?: string | null;
+  email_reply_to?: string | null;
 };
+
+type ResolvedTemplate = { subject: string; body: string; active: boolean };
 
 type TemplateRow = { key: string; subject_ar: string; subject_en: string; body_ar: string; body_en: string; is_active: boolean };
 
@@ -114,9 +125,12 @@ export async function deliverEmailsForNotifications(
   if (!unique.length) return summary;
 
   try {
-    const admin: AnyClient | null = isAdminClientConfigured() ? createAdminClient() : null;
     const userClient: AnyClient | null = options.asService ? null : await createClient().catch(() => null);
-    const claimClient = options.asService ? admin : userClient;
+    const claimClient: AnyClient | null = options.asService
+      ? isAdminClientConfigured()
+        ? createAdminClient()
+        : null
+      : userClient;
     if (!claimClient) {
       console.warn('[notifications] email delivery skipped: no client for claim_notification_emails');
       return summary;
@@ -128,25 +142,46 @@ export async function deliverEmailsForNotifications(
     summary.claimed = claimed.length;
     if (!claimed.length) return summary;
 
-    // Templates are configuration (not personal data); non-HR actors can't read them through RLS,
-    // so the service role reads them when available — the claim above already authorized delivery.
-    const templateClient = admin ?? claimClient;
-    const keys = Array.from(new Set(claimed.map((c) => c.template_key ?? emailTemplateKeyFor(c.type, c.params ?? {}))));
-    const [templatesRes, settingsRes, branding] = await Promise.all([
-      templateClient.from('email_templates').select('key, subject_ar, subject_en, body_ar, body_en, is_active').in('key', keys),
-      templateClient.from('organization_settings').select('email_from_name, email_reply_to').maybeSingle(),
-      getPublicBranding(),
-    ]);
-    if (templatesRes.error) console.error('[notifications] templates lookup failed:', templatesRes.error.code, templatesRes.error.message);
-    const templates = new Map(((templatesRes.data ?? []) as TemplateRow[]).map((tpl) => [tpl.key, tpl]));
-    const orgSettings = (settingsRes.data ?? null) as { email_from_name?: string | null; email_reply_to?: string | null } | null;
+    const templateKeyOf = (c: ClaimedRow) => c.template_key ?? emailTemplateKeyFor(c.type, c.params ?? {});
+    // The claim returns the template in the recipient's language. Fallback (older database without the
+    // template columns): read `email_templates` — RLS lets only HR read it, so use the service role when
+    // configured. The claim above already authorized delivery of these notifications.
+    const needsLookup = claimed.some((c) => c.template_active === undefined);
+    let lookedUp = new Map<string, TemplateRow>();
+    if (needsLookup) {
+      const templateClient: AnyClient = isAdminClientConfigured() ? createAdminClient() : claimClient;
+      const keys = Array.from(new Set(claimed.map(templateKeyOf)));
+      const res = await templateClient
+        .from('email_templates')
+        .select('key, subject_ar, subject_en, body_ar, body_en, is_active')
+        .in('key', keys);
+      if (res.error) console.error('[notifications] templates lookup failed:', res.error.code, res.error.message);
+      lookedUp = new Map(((res.data ?? []) as TemplateRow[]).map((tpl) => [tpl.key, tpl]));
+    }
+    const resolveTemplate = (row: ClaimedRow, locale: Locale): ResolvedTemplate | null => {
+      if (row.template_active !== undefined) {
+        if (row.template_active === null || !row.subject || !row.body) return null;
+        return { subject: row.subject, body: row.body, active: row.template_active };
+      }
+      const tpl = lookedUp.get(templateKeyOf(row));
+      if (!tpl) return null;
+      const pick = (ar: string, en: string) => (locale === 'ar' ? ar || en : en || ar);
+      return { subject: pick(tpl.subject_ar, tpl.subject_en), body: pick(tpl.body_ar, tpl.body_en), active: tpl.is_active };
+    };
+
+    const branding = await getPublicBranding();
+    let senderSettings: { email_from_name?: string | null; email_reply_to?: string | null } | null = null;
+    if (claimed.some((c) => c.email_from_name === undefined)) {
+      const res = await claimClient.from('organization_settings').select('email_from_name, email_reply_to').maybeSingle();
+      senderSettings = (res.data ?? null) as typeof senderSettings;
+    }
 
     for (const row of claimed) {
-      const templateKey = row.template_key ?? emailTemplateKeyFor(row.type, row.params ?? {});
-      const template = templates.get(templateKey);
+      const templateKey = templateKeyOf(row);
       const locale: Locale = isLocale(row.language) ? row.language : 'ar';
+      const template = resolveTemplate(row, locale);
       const to = row.recipient_email ?? '';
-      if (!template || !template.is_active) {
+      if (!template || !template.active) {
         summary.skipped++;
         await recordEmail(
           { to, subject: templateKey, html: '', templateKey, relatedEntityType: 'notification', relatedEntityId: row.notification_id },
@@ -159,8 +194,8 @@ export async function deliverEmailsForNotifications(
       const portalName = brandingPortalName(branding, locale, t('common.appName'));
       const companyName = brandingCompanyName(branding, locale) ?? portalName;
       const vars = buildEmailVars(row, locale, { companyName, portalName });
-      const subject = renderTemplate(locale === 'ar' ? template.subject_ar : template.subject_en, vars, { html: false });
-      const bodyHtml = renderTemplate(locale === 'ar' ? template.body_ar : template.body_en, vars);
+      const subject = renderTemplate(template.subject, vars, { html: false });
+      const bodyHtml = renderTemplate(template.body, vars);
       const html = renderEmailLayout({
         locale,
         subject,
@@ -174,8 +209,8 @@ export async function deliverEmailsForNotifications(
           to,
           subject,
           html,
-          fromName: orgSettings?.email_from_name ?? null,
-          replyTo: orgSettings?.email_reply_to ?? null,
+          fromName: (row.email_from_name === undefined ? senderSettings?.email_from_name : row.email_from_name) ?? null,
+          replyTo: (row.email_reply_to === undefined ? senderSettings?.email_reply_to : row.email_reply_to) ?? null,
           templateKey,
           relatedEntityType: 'notification',
           relatedEntityId: row.notification_id,

@@ -288,6 +288,8 @@ export type Database = {
           code: string | null
           created_at: string
           created_by: string | null
+          description_ar: string | null
+          description_en: string | null
           id: string
           is_active: boolean
           name_ar: string | null
@@ -299,6 +301,8 @@ export type Database = {
           code?: string | null
           created_at?: string
           created_by?: string | null
+          description_ar?: string | null
+          description_en?: string | null
           id?: string
           is_active?: boolean
           name_ar?: string | null
@@ -310,6 +314,8 @@ export type Database = {
           code?: string | null
           created_at?: string
           created_by?: string | null
+          description_ar?: string | null
+          description_en?: string | null
           id?: string
           is_active?: boolean
           name_ar?: string | null
@@ -324,6 +330,8 @@ export type Database = {
           code: string | null
           created_at: string
           created_by: string | null
+          description_ar: string | null
+          description_en: string | null
           head_employee_id: string | null
           id: string
           is_active: boolean
@@ -337,6 +345,8 @@ export type Database = {
           code?: string | null
           created_at?: string
           created_by?: string | null
+          description_ar?: string | null
+          description_en?: string | null
           head_employee_id?: string | null
           id?: string
           is_active?: boolean
@@ -350,6 +360,8 @@ export type Database = {
           code?: string | null
           created_at?: string
           created_by?: string | null
+          description_ar?: string | null
+          description_en?: string | null
           head_employee_id?: string | null
           id?: string
           is_active?: boolean
@@ -1287,6 +1299,8 @@ export type Database = {
           code: string | null
           created_at: string
           created_by: string | null
+          description_ar: string | null
+          description_en: string | null
           id: string
           is_active: boolean
           name_ar: string | null
@@ -1298,6 +1312,8 @@ export type Database = {
           code?: string | null
           created_at?: string
           created_by?: string | null
+          description_ar?: string | null
+          description_en?: string | null
           id?: string
           is_active?: boolean
           name_ar?: string | null
@@ -1309,6 +1325,8 @@ export type Database = {
           code?: string | null
           created_at?: string
           created_by?: string | null
+          description_ar?: string | null
+          description_en?: string | null
           id?: string
           is_active?: boolean
           name_ar?: string | null
@@ -1578,6 +1596,8 @@ export type Database = {
           country: string | null
           created_at: string
           created_by: string | null
+          description_ar: string | null
+          description_en: string | null
           id: string
           is_active: boolean
           name_ar: string | null
@@ -1591,6 +1611,8 @@ export type Database = {
           country?: string | null
           created_at?: string
           created_by?: string | null
+          description_ar?: string | null
+          description_en?: string | null
           id?: string
           is_active?: boolean
           name_ar?: string | null
@@ -1604,6 +1626,8 @@ export type Database = {
           country?: string | null
           created_at?: string
           created_by?: string | null
+          description_ar?: string | null
+          description_en?: string | null
           id?: string
           is_active?: boolean
           name_ar?: string | null
@@ -2679,15 +2703,29 @@ export type Database = {
         Args: { p_employee_id?: string; p_profile_id: string; p_role_key?: string }
         Returns: undefined
       }
+      audit_log_facets: {
+        Args: { p_since?: string }
+        Returns: {
+            facet: string
+            label: string
+            total: number
+            value: string
+          }[]
+      }
       claim_notification_emails: {
         Args: { p_notification_ids: string[] }
         Returns: {
+            body: string
+            email_from_name: string
+            email_reply_to: string
             language: string
             link: string
             notification_id: string
             params: Json
             recipient_email: string
             recipient_name: string
+            subject: string
+            template_active: boolean
             template_key: string
             type: string
           }[]
@@ -2699,6 +2737,24 @@ export type Database = {
       create_request_draft: {
         Args: { p_employee_id?: string; p_request_type_id: string; p_subtype?: string; p_values: Json }
         Returns: string
+      }
+      dashboard_employee_breakdown: {
+        Args: never
+        Returns: Json
+      }
+      dashboard_expiry_items: {
+        Args: { p_days?: number; p_limit?: number }
+        Returns: {
+            days_left: number
+            document_type: string
+            employee_id: string
+            employee_name_ar: string
+            employee_name_en: string
+            employee_number: string
+            entity_id: string
+            expiry_date: string
+            kind: string
+          }[]
       }
       dashboard_stats: {
         Args: never
@@ -2712,8 +2768,16 @@ export type Database = {
         Args: { p_employee_id: string }
         Returns: Json
       }
+      get_my_request_access: {
+        Args: never
+        Returns: Json
+      }
       get_public_branding: {
         Args: never
+        Returns: Json
+      }
+      get_request_capabilities: {
+        Args: { p_request_id: string }
         Returns: Json
       }
       get_request_workflow: {
@@ -2738,11 +2802,35 @@ export type Database = {
             kind: string
             subtitle: string
             title: string
+            type_key: string
           }[]
       }
       initialize_leave_balances: {
         Args: { p_employee_id?: string; p_year: number }
         Returns: number
+      }
+      list_request_assignees: {
+        Args: { p_limit?: number; p_query?: string; p_request_id: string }
+        Returns: {
+            email: string
+            employee_number: string
+            full_name: string
+            id: string
+            job_title_ar: string
+            job_title_en: string
+            name_ar: string
+            name_en: string
+          }[]
+      }
+      list_request_handlers: {
+        Args: never
+        Returns: {
+            email: string
+            full_name: string
+            id: string
+            name_ar: string
+            name_en: string
+          }[]
       }
       log_audit_event: {
         Args: { p_action: string; p_changes?: Json; p_entity_id?: string; p_entity_type?: string; p_summary?: string }
@@ -2751,6 +2839,15 @@ export type Database = {
       log_email: {
         Args: { p_error?: string; p_provider?: string; p_provider_message_id?: string; p_recipient: string; p_related_entity_id?: string; p_related_entity_type?: string; p_status: string; p_subject?: string; p_template_key?: string }
         Returns: string
+      }
+      master_data_usage: {
+        Args: { p_entity: string }
+        Returns: {
+            all_employees: number
+            children: number
+            employees: number
+            id: string
+          }[]
       }
       next_document_number: {
         Args: { p_prefix: string }
@@ -2795,6 +2892,10 @@ export type Database = {
       set_user_status: {
         Args: { p_note?: string; p_status: string; p_user_id: string }
         Returns: undefined
+      }
+      settings_overview: {
+        Args: never
+        Returns: Json
       }
       submit_request: {
         Args: { p_request_id: string }

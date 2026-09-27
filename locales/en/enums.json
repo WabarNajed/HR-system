@@ -126,7 +126,28 @@
     "start": "Marked in progress",
     "complete": "Completed",
     "cancel": "Cancelled",
-    "comment": "Commented"
+    "comment": "Commented",
+    "skip": "Step skipped"
+  },
+  "skipReason": {
+    "no_manager": "No direct manager is assigned",
+    "manager_without_active_account": "The manager has no active portal account",
+    "approver_is_requester": "The approver is the requester",
+    "approver_inactive": "The approver’s account is inactive",
+    "no_role_members": "No active users hold the required role",
+    "cancelled": "The request was cancelled"
+  },
+  "requestCategory": {
+    "time_off": "Time off",
+    "documents": "Documents & letters",
+    "government": "Government services",
+    "benefits": "Benefits",
+    "payroll": "Payroll",
+    "attendance": "Attendance",
+    "personal_data": "Personal data",
+    "travel": "Travel",
+    "separation": "Separation",
+    "general": "General"
   },
   "weekday": {
     "sunday": "Sunday",

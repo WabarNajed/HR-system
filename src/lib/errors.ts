@@ -5,7 +5,12 @@
  *   mapError(err) → 'errors.duplicate' | 'errors.forbidden' | 'errors.requestNotEditable' | … | 'errors.generic'
  *
  * Custom DB errors: `RAISE EXCEPTION 'hr:<namespace>.<key>'` (any SQLSTATE) is mapped to
- * `<namespace>.<key>` when that key exists in the message catalog, otherwise `errors.generic`.
+ * `<namespace>.<key>` (the `hr:` prefix stripped) when that key exists in the message catalog,
+ * otherwise `errors.generic`. Keys raised by the migrations: docs/DATABASE.md §13.
+ *
+ * SQLSTATE fallbacks (docs/DATABASE.md §13): 23505 → errors.duplicate, 23503 → errors.inUse
+ * (errors.invalidReference for a dangling insert), 23514/23502/22xxx → errors.validation,
+ * 42501 → errors.forbidden, PGRST301 (expired/invalid JWT) → errors.sessionExpired.
  */
 import { getMessages } from '@/lib/i18n/messages';
 
@@ -73,8 +78,9 @@ function mapDbCode(code: string, message: string): string | null {
     case '23505':
       return 'errors.duplicate';
     case '23503':
-      // Deleting a referenced row vs. inserting a dangling reference.
-      return /update or delete on table/i.test(message) ? 'errors.inUse' : 'errors.invalidReference';
+      // FK violation: deleting master data that is still referenced (the common case) → inUse.
+      // Only an insert/update pointing at a row that no longer exists → invalidReference.
+      return /insert or update on table/i.test(message) ? 'errors.invalidReference' : 'errors.inUse';
     case '23502':
     case '23514':
     case '22P02':

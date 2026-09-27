@@ -126,7 +126,28 @@
     "start": "بدأ التنفيذ",
     "complete": "تم الإكمال",
     "cancel": "تم الإلغاء",
-    "comment": "أضاف تعليقًا"
+    "comment": "أضاف تعليقًا",
+    "skip": "تم تخطي المرحلة"
+  },
+  "skipReason": {
+    "no_manager": "لا يوجد مدير مباشر معيّن",
+    "manager_without_active_account": "ليس لدى المدير حساب نشط في البوابة",
+    "approver_is_requester": "المعتمِد هو مقدّم الطلب",
+    "approver_inactive": "حساب المعتمِد غير نشط",
+    "no_role_members": "لا يوجد مستخدمون نشطون يحملون الدور المطلوب",
+    "cancelled": "تم إلغاء الطلب"
+  },
+  "requestCategory": {
+    "time_off": "الإجازات",
+    "documents": "المستندات والخطابات",
+    "government": "الخدمات الحكومية",
+    "benefits": "المزايا",
+    "payroll": "الرواتب",
+    "attendance": "الحضور والانصراف",
+    "personal_data": "البيانات الشخصية",
+    "travel": "السفر",
+    "separation": "إنهاء الخدمة",
+    "general": "عام"
   },
   "weekday": {
     "sunday": "الأحد",
