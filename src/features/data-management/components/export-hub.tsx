@@ -17,7 +17,7 @@ export async function ExportHub({ datasets }: { datasets: ExportHubDataset[] }) 
   return (
     <div className="flex flex-col gap-3">
       <p className="text-meta text-muted-foreground">{t('description')}</p>
-      <ul className="grid grid-cols-1 gap-2.5 md:grid-cols-2 xl:grid-cols-3">
+      <ul className="grid grid-cols-1 gap-2.5 lg:grid-cols-2">
         {datasets.map((d) => (
           <li
             key={d.key}
@@ -27,12 +27,12 @@ export async function ExportHub({ datasets }: { datasets: ExportHubDataset[] }) 
             <span className="flex size-9 shrink-0 items-center justify-center rounded-md bg-info-soft text-info">
               <FileDownIcon className="size-4" aria-hidden />
             </span>
-            <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">{d.title}</span>
+            <span className="line-clamp-2 min-w-0 flex-1 text-sm leading-snug font-medium text-foreground">{d.title}</span>
             <span className="flex shrink-0 items-center gap-1">
               {d.formats.map((f) => {
                 const Icon = FORMAT_ICON[f];
                 return (
-                  <Button key={f} asChild variant="outline" size="sm" className="px-2.5">
+                  <Button key={f} asChild variant="outline" size="sm" className="px-2">
                     <a href={`/api/export/${d.key}?format=${f}`} download aria-label={`${d.title} · ${tf(f)}`}>
                       <Icon aria-hidden />
                       {tf(f)}

@@ -106,7 +106,7 @@ export default async function CertificatesPage({ searchParams }: { searchParams:
         }
       />
 
-      <KpiGrid>
+      <KpiGrid count={hrView ? 4 : 3}>
         {hrView ? (
           <>
             <StatCard label={t('kpi.awaiting')} value={n(kpis.pendingRequests)} icon={HourglassIcon} tone="warning" hint={t('kpi.awaitingHint')} href="/certificates?tab=requests&status=pending_hr_review,approved,in_progress" />
@@ -118,7 +118,7 @@ export default async function CertificatesPage({ searchParams }: { searchParams:
           <>
             <StatCard label={t('kpi.myCertificates')} value={n(kpis.totalValid)} icon={AwardIcon} tone="primary" hint={t('kpi.myCertificatesHint')} href="/certificates?tab=issued" />
             <StatCard label={t('kpi.myOpenRequests')} value={n(kpis.pendingRequests)} icon={HourglassIcon} tone="warning" hint={t('kpi.myOpenRequestsHint')} href="/certificates?tab=requests" />
-            <StatCard label={t('kpi.issuedThisMonth')} value={n(kpis.issuedThisMonth)} icon={CalendarCheckIcon} tone="success" hint={t('kpi.issuedThisMonthHint')} className="max-xl:hidden" />
+            <StatCard label={t('kpi.issuedThisMonth')} value={n(kpis.issuedThisMonth)} icon={CalendarCheckIcon} tone="success" hint={t('kpi.issuedThisMonthHint')} className="max-lg:hidden" />
           </>
         )}
       </KpiGrid>

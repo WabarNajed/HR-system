@@ -48,7 +48,7 @@ export default async function EmployeesIdEditPage({ params }: { params: Promise<
     }),
     getOrgCurrency(),
     employee.manager_id ? getManagerCard(id) : Promise.resolve(null),
-    bankEdit ? getCompensation(id) : Promise.resolve(null),
+    bankEdit ? getCompensation(id, { strict: true }) : Promise.resolve(null),
     bankEdit ? getBankAccountForEdit(id) : Promise.resolve(null),
   ]);
   const name = employeeDisplayName(employee, ctx.locale);
