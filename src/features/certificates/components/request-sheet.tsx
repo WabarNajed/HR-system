@@ -37,7 +37,7 @@ export function RequestSheet({
 
   return (
     <Sheet open onOpenChange={(open) => !open && close()}>
-      <SheetContent side="end" className="w-full gap-0 sm:max-w-xl">
+      <SheetContent side="end" className="w-full gap-0 sm:max-w-xl" onOpenAutoFocus={(e) => e.preventDefault()}>
         <SheetHeader className="border-b border-border px-5 pt-5 pb-4">
           <SheetTitle className="pe-8">{title ?? t('title')}</SheetTitle>
           {subtitle ? <SheetDescription asChild><div>{subtitle}</div></SheetDescription> : <SheetDescription className="sr-only">{t('title')}</SheetDescription>}
