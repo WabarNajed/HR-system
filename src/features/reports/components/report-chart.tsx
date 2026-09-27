@@ -33,7 +33,10 @@ import { formatValue, pickLocalized, tOr, useNumberFormat, useReportT, type Loos
  */
 
 type Point = Record<string, unknown> & { key: string };
-type Datum = Record<string, number | string | null> & { __label: string; __key: string };
+type Datum = Record<string, number | string | null> & {
+  __label: string;
+  __key: string;
+};
 
 const BUCKET_COLORS: Record<string, string> = {
   expired: CHART_STATUS.danger,
@@ -84,7 +87,10 @@ function categoryLabel(def: ChartDef, point: Point, locale: Locale, t: LooseT): 
 /** Builds chart rows; folds categories beyond `top` into "Other" (sums; percentages are just cut). */
 function toData(def: ChartDef, points: Point[], locale: Locale, t: LooseT): Datum[] {
   const rows: Datum[] = points.map((p) => {
-    const d: Datum = { __key: String(p.key ?? ''), __label: categoryLabel(def, p, locale, t) };
+    const d: Datum = {
+      __key: String(p.key ?? ''),
+      __label: categoryLabel(def, p, locale, t),
+    };
     for (const s of def.series) {
       const v = p[s.key];
       d[s.key] = v === null || v === undefined ? null : Number(v);
@@ -109,7 +115,11 @@ function ChartTooltip({
   def,
   t,
   locale,
-}: Partial<TooltipContentProps<number, string>> & { def: ChartDef; t: LooseT; locale: Locale }) {
+}: Partial<TooltipContentProps<number, string>> & {
+  def: ChartDef;
+  t: LooseT;
+  locale: Locale;
+}) {
   if (!active || !payload?.length) return null;
   const title = (payload[0]?.payload as Datum | undefined)?.__label ?? String(label ?? '');
   return (
@@ -120,7 +130,13 @@ function ChartTooltip({
           const series = def.series.find((s) => s.key === item.dataKey);
           return (
             <div key={String(item.dataKey)} className="flex items-center gap-2 text-meta">
-              <span aria-hidden className="size-2.5 shrink-0 rounded-[3px]" style={{ background: item.color ?? (item.payload as { fill?: string })?.fill }} />
+              <span
+                aria-hidden
+                className="size-2.5 shrink-0 rounded-[3px]"
+                style={{
+                  background: item.color ?? (item.payload as { fill?: string })?.fill,
+                }}
+              />
               <span className="text-muted-foreground">{series ? t(series.labelKey) : String(item.name)}</span>
               <span className="ms-auto ps-3 font-semibold numeric">{formatValue(item.value, def.format, locale, t)}</span>
             </div>
@@ -199,7 +215,14 @@ export function ReportChart({ def, points, className }: ReportChartProps) {
     chart = (
       <BarChart data={data} layout="vertical" margin={{ top: 4, right: 8, bottom: 4, left: 8 }} barCategoryGap="28%">
         <CartesianGrid horizontal={false} stroke={CHART_CHROME.grid} />
-        <XAxis type="number" reversed={rtl} tickFormatter={tickFormat} domain={valueDomain} allowDecimals={def.format !== 'integer'} {...chartAxisProps} />
+        <XAxis
+          type="number"
+          reversed={rtl}
+          tickFormatter={tickFormat}
+          domain={valueDomain}
+          allowDecimals={def.format !== 'integer'}
+          {...chartAxisProps}
+        />
         <YAxis
           type="category"
           dataKey="__label"
@@ -242,7 +265,14 @@ export function ReportChart({ def, points, className }: ReportChartProps) {
         </defs>
         <CartesianGrid vertical={false} stroke={CHART_CHROME.grid} />
         <XAxis dataKey="__label" reversed={rtl} interval="preserveStartEnd" minTickGap={16} {...chartAxisProps} />
-        <YAxis orientation={rtl ? 'right' : 'left'} width={44} tickFormatter={tickFormat} allowDecimals={false} domain={valueDomain} {...chartAxisProps} />
+        <YAxis
+          orientation={rtl ? 'right' : 'left'}
+          width={44}
+          tickFormatter={tickFormat}
+          allowDecimals={false}
+          domain={valueDomain}
+          {...chartAxisProps}
+        />
         {tooltip}
         {def.type === 'area' ? (
           <Area
@@ -272,7 +302,14 @@ export function ReportChart({ def, points, className }: ReportChartProps) {
       <BarChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: 8 }} barCategoryGap={data.length > 18 ? '18%' : '30%'} barGap={2}>
         <CartesianGrid vertical={false} stroke={CHART_CHROME.grid} />
         <XAxis dataKey="__label" reversed={rtl} interval="preserveStartEnd" minTickGap={8} {...chartAxisProps} />
-        <YAxis orientation={rtl ? 'right' : 'left'} width={44} tickFormatter={tickFormat} allowDecimals={def.format !== 'integer'} domain={valueDomain} {...chartAxisProps} />
+        <YAxis
+          orientation={rtl ? 'right' : 'left'}
+          width={44}
+          tickFormatter={tickFormat}
+          allowDecimals={def.format !== 'integer'}
+          domain={valueDomain}
+          {...chartAxisProps}
+        />
         {tooltip}
         {def.series.map((s, i) => (
           <Bar

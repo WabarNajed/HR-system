@@ -190,6 +190,14 @@ export async function fetchDirectoryPage(
   query = applyDirectoryFilters(query, params, viewer);
   query = applyDirectorySort(query, params, viewer.ctx.locale);
   const { data, error, count } = await query.range(params.from, params.to);
+  if (error && params.from > 0) {
+    // Offset past the last row (stale `?page=` after filtering/deleting): PostgREST answers 416
+    // (PGRST103 — some gateways even drop the connection). Report the real total so the page can
+    // send the user to the last page instead of failing.
+    const head = applyDirectoryFilters(supabase.from('employees').select('id', { count: 'exact', head: true }), params, viewer);
+    const { count: total, error: countError } = await head;
+    if (!countError && (total ?? 0) <= params.from) return { rows: [], total: total ?? 0 };
+  }
   if (error) throw error;
   return { rows: ((data ?? []) as unknown as DirectoryRow[]).map(normalizeDirectoryRow), total: count ?? 0 };
 }
@@ -346,7 +354,9 @@ export type ViewerMode = 'org' | 'self' | 'team';
 export async function getEmployeeRecord(id: string, viewer: EmployeeViewer): Promise<{ employee: EmployeeRecord; mode: ViewerMode } | null> {
   const supabase = await createClient();
   const isSelf = viewer.employeeId === id;
-  const full = viewer.isOrgViewer || isSelf;
+  // Identity documents, DOB, address, emergency contact: only for the employee themselves and org
+  // viewers holding personal data rights — never selected (and so never serialized) for anyone else.
+  const full = isSelf || (viewer.isOrgViewer && (viewer.orgCan('personal_data.view') || viewer.orgCan('personal_data.edit')));
   const { data, error } = await supabase
     .from('employees')
     .select(full ? RECORD_SELECT : TEAM_RECORD_SELECT)
@@ -569,3 +579,13 @@ export const getOrgCurrency = cache(async (): Promise<string> => {
   const { data } = await supabase.from('organization_settings').select('currency').maybeSingle();
   return (data as { currency?: string | null } | null)?.currency || 'SAR';
 });
+
+/** Localized display name for the page title (RLS: null when not visible). */
+export async function getEmployeeTitle(id: string): Promise<string | null> {
+  const ctx = await getSessionContext();
+  if (!ctx) return null;
+  const supabase = await createClient();
+  const { data } = await supabase.from('employees').select('name_ar, name_en, employee_number').eq('id', id).maybeSingle();
+  if (!data) return null;
+  return (ctx.locale === 'en' ? data.name_en || data.name_ar : data.name_ar || data.name_en) || data.employee_number || null;
+}

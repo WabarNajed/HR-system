@@ -98,9 +98,11 @@ export function NewRequestWizard(props: NewRequestWizardProps) {
   const preselected = draftType ?? (props.initialTypeKey ? (types.find((x) => x.key === props.initialTypeKey) ?? null) : null);
   const seeded = initialValues(draftType, draft);
 
-  const [step, setStep] = useState<Step>(preselected ? 2 : 1);
+  const initialTarget = draft?.employee ?? props.initialTarget ?? self;
+  // Without a target employee (e.g. an unlinked super admin filing on behalf) start on step 1.
+  const [step, setStep] = useState<Step>(preselected && initialTarget ? 2 : 1);
   const [typeId, setTypeId] = useState<string | null>(preselected?.id ?? null);
-  const [target, setTarget] = useState<EmployeeOption | null>(draft?.employee ?? props.initialTarget ?? self);
+  const [target, setTarget] = useState<EmployeeOption | null>(initialTarget);
   const [mode, setMode] = useState<'self' | 'other'>(
     (draft?.employee && self && draft.employee.id !== self.id) || (props.initialTarget && props.initialTarget.id !== self?.id) || !self ? 'other' : 'self',
   );
@@ -151,6 +153,8 @@ export function NewRequestWizard(props: NewRequestWizardProps) {
       setErrors({});
     }
     setTypeId(id);
+    // On-behalf filing: the employee must be picked first (the Continue button explains why).
+    if (!target) return;
     setStep(2);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -288,7 +292,8 @@ export function NewRequestWizard(props: NewRequestWizardProps) {
       ? { days: `${formatDays(leave.preview.days, locale)} · ${leave.preview.basis === 'calendar' ? tr('leave.calendarDays') : tr('leave.workingDays')}` }
       : undefined;
 
-  const continueDisabledReason = step === 1 && !type ? t('pickTypeFirst') : step === 1 && mode === 'other' && !target ? t('pickEmployeeFirst') : null;
+  const targetReason = !target ? t('pickEmployeeFirst') : null;
+  const continueDisabledReason = step === 1 && !type ? t('pickTypeFirst') : targetReason;
 
   return (
     <div className="flex flex-col gap-5">
@@ -409,7 +414,7 @@ export function NewRequestWizard(props: NewRequestWizardProps) {
       ) : null}
 
       <WizardFooter>
-        <span className="me-auto text-meta text-muted-foreground numeric">{t('stepOf', { step, total: 3 })}</span>
+        <span className="me-auto text-meta whitespace-nowrap text-muted-foreground numeric max-sm:sr-only">{t('stepOf', { step, total: 3 })}</span>
         {step > 1 ? (
           <Button variant="outline" onClick={() => setStep((s) => (s - 1) as Step)} disabled={busy !== null}>
             <ArrowLeftIcon className="rtl:rotate-180" />
@@ -417,10 +422,12 @@ export function NewRequestWizard(props: NewRequestWizardProps) {
           </Button>
         ) : null}
         {step >= 2 ? (
-          <Button variant="outline" onClick={() => void saveDraft()} loading={busy === 'draft'} disabled={busy !== null}>
-            <SaveIcon />
-            <span className="max-sm:sr-only">{t('saveDraft')}</span>
-          </Button>
+          <DisabledReason reason={targetReason}>
+            <Button variant="outline" onClick={() => void saveDraft()} loading={busy === 'draft'} disabled={busy !== null || Boolean(targetReason)}>
+              <SaveIcon />
+              <span className="max-sm:sr-only">{t('saveDraft')}</span>
+            </Button>
+          </DisabledReason>
         ) : null}
         {step < 3 ? (
           <DisabledReason reason={continueDisabledReason}>
@@ -440,10 +447,12 @@ export function NewRequestWizard(props: NewRequestWizardProps) {
             </Button>
           </DisabledReason>
         ) : (
-          <Button onClick={() => void submit()} loading={busy === 'submit'} disabled={busy !== null} className="min-w-32">
-            <SendIcon className="rtl:-scale-x-100" />
-            {t('submit')}
-          </Button>
+          <DisabledReason reason={targetReason}>
+            <Button onClick={() => void submit()} loading={busy === 'submit'} disabled={busy !== null || Boolean(targetReason)} className="min-w-32">
+              <SendIcon className="rtl:-scale-x-100" />
+              {t('submit')}
+            </Button>
+          </DisabledReason>
         )}
       </WizardFooter>
     </div>
@@ -649,7 +658,7 @@ function TypeCard({
         ) : null}
         <span className="inline-flex min-w-0 items-center gap-1">
           <GitBranchIcon className="size-3.5 shrink-0" aria-hidden />
-          <span className="truncate">{path.join(' → ')}</span>
+          <span className="truncate">{path.join(locale === 'ar' ? ' ← ' : ' → ')}</span>
         </span>
       </div>
     </button>
@@ -721,6 +730,7 @@ function OnBehalfCard({
               });
               return list.map(toOption);
             }}
+            timeout={20000}
             placeholder={t('pickEmployee')}
             searchPlaceholder={t('searchEmployee')}
           />
@@ -869,7 +879,7 @@ function ReviewAttachments({ type, values, general }: { type: RequestTypeDefinit
 function WizardFooter({ children }: { children: ReactNode }) {
   return (
     <div className="sticky bottom-0 z-20 -mx-4 mt-1 border-t border-border bg-card/92 px-4 py-3 backdrop-blur-md supports-[backdrop-filter]:bg-card/80 md:-mx-6 md:px-6 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-      <div className="flex w-full items-center gap-2">{children}</div>
+      <div className="flex w-full items-center justify-end gap-2">{children}</div>
     </div>
   );
 }

@@ -163,13 +163,13 @@ export function AuditLogTable({ rows, total, options, initialEvent, canExport, n
         header: () => t('columns.summary'),
         cell: ({ row }) =>
           row.original.summary ? (
-            <bdi className="line-clamp-2 text-[0.8125rem] text-foreground/90" dir="auto">
-              {row.original.summary}
-            </bdi>
+            <p className="line-clamp-2 max-w-[28rem] text-[0.8125rem] break-words whitespace-normal text-foreground/90" title={row.original.summary}>
+              <bdi>{row.original.summary}</bdi>
+            </p>
           ) : (
             <span className="text-faint-foreground">—</span>
           ),
-        meta: { label: t('columns.summary') },
+        meta: { label: t('columns.summary'), width: '22rem' },
       },
       {
         id: 'ip',
@@ -236,9 +236,9 @@ export function AuditLogTable({ rows, total, options, initialEvent, canExport, n
                   <span className="shrink-0 text-xs text-muted-foreground">{formatRelative(r.createdAt, locale, now)}</span>
                 </div>
                 {r.summary ? (
-                  <bdi className="mt-0.5 line-clamp-2 block text-meta text-foreground/80" dir="auto">
-                    {r.summary}
-                  </bdi>
+                  <p className="mt-0.5 line-clamp-2 text-meta break-words text-foreground/80">
+                    <bdi>{r.summary}</bdi>
+                  </p>
                 ) : null}
                 <div className="mt-1 flex items-center gap-1.5 truncate text-xs text-muted-foreground">
                   <CalendarIcon className="size-3 shrink-0" aria-hidden />

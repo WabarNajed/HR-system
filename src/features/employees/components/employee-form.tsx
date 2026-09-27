@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
-import { useEffect, useMemo, useState, useTransition, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, useTransition, type FormEvent, type ReactNode } from 'react';
 import { useForm, useFormContext, useWatch, type FieldPath } from 'react-hook-form';
 import { toast } from 'sonner';
 import { Combobox } from '@/components/shared/combobox';
@@ -26,6 +26,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { formatCurrency } from '@/lib/format';
+import type { ActionResult } from '@/lib/action';
 import { cn } from '@/lib/utils';
 import { saveEmployee } from '../actions';
 import {
@@ -40,6 +41,7 @@ import {
 } from '../schemas';
 import { EMPLOYMENT_STATUSES, EMPLOYMENT_TYPES, GENDERS, ID_TYPES, MARITAL_STATUSES, type MasterDataOptions } from '../types';
 import { ManagerPicker, type ManagerOption } from './manager-picker';
+import { useLeaveGuard } from './use-leave-guard';
 
 type FieldName = FieldPath<EmployeeFormValues>;
 
@@ -173,36 +175,48 @@ export function EmployeeForm({ mode, employeeId, defaultValues, options, current
 
   const { errors, isDirty } = form.formState;
   const errorCount = Object.keys(errors).length;
+  const leaveGuard = useLeaveGuard(isDirty);
 
   const scrollToFirstError = (names: string[]) => {
     const section = sections.find((s) => s.fields.some((f) => names.includes(f)));
     if (section) document.getElementById(`section-${section.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
-  const onSubmit = form.handleSubmit(
-    (values) => {
-      startTransition(async () => {
-        const result = await saveEmployee({ id: employeeId, values });
-        if (!result.ok) {
-          const fieldErrors = result.fieldErrors ?? {};
-          for (const [name, message] of Object.entries(fieldErrors)) {
-            form.setError(name as FieldName, { type: 'server', message });
-          }
-          toast.error(resolve(result.error));
-          if (Object.keys(fieldErrors).length) scrollToFirstError(Object.keys(fieldErrors));
-          return;
+  // Guards double submits (double click / Enter twice) in the gap before `pending` renders.
+  const submitting = useRef(false);
+  const onValid = (values: EmployeeFormValues) => {
+    startTransition(async () => {
+      const result: ActionResult<{ id: string }> = await saveEmployee({ id: employeeId, values }).catch(() => ({
+        ok: false,
+        error: 'errors.generic',
+      }));
+      if (!result.ok) {
+        submitting.current = false;
+        const fieldErrors = result.fieldErrors ?? {};
+        for (const [name, message] of Object.entries(fieldErrors)) {
+          form.setError(name as FieldName, { type: 'server', message });
         }
-        toast.success(resolve(result.message));
-        form.reset(values);
-        router.push(`/employees/${result.data?.id ?? employeeId}`);
-        router.refresh();
-      });
-    },
-    (invalid) => {
+        toast.error(resolve(result.error));
+        if (Object.keys(fieldErrors).length) scrollToFirstError(Object.keys(fieldErrors));
+        return;
+      }
+      // Success navigates away: stay locked so a late click can't create a duplicate record.
+      toast.success(resolve(result.message));
+      form.reset(values);
+      router.push(`/employees/${result.data?.id ?? employeeId}`);
+      router.refresh();
+    });
+  };
+  const onSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (submitting.current) return;
+    submitting.current = true;
+    void form.handleSubmit(onValid, (invalid) => {
+      submitting.current = false;
       toast.error(t('toast.invalidForm'));
       scrollToFirstError(Object.keys(invalid));
-    },
-  );
+    })(event);
+  };
 
   const personalDisabled = !permissions.personalEdit;
   const fieldDisabled = (name: FieldName) => pending || (PERSONAL.has(name) && personalDisabled);
@@ -446,6 +460,7 @@ export function EmployeeForm({ mode, employeeId, defaultValues, options, current
           }
         />
       </form>
+      {leaveGuard}
     </Form>
   );
 }

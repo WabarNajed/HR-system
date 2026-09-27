@@ -10,12 +10,12 @@
       "createTitle": "إدارة جديدة",
       "createDescription": "أضف وحدة تنظيمية وحدد موقعها في الهيكل الإداري.",
       "editTitle": "تعديل الإدارة",
-      "codePlaceholder": "مثال: HR",
-      "searchPlaceholder": "ابحث بالرمز أو الاسم أو الإدارة الأم أو الرئيس…",
+      "codePlaceholder": "HR",
+      "searchPlaceholder": "ابحث بالرمز أو الاسم أو الرئيس…",
       "emptyTitle": "لا توجد إدارات بعد",
       "emptyDescription": "أضف أول إدارة أو استورد الهيكل التنظيمي من جدول بيانات.",
       "kpiTotal": "الإدارات",
-      "unassignedHint": "موظفون نشطون بلا إدارة"
+      "unassignedHint": "موظفون بلا إدارة"
     },
     "jobTitles": {
       "title": "المسميات الوظيفية",
@@ -24,12 +24,12 @@
       "createTitle": "مسمى وظيفي جديد",
       "createDescription": "أضف مسمى وظيفيًا يمكن إسناده إلى الموظفين.",
       "editTitle": "تعديل المسمى الوظيفي",
-      "codePlaceholder": "مثال: HRM",
+      "codePlaceholder": "HRM",
       "searchPlaceholder": "ابحث بالرمز أو الاسم…",
       "emptyTitle": "لا توجد مسميات وظيفية بعد",
       "emptyDescription": "أضف المسميات الوظيفية واحدًا تلو الآخر أو استوردها من جدول بيانات.",
       "kpiTotal": "المسميات الوظيفية",
-      "unassignedHint": "موظفون نشطون بلا مسمى وظيفي"
+      "unassignedHint": "موظفون بلا مسمى وظيفي"
     },
     "locations": {
       "title": "المواقع",
@@ -38,12 +38,12 @@
       "createTitle": "موقع جديد",
       "createDescription": "أضف مكتبًا أو موقع عمل أو فرعًا.",
       "editTitle": "تعديل الموقع",
-      "codePlaceholder": "مثال: RUH-HQ",
-      "searchPlaceholder": "ابحث بالرمز أو الاسم أو المدينة أو الدولة…",
+      "codePlaceholder": "RUH-HQ",
+      "searchPlaceholder": "ابحث بالرمز أو الاسم أو المدينة…",
       "emptyTitle": "لا توجد مواقع بعد",
       "emptyDescription": "أضف مكاتبك ومواقع العمل أو استوردها من جدول بيانات.",
       "kpiTotal": "المواقع",
-      "unassignedHint": "موظفون نشطون بلا موقع"
+      "unassignedHint": "موظفون بلا موقع"
     },
     "costCenters": {
       "title": "مراكز التكلفة",
@@ -52,12 +52,12 @@
       "createTitle": "مركز تكلفة جديد",
       "createDescription": "أضف مركز تكلفة للتقارير وتوزيع التكاليف.",
       "editTitle": "تعديل مركز التكلفة",
-      "codePlaceholder": "مثال: CC-100",
+      "codePlaceholder": "CC-100",
       "searchPlaceholder": "ابحث بالرمز أو الاسم…",
       "emptyTitle": "لا توجد مراكز تكلفة بعد",
       "emptyDescription": "أضف مراكز التكلفة واحدًا تلو الآخر أو استوردها من جدول بيانات.",
       "kpiTotal": "مراكز التكلفة",
-      "unassignedHint": "موظفون نشطون بلا مركز تكلفة"
+      "unassignedHint": "موظفون بلا مركز تكلفة"
     }
   },
   "sheet": {
@@ -81,7 +81,9 @@
     "city": "المدينة",
     "country": "الدولة",
     "active": "نشط",
-    "activeHint": "تبقى العناصر غير النشطة في سجلات الموظفين الحالية، لكن لا يمكن اختيارها في الإسنادات الجديدة."
+    "activeHint": "تبقى العناصر غير النشطة في سجلات الموظفين الحالية، لكن لا يمكن اختيارها في الإسنادات الجديدة.",
+    "countryPlaceholder": "اختر الدولة",
+    "countrySearch": "ابحث عن دولة…"
   },
   "columns": {
     "parent": "الإدارة الأم",
@@ -99,15 +101,15 @@
   },
   "kpis": {
     "totalHint": "{active} نشط · {inactive} غير نشط",
-    "assigned": "الموظفون المسندون",
-    "assignedHint": "سجلات موظفين نشطة مرتبطة",
-    "unassigned": "موظفون غير مسندين",
+    "assigned": "المسندون",
+    "assignedHint": "موظفون نشطون مرتبطون",
+    "unassigned": "غير المسندين",
     "inactive": "غير النشطة",
     "inactiveHint": "مخفية عن الإسنادات الجديدة",
     "withoutHead": "بلا رئيس",
-    "withoutHeadHint": "إدارات نشطة لم يُحدد لها رئيس",
+    "withoutHeadHint": "إدارات نشطة",
     "unused": "غير مستخدمة",
-    "unusedHint": "لا ترتبط بأي سجل موظف"
+    "unusedHint": "لا يرتبط بها موظفون"
   },
   "toast": {
     "created": "تمت الإضافة بنجاح.",
@@ -137,5 +139,9 @@
   "errors": {
     "nameTaken": "هذا الاسم مستخدم في سجل آخر.",
     "parentCycle": "لا يمكن وضع الإدارة تحت نفسها أو تحت إحدى إداراتها الفرعية."
+  },
+  "bulk": {
+    "allActive": "جميع العناصر المحددة نشطة بالفعل.",
+    "allInactive": "جميع العناصر المحددة غير نشطة بالفعل."
   }
 }

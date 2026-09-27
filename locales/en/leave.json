@@ -54,7 +54,7 @@
     "onLeaveTodayHintOrg": "Across the organization",
     "onLeaveTodayHintTeam": "Among your direct reports",
     "daysTaken": "Days taken in {year}",
-    "daysTakenHint": "Approved leave deducted from your balances",
+    "daysTakenHint": "Approved leave across all types",
     "pending": "Pending leave requests",
     "pendingHintOrg": "Awaiting manager or HR approval",
     "pendingHintTeam": "Your team’s requests in progress",
@@ -149,7 +149,6 @@
     "pageDescription": "Leave types, entitlements and counting rules used by leave requests and balances.",
     "add": "Add leave type",
     "searchPlaceholder": "Search leave types…",
-    "readOnly": "You can view leave types. Editing requires settings or leave administration permission.",
     "deducts": "Deducts balance",
     "noDeduct": "Not deducted",
     "entitlementDays": "{days} days",
@@ -164,12 +163,13 @@
       "paid": "Paid",
       "deducts": "Deducts from balance",
       "defaultEntitlement": "Default entitlement",
-      "maxDays": "Max days per request",
+      "maxDays": "Max per request",
       "basis": "Day count",
       "attachment": "Requires attachment",
       "attachmentShort": "Attachment",
       "gender": "Eligibility",
-      "sortOrder": "Order"
+      "sortOrder": "Order",
+      "balance": "Balance"
     },
     "form": {
       "createTitle": "Add leave type",
@@ -203,12 +203,13 @@
       "total": "Leave types",
       "totalHint": "{count} active",
       "deducting": "Balance-based",
-      "deductingHint": "Active types that deduct from a balance",
+      "deductingHint": "Deduct from a balance",
       "attachment": "Need an attachment",
-      "attachmentHint": "Active types requiring a document",
+      "attachmentHint": "Require a document",
       "inactive": "Inactive",
       "inactiveHint": "Hidden from new requests"
-    }
+    },
+    "perYear": "{days} days / year"
   },
   "holidays": {
     "pageDescription": "Official holidays excluded from working-day leave counts and request SLA due dates.",
@@ -216,7 +217,6 @@
     "year": "Year",
     "yearSummary": "{count, plural, =0 {No active holidays} one {# active holiday} other {# active holidays}} · {days, plural, =0 {no working days off} one {# working day off} other {# working days off}}",
     "searchPlaceholder": "Search holidays…",
-    "readOnly": "You can view public holidays. Editing requires settings or leave administration permission.",
     "impact": "Active holidays are skipped when counting working-day leave and when calculating request due dates. Existing requests keep the days calculated when they were submitted.",
     "ongoing": "Today",
     "upcoming": "Upcoming",

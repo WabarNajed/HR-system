@@ -44,7 +44,7 @@ export function ProfileActions({
   employeeId,
   name,
   employeeNumber,
-  archived,
+  archived: archivedProp,
   canEdit,
   requestHref,
   canUploadDocument,
@@ -53,17 +53,31 @@ export function ProfileActions({
   const t = useTranslations('employees.actions');
   const tc = useTranslations('common');
   const [archiveTarget, setArchiveTarget] = useState<ArchiveTarget | null>(null);
+  // Reflect a successful archive/restore immediately; the server props take over once refreshed.
+  const [override, setOverride] = useState<{ from: boolean; value: boolean } | null>(null);
+  const archived = override && override.from === archivedProp ? override.value : archivedProp;
   const hasMore = canEdit || Boolean(portalHref) || Boolean(employeeNumber);
 
   return (
     <div className="flex flex-wrap items-center gap-2">
       {canEdit ? (
-        <Button asChild variant="outline">
-          <Link href={`/employees/${employeeId}/edit`}>
-            <PencilIcon />
-            {t('edit')}
-          </Link>
-        </Button>
+        archived ? (
+          <SimpleTooltip content={t('editDisabledArchived')}>
+            <span tabIndex={0} className="inline-flex">
+              <Button variant="outline" disabled>
+                <PencilIcon />
+                {t('edit')}
+              </Button>
+            </span>
+          </SimpleTooltip>
+        ) : (
+          <Button asChild variant="outline">
+            <Link href={`/employees/${employeeId}/edit`}>
+              <PencilIcon />
+              {t('edit')}
+            </Link>
+          </Button>
+        )
       ) : null}
       {canUploadDocument ? (
         <UploadDocumentDialog
@@ -114,8 +128,13 @@ export function ProfileActions({
             {employeeNumber ? (
               <DropdownMenuItem
                 onSelect={() => {
+                  // `navigator.clipboard` is missing on insecure origins: say so instead of doing nothing.
+                  if (!navigator.clipboard) {
+                    toast.error(tc('states.errorTitle'));
+                    return;
+                  }
                   navigator.clipboard
-                    ?.writeText(employeeNumber)
+                    .writeText(employeeNumber)
                     .then(() => toast.success(tc('copied')))
                     .catch(() => toast.error(tc('states.errorTitle')));
                 }}
@@ -139,7 +158,11 @@ export function ProfileActions({
           </DropdownMenuContent>
         </DropdownMenu>
       ) : null}
-      <ArchiveEmployeeDialog target={archiveTarget} onOpenChange={(open) => !open && setArchiveTarget(null)} />
+      <ArchiveEmployeeDialog
+        target={archiveTarget}
+        onOpenChange={(open) => !open && setArchiveTarget(null)}
+        onDone={(value) => setOverride({ from: archivedProp, value })}
+      />
     </div>
   );
 }

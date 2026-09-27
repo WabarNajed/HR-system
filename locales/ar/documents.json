@@ -30,23 +30,32 @@
     "missing": "مستندات ناقصة",
     "missingHint": "{count, plural, =0 {جميع الموظفين مستوفون} one {لدى موظف واحد} two {لدى موظفَين} few {لدى # موظفين} many {لدى # موظفًا} other {لدى # موظف}}",
     "uploaded": "المستندات المحفوظة",
-    "uploadedHint": "{count, plural, =0 {لم يُرفع شيء هذا الشهر} other {# رُفعت هذا الشهر}}",
+    "uploadedHint": "{count, plural, =0 {لا شيء هذا الشهر} other {# هذا الشهر}}",
     "pending": "بانتظار المراجعة",
     "pendingHint": "تنتظر مراجعة الموارد البشرية",
     "myTotal": "مستنداتي",
     "myTotalHint": "{count, plural, =0 {لا يوجد ما ينتظر المراجعة} other {# بانتظار المراجعة}}",
-    "myExpiring": "تنتهي خلال 30 يومًا",
-    "myExpiringHint": "من سجلك الوظيفي ومستنداتك",
+    "myExpiring": "قريبة الانتهاء",
+    "myExpiringHint": "خلال الثلاثين يومًا القادمة",
     "myExpired": "منتهية الصلاحية",
-    "myExpiredHint": "جدّدها وارفع النسخة الجديدة",
-    "myRejected": "مستندات مرفوضة",
-    "myRejectedHint": "اطّلع على السبب وأعد الرفع"
+    "myExpiredHint": "جدّدها وأعد رفعها",
+    "myRejected": "مرفوضة",
+    "myRejectedHint": "أعد رفع نسخة مصحّحة",
+    "expiringSoonShort": "قريبة الانتهاء",
+    "missingShort": "ناقصة",
+    "uploadedShort": "محفوظة"
   },
   "tabs": {
     "documents": "المستندات",
     "expiry": "متابعة الصلاحية",
     "missing": "المستندات الناقصة",
     "review": "قائمة المراجعة"
+  },
+  "tabsShort": {
+    "documents": "المستندات",
+    "expiry": "الصلاحية",
+    "missing": "الناقصة",
+    "review": "المراجعة"
   },
   "fields": {
     "employee": "الموظف",
@@ -84,7 +93,7 @@
     "notes": "معلومات إضافية للموارد البشرية (اختياري)…",
     "rejectReason": "وضّح ما يلزم تصحيحه…",
     "approveNote": "ملاحظة للسجل (اختياري)…",
-    "searchDocuments": "ابحث باسم الموظف أو رقم المستند أو اسم الملف…",
+    "searchDocuments": "ابحث بالموظف أو المستند…",
     "searchMyDocuments": "ابحث بالنوع أو الرقم أو اسم الملف…",
     "searchExpiry": "ابحث باسم الموظف أو التابع أو المرجع…",
     "searchMissing": "ابحث باسم الموظف…"
@@ -247,7 +256,7 @@
     "guide1": "ارفع نسخة ممسوحة أو صورة واضحة بصيغة PDF أو JPG أو PNG أو WebP بحجم أقصاه 10 ميجابايت.",
     "guide2": "يراجع فريق الموارد البشرية كل مستند مرفوع ويضيف المعتمد منها إلى ملفك.",
     "guide3": "إذا رُفض مستند فسيظهر لك السبب، ويمكنك رفع نسخة مصحّحة.",
-    "rejectedReason": "السبب: {reason}"
+    "reasonLabel": "السبب"
   },
   "profileTab": {
     "complianceTitle": "الامتثال",

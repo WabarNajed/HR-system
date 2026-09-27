@@ -32,7 +32,6 @@ import { useState, useTransition, type ReactNode } from 'react';
 import { toast } from 'sonner';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog';
 import { EmployeeAvatar } from '@/components/shared/employee-avatar';
-import { EmptyState } from '@/components/shared/empty-state';
 import { FileDropzone, type DropzoneFileState } from '@/components/shared/file-dropzone';
 import { SectionCard } from '@/components/shared/section-card';
 import { StatusBadge } from '@/components/shared/status-badge';
@@ -42,7 +41,6 @@ import { Button } from '@/components/ui/button';
 import { useErrorMessage } from '@/components/ui/form';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
-import { formatDays } from '@/lib/format';
 import type { Locale } from '@/lib/i18n/config';
 import { localized } from '@/lib/i18n/localized';
 import { useDateFormat } from '@/lib/i18n/use-date-format';
@@ -67,6 +65,7 @@ export function RequestActionsPanel({
   status,
   caps,
   compact,
+  editing,
 }: {
   requestId: string;
   number: string | null;
@@ -74,6 +73,8 @@ export function RequestActionsPanel({
   status: string;
   caps: RequestCapabilities;
   compact?: boolean;
+  /** The edit & resubmit form is open (hide the button that opens it). */
+  editing?: boolean;
 }) {
   const t = useTranslations('requests.actions');
   const tr = useTranslations('requests');
@@ -89,7 +90,7 @@ export function RequestActionsPanel({
   if (caps.can_reject) buttons.push({ key: 'reject', label: t('reject'), icon: XCircleIcon, variant: 'outline', onClick: () => setAction('reject') });
   if (caps.can_start) buttons.push({ key: 'start', label: t('start'), icon: PlayIcon, variant: 'default', onClick: () => setAction('start'), primary: true });
   if (caps.can_complete) buttons.push({ key: 'complete', label: t('complete'), icon: CircleCheckBigIcon, variant: caps.can_start ? 'outline' : 'default', onClick: () => setAction('complete'), primary: !caps.can_start });
-  if (caps.can_edit && status === 'returned') buttons.push({ key: 'edit', label: t('editResubmit'), icon: FilePenLineIcon, variant: 'default', href: `/requests/${requestId}?edit=1`, primary: true });
+  if (caps.can_edit && status === 'returned' && !editing) buttons.push({ key: 'edit', label: t('editResubmit'), icon: FilePenLineIcon, variant: 'default', href: `/requests/${requestId}?edit=1`, primary: true });
   if (caps.can_edit && status === 'draft') {
     buttons.push({ key: 'continue', label: t('continueDraft'), icon: FilePenLineIcon, variant: 'default', href: `/requests/new?draft=${requestId}`, primary: true });
     buttons.push({ key: 'submit', label: t('submitDraft'), icon: SendIcon, variant: 'outline', onClick: () => setConfirm('submit') });
@@ -109,8 +110,16 @@ export function RequestActionsPanel({
     );
   }
 
+  const hasPrimary = buttons.some((b) => b.primary);
+  const hintKey = status in NONE_KEYS ? NONE_KEYS[status as keyof typeof NONE_KEYS] : 'generic';
   const list = (
     <div className={cn('grid gap-2', compact ? 'grid-cols-2' : 'grid-cols-1')}>
+      {!hasPrimary && !compact && !editing ? (
+        <p className="mb-1 flex items-start gap-2 rounded-md bg-subtle px-3 py-2 text-meta text-muted-foreground">
+          <LockIcon className="mt-0.5 size-3.5 shrink-0" aria-hidden />
+          {t(`none.${hintKey}`)}
+        </p>
+      ) : null}
       {buttons.map((b) => {
         const Icon = b.icon;
         const cls = cn('w-full justify-center', b.variant === 'ghost' && b.key !== 'reassign' && 'text-danger hover:bg-danger-soft hover:text-danger', compact && b.primary && 'col-span-2');
@@ -431,13 +440,15 @@ export function RequestComments({
           ))}
         </ol>
       ) : (
-        <EmptyState
-          icon={isInternal ? LockIcon : MessageSquareTextIcon}
-          tone="neutral"
-          title={isInternal ? t('emptyInternalTitle') : t('emptyTitle')}
-          description={isInternal ? t('emptyInternalDescription') : t('emptyDescription')}
-          className="min-h-0 py-6"
-        />
+        <div className="flex items-center gap-3 rounded-md border border-dashed border-border-strong bg-subtle px-3.5 py-3">
+          <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-card text-muted-foreground ring-1 ring-border">
+            {isInternal ? <LockIcon className="size-4" aria-hidden /> : <MessageSquareTextIcon className="size-4" aria-hidden />}
+          </span>
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-foreground">{isInternal ? t('emptyInternalTitle') : t('emptyTitle')}</p>
+            <p className="text-xs text-muted-foreground">{isInternal ? t('emptyInternalDescription') : t('emptyDescription')}</p>
+          </div>
+        </div>
       )}
       {canComment ? <CommentComposer requestId={requestId} internal={isInternal} /> : null}
     </div>
@@ -510,7 +521,8 @@ function CommentComposer({ requestId, internal }: { requestId: string; internal:
   const [value, setValue] = useState('');
   const [pending, start] = useTransition();
   const post = () => {
-    if (!value.trim()) return;
+    // Ctrl/⌘+Enter bypasses the disabled button: never post twice while a comment is in flight.
+    if (!value.trim() || pending) return;
     start(async () => {
       const res = await addRequestComment({ requestId, body: value, internal });
       if (!res.ok) {
@@ -537,7 +549,7 @@ function CommentComposer({ requestId, internal }: { requestId: string; internal:
       />
       <div className="flex items-center justify-between gap-2">
         <span className="text-xs text-faint-foreground max-sm:hidden">{t('shortcut')}</span>
-        <Button size="sm" onClick={post} loading={pending} disabled={!value.trim()} variant={internal ? 'outline' : 'default'} className="ms-auto">
+        <Button size="sm" onClick={post} loading={pending} disabled={!value.trim() || pending} variant={internal ? 'outline' : 'default'} className="ms-auto">
           {internal ? <LockIcon /> : <SendIcon className="rtl:-scale-x-100" />}
           {internal ? t('postInternal') : t('post')}
         </Button>
@@ -588,7 +600,7 @@ export function RequestHistory({ entries }: { entries: RequestHistoryEntry[] }) 
         t('balanceEffect', {
           from: label(leaveEffect.balance_effect.old),
           to: label(leaveEffect.balance_effect.new),
-          days: formatDays(leaveEffect.days ?? 0, locale),
+          days: Number(leaveEffect.days ?? 0),
         }),
       );
     }

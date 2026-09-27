@@ -4,7 +4,7 @@ import { closestCenter, DndContext, KeyboardSensor, PointerSensor, useSensor, us
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { ArrowDownIcon, ArrowUpIcon, GripVerticalIcon, ListPlusIcon, LockIcon, XIcon } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useId, useMemo, useState } from 'react';
 import { SearchInput } from '@/components/shared/search-input';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -59,14 +59,34 @@ function SortableColumn({
       </button>
       <span className="w-5 shrink-0 text-center text-xs text-muted-foreground numeric">{index + 1}</span>
       <span className="min-w-0 flex-1 truncate font-medium">{t(`reports.builder.fields.${field.labelId}`)}</span>
-      <div className="flex items-center opacity-70 transition-opacity group-hover/col:opacity-100 focus-within:opacity-100">
-        <Button variant="ghost" size="icon-xs" disabled={index === 0} onClick={() => onMove(index, index - 1)} aria-label={t('reports.builder.moveUp')}>
+      <div className="flex items-center">
+        <Button
+          variant="ghost"
+          size="icon-xs"
+          className="opacity-0 transition-opacity group-hover/col:opacity-100 focus-visible:opacity-100 disabled:invisible max-md:opacity-100"
+          disabled={index === 0}
+          onClick={() => onMove(index, index - 1)}
+          aria-label={t('reports.builder.moveUp')}
+        >
           <ArrowUpIcon />
         </Button>
-        <Button variant="ghost" size="icon-xs" disabled={index === count - 1} onClick={() => onMove(index, index + 1)} aria-label={t('reports.builder.moveDown')}>
+        <Button
+          variant="ghost"
+          size="icon-xs"
+          className="opacity-0 transition-opacity group-hover/col:opacity-100 focus-visible:opacity-100 disabled:invisible max-md:opacity-100"
+          disabled={index === count - 1}
+          onClick={() => onMove(index, index + 1)}
+          aria-label={t('reports.builder.moveDown')}
+        >
           <ArrowDownIcon />
         </Button>
-        <Button variant="ghost" size="icon-xs" onClick={onRemove} aria-label={t('reports.builder.removeColumn')} className="hover:text-danger">
+        <Button
+          variant="ghost"
+          size="icon-xs"
+          onClick={onRemove}
+          aria-label={t('reports.builder.removeColumn')}
+          className="hover:text-danger"
+        >
           <XIcon />
         </Button>
       </div>
@@ -78,7 +98,14 @@ function SortableColumn({
 export function BuilderColumns({ fields, restrictedCount, value, onChange }: Props) {
   const t = useReportT();
   const [query, setQuery] = useState('');
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }), useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }));
+  // Stable accessibility ids for SSR (dnd-kit otherwise generates different ids on the client).
+  const dndId = useId();
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
+  );
   const byKey = useMemo(() => new Map(fields.map((f) => [f.key, f])), [fields]);
   const selected = value.map((k) => byKey.get(k)).filter((f): f is BuilderField => Boolean(f));
   const selectedSet = new Set(value);
@@ -105,7 +132,12 @@ export function BuilderColumns({ fields, restrictedCount, value, onChange }: Pro
         <div className="flex items-center justify-between gap-2">
           <h3 className="text-meta font-semibold text-muted-foreground">{t('reports.builder.available')}</h3>
           <div className="flex items-center gap-1">
-            <Button variant="ghost" size="sm" className="h-7 px-2" onClick={() => onChange(Array.from(new Set([...value, ...matches.map((f) => f.key)])).slice(0, BUILDER_LIMITS.columns))}>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-7 px-2"
+              onClick={() => onChange(Array.from(new Set([...value, ...matches.map((f) => f.key)])).slice(0, BUILDER_LIMITS.columns))}
+            >
               <ListPlusIcon />
               {t('reports.builder.selectAll')}
             </Button>
@@ -159,7 +191,13 @@ export function BuilderColumns({ fields, restrictedCount, value, onChange }: Pro
           </h3>
           <SimpleTooltip content={selected.length ? undefined : t('reports.builder.noColumns')}>
             <span>
-              <Button variant="ghost" size="sm" className="h-7 px-2 text-muted-foreground" disabled={!selected.length} onClick={() => onChange([])}>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2 text-muted-foreground"
+                disabled={!selected.length}
+                onClick={() => onChange([])}
+              >
                 <XIcon />
                 {t('reports.builder.clearColumns')}
               </Button>
@@ -167,11 +205,18 @@ export function BuilderColumns({ fields, restrictedCount, value, onChange }: Pro
           </SimpleTooltip>
         </div>
         {selected.length ? (
-          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+          <DndContext id={dndId} sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
             <SortableContext items={value} strategy={verticalListSortingStrategy}>
               <ol className="flex max-h-[19.5rem] flex-col gap-1.5 overflow-y-auto pe-0.5">
                 {selected.map((f, i) => (
-                  <SortableColumn key={f.key} field={f} index={i} count={selected.length} onMove={move} onRemove={() => toggle(f.key, false)} />
+                  <SortableColumn
+                    key={f.key}
+                    field={f}
+                    index={i}
+                    count={selected.length}
+                    onMove={move}
+                    onRemove={() => toggle(f.key, false)}
+                  />
                 ))}
               </ol>
             </SortableContext>

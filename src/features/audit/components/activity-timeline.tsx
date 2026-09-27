@@ -32,9 +32,9 @@ export function AuditActivityTimeline({ events }: { events: AuditEventView[] }) 
       ),
       actor: e.actor.name || e.actor.email ? t('activity.by', { name: e.actor.name || e.actor.email || '' }) : t('system'),
       description: e.summary ? (
-        <bdi dir="auto" className="line-clamp-2">
-          {e.summary}
-        </bdi>
+        <span className="line-clamp-2 break-words">
+          <bdi>{e.summary}</bdi>
+        </span>
       ) : undefined,
       content:
         changed > 0 ? (

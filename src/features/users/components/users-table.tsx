@@ -118,7 +118,7 @@ export function UsersTable({ rows, total, roles, abilities }: UsersTableProps) {
         id: 'roles',
         header: t('columns.roles'),
         enableSorting: false,
-        cell: ({ row }) => <RoleBadges roles={row.original.roles} label={roleLabel} max={2} emptyLabel={t('noRoles')} className="flex-nowrap" />,
+        cell: ({ row }) => <RoleBadges roles={row.original.roles} label={roleLabel} max={1} emptyLabel={t('noRoles')} className="flex-nowrap" />,
         meta: { label: t('columns.roles') },
       },
       {

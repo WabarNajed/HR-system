@@ -156,7 +156,15 @@ export function NotificationsCenter({ items, total, page, pageSize, tab, categor
           </Select>
           <SimpleTooltip content={unreadInScope === 0 ? t('toast.nothingToMark') : undefined}>
             <span>
-              <Button variant="outline" size="sm" onClick={markAll} loading={markingAll} disabled={unreadInScope === 0 || markingAll} className="h-8 whitespace-nowrap">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={markAll}
+                loading={markingAll}
+                disabled={unreadInScope === 0 || markingAll}
+                className="h-8 whitespace-nowrap"
+                aria-label={category ? t('actions.markAllReadCategory') : t('actions.markAllRead')}
+              >
                 {!markingAll ? <CheckCheckIcon /> : null}
                 <span className="hidden sm:inline">{category ? t('actions.markAllReadCategory') : t('actions.markAllRead')}</span>
               </Button>

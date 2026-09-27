@@ -89,6 +89,7 @@ export async function OverviewTab({
       <SectionCard title={t('profile.overview.snapshot')} icon={<CalendarDaysIcon />}>
         <KeyValueGrid
           columns={3}
+          className="max-sm:grid-cols-2"
           items={[
             { label: t('fields.jobTitle'), value: named(employee.job_title) },
             { label: t('fields.department'), value: named(employee.department) },

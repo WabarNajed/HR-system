@@ -60,7 +60,7 @@ export function RegistrationDetailsForm({ defaults, infoRequested }: Props) {
       <h2 className="text-card-title text-foreground">{infoRequested ? t('updateTitle') : t('editDetails')}</h2>
       <p className="mt-0.5 text-meta text-muted-foreground">{infoRequested ? t('updateDescription') : t('editDescription')}</p>
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} noValidate className="mt-4 flex flex-col gap-3.5" aria-busy={pending}>
+        <form method="post" onSubmit={form.handleSubmit(onSubmit)} noValidate className="mt-4 flex flex-col gap-3.5" aria-busy={pending}>
           <FormField
             control={form.control}
             name="fullName"

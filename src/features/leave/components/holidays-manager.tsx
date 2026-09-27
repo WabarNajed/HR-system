@@ -18,7 +18,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Sheet, SheetBody, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Switch } from '@/components/ui/switch';
-import { SimpleTooltip } from '@/components/ui/tooltip';
 import { daysBetween } from '@/lib/dates';
 import type { Locale } from '@/lib/i18n/config';
 import { localized } from '@/lib/i18n/localized';
@@ -316,16 +315,7 @@ export function HolidaysManager({
       <PlusIcon />
       {t('add')}
     </Button>
-  ) : (
-    <SimpleTooltip content={t('readOnly')}>
-      <span tabIndex={0} className="inline-flex">
-        <Button size="sm" disabled>
-          <PlusIcon />
-          {t('add')}
-        </Button>
-      </span>
-    </SimpleTooltip>
-  );
+  ) : null;
 
   return (
     <div className="flex flex-col gap-3">

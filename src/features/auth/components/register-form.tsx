@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage, useErrorMessage } from '@/components/ui/form';
 import { InputGroup } from '@/components/ui/input-group';
 import { SegmentedTabs } from '@/components/shared/link-tabs';
+import { localeNames } from '@/lib/i18n/config';
 import { signUp } from '../actions';
 import { registerSchema, type RegisterInput } from '../schemas';
 import { AuthHeading } from './auth-heading';
@@ -21,7 +22,6 @@ const FIELDS = ['fullName', 'employeeNumber', 'email', 'mobile', 'password', 'co
 
 export function RegisterForm() {
   const t = useTranslations('auth.register');
-  const tc = useTranslations('common');
   const locale = useLocale() as 'ar' | 'en';
   const resolveError = useErrorMessage();
   const [pending, startTransition] = useTransition();
@@ -62,7 +62,7 @@ export function RegisterForm() {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} noValidate className="flex flex-col gap-4" aria-busy={pending}>
+      <form method="post" onSubmit={form.handleSubmit(onSubmit)} noValidate className="flex flex-col gap-4" aria-busy={pending}>
         {error ? (
           <Alert variant="danger" aria-live="assertive">
             <AlertCircleIcon />
@@ -172,8 +172,8 @@ export function RegisterForm() {
                   value={field.value}
                   onValueChange={(v) => field.onChange(v)}
                   items={[
-                    { value: 'ar', label: tc('arabic') },
-                    { value: 'en', label: tc('english') },
+                    { value: 'ar', label: <span lang="ar">{localeNames.ar}</span> },
+                    { value: 'en', label: <span lang="en">{localeNames.en}</span> },
                   ]}
                   aria-label={t('language')}
                 />

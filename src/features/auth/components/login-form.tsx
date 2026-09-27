@@ -51,7 +51,7 @@ export function LoginForm({ next, notice, allowRegister }: { next?: string; noti
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} noValidate className="flex flex-col gap-4" aria-busy={pending}>
+      <form method="post" onSubmit={form.handleSubmit(onSubmit)} noValidate className="flex flex-col gap-4" aria-busy={pending}>
         {noticeAlert}
         {error ? (
           <Alert variant="danger" aria-live="assertive">

@@ -123,7 +123,7 @@ export const searchUploadEmployees = withAction(
       .from('employees')
       .select('id, employee_number, name_ar, name_en')
       .is('archived_at', null)
-      .order('name_ar', { nullsFirst: false })
+      .order(ctx.locale === 'en' ? 'name_en' : 'name_ar', { nullsFirst: false })
       .limit(20);
     if (query) q = q.ilike('search_text', toIlikePattern(query.toLowerCase()));
     const { data, error } = await q;
@@ -180,6 +180,7 @@ export const finalizeDocumentUpload = withAction(
     const supabase = await createClient();
     const doc = await loadDocument(supabase, documentId);
     if (!doc.storage_path || !(await objectExists(supabase, doc.storage_path))) throw new ActionError('errors.uploadFailed');
+    if (doc.uploaded_by !== ctx.user.id) throw new ActionError('errors.forbidden');
     await logAuditEvent(
       {
         action: 'document.upload',
@@ -380,10 +381,18 @@ export const deleteDocument = withAction(
     const ownPending =
       doc.employee_id === access.ownEmployeeId && doc.uploaded_by === ctx.user.id && doc.status === 'pending_review';
     if (!access.edit && !ownPending) throw new ActionError('errors.forbidden');
-    // Remove the file first while the row still authorizes it (storage policies read the row).
-    if (doc.storage_path) await removeFiles(supabase, BUCKETS.employeeDocuments, [doc.storage_path]);
-    const { error } = await supabase.from('employee_documents').delete().eq('id', documentId);
-    if (error) throw error;
+    if (access.edit) {
+      // HR: row first (the file is only removed once the record is gone), then the file.
+      const { error } = await supabase.from('employee_documents').delete().eq('id', documentId);
+      if (error) throw error;
+      if (doc.storage_path) await removeFiles(supabase, BUCKETS.employeeDocuments, [doc.storage_path]);
+    } else {
+      // Owner withdrawal: the storage policy authorizes the delete through the pending row, so the
+      // file goes first while the row still exists.
+      if (doc.storage_path) await removeFiles(supabase, BUCKETS.employeeDocuments, [doc.storage_path]);
+      const { error } = await supabase.from('employee_documents').delete().eq('id', documentId);
+      if (error) throw error;
+    }
     await logAuditEvent(
       {
         action: ownPending && !access.edit ? 'document.withdraw' : 'document.delete',

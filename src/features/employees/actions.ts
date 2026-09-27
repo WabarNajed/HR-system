@@ -49,6 +49,14 @@ function saveErrorToFieldErrors(error: unknown): { key: string; fieldErrors?: Re
   return { key };
 }
 
+/** Archived records are read-only until restored (UI hides the controls; this is the server rule). */
+async function assertEditable(supabase: Awaited<ReturnType<typeof createClient>>, employeeId: string) {
+  const { data, error } = await supabase.from('employees').select('archived_at').eq('id', employeeId).maybeSingle();
+  if (error) throw error;
+  if (!data) throw new ActionError('errors.notFound');
+  if (data.archived_at) throw new ActionError('employees.actions.editDisabledArchived');
+}
+
 /* ─── Create / update ─────────────────────────────────────────────────────── */
 
 export const saveEmployee = withAction(
@@ -97,6 +105,7 @@ export const saveEmployee = withAction(
     }
 
     const supabase = await createClient();
+    if (id) await assertEditable(supabase, id);
     const { data, error } = await supabase.rpc('save_employee', {
       // null = create (the generated type has no nullable uuid args)
       p_employee_id: (id ?? null) as unknown as string,
@@ -123,13 +132,17 @@ async function setArchived(id: string, archived: boolean) {
   const viewer = await getViewer(ctx);
   if (!viewer.orgCan('employees.edit')) throw new ActionError('errors.forbidden');
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from('employees')
-    .update({ archived_at: archived ? new Date().toISOString() : null })
-    .eq('id', id)
-    .select('id');
+  // Only rows in the opposite state change, so a repeated click (stale page, double submit) neither
+  // moves the archive date nor writes a second audit entry.
+  let query = supabase.from('employees').update({ archived_at: archived ? new Date().toISOString() : null }).eq('id', id);
+  query = archived ? query.is('archived_at', null) : query.not('archived_at', 'is', null);
+  const { data, error } = await query.select('id');
   if (error) throw error;
-  if (!data?.length) throw new ActionError('errors.notFound');
+  if (!data?.length) {
+    const { data: row, error: readError } = await supabase.from('employees').select('id').eq('id', id).maybeSingle();
+    if (readError) throw readError;
+    if (!row) throw new ActionError('errors.notFound');
+  }
   revalidateEmployee(id);
 }
 
@@ -165,9 +178,10 @@ export const setEmployeeAvatar = withAction(
     if (!viewer.orgCan('employees.edit')) throw new ActionError('errors.forbidden');
     if (!new RegExp(`^${id}/avatar/[A-Za-z0-9-]+\\.(jpe?g|png|webp)$`).test(path)) throw new ActionError('errors.validation');
     const supabase = await createClient();
-    const { data: current, error: readError } = await supabase.from('employees').select('avatar_path').eq('id', id).maybeSingle();
+    const { data: current, error: readError } = await supabase.from('employees').select('avatar_path, archived_at').eq('id', id).maybeSingle();
     if (readError) throw readError;
     if (!current) throw new ActionError('errors.notFound');
+    if (current.archived_at) throw new ActionError('employees.actions.editDisabledArchived');
     const { error } = await supabase.from('employees').update({ avatar_path: path }).eq('id', id);
     if (error) throw error;
     if (current.avatar_path && current.avatar_path !== path) {
@@ -278,6 +292,7 @@ export const saveDependent = withAction(
       notes: toNullable(values.notes),
     };
     const supabase = await createClient();
+    await assertEditable(supabase, employeeId);
     if (id) {
       const { data, error } = await supabase.from('employee_dependents').update(row).eq('id', id).eq('employee_id', employeeId).select('id');
       if (error) throw error;
@@ -298,6 +313,7 @@ export const deleteDependent = withAction(
     const viewer = await getViewer(ctx);
     if (!viewer.orgCan('personal_data.edit')) throw new ActionError('errors.forbidden');
     const supabase = await createClient();
+    await assertEditable(supabase, employeeId);
     const { data, error } = await supabase.from('employee_dependents').delete().eq('id', id).eq('employee_id', employeeId).select('id');
     if (error) throw error;
     if (!data?.length) throw new ActionError('errors.notFound');
@@ -316,6 +332,7 @@ export const saveInsurance = withAction(
     const allowed = id ? viewer.orgCan('insurance.edit') : viewer.orgCan('insurance.create') || viewer.orgCan('insurance.edit');
     if (!allowed) throw new ActionError('errors.forbidden');
     const supabase = await createClient();
+    await assertEditable(supabase, employeeId);
     if (values.dependent_id) {
       const { data: dep, error: depError } = await supabase
         .from('employee_dependents')
@@ -356,6 +373,7 @@ export const deleteInsurance = withAction(
     const viewer = await getViewer(ctx);
     if (!viewer.orgCan('insurance.edit')) throw new ActionError('errors.forbidden');
     const supabase = await createClient();
+    await assertEditable(supabase, employeeId);
     const { data, error } = await supabase.from('employee_insurance').delete().eq('id', id).eq('employee_id', employeeId).select('id');
     if (error) throw error;
     if (!data?.length) throw new ActionError('errors.notFound');

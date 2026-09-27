@@ -7,6 +7,7 @@ import { todayIso } from '@/lib/i18n/date-format';
 import { getTranslator } from '@/lib/i18n/translator';
 import { parseListParams } from '@/lib/list-params';
 import { pageMetadata } from '@/lib/metadata';
+import { can } from '@/lib/permissions';
 import { createClient } from '@/lib/supabase/server';
 import { ReportView } from '@/features/reports/components/report-view';
 import { canExportReport, canViewReport, readReportFilters, searchParamsGetter } from '@/features/reports/filters';
@@ -47,9 +48,18 @@ export default async function ReportPage({ params, searchParams }: PageProps) {
     fetchReportSummary(supabase, def, state),
     def.table === 'paged'
       ? fetchReportPage(supabase, def, state, { ...tableQuery, from: list.from, to: list.to }, ctx.locale)
-      : fetchReportRows(supabase, def, state, { q: '', sort: def.defaultSort.id, dir: def.defaultSort.desc ? 'desc' : 'asc' }, ctx.locale, AGGREGATE_ROW_LIMIT).then(
-          (rows) => ({ rows, total: rows.length }),
-        ),
+      : fetchReportRows(
+          supabase,
+          def,
+          state,
+          {
+            q: '',
+            sort: def.defaultSort.id,
+            dir: def.defaultSort.desc ? 'desc' : 'asc',
+          },
+          ctx.locale,
+          AGGREGATE_ROW_LIMIT,
+        ).then((rows) => ({ rows, total: rows.length })),
     loadFilterOptions(supabase, def.filters, ctx.locale),
     loadEmployeeOptions(supabase, state.values.employee ?? [], ctx.locale),
   ]);
@@ -67,7 +77,9 @@ export default async function ReportPage({ params, searchParams }: PageProps) {
         summary={summary}
         rows={table.rows}
         total={table.total}
-        canExport={canExportReport(ctx, def)}
+        exportDisabledKey={
+          canExportReport(ctx, def) ? null : can(ctx, 'reports.export') ? 'reports.view.exportRestricted' : 'reports.view.exportDisabled'
+        }
         teamScope={!ctx.isHR}
         generatedAt={new Date().toISOString()}
       />

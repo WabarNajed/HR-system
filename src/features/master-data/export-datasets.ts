@@ -1,5 +1,6 @@
 import 'server-only';
 
+import { intlLocale } from '@/lib/i18n/config';
 import { employeeDisplayName, localized } from '@/lib/i18n/localized';
 import type { LooseTranslator } from '@/lib/i18n/translator';
 import { defineDataset, type AnyExportDataset, type ExportColumn } from '@/lib/export/types';
@@ -12,11 +13,35 @@ import { fetchMasterRows, fetchMasterUsage, toMasterRow } from './queries';
  * `src/lib/export/registry.ts`. Same search (`q`), status filter and sort ids as the Settings pages.
  */
 
-const SORTS = ['code', 'name', 'employees', 'status', 'updated_at', 'parent', 'city'] as const;
+const SORTS = ['code', 'name', 'employees', 'status', 'updated_at', 'parent', 'head', 'city'] as const;
 
-function matches(row: MasterDataRow, q: string): boolean {
+/** ISO 3166 code (Settings › Locations picker) → localized name; free text from imports as is. */
+function countryName(value: string | null, locale: 'ar' | 'en'): string {
+  const v = value?.trim() ?? '';
+  if (!/^[A-Za-z]{2}$/.test(v)) return v;
+  try {
+    return new Intl.DisplayNames([intlLocale(locale)], { type: 'region' }).of(v.toUpperCase()) ?? v;
+  } catch {
+    return v;
+  }
+}
+
+/** Same haystack as the page's client-side search (master-data-manager `searchText`). */
+function matches(row: MasterDataRow, q: string, locale: 'ar' | 'en'): boolean {
   if (!q) return true;
-  const hay = [row.code, row.name_ar, row.name_en, row.city, row.country, row.parent?.name_ar, row.parent?.name_en]
+  const hay = [
+    row.code,
+    row.name_ar,
+    row.name_en,
+    row.city,
+    row.country,
+    countryName(row.country, locale),
+    row.parent?.name_ar,
+    row.parent?.name_en,
+    row.head?.name_ar,
+    row.head?.name_en,
+    row.head?.employee_number,
+  ]
     .filter(Boolean)
     .join(' ')
     .toLowerCase();
@@ -39,6 +64,8 @@ function sortRows(rows: MasterDataRow[], params: ListParams, locale: 'ar' | 'en'
         return localized(r, 'name', locale);
       case 'parent':
         return r.parent ? localized(r.parent, 'name', locale) : '';
+      case 'head':
+        return r.head ? employeeDisplayName(r.head, locale) : '';
       case 'city':
         return r.city ?? '';
       default:
@@ -72,7 +99,10 @@ function baseColumns(t: LooseTranslator, entity: MasterEntity): ExportColumn<Mas
     );
   }
   if (config.hasPlace) {
-    cols.push({ key: 'city', header: t('masterData.fields.city'), width: 18 }, { key: 'country', header: t('masterData.fields.country'), width: 18 });
+    cols.push(
+      { key: 'city', header: t('masterData.fields.city'), width: 18 },
+      { key: 'country', header: t('masterData.fields.country'), width: 22, value: (r) => countryName(r.country, t.locale) },
+    );
   }
   cols.push(
     { key: 'employees', header: t('masterData.columns.employees'), type: 'integer', width: 12 },
@@ -90,7 +120,8 @@ function dataset(entity: MasterEntity): AnyExportDataset {
     key: config.exportKey,
     permission: 'settings.export',
     titleKey: `masterData.entities.${config.key}.title`,
-    filterKeys: ['status'],
+    // Same filter keys as the page's client-side filters (status · head for departments · city for locations).
+    filterKeys: ['status', 'head', 'city'],
     allowedSorts: SORTS,
     defaultSort: 'code',
     defaultDir: 'asc',
@@ -99,17 +130,26 @@ function dataset(entity: MasterEntity): AnyExportDataset {
     fetchRows: async (supabase, params, ctx) => {
       const [raw, usage] = await Promise.all([fetchMasterRows(supabase, entity, ctx.limit), fetchMasterUsage(supabase, entity)]);
       const status = params.filters.status ?? [];
+      const head = config.hasHierarchy ? (params.filters.head ?? []) : [];
+      const city = config.hasPlace ? (params.filters.city ?? []) : [];
       const rows = raw
         .map((r) => toMasterRow(r, usage.get(r.id)))
-        .filter((r) => matches(r, params.q))
-        .filter((r) => !status.length || status.includes(r.is_active ? 'active' : 'inactive'));
+        .filter((r) => matches(r, params.q, ctx.locale))
+        .filter((r) => !status.length || status.includes(r.is_active ? 'active' : 'inactive'))
+        .filter((r) => !head.length || head.includes(r.head_employee_id ? 'yes' : 'no'))
+        .filter((r) => !city.length || (r.city !== null && city.includes(r.city)));
       return sortRows(rows, params, ctx.locale);
     },
     describeFilters: (params, t) => {
+      const sep = t.locale === 'ar' ? '، ' : ', ';
+      const out: string[] = [];
       const status = params.filters.status ?? [];
-      return status.length
-        ? [`${t('common.status')}: ${status.map((s) => (s === 'active' ? t('common.active') : t('common.inactive'))).join('، ')}`]
-        : [];
+      if (status.length) out.push(`${t('common.status')}: ${status.map((s) => (s === 'active' ? t('common.active') : t('common.inactive'))).join(sep)}`);
+      const head = config.hasHierarchy ? (params.filters.head ?? []) : [];
+      if (head.length) out.push(`${t('masterData.columns.head')}: ${head.map((h) => (h === 'yes' ? t('masterData.filters.hasHead') : t('masterData.filters.noHead'))).join(sep)}`);
+      const city = config.hasPlace ? (params.filters.city ?? []) : [];
+      if (city.length) out.push(`${t('masterData.fields.city')}: ${city.join(sep)}`);
+      return out;
     },
   });
 }

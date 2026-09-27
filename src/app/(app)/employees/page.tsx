@@ -1,6 +1,7 @@
 import { AlarmClockIcon, ArchiveIcon, HourglassIcon, KeyRoundIcon, PalmtreeIcon, UploadIcon, UserPlusIcon, UsersIcon } from 'lucide-react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { PageHeader } from '@/components/shared/page-header';
 import { KpiGrid, PageStack } from '@/components/shared/responsive-grid';
@@ -9,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { ROUTE_ACCESS } from '@/components/shell/nav-config';
 import { requireAccess } from '@/lib/auth/guards';
 import { todayIso } from '@/lib/dates';
-import { parseListParams } from '@/lib/list-params';
+import { mergeSearchParams, pageCount, parseListParams } from '@/lib/list-params';
 import { pageMetadata } from '@/lib/metadata';
 import { can } from '@/lib/permissions';
 import { createClient } from '@/lib/supabase/server';
@@ -30,6 +31,12 @@ export default async function EmployeesPage({ searchParams }: { searchParams: Pr
     getDirectoryStats(viewer),
     getDirectoryFilterOptions(ctx.locale),
   ]);
+
+  // Stale `?page=` beyond the last page (e.g. after narrowing the filters): jump to the last page.
+  if (!page.rows.length && params.page > 1) {
+    const last = pageCount(page.total, params.pageSize);
+    redirect(`/employees?${mergeSearchParams(sp, { page: last > 1 ? last : null }).toString()}`);
+  }
 
   const orgView = viewer.isOrgViewer;
   const nf = new Intl.NumberFormat(ctx.locale === 'ar' ? 'ar-SA-u-nu-latn' : 'en-US');

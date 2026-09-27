@@ -8,6 +8,7 @@ fs.mkdirSync('e2e/.auth', { recursive: true });
 
 for (const role of SESSION_ROLES) {
   setup(`sign in as ${role}`, async ({ page }) => {
+    setup.setTimeout(300_000);
     await login(page, role, { locale: 'ar' });
     await expect(page).toHaveURL(/\/dashboard$/);
     await page.context().storageState({ path: storageStatePath(role) });

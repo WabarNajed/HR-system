@@ -121,7 +121,7 @@ export const searchUnlinkedUsersAction = withAction(
   employeeSearchSchema,
   async ({ q }, { ctx }) => {
     requirePermissionIn(ctx, 'users.edit');
-    return ok(await searchUnlinkedUsers(q));
+    return ok(await searchUnlinkedUsers(q, { excludeSuperAdmins: !ctx.isSuperAdmin }));
   },
   { scope: 'users.searchUnlinkedUsers' },
 );

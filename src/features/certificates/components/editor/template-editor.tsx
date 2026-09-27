@@ -134,6 +134,9 @@ export function TemplateEditor({ template, canEdit }: { template: TemplateDetail
   const [versionsOpen, setVersionsOpen] = useState(false);
   const [leaveOpen, setLeaveOpen] = useState(false);
   const [saving, startSaving] = useTransition();
+  /** Versions confirmed by actions before the refreshed props arrive (the server can lag). */
+  const [savedVersion, setSavedVersion] = useState(template.current_version);
+  const [publishedLocal, setPublishedLocal] = useState<number | null>(template.published_version);
   const [statusPending, startStatus] = useTransition();
 
   const onHtml = useCallback((k: EditorKey, value: string, initial: boolean) => {
@@ -180,6 +183,8 @@ export function TemplateEditor({ template, canEdit }: { template: TemplateDetail
   const activeEditor = editors[activeKey];
   const tabLabel: Record<EditorKey, string> = { ar: te('arabic'), en: te('english'), header: te('header'), footer: te('footer') };
 
+  const currentVersion = Math.max(template.current_version, savedVersion);
+
   const markSaved = (nextMeta: Meta) => {
     const current = { ...htmlState };
     for (const k of EDITOR_KEYS) {
@@ -198,8 +203,9 @@ export function TemplateEditor({ template, canEdit }: { template: TemplateDetail
     }
     startSaving(async () => {
       const draft = getDraft();
-      const result = await run(saveTemplate({ id: template.id, expectedVersion: template.current_version, draft, changeNotes: notes.trim() }));
+      const result = await run(saveTemplate({ id: template.id, expectedVersion: currentVersion, draft, changeNotes: notes.trim() }));
       if (result.ok) {
+        if (result.data) setSavedVersion(result.data.version);
         markSaved(meta);
         setNotes('');
         setSaveOpen(false);
@@ -236,8 +242,11 @@ export function TemplateEditor({ template, canEdit }: { template: TemplateDetail
 
   const setM = <K extends keyof Meta>(key: K, value: Meta[K]) => setMeta((m) => ({ ...m, [key]: value }));
 
-  const published = template.published_version;
-  const publishBlocked = dirty ? te('publishDisabledUnsaved') : published === template.current_version && template.is_active ? te('publishDisabledCurrent') : null;
+  const published = Math.max(template.published_version ?? 0, publishedLocal ?? 0) || null;
+  const justPublished = publishedLocal !== null && publishedLocal > (template.published_version ?? 0);
+  const status = justPublished ? 'published' : template.status;
+  const activeNow = template.is_active || justPublished;
+  const publishBlocked = dirty ? te('publishDisabledUnsaved') : published === currentVersion && activeNow ? te('publishDisabledCurrent') : null;
   const title = localized(meta, 'name', locale) || localized(template, 'name', locale);
 
   const condVars = useMemo(() => {
@@ -277,36 +286,34 @@ export function TemplateEditor({ template, canEdit }: { template: TemplateDetail
             </SelectContent>
           </Select>
         </Field>
-        <div className="grid grid-cols-2 gap-3">
-          <Field label={t('fields.variant')}>
-            <Select value={meta.variant} onValueChange={(v) => setM('variant', v)} disabled={!canEdit}>
-              <SelectTrigger className="w-full" aria-label={t('fields.variant')}>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {variantOptions.map((v) => (
-                  <SelectItem key={v} value={v}>
-                    {labels.variant(v)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </Field>
-          <Field label={t('fields.language')}>
-            <Select value={meta.language} onValueChange={(v) => setM('language', v as CertificateLanguage)} disabled={!canEdit}>
-              <SelectTrigger className="w-full" aria-label={t('fields.language')}>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {CERTIFICATE_LANGUAGES.map((v) => (
-                  <SelectItem key={v} value={v}>
-                    {labels.language(v)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </Field>
-        </div>
+        <Field label={t('fields.variant')}>
+          <Select value={meta.variant} onValueChange={(v) => setM('variant', v)} disabled={!canEdit}>
+            <SelectTrigger className="w-full" aria-label={t('fields.variant')}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {variantOptions.map((v) => (
+                <SelectItem key={v} value={v}>
+                  {labels.variant(v)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </Field>
+        <Field label={t('fields.language')}>
+          <Select value={meta.language} onValueChange={(v) => setM('language', v as CertificateLanguage)} disabled={!canEdit}>
+            <SelectTrigger className="w-full" aria-label={t('fields.language')}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {CERTIFICATE_LANGUAGES.map((v) => (
+                <SelectItem key={v} value={v}>
+                  {labels.language(v)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </Field>
         <p className="text-meta text-muted-foreground">{t('fields.languageHint')}</p>
       </PaneSection>
 
@@ -334,11 +341,25 @@ export function TemplateEditor({ template, canEdit }: { template: TemplateDetail
       <PaneSection title={te('letterhead')}>
         <p className="text-meta text-muted-foreground">{te('letterheadHint')}</p>
         <div className="grid grid-cols-2 gap-2">
-          <Button variant="outline" size="sm" onClick={() => { setActive('header'); setPane('content'); }}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setActive('header');
+              setPane('content');
+            }}
+          >
             <PanelsTopLeftIcon />
             {te('editHeader')}
           </Button>
-          <Button variant="outline" size="sm" onClick={() => { setActive('footer'); setPane('content'); }}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              setActive('footer');
+              setPane('content');
+            }}
+          >
             <PanelsTopLeftIcon className="-scale-y-100" />
             {te('editFooter')}
           </Button>
@@ -348,7 +369,7 @@ export function TemplateEditor({ template, canEdit }: { template: TemplateDetail
       <PaneSection title={t('list.columns.status')}>
         <div className="flex flex-col gap-2.5 rounded-md border border-border bg-subtle p-3">
           <div className="flex flex-wrap items-center gap-1.5">
-            <StatusBadge domain="template" status={template.status} size="sm" />
+            <StatusBadge domain="template" status={status} size="sm" />
             {template.is_default ? (
               <Badge variant="secondary" size="sm" className="gap-1">
                 <StarIcon className="size-3 fill-current" aria-hidden />
@@ -364,7 +385,7 @@ export function TemplateEditor({ template, canEdit }: { template: TemplateDetail
           <dl className="grid grid-cols-2 gap-2 text-meta">
             <div>
               <dt className="text-muted-foreground">{t('list.columns.version')}</dt>
-              <dd className="numeric font-medium">{t('list.versionLabel', { version: template.current_version })}</dd>
+              <dd className="numeric font-medium">{t('list.versionLabel', { version: currentVersion })}</dd>
             </div>
             <div>
               <dt className="text-muted-foreground">{te('publish')}</dt>
@@ -457,9 +478,7 @@ export function TemplateEditor({ template, canEdit }: { template: TemplateDetail
               )}
               onClick={() => editors[k]?.commands.focus()}
             >
-              {letterhead ? (
-                <p className="mb-3 border-b border-dashed border-border pb-2 text-meta text-muted-foreground">{te('letterheadHint')}</p>
-              ) : null}
+              {letterhead ? <p className="mb-3 border-b border-dashed border-border pb-2 text-meta text-muted-foreground">{te('letterheadHint')}</p> : null}
               <EditorContent editor={editors[k]} />
             </div>
           );
@@ -494,9 +513,9 @@ export function TemplateEditor({ template, canEdit }: { template: TemplateDetail
           <div className="flex min-w-0 items-center gap-2">
             <FileTextIcon className="size-4 shrink-0 text-primary" aria-hidden />
             <h1 className="truncate text-base font-semibold">{title}</h1>
-            <StatusBadge domain="template" status={template.status} size="sm" className="hidden sm:inline-flex" />
+            <StatusBadge domain="template" status={status} size="sm" className="hidden sm:inline-flex" />
             <Badge variant="outline" size="sm" className="numeric hidden shrink-0 sm:inline-flex">
-              {te('versionBadge', { version: template.current_version })}
+              {te('versionBadge', { version: currentVersion })}
             </Badge>
           </div>
           <p className="mt-0.5 flex items-center gap-1.5 truncate text-[0.6875rem] text-muted-foreground">
@@ -567,7 +586,10 @@ export function TemplateEditor({ template, canEdit }: { template: TemplateDetail
       </div>
 
       <div className="grid min-h-0 flex-1 grid-cols-1 xl:grid-cols-[18rem_minmax(0,1fr)_17.5rem]">
-        <aside className={cn('min-h-0 overflow-y-auto border-e border-border bg-card', pane === 'settings' ? 'block' : 'hidden', 'xl:block')} aria-label={te('settings')}>
+        <aside
+          className={cn('min-h-0 overflow-y-auto border-e border-border bg-card', pane === 'settings' ? 'block' : 'hidden', 'xl:block')}
+          aria-label={te('settings')}
+        >
           {settingsPane}
         </aside>
         <section className={cn('min-h-0 min-w-0', pane === 'content' ? 'block' : 'hidden', 'xl:block')} aria-label={te('content')}>
@@ -583,7 +605,7 @@ export function TemplateEditor({ template, canEdit }: { template: TemplateDetail
         <DialogContent size="md">
           <DialogHeader>
             <DialogTitle>{te('saveDialogTitle')}</DialogTitle>
-            <DialogDescription>{te('saveDialogDescription', { version: template.current_version + 1 })}</DialogDescription>
+            <DialogDescription>{te('saveDialogDescription', { version: currentVersion + 1 })}</DialogDescription>
           </DialogHeader>
           <DialogBody>
             <div className="space-y-1.5 pb-2">
@@ -621,11 +643,12 @@ export function TemplateEditor({ template, canEdit }: { template: TemplateDetail
       <ConfirmDialog
         open={publishOpen}
         onOpenChange={setPublishOpen}
-        title={te('publishDialogTitle', { version: template.current_version })}
+        title={te('publishDialogTitle', { version: currentVersion })}
         description={te('publishDialogDescription')}
         confirmLabel={te('publish')}
         onConfirm={async () => {
           const result = await run(publishTemplate({ id: template.id }));
+          if (result.ok && result.data) setPublishedLocal(result.data.version);
           return result.ok;
         }}
       />
@@ -648,13 +671,16 @@ export function TemplateEditor({ template, canEdit }: { template: TemplateDetail
         open={versionsOpen}
         onOpenChange={setVersionsOpen}
         versions={template.versions}
-        currentVersion={template.current_version}
-        publishedVersion={template.published_version}
+        currentVersion={currentVersion}
+        publishedVersion={published}
         canRestore={canEdit && !dirty}
         restoreBlockedReason={!canEdit ? te('readOnly') : dirty ? t('versions.restoreDisabledUnsaved') : null}
         onRestore={async (v) => {
           const result = await run(restoreTemplateVersion({ id: template.id, version: v.version }));
-          if (result.ok) applySnapshot(v);
+          if (result.ok) {
+            applySnapshot(v);
+            if (result.data) setSavedVersion(result.data.version);
+          }
           return result.ok;
         }}
       />

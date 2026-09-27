@@ -18,14 +18,15 @@
       "version": "الإصدار",
       "status": "الحالة",
       "lastEdited": "آخر تعديل",
-      "usage": "الصادرة"
+      "usage": "الصادرة",
+      "variantLanguage": "النسخة واللغة"
     },
     "default": "افتراضي",
     "defaultTooltip": "يُعرض أولًا عند إصدار هذا النوع من الشهادات",
     "unpublished": "تغييرات غير منشورة",
     "unpublishedTooltip": "الإصدار {current} محفوظ، بينما لا يزال الإصدار {published} مستخدمًا في إصدار الشهادات",
-    "versionLabel": "إ{version}",
-    "publishedVersion": "منشور إ{version}",
+    "versionLabel": "الإصدار {version}",
+    "publishedVersion": "المنشور: الإصدار {version}",
     "never": "غير منشور",
     "editedBy": "{date} · {name}",
     "count": "{count, plural, zero {لا توجد قوالب} one {قالب واحد} two {قالبان} few {# قوالب} many {# قالبًا} other {# قالب}}",
@@ -174,35 +175,122 @@
       "company": "الشركة",
       "certificate": "الشهادة"
     },
-    "employee_name_ar": { "label": "اسم الموظف (عربي)", "description": "الاسم الكامل بالعربية" },
-    "employee_name_en": { "label": "اسم الموظف (إنجليزي)", "description": "الاسم الكامل بالإنجليزية" },
-    "employee_id": { "label": "الرقم الوظيفي", "description": "رقم الموظف" },
-    "job_title_ar": { "label": "المسمى الوظيفي (عربي)", "description": "المسمى الحالي" },
-    "job_title_en": { "label": "المسمى الوظيفي (إنجليزي)", "description": "المسمى الحالي" },
-    "department_ar": { "label": "الإدارة (عربي)", "description": "الإدارة الحالية" },
-    "department_en": { "label": "الإدارة (إنجليزي)", "description": "الإدارة الحالية" },
-    "joining_date": { "label": "تاريخ الالتحاق", "description": "يُنسّق بلغة القسم" },
-    "nationality": { "label": "الجنسية", "description": "كما في ملف الموظف" },
-    "passport_number": { "label": "رقم الجواز", "description": "لخطابات السفارات والتأشيرات" },
-    "national_id": { "label": "رقم الإقامة / الهوية", "description": "رقم وثيقة الهوية" },
-    "basic_salary": { "label": "الراتب الأساسي", "description": "شهري مع العملة" },
-    "housing_allowance": { "label": "بدل السكن", "description": "شهري مع العملة" },
-    "transport_allowance": { "label": "بدل النقل", "description": "شهري مع العملة" },
-    "other_allowance": { "label": "بدلات أخرى", "description": "شهري مع العملة" },
-    "total_salary": { "label": "إجمالي الراتب", "description": "الراتب الشهري الإجمالي" },
-    "company_name_ar": { "label": "اسم الشركة (عربي)", "description": "الاسم النظامي عند توفره" },
-    "company_name_en": { "label": "اسم الشركة (إنجليزي)", "description": "الاسم النظامي عند توفره" },
-    "company_address_ar": { "label": "عنوان الشركة (عربي)", "description": "من إعدادات المنشأة" },
-    "company_address_en": { "label": "عنوان الشركة (إنجليزي)", "description": "من إعدادات المنشأة" },
-    "company_cr": { "label": "السجل التجاري", "description": "رقم السجل التجاري" },
-    "company_vat": { "label": "الرقم الضريبي", "description": "رقم التسجيل الضريبي" },
-    "company_phone": { "label": "هاتف الشركة", "description": "من إعدادات المنشأة" },
-    "company_website": { "label": "موقع الشركة", "description": "من إعدادات المنشأة" },
-    "certificate_number": { "label": "رقم الشهادة", "description": "CERT-YYYY-000001" },
-    "current_date": { "label": "تاريخ الإصدار", "description": "ميلادي، ويُضاف الهجري في العربية" },
-    "current_date_hijri": { "label": "تاريخ الإصدار (هجري)", "description": "تقويم أم القرى" },
-    "addressed_to": { "label": "الجهة الموجّه إليها", "description": "من بيانات الطلب" },
-    "purpose": { "label": "الغرض", "description": "من بيانات الطلب" }
+    "employee_name_ar": {
+      "label": "اسم الموظف (عربي)",
+      "description": "الاسم الكامل بالعربية"
+    },
+    "employee_name_en": {
+      "label": "اسم الموظف (إنجليزي)",
+      "description": "الاسم الكامل بالإنجليزية"
+    },
+    "employee_id": {
+      "label": "الرقم الوظيفي",
+      "description": "رقم الموظف"
+    },
+    "job_title_ar": {
+      "label": "المسمى الوظيفي (عربي)",
+      "description": "المسمى الحالي"
+    },
+    "job_title_en": {
+      "label": "المسمى الوظيفي (إنجليزي)",
+      "description": "المسمى الحالي"
+    },
+    "department_ar": {
+      "label": "الإدارة (عربي)",
+      "description": "الإدارة الحالية"
+    },
+    "department_en": {
+      "label": "الإدارة (إنجليزي)",
+      "description": "الإدارة الحالية"
+    },
+    "joining_date": {
+      "label": "تاريخ الالتحاق",
+      "description": "يُنسّق بلغة القسم"
+    },
+    "nationality": {
+      "label": "الجنسية",
+      "description": "كما في ملف الموظف"
+    },
+    "passport_number": {
+      "label": "رقم الجواز",
+      "description": "لخطابات السفارات والتأشيرات"
+    },
+    "national_id": {
+      "label": "رقم الإقامة / الهوية",
+      "description": "رقم وثيقة الهوية"
+    },
+    "basic_salary": {
+      "label": "الراتب الأساسي",
+      "description": "شهري مع العملة"
+    },
+    "housing_allowance": {
+      "label": "بدل السكن",
+      "description": "شهري مع العملة"
+    },
+    "transport_allowance": {
+      "label": "بدل النقل",
+      "description": "شهري مع العملة"
+    },
+    "other_allowance": {
+      "label": "بدلات أخرى",
+      "description": "شهري مع العملة"
+    },
+    "total_salary": {
+      "label": "إجمالي الراتب",
+      "description": "الراتب الشهري الإجمالي"
+    },
+    "company_name_ar": {
+      "label": "اسم الشركة (عربي)",
+      "description": "الاسم النظامي عند توفره"
+    },
+    "company_name_en": {
+      "label": "اسم الشركة (إنجليزي)",
+      "description": "الاسم النظامي عند توفره"
+    },
+    "company_address_ar": {
+      "label": "عنوان الشركة (عربي)",
+      "description": "من إعدادات المنشأة"
+    },
+    "company_address_en": {
+      "label": "عنوان الشركة (إنجليزي)",
+      "description": "من إعدادات المنشأة"
+    },
+    "company_cr": {
+      "label": "السجل التجاري",
+      "description": "رقم السجل التجاري"
+    },
+    "company_vat": {
+      "label": "الرقم الضريبي",
+      "description": "رقم التسجيل الضريبي"
+    },
+    "company_phone": {
+      "label": "هاتف الشركة",
+      "description": "من إعدادات المنشأة"
+    },
+    "company_website": {
+      "label": "موقع الشركة",
+      "description": "من إعدادات المنشأة"
+    },
+    "certificate_number": {
+      "label": "رقم الشهادة",
+      "description": "CERT-YYYY-000001"
+    },
+    "current_date": {
+      "label": "تاريخ الإصدار",
+      "description": "ميلادي، ويُضاف الهجري في العربية"
+    },
+    "current_date_hijri": {
+      "label": "تاريخ الإصدار (هجري)",
+      "description": "تقويم أم القرى"
+    },
+    "addressed_to": {
+      "label": "الجهة الموجّه إليها",
+      "description": "من بيانات الطلب"
+    },
+    "purpose": {
+      "label": "الغرض",
+      "description": "من بيانات الطلب"
+    }
   },
   "preview": {
     "title": "معاينة القالب",
@@ -256,7 +344,8 @@
       "show_qr": "رمز QR",
       "certificate_type": "النوع",
       "variant": "النسخة"
-    }
+    },
+    "formattingOnly": "تحديث التنسيق فقط"
   },
   "starter": {
     "number": "الرقم:",

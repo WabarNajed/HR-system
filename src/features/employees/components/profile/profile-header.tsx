@@ -75,17 +75,22 @@ export function ProfileHeader({
         }}
       />
       <div className="px-4 sm:px-6">
-        <div className="-mt-10 flex flex-col gap-3 sm:-mt-12 lg:flex-row lg:items-end lg:justify-between lg:gap-6">
-          <div className="flex min-w-0 items-end gap-4">
+        {/* Name and actions start just below the cover band (never on top of it), whatever the name length. */}
+        <div className="-mt-10 flex flex-col gap-3 sm:-mt-12 lg:flex-row lg:items-start lg:justify-between lg:gap-6">
+          <div className="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
             <AvatarUploader
               employeeId={employee.id}
               name={name}
               src={employee.avatar_path ? fileRouteUrl('employee-documents', employee.avatar_path) : null}
               editable={canEditAvatar && !archived}
             />
-            <div className="min-w-0 pb-0.5">
+            <div className="min-w-0 sm:pt-14">
               <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
-                <h1 id="employee-name" className="min-w-0 text-[1.375rem] leading-8 font-semibold text-foreground sm:text-page-title">
+                <h1
+                  id="employee-name"
+                  title={name}
+                  className="line-clamp-2 min-w-0 text-[1.375rem] leading-8 font-semibold break-words text-foreground sm:text-page-title"
+                >
                   {name}
                 </h1>
                 <StatusBadge domain="employment" status={employee.employment_status} />
@@ -98,7 +103,7 @@ export function ProfileHeader({
               {alt ? <p className="truncate text-sm text-muted-foreground">{alt}</p> : null}
             </div>
           </div>
-          <div className="lg:pb-0.5">
+          <div className="shrink-0 lg:pt-14">
             <ProfileActions
               employeeId={employee.id}
               name={name}

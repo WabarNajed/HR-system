@@ -2,7 +2,6 @@ import type { Metadata } from 'next';
 import { forbidden, redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { PageHeader } from '@/components/shared/page-header';
-import { BreadcrumbLabel } from '@/components/shell/breadcrumb-context';
 import { ROUTE_ACCESS } from '@/components/shell/nav-config';
 import { ImportWizard, type WizardCaps, type WizardInitial } from '@/features/data-management/components/wizard/import-wizard';
 import type { DbClient } from '@/features/data-management/lib/context';
@@ -103,7 +102,7 @@ export default async function DataImportPage({ searchParams }: { searchParams: S
                   pending: 0,
                   imported: imp.totals.imported,
                   skipped: r?.skipped ?? 0,
-                  failed: r?.failed ?? 0,
+                  failed: imp.totals.error,
                   done: true,
                   status: imp.status,
                   result: r,
@@ -119,10 +118,7 @@ export default async function DataImportPage({ searchParams }: { searchParams: S
 
   return (
     <div className="flex flex-col gap-5">
-      <BreadcrumbLabel label={t('wizard.title')} />
       <PageHeader
-        compact
-        breadcrumbs={[{ label: t('title'), href: '/admin/data-management' }, { label: t('wizard.title') }]}
         title={t('wizard.title')}
         description={t('wizard.description')}
       />

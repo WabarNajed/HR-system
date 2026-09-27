@@ -93,6 +93,12 @@ export function AuditDetailsSheet({ event, onOpenChange }: { event: AuditEventVi
   const masked = hasMasked(entries);
   const diffs = entries.filter((e) => e.kind === 'diff');
   const values = entries.filter((e) => e.kind === 'value');
+  // Row creations only carry new values and deletions only old ones → one value column.
+  const diffMode: 'created' | 'deleted' | 'changed' = diffs.every((d) => d.kind === 'diff' && !d.hasBefore)
+    ? 'created'
+    : diffs.every((d) => d.kind === 'diff' && !d.hasAfter)
+      ? 'deleted'
+      : 'changed';
 
   return (
     <Sheet open={Boolean(event)} onOpenChange={onOpenChange}>
@@ -220,8 +226,16 @@ export function AuditDetailsSheet({ event, onOpenChange }: { event: AuditEventVi
                       <thead className="bg-subtle text-xs text-muted-foreground">
                         <tr>
                           <th className="w-[32%] px-3 py-2 text-start font-medium">{t('details.field')}</th>
-                          <th className="px-3 py-2 text-start font-medium">{t('details.before')}</th>
-                          <th className="px-3 py-2 text-start font-medium">{t('details.after')}</th>
+                          {diffMode === 'created' ? (
+                            <th className="px-3 py-2 text-start font-medium">{t('details.value')}</th>
+                          ) : diffMode === 'deleted' ? (
+                            <th className="px-3 py-2 text-start font-medium">{t('details.previousValue')}</th>
+                          ) : (
+                            <>
+                              <th className="px-3 py-2 text-start font-medium">{t('details.before')}</th>
+                              <th className="px-3 py-2 text-start font-medium">{t('details.after')}</th>
+                            </>
+                          )}
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-border">
@@ -233,12 +247,24 @@ export function AuditDetailsSheet({ event, onOpenChange }: { event: AuditEventVi
                                   {d.field}
                                 </code>
                               </td>
-                              <td className={cn('px-3 py-2', d.hasBefore && d.hasAfter && 'bg-danger-soft/40')}>
-                                {d.hasBefore ? <Value value={d.before} /> : <span className="text-faint-foreground">—</span>}
-                              </td>
-                              <td className={cn('px-3 py-2', d.hasAfter && d.hasBefore && 'bg-success-soft/40')}>
-                                {d.hasAfter ? <Value value={d.after} /> : <span className="text-faint-foreground">—</span>}
-                              </td>
+                              {diffMode === 'created' ? (
+                                <td className="px-3 py-2">
+                                  <Value value={d.after} />
+                                </td>
+                              ) : diffMode === 'deleted' ? (
+                                <td className="px-3 py-2">
+                                  <Value value={d.before} />
+                                </td>
+                              ) : (
+                                <>
+                                  <td className={cn('px-3 py-2', d.hasBefore && d.hasAfter && 'bg-danger-soft/40')}>
+                                    {d.hasBefore ? <Value value={d.before} /> : <span className="text-faint-foreground">—</span>}
+                                  </td>
+                                  <td className={cn('px-3 py-2', d.hasAfter && d.hasBefore && 'bg-success-soft/40')}>
+                                    {d.hasAfter ? <Value value={d.after} /> : <span className="text-faint-foreground">—</span>}
+                                  </td>
+                                </>
+                              )}
                             </tr>
                           ) : null,
                         )}

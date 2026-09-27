@@ -226,7 +226,7 @@ const employeesDataset = defineDataset<EmployeeExportRow>({
       personal && { key: 'id_type', header: t('employees.fields.idType'), width: 12, value: (r) => tr(t, 'enums.idType', r.id_type) },
       personal && { key: 'national_id', header: t('employees.fields.nationalId'), width: 16 },
       personal && { key: 'iqama_issue_date', header: t('employees.fields.iqamaIssueDate'), type: 'date' },
-      { key: 'iqama_expiry_date', header: t('employees.fields.iqamaExpiryDate'), type: 'date' },
+      orgCan(ctx, 'employees.view') && { key: 'iqama_expiry_date', header: t('employees.fields.iqamaExpiryDate'), type: 'date' },
       personal && { key: 'iqama_expiry_hijri', header: t('employees.fields.iqamaExpiryHijri'), width: 14 },
       personal && { key: 'iqama_profession', header: t('employees.fields.iqamaProfession'), width: 20 },
       personal && { key: 'passport_number', header: t('employees.fields.passportNumber'), width: 14 },
@@ -296,26 +296,32 @@ const employeesListDataset = defineDataset<EmployeeExportRow>({
   allowedSorts: DIRECTORY_SORTS,
   defaultSort: 'name',
   defaultDir: 'asc',
-  columns: (t) => [
-    { key: 'employee_number', header: t('employees.columns.employeeNumber') },
-    { key: 'name', header: t('employees.columns.employee'), value: (r) => employeeDisplayName(r, t.locale) },
-    { key: 'job_title', header: t('employees.columns.jobTitle'), value: (r) => named(r.job_title, t) },
-    { key: 'department', header: t('employees.columns.department'), value: (r) => named(r.department, t) },
-    { key: 'manager', header: t('employees.columns.manager'), value: (r) => (r.manager ? employeeDisplayName(r.manager, t.locale) : '') },
-    { key: 'employment_status', header: t('employees.columns.status'), value: (r) => tr(t, 'statuses.employment', r.employment_status) },
-    { key: 'joining_date', header: t('employees.columns.joiningDate'), type: 'date' },
-    { key: 'iqama_expiry_date', header: t('employees.columns.iqamaExpiry'), type: 'date' },
-    { key: 'mobile', header: t('employees.columns.mobile') },
-  ],
-  fetchRows: (supabase, params, ctx) =>
-    fetchEmployees(
+  columns: (t, ctx) => {
+    const cols: (ExportColumn<EmployeeExportRow> | false)[] = [
+      { key: 'employee_number', header: t('employees.columns.employeeNumber') },
+      { key: 'name', header: t('employees.columns.employee'), value: (r) => employeeDisplayName(r, t.locale) },
+      { key: 'job_title', header: t('employees.columns.jobTitle'), value: (r) => named(r.job_title, t) },
+      { key: 'department', header: t('employees.columns.department'), value: (r) => named(r.department, t) },
+      { key: 'manager', header: t('employees.columns.manager'), value: (r) => (r.manager ? employeeDisplayName(r.manager, t.locale) : '') },
+      { key: 'employment_status', header: t('employees.columns.status'), value: (r) => tr(t, 'statuses.employment', r.employment_status) },
+      { key: 'joining_date', header: t('employees.columns.joiningDate'), type: 'date' },
+      // Government-ID dates only for organization-wide viewers (same rule as the directory column).
+      orgCan(ctx, 'employees.view') && { key: 'iqama_expiry_date', header: t('employees.columns.iqamaExpiry'), type: 'date' },
+      { key: 'mobile', header: t('employees.columns.mobile') },
+    ];
+    return cols.filter((c): c is ExportColumn<EmployeeExportRow> => Boolean(c));
+  },
+  fetchRows: async (supabase, params, ctx) => {
+    const viewer = await viewerFor(ctx);
+    return fetchEmployees(
       supabase,
       params,
       ctx,
-      'id, employee_number, name_ar, name_en, mobile, employment_status, joining_date, iqama_expiry_date, archived_at, ' +
+      `id, employee_number, name_ar, name_en, mobile, employment_status, joining_date, ${viewer.isOrgViewer ? 'iqama_expiry_date, ' : ''}archived_at, ` +
         'department:departments!department_id(id, name_ar, name_en), job_title:job_titles!job_title_id(id, name_ar, name_en), ' +
         'manager:manager_id(name_ar, name_en, employee_number), portal:profiles!profiles_employee_id_fkey(status)',
-    ),
+    );
+  },
   describeFilters: describeDirectoryFilters,
 });
 

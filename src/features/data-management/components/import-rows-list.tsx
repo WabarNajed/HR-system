@@ -2,7 +2,7 @@
 
 import { ChevronLeftIcon, ChevronRightIcon, RowsIcon } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { EmptyState } from '@/components/shared/empty-state';
 import { ErrorState } from '@/components/shared/error-state';
 import { SegmentedTabs } from '@/components/shared/link-tabs';
@@ -166,36 +166,31 @@ export function ImportRowsList({ importId, type, tabs, defaultTab = 'all', reloa
   const [filter, setFilter] = useState<RowFilter>(defaultTab);
   const [q, setQ] = useState('');
   const [page, setPage] = useState(1);
-  const [rows, setRows] = useState<ImportRowView[] | null>(null);
-  const [total, setTotal] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [failed, setFailed] = useState<string | null>(null);
+  const [nonce, setNonce] = useState(0);
+  const [result, setResult] = useState<{ key: string; rows: ImportRowView[]; total: number } | { key: string; error: string } | null>(null);
   const [open, setOpen] = useState<ImportRowView | null>(null);
-  const seq = useRef(0);
-
-  const load = useCallback(async () => {
-    const id = ++seq.current;
-    setLoading(true);
-    setFailed(null);
-    try {
-      const res = await listImportRowsAction({ importId, filter, q: q || undefined, page, pageSize: PAGE_SIZE });
-      if (id !== seq.current) return;
-      if (res.ok && res.data) {
-        setRows(res.data.rows);
-        setTotal(res.data.total);
-      } else {
-        setFailed(res.ok ? 'errors.generic' : res.error);
-      }
-    } catch {
-      if (id === seq.current) setFailed('errors.network');
-    } finally {
-      if (id === seq.current) setLoading(false);
-    }
-  }, [importId, filter, q, page]);
+  const key = `${importId}|${filter}|${q}|${page}|${reloadKey ?? ''}|${nonce}`;
 
   useEffect(() => {
-    void load();
-  }, [load, reloadKey]);
+    let alive = true;
+    listImportRowsAction({ importId, filter, q: q || undefined, page, pageSize: PAGE_SIZE })
+      .then((res) => {
+        if (!alive) return;
+        setResult(res.ok && res.data ? { key, rows: res.data.rows, total: res.data.total } : { key, error: res.ok ? 'errors.generic' : res.error });
+      })
+      .catch(() => {
+        if (alive) setResult({ key, error: 'errors.network' });
+      });
+    return () => {
+      alive = false;
+    };
+  }, [key, importId, filter, q, page]);
+
+  const loading = result?.key !== key;
+  const failed = !loading && result !== null && 'error' in result;
+  const rows = result && 'rows' in result ? result.rows : null;
+  const total = result && 'rows' in result ? result.total : 0;
+  const load = () => setNonce((n) => n + 1);
 
   const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const from = total ? (page - 1) * PAGE_SIZE + 1 : 0;

@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useTransition } from 'react';
 import { useForm } from 'react-hook-form';
+import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogBody, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -15,6 +16,9 @@ import { localized } from '@/lib/i18n/localized';
 import { createRoleAction, updateRoleAction } from '../actions';
 import type { RoleWithPermissions } from '../queries';
 import { roleDetailsSchema } from '../schemas';
+
+/** The dialog also carries the (create-only) "start from" role, which the details schema would strip. */
+const formSchema = roleDetailsSchema.and(z.object({ copyFromRoleId: z.string() }));
 
 type FormValues = {
   nameAr: string;
@@ -49,7 +53,7 @@ export function RoleDialog({
   const run = useActionFeedback();
   const [pending, startTransition] = useTransition();
   const form = useForm<FormValues>({
-    resolver: zodResolver(roleDetailsSchema) as never,
+    resolver: zodResolver(formSchema) as never,
     defaultValues: { nameAr: '', nameEn: '', descriptionAr: '', descriptionEn: '', dataScope: 'own', copyFromRoleId: NONE },
   });
 

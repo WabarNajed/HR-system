@@ -1,6 +1,7 @@
 import 'server-only';
 
 import { ROUTE_ACCESS } from '@/components/shell/nav-config';
+import { countryOptions } from '@/features/settings/queries';
 import { requireAccess } from '@/lib/auth/guards';
 import { can, checkAccess } from '@/lib/permissions';
 import { createClient } from '@/lib/supabase/server';
@@ -16,16 +17,17 @@ export async function MasterDataPage({ entity }: { entity: MasterEntity }) {
   const supabase = await createClient();
 
   const rows = await listMasterData(supabase, entity);
-  const [kpis, departments] = await Promise.all([
-    masterDataKpis(supabase, entity, rows, ctx.isHR && can(ctx, 'employees.view')),
+  const kpis = await masterDataKpis(supabase, entity, rows, ctx.isHR && can(ctx, 'employees.view'));
+  const departments: DepartmentOption[] =
     entity === 'departments'
-      ? Promise.resolve<DepartmentOption[]>(
-          rows.map((r) => ({ id: r.id, code: r.code, name_ar: r.name_ar, name_en: r.name_en, parent_id: r.parent_id, is_active: r.is_active })),
-        )
-      : Promise.resolve<DepartmentOption[]>([]),
-  ]);
+      ? rows.map((r) => ({ id: r.id, code: r.code, name_ar: r.name_ar, name_en: r.name_en, parent_id: r.parent_id, is_active: r.is_active }))
+      : [];
 
-  const importAllowed = checkAccess(ctx, ROUTE_ACCESS['/admin/data-management']) && can(ctx, 'settings.edit');
+  // Locations: ISO country picker + localized country names (built here so SSR and hydration agree).
+  const countries = config.hasPlace ? countryOptions(ctx.locale) : [];
+
+  const canEdit = can(ctx, 'settings.edit');
+  const importAllowed = canEdit && checkAccess(ctx, ROUTE_ACCESS['/admin/data-management']);
 
   return (
     <MasterDataManager
@@ -33,10 +35,10 @@ export async function MasterDataPage({ entity }: { entity: MasterEntity }) {
       rows={rows}
       kpis={kpis}
       departments={departments}
-      canEdit={can(ctx, 'settings.edit')}
+      countries={countries}
+      canEdit={canEdit}
       canExport={can(ctx, 'settings.export')}
       importHref={importAllowed ? `/admin/data-management?type=${config.importType}` : null}
     />
   );
 }
-

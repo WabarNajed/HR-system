@@ -53,7 +53,7 @@ export function ResetPasswordForm({ mode = 'recovery', email }: { mode?: 'invite
         description={invite ? t('inviteSubtitle') : t('subtitle')}
       />
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} noValidate className="flex flex-col gap-4" aria-busy={pending}>
+        <form method="post" onSubmit={form.handleSubmit(onSubmit)} noValidate className="flex flex-col gap-4" aria-busy={pending}>
           {email ? (
             <div className="flex items-center justify-between gap-3 rounded-md border border-border bg-subtle px-3 py-2 text-meta">
               <span className="text-muted-foreground">{t('account')}</span>

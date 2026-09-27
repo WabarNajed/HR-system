@@ -141,7 +141,7 @@ export function TemplatesManager({ templates, canEdit, types }: Props) {
 
   const versionCell = (tpl: TemplateListItem) => (
     <div className="flex flex-col gap-0.5">
-      <span className="numeric font-medium">{t('versionLabel', { version: tpl.current_version })}</span>
+      <span className="numeric font-medium">{tpl.current_version}</span>
       {tpl.has_unpublished_changes ? (
         <SimpleTooltip content={t('unpublishedTooltip', { current: tpl.current_version, published: tpl.published_version ?? 0 })}>
           <span className="w-fit cursor-help text-[0.6875rem] font-medium text-warning">{t('publishedVersion', { version: tpl.published_version ?? 0 })}</span>
@@ -229,42 +229,43 @@ export function TemplatesManager({ templates, canEdit, types }: Props) {
                 <thead>
                   <tr className="border-b border-border bg-subtle text-start text-meta text-muted-foreground">
                     <th className="px-4 py-2.5 text-start font-medium">{t('columns.name')}</th>
-                    <th className="px-3 py-2.5 text-start font-medium">{t('columns.variant')}</th>
-                    <th className="px-3 py-2.5 text-start font-medium">{t('columns.language')}</th>
-                    <th className="px-3 py-2.5 text-start font-medium">{t('columns.version')}</th>
-                    <th className="px-3 py-2.5 text-start font-medium">{t('columns.status')}</th>
-                    <th className="px-3 py-2.5 text-start font-medium">{t('columns.lastEdited')}</th>
-                    <th className="px-3 py-2.5 text-end font-medium">{t('columns.usage')}</th>
-                    <th className="w-12 px-2 py-2.5" />
+                    <th className="px-2.5 py-2.5 text-start font-medium whitespace-nowrap">{t('columns.variantLanguage')}</th>
+                    <th className="px-2.5 py-2.5 text-start font-medium">{t('columns.version')}</th>
+                    <th className="px-2.5 py-2.5 text-start font-medium">{t('columns.status')}</th>
+                    <th className="px-2.5 py-2.5 text-start font-medium">{t('columns.lastEdited')}</th>
+                    <th className="px-2.5 py-2.5 text-end font-medium">{t('columns.usage')}</th>
+                    <th className="w-11 px-2 py-2.5" />
                   </tr>
                 </thead>
                 {groups.map((g) => (
                   <tbody key={g.type} className="border-b border-border last:border-b-0">
                     <tr className="bg-muted/40">
-                      <th colSpan={8} className="px-4 py-1.5 text-start text-[0.6875rem] font-semibold tracking-wide text-muted-foreground uppercase">
+                      <th colSpan={7} className="px-4 py-1.5 text-start text-[0.6875rem] font-semibold tracking-wide text-muted-foreground uppercase">
                         {labels.type(g.type)} <span className="numeric ms-1 text-faint-foreground">{g.items.length}</span>
                       </th>
                     </tr>
                     {g.items.map((tpl) => (
                       <tr key={tpl.id} className="border-t border-border transition-colors hover:bg-subtle/70">
                         <td className="max-w-80 px-4 py-2.5">{nameCell(tpl)}</td>
-                        <td className="px-3 py-2.5 text-muted-foreground">{labels.variant(tpl.variant)}</td>
-                        <td className="px-3 py-2.5">
-                          <Badge variant="outline" size="sm">
-                            {labels.language(tpl.language)}
-                          </Badge>
-                        </td>
-                        <td className="px-3 py-2.5">{versionCell(tpl)}</td>
-                        <td className="px-3 py-2.5">
-                          <StatusBadge domain="template" status={tpl.status} size="sm" />
-                        </td>
-                        <td className="px-3 py-2.5">
-                          <div className="leading-tight">
-                            <div className="numeric whitespace-nowrap">{fmt.date(tpl.updated_at)}</div>
-                            {tpl.last_editor ? <div className="mt-0.5 max-w-40 truncate text-meta text-muted-foreground">{tpl.last_editor}</div> : null}
+                        <td className="px-2.5 py-2.5">
+                          <div className="flex flex-col items-start gap-1 leading-tight">
+                            <span className="text-foreground">{labels.variant(tpl.variant)}</span>
+                            <Badge variant="outline" size="sm" className="whitespace-nowrap">
+                              {labels.language(tpl.language)}
+                            </Badge>
                           </div>
                         </td>
-                        <td className="numeric px-3 py-2.5 text-end">{tpl.issued_count}</td>
+                        <td className="px-2.5 py-2.5">{versionCell(tpl)}</td>
+                        <td className="px-2.5 py-2.5">
+                          <StatusBadge domain="template" status={tpl.status} size="sm" className="whitespace-nowrap" />
+                        </td>
+                        <td className="px-2.5 py-2.5">
+                          <div className="leading-tight">
+                            <div className="numeric whitespace-nowrap">{fmt.date(tpl.updated_at)}</div>
+                            {tpl.last_editor ? <div className="mt-0.5 max-w-36 truncate text-meta text-muted-foreground">{tpl.last_editor}</div> : null}
+                          </div>
+                        </td>
+                        <td className="numeric px-2.5 py-2.5 text-end">{tpl.issued_count}</td>
                         <td className="px-2 py-2.5 text-end">{menu(tpl)}</td>
                       </tr>
                     ))}

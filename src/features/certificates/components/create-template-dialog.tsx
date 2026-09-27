@@ -64,6 +64,19 @@ export function CreateTemplateDialog({
   }, [seed, form, t]);
 
   const sourceId = useWatch({ control: form.control, name: 'sourceId' });
+  const sortedTemplates = [...templates].sort((a, b) => localized(a, 'name', locale).localeCompare(localized(b, 'name', locale), locale));
+
+  /** Picking a source copies its names (with a copy suffix), type, variant and language. */
+  const pickSource = (id: string | null) => {
+    form.setValue('sourceId', id);
+    const src = templates.find((tpl) => tpl.id === id);
+    if (!src) return;
+    form.setValue('name_ar', `${src.name_ar}${t('create.copySuffixAr')}`.slice(0, 150), { shouldValidate: form.formState.isSubmitted });
+    form.setValue('name_en', `${src.name_en}${t('create.copySuffixEn')}`.slice(0, 150), { shouldValidate: form.formState.isSubmitted });
+    form.setValue('certificate_type', src.certificate_type);
+    form.setValue('variant', src.variant);
+    form.setValue('language', src.language);
+  };
   const variant = useWatch({ control: form.control, name: 'variant' });
   const variants = Array.from(new Set<string>([...KNOWN_VARIANTS, variant]));
 
@@ -105,7 +118,7 @@ export function CreateTemplateDialog({
                   <button
                     type="button"
                     className={choice(Boolean(sourceId))}
-                    onClick={() => form.setValue('sourceId', sourceId || templates[0]?.id || null)}
+                    onClick={() => (sourceId ? undefined : pickSource(seed?.source?.id ?? sortedTemplates[0]?.id ?? null))}
                     aria-pressed={Boolean(sourceId)}
                     disabled={!templates.length}
                   >
@@ -124,14 +137,14 @@ export function CreateTemplateDialog({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>{t('create.source')}</FormLabel>
-                      <Select value={field.value ?? ''} onValueChange={field.onChange}>
+                      <Select value={field.value ?? ''} onValueChange={(v) => pickSource(v)}>
                         <FormControl>
                           <SelectTrigger className="w-full">
                             <SelectValue />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {templates.map((tpl) => (
+                          {sortedTemplates.map((tpl) => (
                             <SelectItem key={tpl.id} value={tpl.id}>
                               {localized(tpl, 'name', locale)}
                             </SelectItem>

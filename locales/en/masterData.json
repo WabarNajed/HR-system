@@ -10,12 +10,12 @@
       "createTitle": "New department",
       "createDescription": "Add an organizational unit and place it in the hierarchy.",
       "editTitle": "Edit department",
-      "codePlaceholder": "e.g. HR",
-      "searchPlaceholder": "Search by code, name, parent or head…",
+      "codePlaceholder": "HR",
+      "searchPlaceholder": "Search code, name or head…",
       "emptyTitle": "No departments yet",
       "emptyDescription": "Add your first department or import the structure from a spreadsheet.",
       "kpiTotal": "Departments",
-      "unassignedHint": "Active employees without a department"
+      "unassignedHint": "No department assigned"
     },
     "jobTitles": {
       "title": "Job titles",
@@ -24,12 +24,12 @@
       "createTitle": "New job title",
       "createDescription": "Add a job title that can be assigned to employees.",
       "editTitle": "Edit job title",
-      "codePlaceholder": "e.g. HRM",
-      "searchPlaceholder": "Search by code or name…",
+      "codePlaceholder": "HRM",
+      "searchPlaceholder": "Search code or name…",
       "emptyTitle": "No job titles yet",
       "emptyDescription": "Add job titles one by one or import them from a spreadsheet.",
       "kpiTotal": "Job titles",
-      "unassignedHint": "Active employees without a job title"
+      "unassignedHint": "No job title assigned"
     },
     "locations": {
       "title": "Locations",
@@ -38,12 +38,12 @@
       "createTitle": "New location",
       "createDescription": "Add an office, site or branch.",
       "editTitle": "Edit location",
-      "codePlaceholder": "e.g. RUH-HQ",
-      "searchPlaceholder": "Search by code, name, city or country…",
+      "codePlaceholder": "RUH-HQ",
+      "searchPlaceholder": "Search code, name or city…",
       "emptyTitle": "No locations yet",
       "emptyDescription": "Add your offices and sites or import them from a spreadsheet.",
       "kpiTotal": "Locations",
-      "unassignedHint": "Active employees without a location"
+      "unassignedHint": "No location assigned"
     },
     "costCenters": {
       "title": "Cost centers",
@@ -52,12 +52,12 @@
       "createTitle": "New cost center",
       "createDescription": "Add a cost center for reporting and allocations.",
       "editTitle": "Edit cost center",
-      "codePlaceholder": "e.g. CC-100",
-      "searchPlaceholder": "Search by code or name…",
+      "codePlaceholder": "CC-100",
+      "searchPlaceholder": "Search code or name…",
       "emptyTitle": "No cost centers yet",
       "emptyDescription": "Add cost centers one by one or import them from a spreadsheet.",
       "kpiTotal": "Cost centers",
-      "unassignedHint": "Active employees without a cost center"
+      "unassignedHint": "No cost center assigned"
     }
   },
   "sheet": {
@@ -81,7 +81,9 @@
     "city": "City",
     "country": "Country",
     "active": "Active",
-    "activeHint": "Inactive items stay on existing employee records but can’t be selected for new assignments."
+    "activeHint": "Inactive items stay on existing employee records but can’t be selected for new assignments.",
+    "countryPlaceholder": "Select a country",
+    "countrySearch": "Search countries…"
   },
   "columns": {
     "parent": "Parent department",
@@ -99,15 +101,15 @@
   },
   "kpis": {
     "totalHint": "{active} active · {inactive} inactive",
-    "assigned": "Assigned employees",
-    "assignedHint": "Active employee records linked",
-    "unassigned": "Unassigned employees",
+    "assigned": "Assigned",
+    "assignedHint": "Active employees linked",
+    "unassigned": "Unassigned",
     "inactive": "Inactive",
     "inactiveHint": "Hidden from new assignments",
     "withoutHead": "Without a head",
-    "withoutHeadHint": "Active departments with no head assigned",
+    "withoutHeadHint": "Active departments",
     "unused": "Not in use",
-    "unusedHint": "No employee records linked"
+    "unusedHint": "No employees linked"
   },
   "toast": {
     "created": "Created successfully.",
@@ -137,5 +139,9 @@
   "errors": {
     "nameTaken": "Another record already uses this name.",
     "parentCycle": "A department can’t be placed under itself or one of its sub-departments."
+  },
+  "bulk": {
+    "allActive": "All selected items are already active.",
+    "allInactive": "All selected items are already inactive."
   }
 }

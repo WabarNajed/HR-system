@@ -173,7 +173,7 @@ export function IssuedCertificatesTable({ rows, total, hrView, canRevoke, canExp
         data={rows}
         total={total}
         getRowId={(r) => r.id}
-        searchPlaceholder={t('filters.searchIssued')}
+        searchPlaceholder={hrView ? t('filters.searchIssued') : t('filters.searchOwn')}
         filters={filters}
         moreFilters={moreFilters}
         exportDataset={canExport ? 'certificates' : undefined}

@@ -34,7 +34,7 @@ export const generateMetadata = (): Promise<Metadata> => pageMetadata('dashboard
 
 function ComplianceSkeleton() {
   return (
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:gap-4 xl:grid-cols-4">
+    <div className="grid grid-cols-2 gap-3 md:gap-4 xl:grid-cols-4">
       {Array.from({ length: 4 }).map((_, i) => (
         <WidgetSkeleton key={i} rows={0} className="min-h-[6.5rem]" />
       ))}

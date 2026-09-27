@@ -42,7 +42,7 @@ export async function HubCards({ canEmployees, canMaster }: { canEmployees: bool
                 <Icon className="size-[1.125rem] sm:size-5" strokeWidth={1.8} aria-hidden />
               </span>
               <span className="min-w-0 flex-1">
-                <span className="block truncate text-sm font-semibold text-foreground sm:text-card-title">{t(`${card.key}.title`)}</span>
+                <span className="line-clamp-2 block text-sm leading-snug font-semibold text-foreground sm:truncate sm:text-card-title">{t(`${card.key}.title`)}</span>
                 <span className="mt-0.5 line-clamp-2 hidden text-meta text-muted-foreground sm:block">{t(`${card.key}.description`)}</span>
               </span>
               <ChevronRightIcon className="hidden size-4 shrink-0 text-faint-foreground transition-transform group-hover:text-primary sm:block rtl:rotate-180" aria-hidden />

@@ -35,7 +35,7 @@
     "total": "Portal accounts",
     "totalHint": "{active} active",
     "invited": "Invitations pending",
-    "invitedHint": "Invited, not signed in yet",
+    "invitedHint": "Not signed in yet",
     "pendingRegistrations": "Registrations",
     "pendingHint": "Awaiting HR review",
     "disabled": "Disabled accounts",

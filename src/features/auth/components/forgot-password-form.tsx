@@ -55,7 +55,7 @@ export function ForgotPasswordForm() {
     <>
       <AuthHeading title={t('title')} description={t('subtitle')} />
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} noValidate className="flex flex-col gap-4" aria-busy={pending}>
+        <form method="post" onSubmit={form.handleSubmit(onSubmit)} noValidate className="flex flex-col gap-4" aria-busy={pending}>
           {error ? (
             <Alert variant="danger" aria-live="assertive">
               <AlertCircleIcon />

@@ -24,7 +24,8 @@ import { useTranslations } from 'next-intl';
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { usePermissions } from '@/components/shared/permission-gate';
 import { Button } from '@/components/ui/button';
-import { CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from '@/components/ui/command';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from '@/components/ui/command';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Kbd } from '@/components/ui/kbd';
 import { globalSearch, type SearchResult, type SearchResultKind } from '@/features/search/actions';
 import { createClient } from '@/lib/supabase/client';
@@ -93,12 +94,15 @@ function writeRecent(key: string | null, items: SearchResult[]) {
   }
 }
 
-/** Emphasizes the first case-insensitive occurrence of the query in a title. */
+/** Emphasizes the first case-insensitive whole-word occurrence of the query in a title. */
 function highlight(text: string, query: string): ReactNode {
   const q = query.trim();
   if (q.length < 2) return text;
   const i = text.toLocaleLowerCase().indexOf(q.toLocaleLowerCase());
   if (i < 0) return text;
+  // Never split a word: wrapping part of an Arabic word in <mark> breaks cursive letter joining.
+  const letter = /[\p{L}\p{M}]/u;
+  if ((i > 0 && letter.test(text[i - 1]!)) || (i + q.length < text.length && letter.test(text[i + q.length]!))) return text;
   return (
     <>
       {text.slice(0, i)}
@@ -134,6 +138,9 @@ export function GlobalSearch({ visibleNavIds }: { visibleNavIds: readonly string
   const [state, setState] = useState<State>({ status: 'idle' });
   const [storageKey, setStorageKey] = useState<string | null>(null);
   const [recent, setRecent] = useState<SearchResult[]>([]);
+  // Controlled cmdk selection: server results replace the list, so re-select the first row
+  // whenever the result set changes (Enter then always opens the best match).
+  const [selected, setSelected] = useState('');
   const seq = useRef(0);
 
   // ⌘K / Ctrl+K anywhere; "/" when not typing in a field.
@@ -240,6 +247,21 @@ export function GlobalSearch({ visibleNavIds }: { visibleNavIds: readonly string
     return KIND_ORDER.filter((k) => map.has(k)).map((k) => ({ kind: k, items: map.get(k)! }));
   }, [state]);
 
+  const firstValue =
+    state.status === 'ready'
+      ? state.results.length
+        ? `${grouped[0]!.items[0]!.kind}-${grouped[0]!.items[0]!.id}`
+        : 'all-requests'
+      : state.status === 'idle'
+        ? recent.length
+          ? `recent-${recent[0]!.kind}-${recent[0]!.id}`
+          : 'action-first'
+        : '';
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (firstValue) setSelected(firstValue);
+  }, [firstValue]);
+
   const visible = new Set(visibleNavIds);
   const pages = NAV_GROUPS.flatMap((g) => g.items).filter((i) => visible.has(i.id));
   const canRequest = can('requests.create');
@@ -284,13 +306,22 @@ export function GlobalSearch({ visibleNavIds }: { visibleNavIds: readonly string
         <SearchIcon />
       </Button>
 
-      <CommandDialog
-        open={open}
-        onOpenChange={onOpenChange}
-        shouldFilter={false}
-        title={tNav('nav.header.search')}
-        className="max-sm:top-0 max-sm:h-dvh max-sm:max-h-dvh max-sm:w-full max-sm:max-w-none max-sm:rounded-none max-sm:border-0 sm:max-w-2xl"
-      >
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent
+          showCloseButton={false}
+          aria-describedby={undefined}
+          className="top-[12dvh] mt-0 overflow-hidden p-0 max-sm:top-0 max-sm:h-dvh max-sm:max-h-dvh max-sm:w-full max-sm:max-w-none max-sm:rounded-none max-sm:border-0 sm:max-w-2xl"
+        >
+          <DialogHeader className="sr-only">
+            <DialogTitle>{tNav('nav.header.search')}</DialogTitle>
+          </DialogHeader>
+          <Command
+            shouldFilter={false}
+            value={selected}
+            onValueChange={setSelected}
+            loop
+            className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-item]]:px-2.5 [&_[cmdk-item]]:py-2"
+          >
         <div className="relative">
           <CommandInput value={query} onValueChange={setQuery} placeholder={t('placeholder')} className="pe-8 max-sm:pe-16" />
           {state.status === 'loading' ? (
@@ -331,10 +362,10 @@ export function GlobalSearch({ visibleNavIds }: { visibleNavIds: readonly string
                 </>
               ) : null}
               <CommandGroup heading={t('quickActions')}>
-                {quickActions.map((a) => {
+                {quickActions.map((a, i) => {
                   const Icon = a.icon;
                   return (
-                    <CommandItem key={a.id} value={`action-${a.id}`} onSelect={() => go(a.href)}>
+                    <CommandItem key={a.id} value={i === 0 ? 'action-first' : `action-${a.id}`} onSelect={() => go(a.href)}>
                       <Icon />
                       {a.label}
                     </CommandItem>
@@ -432,7 +463,9 @@ export function GlobalSearch({ visibleNavIds }: { visibleNavIds: readonly string
           </span>
           <span className="ms-auto hidden items-center gap-1.5 md:flex">{t('scopeHint')}</span>
         </div>
-      </CommandDialog>
+          </Command>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

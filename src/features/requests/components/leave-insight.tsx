@@ -146,14 +146,14 @@ export function LeaveInsight({
           <div className="flex items-center justify-between text-xs text-muted-foreground">
             <span className="inline-flex items-center gap-1.5">
               <WalletIcon className="size-3.5" aria-hidden />
-              {t('availableNow', { days: formatDays(preview.balance.available, locale) })}
+              {t('availableNow', { days: Number(preview.balance.available) })}
             </span>
             <span className="numeric">
               {t('usedOf', { used: formatDays(preview.balance.used + preview.balance.pending, locale), total: formatDays(preview.balance.entitlement, locale) })}
             </span>
           </div>
           <Progress value={pct} className="h-1.5" />
-          {preview.balance.pending > 0 ? <p className="text-xs text-muted-foreground">{t('pendingHold', { days: formatDays(preview.balance.pending, locale) })}</p> : null}
+          {preview.balance.pending > 0 ? <p className="text-xs text-muted-foreground">{t('pendingHold', { days: Number(preview.balance.pending) })}</p> : null}
         </div>
       ) : null}
 
@@ -164,7 +164,7 @@ export function LeaveInsight({
         <Notice tone="danger">{t('insufficient', { available: formatDays(preview!.balance!.available, locale), requested: formatDays(days ?? 0, locale) })}</Notice>
       ) : null}
       {preview?.maxDays && days !== null && days > preview.maxDays ? (
-        <Notice tone="danger">{t('maxDays', { max: formatDays(preview.maxDays, locale) })}</Notice>
+        <Notice tone="danger">{t('maxDays', { max: Number(preview.maxDays) })}</Notice>
       ) : null}
       {preview?.overlaps.length ? (
         <Notice tone="warning">

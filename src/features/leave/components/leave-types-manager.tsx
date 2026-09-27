@@ -30,7 +30,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Sheet, SheetBody, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
-import { SimpleTooltip } from '@/components/ui/tooltip';
 import type { Locale } from '@/lib/i18n/config';
 import { localized } from '@/lib/i18n/localized';
 import { formatDays } from '@/lib/format';
@@ -385,27 +384,22 @@ export function LeaveTypesManager({ rows, canEdit }: { rows: LeaveTypeRow[]; can
         meta: { label: locale === 'ar' ? tc('nameEn') : tc('nameAr'), defaultHidden: true },
       },
       {
-        id: 'deducts_balance',
-        accessorKey: 'deducts_balance',
-        header: () => t('types.fields.deducts'),
+        id: 'default_entitlement',
+        accessorFn: (r) => (r.deducts_balance ? r.default_entitlement : -1),
+        header: ({ column }) => <SortHeader column={column} title={t('types.fields.balance')} />,
         cell: ({ row }) =>
           row.original.deducts_balance ? (
-            <Badge variant="default" size="sm">
-              <WalletCardsIcon />
-              {t('types.deducts')}
-            </Badge>
+            <div className="flex items-center gap-2">
+              <Badge variant="default" size="sm">
+                <WalletCardsIcon />
+                {t('types.deducts')}
+              </Badge>
+              <span className="text-meta font-medium numeric">{t('types.perYear', { days: formatDays(row.original.default_entitlement, locale) })}</span>
+            </div>
           ) : (
             <span className="text-meta text-muted-foreground">{t('types.noDeduct')}</span>
           ),
-        enableSorting: false,
-        meta: { label: t('types.fields.deducts') },
-      },
-      {
-        id: 'default_entitlement',
-        accessorKey: 'default_entitlement',
-        header: ({ column }) => <SortHeader column={column} title={t('types.fields.defaultEntitlement')} />,
-        cell: ({ row }) => (row.original.deducts_balance ? <span className="font-medium numeric">{formatDays(row.original.default_entitlement, locale)}</span> : no),
-        meta: { label: t('types.fields.defaultEntitlement'), align: 'end', headerClassName: 'whitespace-nowrap' },
+        meta: { label: t('types.fields.balance') },
       },
       {
         id: 'max_days_per_request',
@@ -511,16 +505,7 @@ export function LeaveTypesManager({ rows, canEdit }: { rows: LeaveTypeRow[]; can
       <PlusIcon />
       {t('types.add')}
     </Button>
-  ) : (
-    <SimpleTooltip content={t('types.readOnly')}>
-      <span tabIndex={0} className="inline-flex">
-        <Button size="sm" disabled>
-          <PlusIcon />
-          {t('types.add')}
-        </Button>
-      </span>
-    </SimpleTooltip>
-  );
+  ) : null;
 
   return (
     <>

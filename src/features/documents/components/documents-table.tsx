@@ -186,7 +186,11 @@ export function DocumentsTable({ variant, rows, total, departments = [], exportE
             <div className="flex flex-col items-start gap-1">
               <StatusBadge domain="document" status={r.status} size="sm" />
               {r.status === 'rejected' && r.review_note && (variant === 'own' || variant === 'profile') ? (
-                <span className="line-clamp-2 max-w-52 text-xs text-danger">{t('my.rejectedReason', { reason: r.review_note })}</span>
+                <SimpleTooltip content={r.review_note}>
+                  <span className="line-clamp-2 max-w-40 text-xs whitespace-normal text-danger">
+                    {t('my.reasonLabel')}: <bdi>{r.review_note}</bdi>
+                  </span>
+                </SimpleTooltip>
               ) : null}
             </div>
           );
@@ -209,7 +213,7 @@ export function DocumentsTable({ variant, rows, total, departments = [], exportE
           </div>
         );
       },
-      meta: { label: t('fields.uploadedAt') },
+      meta: { label: t('fields.uploadedAt'), defaultHidden: variant === 'own' },
     });
 
     if (variant === 'review') {

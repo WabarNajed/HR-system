@@ -1,33 +1,15 @@
 'use client';
 
-import {
-  ChevronDownIcon,
-  DownloadIcon,
-  FileSpreadsheetIcon,
-  FileTextIcon,
-  PrinterIcon,
-  SheetIcon,
-  UsersRoundIcon,
-} from 'lucide-react';
+import { PrinterIcon, UsersRoundIcon } from 'lucide-react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useLocale } from 'next-intl';
 import { useEffect, useMemo, useState, useTransition } from 'react';
 import { PageHeader } from '@/components/shared/page-header';
 import { KpiGrid, PageStack } from '@/components/shared/responsive-grid';
 import { SegmentedTabs } from '@/components/shared/link-tabs';
-import { SectionCard } from '@/components/shared/section-card';
 import { StatCard } from '@/components/shared/stat-card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { SimpleTooltip } from '@/components/ui/tooltip';
 import type { Locale } from '@/lib/i18n/config';
 import { useDateFormat } from '@/lib/i18n/use-date-format';
 import { formatNumber } from '@/lib/format';
@@ -40,6 +22,7 @@ import type { ReportSummary } from '../registry';
 import type { FacetOption } from './facet-filter';
 import { formatValue, useReportT, type LooseT } from './format';
 import { rememberReport } from './recent-reports';
+import { ReportExportMenu } from './export-menu';
 import { ReportChart } from './report-chart';
 import { ReportFilterBar, type FilterPatch } from './report-filter-bar';
 import { ReportTable } from './report-table';
@@ -52,7 +35,8 @@ export type ReportViewProps = {
   summary: ReportSummary;
   rows: Record<string, unknown>[];
   total: number;
-  canExport: boolean;
+  /** i18n key explaining why export is unavailable (null = allowed). */
+  exportDisabledKey: string | null;
   teamScope: boolean;
   generatedAt: string;
 };
@@ -66,10 +50,12 @@ function kpiHint(kpi: KpiDef, kpis: ReportSummary['kpis'], locale: Locale, t: Lo
   }
   const v = kpis[kpi.hintValueKey];
   if (v === null || v === undefined) return undefined;
-  return t(kpi.hintKey, { value: formatNumber(Number(v), locale, { maximumFractionDigits: 1 }) });
+  return t(kpi.hintKey, {
+    value: formatNumber(Number(v), locale, { maximumFractionDigits: 1 }),
+  });
 }
 
-function ExportMenu({ def, canExport, queryString }: { def: ReportDefinition; canExport: boolean; queryString: string }) {
+function ExportMenu({ def, disabledKey, queryString }: { def: ReportDefinition; disabledKey: string | null; queryString: string }) {
   const t = useReportT();
   const href = (format: string) => {
     const params = new URLSearchParams(queryString);
@@ -78,50 +64,24 @@ function ExportMenu({ def, canExport, queryString }: { def: ReportDefinition; ca
     params.set('format', format);
     return `/api/export/${reportDatasetKey(def.key)}?${params.toString()}`;
   };
-  if (!canExport) {
-    return (
-      <SimpleTooltip content={t('reports.view.exportDisabled')}>
-        <span tabIndex={0} className="inline-flex rounded-md focus-visible:ring-[3px] focus-visible:ring-ring/40 focus-visible:outline-none">
-          <Button variant="outline" disabled aria-disabled>
-            <DownloadIcon />
-            {t('reports.view.export')}
-          </Button>
-        </span>
-      </SimpleTooltip>
-    );
-  }
-  const items = [
-    { format: 'xlsx', label: t('common.table.exportExcel'), icon: FileSpreadsheetIcon },
-    { format: 'csv', label: t('common.table.exportCsv'), icon: SheetIcon },
-    { format: 'pdf', label: t('common.table.exportPdf'), icon: FileTextIcon },
-  ];
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button>
-          <DownloadIcon />
-          {t('reports.view.export')}
-          <ChevronDownIcon className="opacity-70" />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-60">
-        <DropdownMenuLabel className="font-normal text-muted-foreground">{t('common.table.exportHint')}</DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        {items.map(({ format, label, icon: Icon }) => (
-          <DropdownMenuItem key={format} asChild>
-            <a href={href(format)} download>
-              <Icon />
-              {label}
-            </a>
-          </DropdownMenuItem>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <ReportExportMenu href={href} disabledReason={disabledKey ? t(disabledKey) : null} hint={t('common.table.exportHint')} />
   );
 }
 
 /** Report page body: header, filters, KPIs, chart(s) and the detail table. */
-export function ReportView({ reportKey, state, options, employeeOptions, summary, rows, total, canExport, teamScope, generatedAt }: ReportViewProps) {
+export function ReportView({
+  reportKey,
+  state,
+  options,
+  employeeOptions,
+  summary,
+  rows,
+  total,
+  exportDisabledKey,
+  teamScope,
+  generatedAt,
+}: ReportViewProps) {
   const def = getReportDefinition(reportKey)!;
   const t = useReportT();
   const locale = useLocale() as Locale;
@@ -140,7 +100,14 @@ export function ReportView({ reportKey, state, options, employeeOptions, summary
     startTransition(() => router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false }));
   };
 
-  const queryString = useMemo(() => mergeSearchParams(searchParams, { page: null, pageSize: null }).toString(), [searchParams]);
+  const queryString = useMemo(
+    () =>
+      mergeSearchParams(searchParams, {
+        page: null,
+        pageSize: null,
+      }).toString(),
+    [searchParams],
+  );
   const chart = def.charts[chartIndex] ?? def.charts[0];
   const filtered = activeFilterCount(state) > 0 || Boolean(searchParams.get('q'));
   const GroupIcon = def.icon;
@@ -175,20 +142,33 @@ export function ReportView({ reportKey, state, options, employeeOptions, summary
               <PrinterIcon />
               <span className="max-sm:sr-only">{t('reports.view.print')}</span>
             </Button>
-            <ExportMenu def={def} canExport={canExport} queryString={queryString} />
+            <ExportMenu def={def} disabledKey={exportDisabledKey} queryString={queryString} />
           </div>
         }
       >
-        <p className="hidden text-meta text-muted-foreground print:block">{t('reports.view.generatedAt', { date: fmt.dateTime(generatedAt) })}</p>
+        <p className="hidden text-meta text-muted-foreground print:block">
+          {t('reports.view.generatedAt', { date: fmt.dateTime(generatedAt) })}
+        </p>
       </PageHeader>
 
-      <ReportFilterBar def={def} state={state} options={options} employeeOptions={employeeOptions} onChange={navigate} pending={isPending} />
+      <ReportFilterBar
+        def={def}
+        state={state}
+        options={options}
+        employeeOptions={employeeOptions}
+        onChange={navigate}
+        pending={isPending}
+      />
 
-      <div className={cn('flex flex-col gap-5 transition-opacity duration-200', isPending && 'pointer-events-none opacity-60')} aria-busy={isPending || undefined}>
+      <div
+        className={cn('flex flex-col gap-5 transition-opacity duration-200', isPending && 'pointer-events-none opacity-60')}
+        aria-busy={isPending || undefined}
+      >
         <KpiGrid count={kpiCount} className={cn(kpiCount === 5 && 'xl:grid-cols-5', kpiCount === 3 && 'lg:grid-cols-3')}>
-          {def.kpis.map((kpi) => (
+          {def.kpis.map((kpi, i) => (
             <StatCard
               key={kpi.key}
+              className={cn(def.kpis.length % 2 === 1 && i === def.kpis.length - 1 && 'max-lg:col-span-2')}
               label={t(kpi.labelKey)}
               value={formatValue(summary.kpis[kpi.key] ?? (kpi.format === 'percent' ? null : 0), kpi.format, locale, t)}
               icon={kpi.icon}
@@ -199,24 +179,30 @@ export function ReportView({ reportKey, state, options, employeeOptions, summary
         </KpiGrid>
 
         {chart ? (
-          <SectionCard
-            title={t(chart.titleKey)}
-            className="break-inside-avoid"
-            actions={
-              def.charts.length > 1 ? (
+          <section
+            data-slot="section-card"
+            className="flex min-w-0 break-inside-avoid flex-col rounded-lg border border-border bg-card shadow-card"
+          >
+            <div className="flex flex-col gap-2.5 px-5 pt-4 pb-1 sm:flex-row sm:items-center sm:justify-between">
+              <h2 className="text-card-title text-foreground">{t(chart.titleKey)}</h2>
+              {def.charts.length > 1 ? (
                 <SegmentedTabs
                   size="sm"
                   aria-label={t('reports.charts.viewAs')}
-                  className="print:hidden"
+                  className="self-start print:hidden sm:self-auto"
                   value={String(chartIndex)}
                   onValueChange={(v) => setChartIndex(Number(v))}
-                  items={def.charts.map((c, i) => ({ value: String(i), label: t(`reports.chartTabs.${c.tab ?? c.key}`) }))}
+                  items={def.charts.map((c, i) => ({
+                    value: String(i),
+                    label: t(`reports.chartTabs.${c.tab ?? c.key}`),
+                  }))}
                 />
-              ) : null
-            }
-          >
-            <ReportChart def={chart} points={(summary.charts[chart.key] ?? []) as Array<Record<string, unknown> & { key: string }>} />
-          </SectionCard>
+              ) : null}
+            </div>
+            <div className="px-5 pt-3 pb-5">
+              <ReportChart def={chart} points={(summary.charts[chart.key] ?? []) as Array<Record<string, unknown> & { key: string }>} />
+            </div>
+          </section>
         ) : null}
 
         <section className="flex min-w-0 flex-col gap-3" aria-labelledby="report-table-title">

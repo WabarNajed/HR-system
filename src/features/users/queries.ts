@@ -468,9 +468,20 @@ export async function searchEmployeesForLinking(q: string, limit = 20): Promise<
 }
 
 /** Portal accounts without an employee link (Portal access card › "Link existing user"). */
-export async function searchUnlinkedUsers(q: string, limit = 20): Promise<{ id: string; fullName: string | null; email: string | null; status: ProfileStatus }[]> {
+export async function searchUnlinkedUsers(
+  q: string,
+  options: { excludeSuperAdmins: boolean },
+  limit = 20,
+): Promise<{ id: string; fullName: string | null; email: string | null; status: ProfileStatus }[]> {
   const supabase = await createClient();
   let query = supabase.from('profiles').select('id, full_name, email, status').is('employee_id', null).in('status', ['active', 'disabled']);
+  if (options.excludeSuperAdmins) {
+    // Only a super admin may link a super admin account (set_user_employee) — don't offer them.
+    const { data: supers, error: superError } = await supabase.from('user_roles').select('user_id, role:roles!inner(key)').eq('role.key', 'super_admin');
+    if (superError) throw superError;
+    const ids = (supers ?? []).map((r) => r.user_id);
+    if (ids.length) query = query.not('id', 'in', `(${ids.join(',')})`);
+  }
   const term = q.trim();
   if (term) {
     const pattern = toIlikePattern(term);

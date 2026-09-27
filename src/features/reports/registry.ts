@@ -33,32 +33,122 @@ const EMPLOYEE_SEARCH = ['name_ar', 'name_en', 'employee_number'] as const;
 const REQUEST_SEARCH = ['request_number', 'name_ar', 'name_en', 'employee_number', 'type_ar', 'type_en'] as const;
 
 const SOURCES: Record<string, RowSource> = {
-  'employee-master': { fn: 'report_employee_rows', fixed: { scope: 'records', date_field: 'joining_date' }, rowId: 'id', search: [...EMPLOYEE_SEARCH, 'company_email'] },
+  'employee-master': {
+    fn: 'report_employee_rows',
+    fixed: { scope: 'records', date_field: 'joining_date' },
+    rowId: 'id',
+    search: [...EMPLOYEE_SEARCH, 'company_email'],
+  },
   headcount: { fn: 'report_headcount_trend', rowId: 'month' },
-  'employees-by-department': { fn: 'report_employee_breakdown', args: { p_dimension: 'department' }, rowId: 'group_key', search: ['label_ar', 'label_en'] },
-  'employees-by-nationality': { fn: 'report_employee_breakdown', args: { p_dimension: 'nationality' }, rowId: 'group_key', search: ['label_ar', 'label_en'] },
-  'employees-by-job-title': { fn: 'report_employee_breakdown', args: { p_dimension: 'job_title' }, rowId: 'group_key', search: ['label_ar', 'label_en'] },
-  'new-joiners': { fn: 'report_employee_rows', fixed: { scope: 'records', date_field: 'joining_date' }, rowId: 'id', search: EMPLOYEE_SEARCH },
-  leavers: { fn: 'report_employee_rows', fixed: { scope: 'leavers', date_field: 'termination_date' }, rowId: 'id', search: EMPLOYEE_SEARCH },
-  'contract-expiry': { fn: 'report_expiry_rows', args: { p_kind: 'contract' }, rowId: 'row_id', search: EMPLOYEE_SEARCH },
-  'iqama-expiry': { fn: 'report_expiry_rows', args: { p_kind: 'iqama' }, rowId: 'row_id', search: [...EMPLOYEE_SEARCH, 'reference'] },
-  'passport-expiry': { fn: 'report_expiry_rows', args: { p_kind: 'passport' }, rowId: 'row_id', search: [...EMPLOYEE_SEARCH, 'reference'] },
+  'employees-by-department': {
+    fn: 'report_employee_breakdown',
+    args: { p_dimension: 'department' },
+    rowId: 'group_key',
+    search: ['label_ar', 'label_en'],
+  },
+  'employees-by-nationality': {
+    fn: 'report_employee_breakdown',
+    args: { p_dimension: 'nationality' },
+    rowId: 'group_key',
+    search: ['label_ar', 'label_en'],
+  },
+  'employees-by-job-title': {
+    fn: 'report_employee_breakdown',
+    args: { p_dimension: 'job_title' },
+    rowId: 'group_key',
+    search: ['label_ar', 'label_en'],
+  },
+  'new-joiners': {
+    fn: 'report_employee_rows',
+    fixed: { scope: 'records', date_field: 'joining_date' },
+    rowId: 'id',
+    search: EMPLOYEE_SEARCH,
+  },
+  leavers: {
+    fn: 'report_employee_rows',
+    fixed: { scope: 'leavers', date_field: 'termination_date' },
+    rowId: 'id',
+    search: EMPLOYEE_SEARCH,
+  },
+  'contract-expiry': {
+    fn: 'report_expiry_rows',
+    args: { p_kind: 'contract' },
+    rowId: 'row_id',
+    search: EMPLOYEE_SEARCH,
+  },
+  'iqama-expiry': {
+    fn: 'report_expiry_rows',
+    args: { p_kind: 'iqama' },
+    rowId: 'row_id',
+    search: [...EMPLOYEE_SEARCH, 'reference'],
+  },
+  'passport-expiry': {
+    fn: 'report_expiry_rows',
+    args: { p_kind: 'passport' },
+    rowId: 'row_id',
+    search: [...EMPLOYEE_SEARCH, 'reference'],
+  },
   'insurance-expiry': {
     fn: 'report_expiry_rows',
     args: { p_kind: 'insurance' },
     rowId: 'row_id',
     search: [...EMPLOYEE_SEARCH, 'reference', 'provider', 'dependent_name_ar', 'dependent_name_en'],
   },
-  'leave-balance': { fn: 'report_leave_balance_rows', rowId: 'id', search: [...EMPLOYEE_SEARCH, 'leave_type_ar', 'leave_type_en'] },
-  'leave-usage': { fn: 'report_leave_rows', rowId: 'id', search: [...EMPLOYEE_SEARCH, 'request_number', 'leave_type_ar', 'leave_type_en'] },
-  'hr-requests': { fn: 'report_request_rows', fixed: { scope: 'all', date_field: 'submitted' }, rowId: 'id', search: REQUEST_SEARCH },
-  'open-requests': { fn: 'report_request_rows', fixed: { scope: 'open', date_field: 'submitted' }, rowId: 'id', search: REQUEST_SEARCH },
-  'completed-requests': { fn: 'report_request_rows', fixed: { scope: 'completed', date_field: 'resolved' }, rowId: 'id', search: REQUEST_SEARCH },
-  'rejected-requests': { fn: 'report_request_rows', fixed: { scope: 'rejected', date_field: 'resolved' }, rowId: 'id', search: REQUEST_SEARCH },
-  'overdue-requests': { fn: 'report_request_rows', fixed: { scope: 'overdue', date_field: 'submitted' }, rowId: 'id', search: REQUEST_SEARCH },
-  'sla-performance': { fn: 'report_sla_rows', rowId: 'request_type_id', search: ['type_ar', 'type_en'] },
-  'certificates-issued': { fn: 'report_certificate_rows', rowId: 'id', search: [...EMPLOYEE_SEARCH, 'certificate_number', 'request_number'] },
-  'user-activity': { fn: 'report_user_activity_rows', rowId: 'actor_key', search: ['actor_name', 'actor_email', 'employee_number'] },
+  'leave-balance': {
+    fn: 'report_leave_balance_rows',
+    rowId: 'id',
+    search: [...EMPLOYEE_SEARCH, 'leave_type_ar', 'leave_type_en'],
+  },
+  'leave-usage': {
+    fn: 'report_leave_rows',
+    rowId: 'id',
+    search: [...EMPLOYEE_SEARCH, 'request_number', 'leave_type_ar', 'leave_type_en'],
+  },
+  'hr-requests': {
+    fn: 'report_request_rows',
+    fixed: { scope: 'all', date_field: 'submitted' },
+    rowId: 'id',
+    search: REQUEST_SEARCH,
+  },
+  'open-requests': {
+    fn: 'report_request_rows',
+    fixed: { scope: 'open', date_field: 'submitted' },
+    rowId: 'id',
+    search: REQUEST_SEARCH,
+  },
+  'completed-requests': {
+    fn: 'report_request_rows',
+    fixed: { scope: 'completed', date_field: 'resolved' },
+    rowId: 'id',
+    search: REQUEST_SEARCH,
+  },
+  'rejected-requests': {
+    fn: 'report_request_rows',
+    fixed: { scope: 'rejected', date_field: 'resolved' },
+    rowId: 'id',
+    search: REQUEST_SEARCH,
+  },
+  'overdue-requests': {
+    fn: 'report_request_rows',
+    fixed: { scope: 'overdue', date_field: 'submitted' },
+    rowId: 'id',
+    search: REQUEST_SEARCH,
+  },
+  'sla-performance': {
+    fn: 'report_sla_rows',
+    rowId: 'request_type_id',
+    search: ['type_ar', 'type_en'],
+  },
+  'certificates-issued': {
+    fn: 'report_certificate_rows',
+    rowId: 'id',
+    search: [...EMPLOYEE_SEARCH, 'certificate_number', 'request_number'],
+  },
+  'user-activity': {
+    fn: 'report_user_activity_rows',
+    rowId: 'actor_key',
+    search: ['actor_name_ar', 'actor_name_en', 'actor_email', 'employee_number'],
+  },
 };
 
 for (const def of REPORTS) {
@@ -89,9 +179,11 @@ function columnFields(col: ReportColumn): string[] {
     case 'localized':
       return [`${field}_ar`, `${field}_en`];
     case 'user':
-      return ['actor_id', 'actor_name', 'actor_email', 'employee_number'];
+      return ['actor_id', 'actor_name_ar', 'actor_name_en', 'actor_email', 'employee_number'];
     case 'request':
       return [field, col.linkField ?? 'id'];
+    case 'hijri':
+      return col.dateField ? [field, col.dateField] : [field];
     default:
       return [field];
   }
@@ -109,7 +201,7 @@ export function sortColumn(def: ReportDefinition, id: string | null, locale: Loc
     case 'localized':
       return `${field}_${locale}`;
     case 'user':
-      return 'actor_name';
+      return `actor_name_${locale}`;
     default:
       return field;
   }
@@ -129,14 +221,24 @@ function selectList(def: ReportDefinition, source: RowSource): string {
 
 function rpcArgs(def: ReportDefinition, state: ReportFilterState): Record<string, unknown> {
   const source = SOURCES[def.key]!;
-  return { ...(source.args ?? {}), p_filters: { ...toSqlFilters(state), ...(source.fixed ?? {}) } };
+  return {
+    ...(source.args ?? {}),
+    p_filters: { ...toSqlFilters(state), ...(source.fixed ?? {}) },
+  };
 }
 
 type LooseQuery = {
   select: (cols: string) => LooseQuery;
   or: (filter: string) => LooseQuery;
   order: (col: string, opts: { ascending: boolean; nullsFirst?: boolean }) => LooseQuery;
-  range: (from: number, to: number) => PromiseLike<{ data: ReportRow[] | null; error: unknown; count: number | null }>;
+  range: (
+    from: number,
+    to: number,
+  ) => PromiseLike<{
+    data: ReportRow[] | null;
+    error: unknown;
+    count: number | null;
+  }>;
 };
 
 /** Dynamic RPC call (function names come from the fixed SOURCES table, never from the client). */
@@ -145,7 +247,13 @@ function rpc(supabase: ServerSupabaseClient, fn: string, args: Record<string, un
   return call.call(supabase, fn, args, count ? { count: 'exact' } : undefined);
 }
 
-function applyQuery(query: LooseQuery, def: ReportDefinition, source: RowSource, table: Omit<TableQuery, 'from' | 'to'>, locale: Locale): LooseQuery {
+function applyQuery(
+  query: LooseQuery,
+  def: ReportDefinition,
+  source: RowSource,
+  table: Omit<TableQuery, 'from' | 'to'>,
+  locale: Locale,
+): LooseQuery {
   let q = query.select(selectList(def, source));
   if (table.q && source.search?.length) {
     const pattern = toIlikePattern(table.q);
@@ -177,7 +285,10 @@ export async function fetchReportPage(
     table.to,
   );
   if (error) throw error;
-  return { rows: (data ?? []).map((r) => ({ ...r, __rowId: r[source.rowId] })), total: count ?? data?.length ?? 0 };
+  return {
+    rows: (data ?? []).map((r) => ({ ...r, __rowId: r[source.rowId] })),
+    total: count ?? data?.length ?? 0,
+  };
 }
 
 /** All rows (up to `limit`) — aggregate tables and exports. */
@@ -191,12 +302,19 @@ export async function fetchReportRows(
 ): Promise<ReportRow[]> {
   const source = SOURCES[def.key]!;
   const args = rpcArgs(def, state);
-  const rows = await fetchAllPages<ReportRow>((from, to) => applyQuery(rpc(supabase, source.fn, args), def, source, table, locale).range(from, to), limit);
+  const rows = await fetchAllPages<ReportRow>(
+    (from, to) => applyQuery(rpc(supabase, source.fn, args), def, source, table, locale).range(from, to),
+    limit,
+  );
   return rows.map((r) => ({ ...r, __rowId: r[source.rowId] }));
 }
 
 /** KPI values + chart series. */
-export async function fetchReportSummary(supabase: ServerSupabaseClient, def: ReportDefinition, state: ReportFilterState): Promise<ReportSummary> {
+export async function fetchReportSummary(
+  supabase: ServerSupabaseClient,
+  def: ReportDefinition,
+  state: ReportFilterState,
+): Promise<ReportSummary> {
   const source = SOURCES[def.key]!;
   const { data, error } = await supabase.rpc('report_summary', {
     p_report: def.key,

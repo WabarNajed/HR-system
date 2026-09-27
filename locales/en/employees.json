@@ -5,14 +5,13 @@
     "description": "Everyone in the organization — employment, reporting lines and compliance at a glance.",
     "teamTitle": "My team",
     "teamDescription": "Your direct reports and their employment details.",
-    "searchPlaceholder": "Search name, employee ID or email",
+    "searchPlaceholder": "Search name, ID or email",
     "searchPlaceholderSensitive": "Search name, ID, email or Iqama",
     "emptyTitle": "No employees yet",
     "emptyDescription": "Add employees one by one or import them from a spreadsheet.",
     "emptyTeamTitle": "No direct reports",
     "emptyTeamDescription": "Employees who report to you will appear here.",
     "archived": "Archived",
-    "noEmail": "No email on record",
     "iqamaShort": "Iqama {date}"
   },
   "kpi": {

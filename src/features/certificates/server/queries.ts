@@ -242,8 +242,12 @@ async function employeeIdsMatching(supabase: ServerSupabaseClient, q: string): P
 
 type IssuedQueryOptions = { employeeId?: string; requestId?: string };
 
+/**
+ * Applies the Issued-tab filters. Synchronous on purpose: PostgREST builders are thenables, so returning
+ * one from an async function would execute it. Resolve `employeeIds` (search) first.
+ */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function applyIssuedFilters(supabase: ServerSupabaseClient, query: any, params: ListParams, opts: IssuedQueryOptions) {
+function applyIssuedFilters(query: any, params: ListParams, opts: IssuedQueryOptions, employeeIds: string[] | null) {
   let q = query;
   const f = params.filters as Record<string, string[] | undefined>;
   if (opts.employeeId) q = q.eq('employee_id', opts.employeeId);
@@ -254,9 +258,8 @@ async function applyIssuedFilters(supabase: ServerSupabaseClient, query: any, pa
   if (f.issuedFrom?.[0]) q = q.gte('issue_date', f.issuedFrom[0]);
   if (f.issuedTo?.[0]) q = q.lte('issue_date', f.issuedTo[0]);
   if (params.q) {
-    const ids = await employeeIdsMatching(supabase, params.q);
     const numberFilter = `certificate_number.ilike.${toIlikePattern(params.q.toUpperCase())}`;
-    q = ids.length ? q.or(`${numberFilter},employee_id.in.(${ids.join(',')})`) : q.or(numberFilter);
+    q = employeeIds?.length ? q.or(`${numberFilter},employee_id.in.(${employeeIds.join(',')})`) : q.or(numberFilter);
   }
   const sort = params.sort ?? 'created_at';
   q = q.order(sort, { ascending: params.dir === 'asc' });
@@ -269,8 +272,8 @@ export async function listIssuedCertificates(
   params: ListParams,
   opts: IssuedQueryOptions = {},
 ): Promise<{ rows: IssuedCertificateRow[]; total: number }> {
-  const base = supabase.from('certificates').select(ISSUED_COLUMNS, { count: 'exact' });
-  const query = await applyIssuedFilters(supabase, base, params, opts);
+  const employeeIds = params.q ? await employeeIdsMatching(supabase, params.q) : null;
+  const query = applyIssuedFilters(supabase.from('certificates').select(ISSUED_COLUMNS, { count: 'exact' }), params, opts, employeeIds);
   const { data, count, error } = await query.range(params.from, params.to);
   if (error) throw error;
   return { rows: ((data ?? []) as RawIssued[]).map(toIssuedRow), total: count ?? 0 };
@@ -282,10 +285,10 @@ export async function listIssuedForExport(
   limit: number,
 ): Promise<IssuedCertificateRow[]> {
   const out: IssuedCertificateRow[] = [];
+  const employeeIds = params.q ? await employeeIdsMatching(supabase, params.q) : null;
   for (let from = 0; from < limit; from += 1000) {
     const to = Math.min(from + 1000, limit) - 1;
-    const base = supabase.from('certificates').select(ISSUED_COLUMNS);
-    const query = await applyIssuedFilters(supabase, base, params, {});
+    const query = applyIssuedFilters(supabase.from('certificates').select(ISSUED_COLUMNS), params, {}, employeeIds);
     const { data, error } = await query.range(from, to);
     if (error) throw error;
     const rows = ((data ?? []) as RawIssued[]).map(toIssuedRow);

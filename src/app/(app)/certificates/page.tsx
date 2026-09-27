@@ -162,7 +162,7 @@ export default async function CertificatesPage({ searchParams }: { searchParams:
           }
           subtitle={sheet.employee ? <SheetEmployee employee={sheet.employee} /> : null}
         >
-          <CertificateRequestPanel requestId={sheet.id} />
+          <CertificateRequestPanel requestId={sheet.id} showSummary />
         </RequestSheet>
       ) : null}
     </PageStack>

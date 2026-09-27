@@ -184,11 +184,11 @@ export async function loadEmployeeContext(
   supabase: ServerSupabaseClient,
   employeeId: string,
 ): Promise<{ employee: IssuingEmployee | null; compensation: IssuingCompensation | null }> {
-  const [{ data: emp }, { data: comp }] = await Promise.all([
+  const [{ data: emp, error: empError }, { data: comp }] = await Promise.all([
     supabase
       .from('employees')
       .select(
-        'id, employee_number, name_ar, name_en, nationality, passport_number, national_id, joining_date, job_title:job_titles(name_ar, name_en), department:departments(name_ar, name_en)',
+        'id, employee_number, name_ar, name_en, nationality, passport_number, national_id, joining_date, job_title:job_titles(name_ar, name_en), department:departments!employees_department_id_fkey(name_ar, name_en)',
       )
       .eq('id', employeeId)
       .maybeSingle(),
@@ -198,6 +198,7 @@ export async function loadEmployeeContext(
       .eq('employee_id', employeeId)
       .maybeSingle(),
   ]);
+  if (empError) throw empError;
   return {
     employee: (emp as IssuingEmployee | null) ?? null,
     compensation: (comp as IssuingCompensation | null) ?? null,

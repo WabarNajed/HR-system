@@ -32,6 +32,8 @@ export type ReportFilterState = {
   isDefaultRange: boolean;
   /** The user cleared the default range (`period=all`). */
   allTime: boolean;
+  /** Year applied when the `year` filter is empty (the current year). */
+  defaultYear: number;
   values: Partial<Record<ReportFilterKey, string[]>>;
 };
 
@@ -73,9 +75,17 @@ export function presetRange(preset: RangePreset, today: string): { from: string;
       return { from: shiftIso(today, { days: -89 }), to: today };
     case 'thisYear':
       return { from: `${today.slice(0, 4)}-01-01`, to: today };
+    case 'calendarYear':
+      return {
+        from: `${today.slice(0, 4)}-01-01`,
+        to: `${today.slice(0, 4)}-12-31`,
+      };
     case 'last12Months':
     default:
-      return { from: shiftIso(`${today.slice(0, 7)}-01`, { months: -11 }), to: today };
+      return {
+        from: shiftIso(`${today.slice(0, 7)}-01`, { months: -11 }),
+        to: today,
+      };
   }
 }
 
@@ -133,7 +143,14 @@ export function readReportFilters(
       isDefaultRange = true;
     }
   }
-  return { dateFrom, dateTo, isDefaultRange, allTime, values };
+  return {
+    dateFrom,
+    dateTo,
+    isDefaultRange,
+    allTime,
+    values,
+    defaultYear: Number(today.slice(0, 4)),
+  };
 }
 
 /** Adapter for Next `searchParams` objects. */
@@ -172,7 +189,7 @@ export function toSqlFilters(state: ReportFilterState): Record<string, unknown> 
   put('buckets', v.bucket);
   put('categories', v.category);
   put('certificate_types', v.certificateType);
-  if (v.year?.[0]) out.year = v.year[0];
+  out.year = v.year?.[0] ?? String(state.defaultYear);
   return out;
 }
 
@@ -191,7 +208,10 @@ export function canViewReport(subject: PermissionSubject | null | undefined, def
   return base && hasAll(subject, def.requires);
 }
 
-/** Exports need `reports.export` on top of report access (export datasets check the same). */
+/**
+ * Exports need `reports.export` (+ the report's stricter export permission, e.g. `audit.export` for
+ * User Activity) on top of report access. The export datasets check exactly the same.
+ */
 export function canExportReport(subject: PermissionSubject | null | undefined, def: ReportDefinition): boolean {
-  return canViewReport(subject, def) && can(subject, 'reports.export');
+  return canViewReport(subject, def) && can(subject, 'reports.export') && (!def.exportPermission || can(subject, def.exportPermission));
 }

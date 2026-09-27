@@ -131,8 +131,8 @@
     },
     "compliance": {
       "expired": "Expired",
-      "within30": "≤ 30 days",
-      "within90": "≤ 90 days",
+      "within30": "≤30 days",
+      "within90": "≤90 days",
       "allClear": "All clear",
       "kinds": {
         "iqama": "Iqama",

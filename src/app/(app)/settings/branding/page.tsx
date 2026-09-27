@@ -1,7 +1,9 @@
+import { EyeIcon } from 'lucide-react';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { PageHeader } from '@/components/shared/page-header';
 import { ROUTE_ACCESS } from '@/components/shell/nav-config';
+import { Button } from '@/components/ui/button';
 import { BrandingEditor } from '@/features/branding/components/branding-editor';
 import type { PreviewStrings } from '@/features/branding/components/brand-preview';
 import { getBrandingSettings } from '@/features/branding/queries';
@@ -67,9 +69,17 @@ export default async function SettingsBrandingPage() {
         title={t('title')}
         description={t('description')}
         actions={
-          data.updatedAt ? (
-            <span className="text-meta text-muted-foreground">{t('lastUpdated', { date: formatDateTime(data.updatedAt, ctx.locale) })}</span>
-          ) : null
+          <>
+            {data.updatedAt ? (
+              <span className="text-meta text-muted-foreground">{t('lastUpdated', { date: formatDateTime(data.updatedAt, ctx.locale) })}</span>
+            ) : null}
+            <Button asChild variant="outline" size="sm" className="xl:hidden">
+              <a href="#brand-preview">
+                <EyeIcon />
+                {t('preview.jump')}
+              </a>
+            </Button>
+          </>
         }
       />
       <BrandingEditor

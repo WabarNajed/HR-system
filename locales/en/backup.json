@@ -1,4 +1,125 @@
 {
   "title": "Backup & reset",
-  "description": "Export a backup package or reset the organization."
+  "description": "Download a complete backup package or reset the organization to a clean state.",
+  "kpi": {
+    "lastBackup": "Last backup",
+    "never": "No backup yet",
+    "backups": "Backups",
+    "backupsHint": "Downloaded packages (audit trail)",
+    "records": "Records to back up",
+    "recordsHint": "Across {count} tables",
+    "sensitive": "Salary & bank data",
+    "sensitiveIncluded": "Included",
+    "sensitiveExcluded": "Excluded",
+    "sensitiveIncludedHint": "Super admin backup",
+    "sensitiveExcludedHint": "Super admin only"
+  },
+  "create": {
+    "title": "Create a backup",
+    "description": "A ZIP package with a manifest and one JSON and one Excel file per table. Uploaded files are not included — only their metadata.",
+    "download": "Download backup",
+    "preparing": "Preparing the backup…",
+    "received": "{size} received",
+    "contents": "What's included",
+    "rows": "{count} rows",
+    "sensitiveNote": "Salary and bank accounts are included only in backups made by the Super Admin.",
+    "format": "ZIP · manifest.json · JSON + XLSX per table"
+  },
+  "groups": {
+    "organization": "Organization & settings",
+    "people": "Employees & records",
+    "structure": "Structure & holidays",
+    "leave": "Leave",
+    "requests": "Requests",
+    "certificates": "Certificates & templates",
+    "configuration": "Request, email & access configuration"
+  },
+  "tables": {
+    "organizations": "Organization",
+    "organization_settings": "Organization settings",
+    "system_settings": "System settings",
+    "employees": "Employees",
+    "employee_compensation": "Compensation",
+    "employee_bank_accounts": "Bank accounts",
+    "employee_dependents": "Dependents",
+    "employee_insurance": "Insurance",
+    "employee_documents": "Documents (metadata)",
+    "departments": "Departments",
+    "job_titles": "Job titles",
+    "locations": "Locations",
+    "cost_centers": "Cost centers",
+    "public_holidays": "Public holidays",
+    "leave_types": "Leave types",
+    "leave_balances": "Leave balances",
+    "leave_adjustments": "Leave adjustments",
+    "leave_requests": "Leave requests",
+    "hr_requests": "Requests",
+    "hr_request_values": "Request values",
+    "request_history": "Request history",
+    "request_comments": "Request comments",
+    "request_approvals": "Approvals",
+    "request_attachments": "Attachments (metadata)",
+    "certificates": "Certificates (metadata)",
+    "certificate_templates": "Certificate templates",
+    "certificate_template_versions": "Template versions",
+    "request_types": "Request types",
+    "request_fields": "Request fields",
+    "request_workflows": "Workflows",
+    "request_workflow_steps": "Workflow steps",
+    "email_templates": "Email templates",
+    "notification_settings": "Notification settings",
+    "roles": "Roles",
+    "role_permissions": "Role permissions"
+  },
+  "history": {
+    "title": "Backup history",
+    "description": "From the audit trail.",
+    "empty": "No backups have been downloaded yet.",
+    "noAccess": "The backup history is read from the audit trail, which requires the audit permission.",
+    "summary": "{tables} tables · {rows} rows",
+    "sensitive": "Incl. salary & bank",
+    "by": "By {name}",
+    "viewAudit": "Open audit log"
+  },
+  "reset": {
+    "title": "Reset organization",
+    "description": "Permanently deletes the organization's data and returns the portal to its first-time setup. This cannot be undone.",
+    "deletedTitle": "Deleted",
+    "deleted": {
+      "people": "All employees and their records: Iqama, passport, dependents, insurance, documents, compensation and bank accounts",
+      "operations": "All requests, approvals, comments, leave balances and leave requests, certificates and notifications",
+      "structure": "Departments, job titles, locations, cost centers, public holidays and import history",
+      "configuration": "Request types, workflows, leave types and templates — restored to the default configuration",
+      "accounts": "Every user account except the Super Admins",
+      "files": "All uploaded files: documents, attachments, certificate PDFs and branding images"
+    },
+    "keptTitle": "Kept",
+    "kept": {
+      "admins": "Super Admin accounts and their sign-in",
+      "roles": "Roles and permissions",
+      "audit": "The complete audit trail (the reset itself is recorded)",
+      "code": "The application and its database structure"
+    },
+    "backupFirst": "Download a backup first — it is the only way to recover the data.",
+    "start": "Reset organization…",
+    "onlySuperAdmin": "Only the Super Admin can reset the organization.",
+    "lastReset": "Last reset on {date} by {name}",
+    "dialogTitle": "Reset the organization?",
+    "dialogDescription": "Everything listed under “Deleted” is removed permanently. You will be signed out and continue with the setup wizard.",
+    "backupDone": "I have downloaded a backup",
+    "password": "Your password",
+    "passwordHint": "Confirm it's you before this action.",
+    "phrase": "Type {phrase} to confirm",
+    "confirm": "Reset organization",
+    "resetting": "Resetting…"
+  },
+  "errors": {
+    "wrongPassword": "The password is incorrect.",
+    "downloadFailed": "The backup could not be created. Please try again."
+  },
+  "toast": {
+    "backupReady": "Backup downloaded.",
+    "resetDone": "The organization was reset. Sign in to start the setup.",
+    "resetDoneFilesPending": "The organization was reset, but some stored files could not be removed. Sign in to start the setup."
+  }
 }

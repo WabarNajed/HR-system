@@ -245,7 +245,7 @@ function DetailsBody({
             <XCircleIcon />
             <AlertDescription>
               <span className="font-medium">{t('fields.rejectionReason')}: </span>
-              {d.review_note}
+              <bdi>{d.review_note}</bdi>
             </AlertDescription>
           </Alert>
         ) : null}

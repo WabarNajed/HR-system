@@ -12,7 +12,7 @@
       "hours": "Working hours",
       "currency": "Currency",
       "timezone": "Time zone",
-      "edit": "Edit profile"
+      "edit": "Edit details"
     },
     "status": {
       "empty": {
@@ -192,7 +192,8 @@
       "weekendDays": "Weekend days",
       "weekendDaysHint": "A day can be a working day or a weekend day, not both.",
       "workStart": "Workday starts",
-      "workEnd": "Workday ends"
+      "workEnd": "Workday ends",
+      "timeSearch": "Type a time, e.g. 08:30"
     },
     "summary": {
       "workingDays": "{count, plural, one {<b>#</b> working day} other {<b>#</b> working days}}",
@@ -294,7 +295,8 @@
       "letterRef": "Ref.",
       "signatory": "Authorized signatory",
       "cr": "CR",
-      "vat": "VAT"
+      "vat": "VAT",
+      "jump": "Preview"
     },
     "image": {
       "upload": "Upload",

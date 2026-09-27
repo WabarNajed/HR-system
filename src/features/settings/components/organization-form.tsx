@@ -20,6 +20,7 @@ import { BrandImageField } from '@/features/branding/components/brand-image-fiel
 import { saveOrganization } from '../actions';
 import { WEEKDAYS, organizationFormSchema, type OrganizationFormValues } from '../schemas';
 import type { Option } from '../queries';
+import { TimeField } from './time-field';
 import { useUnsavedChangesWarning } from './use-unsaved-changes';
 
 export type OrganizationFormProps = {
@@ -396,7 +397,14 @@ export function OrganizationForm({ defaultValues, logoUrl, canEdit, logoLockedRe
                   <FormItem>
                     <FormLabel required>{t('fields.workStart')}</FormLabel>
                     <FormControl>
-                      <Input {...field} type="time" dir="ltr" step={300} className="max-w-40" />
+                      <TimeField
+                        value={field.value}
+                        onChange={field.onChange}
+                        onBlur={field.onBlur}
+                        disabled={disabled}
+                        searchPlaceholder={t('fields.timeSearch')}
+                        className="max-w-40"
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -409,7 +417,14 @@ export function OrganizationForm({ defaultValues, logoUrl, canEdit, logoLockedRe
                   <FormItem>
                     <FormLabel required>{t('fields.workEnd')}</FormLabel>
                     <FormControl>
-                      <Input {...field} type="time" dir="ltr" step={300} className="max-w-40" />
+                      <TimeField
+                        value={field.value}
+                        onChange={field.onChange}
+                        onBlur={field.onBlur}
+                        disabled={disabled}
+                        searchPlaceholder={t('fields.timeSearch')}
+                        className="max-w-40"
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

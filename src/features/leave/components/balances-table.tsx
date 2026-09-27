@@ -49,10 +49,10 @@ export function BalancesTable({ rows, total, typeOptions, departmentOptions, can
       cell: ({ row }) => {
         const v = row.original[key];
         return (
-          <span className={cn('numeric', v === 0 ? 'text-faint-foreground' : 'text-foreground', key === 'pending' && v > 0 && 'font-medium text-warning')}>
+          <bdi dir="ltr" className={cn('numeric', v === 0 ? 'text-faint-foreground' : 'text-foreground', key === 'pending' && v > 0 && 'font-medium text-warning')}>
             {key === 'adjustment' && v > 0 ? '+' : ''}
             {d(v)}
-          </span>
+          </bdi>
         );
       },
       meta: { label, align: 'end', headerClassName: 'whitespace-nowrap', defaultHidden: hidden },
@@ -73,8 +73,9 @@ export function BalancesTable({ rows, total, typeOptions, departmentOptions, can
               }}
               subtitle={
                 <>
-                  <bdi className="numeric">{row.original.employee.employee_number ?? '—'}</bdi>
-                  {row.original.employee.department ? ` · ${localized(row.original.employee.department, 'name', locale)}` : ''}
+                  {row.original.employee.employee_number ? <bdi className="numeric">{row.original.employee.employee_number}</bdi> : null}
+                  {row.original.employee.employee_number && row.original.employee.department ? ' · ' : ''}
+                  {row.original.employee.department ? localized(row.original.employee.department, 'name', locale) : ''}
                 </>
               }
               href={`/employees/${row.original.employee.id}?tab=leave`}

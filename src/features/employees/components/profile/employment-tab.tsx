@@ -38,6 +38,7 @@ export async function EmploymentTab({
       <SectionCard title={t('profile.employment.position')} icon={<BriefcaseIcon />}>
         <KeyValueGrid
           columns={3}
+          className="max-sm:grid-cols-2"
           items={[
             { label: t('fields.jobTitle'), value: named(employee.job_title) },
             { label: t('fields.grade'), value: employee.grade },
@@ -74,6 +75,7 @@ export async function EmploymentTab({
       <SectionCard title={t('profile.employment.dates')} icon={<CalendarRangeIcon />}>
         <KeyValueGrid
           columns={3}
+          className="max-sm:grid-cols-2"
           items={[
             { label: t('fields.employmentStatus'), value: <StatusBadge domain="employment" status={employee.employment_status} /> },
             { label: t('fields.joiningDate'), value: d(employee.joining_date) },

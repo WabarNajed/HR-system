@@ -59,7 +59,7 @@ export function CertificateRequestsTable({ rows, total, hrView, canIssue, reques
             </bdi>
           </Link>
         ),
-        meta: { label: t('fields.requestNumber'), sticky: true, width: '10.5rem' },
+        meta: { label: t('fields.requestNumber'), sticky: true, width: '9.75rem' },
       },
       {
         id: 'employee',
@@ -75,7 +75,7 @@ export function CertificateRequestsTable({ rows, total, hrView, canIssue, reques
             '—'
           ),
         enableSorting: false,
-        meta: { label: t('fields.employee'), width: '15rem' },
+        meta: { label: t('fields.employee'), width: '13rem' },
       },
       {
         id: 'type',
@@ -83,32 +83,25 @@ export function CertificateRequestsTable({ rows, total, hrView, canIssue, reques
         cell: ({ row }) => (
           <div className="min-w-0 leading-tight">
             <div className="truncate font-medium">{labels.type(row.original.subtype)}</div>
-            {row.original.addressed_to ? <div className="mt-0.5 truncate text-meta text-muted-foreground">{row.original.addressed_to}</div> : null}
+            <div className="mt-1 flex min-w-0 items-center gap-1.5 text-meta text-muted-foreground">
+              {row.original.language ? (
+                <Badge variant="outline" size="sm" className="shrink-0">
+                  {labels.language(row.original.language)}
+                </Badge>
+              ) : null}
+              {row.original.addressed_to ? <span className="truncate">{row.original.addressed_to}</span> : null}
+            </div>
           </div>
         ),
         enableSorting: false,
         meta: { label: t('fields.type') },
       },
       {
-        id: 'language',
-        header: () => t('fields.language'),
-        cell: ({ row }) =>
-          row.original.language ? (
-            <Badge variant="outline" size="sm">
-              {labels.language(row.original.language)}
-            </Badge>
-          ) : (
-            '—'
-          ),
-        enableSorting: false,
-        meta: { label: t('fields.language') },
-      },
-      {
         id: 'created_at',
         accessorKey: 'created_at',
         header: ({ column }) => <DataTableColumnHeader column={column} title={t('fields.submitted')} />,
         cell: ({ row }) => <span className="numeric whitespace-nowrap">{fmt.date(row.original.submitted_at ?? row.original.created_at)}</span>,
-        meta: { label: t('fields.submitted') },
+        meta: { label: t('fields.submitted'), width: '7.75rem' },
       },
       {
         id: 'status',
@@ -171,7 +164,7 @@ export function CertificateRequestsTable({ rows, total, hrView, canIssue, reques
       total={total}
       getRowId={(r) => r.id}
       rowHref={(r) => sheetHref(r.id)}
-      searchPlaceholder={t('filters.searchRequests')}
+      searchPlaceholder={hrView ? t('filters.searchRequests') : t('filters.searchOwnRequests')}
       filters={filters}
       moreFilters={[{ type: 'dateRange', key: 'created', title: t('filters.submitted') }]}
       defaultSort={{ id: 'created_at', desc: true }}

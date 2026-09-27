@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { forbidden } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { PageHeader } from '@/components/shared/page-header';
 import { ROUTE_ACCESS } from '@/components/shell/nav-config';
@@ -7,6 +8,7 @@ import { getDraftForWizard, getRequestAccess, loadFormLookups, loadRequestTypes 
 import type { EmployeeOption } from '@/features/requests/types';
 import { requireAccess } from '@/lib/auth/guards';
 import { pageMetadata } from '@/lib/metadata';
+import { can } from '@/lib/permissions';
 import { createClient, type ServerSupabaseClient } from '@/lib/supabase/server';
 
 export const generateMetadata = (): Promise<Metadata> => pageMetadata('nav.items.newRequest');
@@ -38,7 +40,12 @@ export default async function NewRequestPage({ searchParams }: { searchParams: P
   const t = await getTranslations('requests');
   const supabase = await createClient();
 
-  const [access, types] = await Promise.all([getRequestAccess(supabase, ctx.user.id), loadRequestTypes(supabase, { activeOnly: true })]);
+  const [access, allTypes] = await Promise.all([getRequestAccess(supabase, ctx.user.id), loadRequestTypes(supabase, { activeOnly: true })]);
+  // Same rule as create_request_draft: requests.create (own), leave.create for leave types, org requests.create on behalf.
+  const canCreateAny = can(ctx, 'requests.create') || access.orgCreate;
+  const canCreateLeave = can(ctx, 'leave.create');
+  if (!canCreateAny && !canCreateLeave) forbidden();
+  const types = canCreateAny ? allTypes : allTypes.filter((x) => x.fields.some((f) => f.field_type === 'leave_type') || x.key === 'leave');
   const self = ctx.employee
     ? {
         id: ctx.employee.id,

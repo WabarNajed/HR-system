@@ -320,7 +320,7 @@ function WeekRow({
             key={day}
             className={cn(
               'relative flex min-w-0 flex-col border-e border-border px-1.5 pt-1.5 pb-1 last:border-e-0 md:px-2',
-              weekend && 'bg-muted/80 dark:bg-muted/40',
+              weekend && 'bg-muted/80 dark:bg-black/25',
               holiday && 'bg-secondary-soft/70',
               !inMonth && 'bg-subtle/60',
             )}

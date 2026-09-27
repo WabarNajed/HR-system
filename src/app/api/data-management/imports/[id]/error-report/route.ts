@@ -26,7 +26,7 @@ async function fetchRows(db: DbClient, importId: string, mode: 'errors' | 'warni
   const out: Row[] = [];
   for (let from = 0; from < 50_000; from += 1000) {
     let q = db.from('import_rows').select('row_number, status, raw, errors, warnings').eq('import_id', importId);
-    q = mode === 'errors' ? q.eq('status', 'error') : q.neq('status', 'error').contains('warnings', [{ level: 'warning' }]);
+    q = mode === 'errors' ? q.eq('status', 'error') : q.neq('status', 'error').filter('warnings', 'cs', JSON.stringify([{ level: 'warning' }]));
     const { data, error } = await q.order('row_number').range(from, from + 999);
     if (error) throw error;
     out.push(...((data ?? []) as Row[]));

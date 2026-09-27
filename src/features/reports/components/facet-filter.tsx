@@ -10,7 +10,12 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 
-export type FacetOption = { value: string; label: string; description?: string; muted?: boolean };
+export type FacetOption = {
+  value: string;
+  label: string;
+  description?: string;
+  muted?: boolean;
+};
 
 export type FacetFilterProps = {
   title: string;
@@ -194,7 +199,17 @@ export function FacetFilter({
   );
 }
 
-function FacetItem({ option, checked, multiple, onSelect }: { option: FacetOption; checked: boolean; multiple: boolean; onSelect: () => void }) {
+function FacetItem({
+  option,
+  checked,
+  multiple,
+  onSelect,
+}: {
+  option: FacetOption;
+  checked: boolean;
+  multiple: boolean;
+  onSelect: () => void;
+}) {
   return (
     <CommandItem value={`${option.label} ${option.description ?? ''} ${option.value}`} onSelect={onSelect} className="gap-2.5">
       <span

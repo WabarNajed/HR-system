@@ -86,6 +86,7 @@ export function RequestFormRenderer({ fields, values, onChange, errors, readOnly
     return <ReadOnlyFields fields={shown} values={values} lookups={lookups} computed={context?.computed} columns={columns} className={className} locale={locale} />;
   }
 
+  const layout = gridLayout(shown, columns);
   return (
     <div className={cn('grid grid-cols-1 gap-x-5 gap-y-4', columns === 2 && 'md:grid-cols-2', className)} data-slot="request-form">
       {shown.map((field) => (
@@ -93,7 +94,8 @@ export function RequestFormRenderer({ fields, values, onChange, errors, readOnly
           key={field.key}
           field={field}
           error={errors?.[field.key]}
-          full={columns === 1 || FULL_WIDTH.has(field.field_type) || isChoiceGrid(field)}
+          full={layout.get(field.key)?.full ?? true}
+          alignWithLabel={layout.get(field.key)?.offset ?? false}
           locale={locale}
         >
           {(id, describedBy) => (
@@ -147,6 +149,27 @@ function useLookups(fields: RequestField[], context?: RequestFormRendererContext
 
 /* ─── Layout shell ────────────────────────────────────────────────────────── */
 
+/**
+ * Two-column placement: full-width fields take a whole row; a Yes/No switch sharing a row with a
+ * labelled input is offset by the label height so both boxes line up.
+ */
+function gridLayout(fields: RequestField[], columns: 1 | 2): Map<string, { full: boolean; offset: boolean }> {
+  const out = new Map<string, { full: boolean; offset: boolean }>();
+  const isFull = (f: RequestField) => columns === 1 || FULL_WIDTH.has(f.field_type) || isChoiceGrid(f);
+  let col = 0;
+  fields.forEach((f, i) => {
+    if (isFull(f)) {
+      out.set(f.key, { full: true, offset: false });
+      col = 0;
+      return;
+    }
+    const neighbour = col === 0 ? (fields[i + 1] && !isFull(fields[i + 1]!) ? fields[i + 1] : undefined) : fields[i - 1];
+    out.set(f.key, { full: false, offset: f.field_type === 'yes_no' && Boolean(neighbour) && neighbour!.field_type !== 'yes_no' });
+    col = col === 0 ? 1 : 0;
+  });
+  return out;
+}
+
 function isChoiceGrid(field: RequestField) {
   return field.key === 'subtype' && field.field_type === 'dropdown' && field.options.length > 1 && field.options.length <= 12;
 }
@@ -155,12 +178,14 @@ function FieldShell({
   field,
   error,
   full,
+  alignWithLabel,
   locale,
   children,
 }: {
   field: RequestField;
   error?: string;
   full: boolean;
+  alignWithLabel?: boolean;
   locale: Locale;
   children: (id: string, describedBy: string | undefined) => ReactNode;
 }) {
@@ -177,7 +202,8 @@ function FieldShell({
 
   if (field.field_type === 'yes_no') {
     return (
-      <div className={cn('min-w-0', full && 'col-span-full')} data-field={field.key}>
+      // Offset by the label height so the switch row lines up with the inputs beside it.
+      <div className={cn('min-w-0', full && 'col-span-full', alignWithLabel && 'md:mt-[1.625rem]')} data-field={field.key}>
         {children(id, describedBy)}
         {error ? (
           <p id={errorId} className="mt-1.5 text-xs font-medium text-danger">
@@ -361,6 +387,7 @@ function ChoiceGrid({ id, field, value, onChange, invalid, context, locale }: In
   return (
     <RadioGroup
       id={id}
+      aria-label={localized(field, 'label', locale)}
       value={selected}
       onValueChange={(v) => onChange(v)}
       disabled={context?.disabled}
@@ -422,7 +449,7 @@ function MultiSelectInput({ id, field, value, onChange, invalid, context, locale
   const selected = Array.isArray(value) ? (value as string[]) : [];
   const toggle = (v: string) => onChange(selected.includes(v) ? selected.filter((x) => x !== v) : [...selected, v]);
   return (
-    <div id={id} role="group" data-invalid={invalid || undefined} className="flex flex-wrap gap-2">
+    <div id={id} role="group" aria-label={localized(field, 'label', locale)} data-invalid={invalid || undefined} className="flex flex-wrap gap-2">
       {field.options.map((o) => {
         const on = selected.includes(o.value);
         return (
@@ -568,6 +595,7 @@ function EmployeeInput({ id, value, onChange, invalid, lookups, context, locale,
         if (!res.ok) throw new Error(res.error);
         return (res.data ?? []).map((e) => employeeOption(e, locale));
       }}
+      timeout={20000}
       placeholder={localized(field, 'placeholder', locale) || t('searchEmployee')}
       searchPlaceholder={t('searchEmployee')}
       disabled={context?.disabled}

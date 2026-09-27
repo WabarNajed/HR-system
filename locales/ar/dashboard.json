@@ -131,8 +131,8 @@
     },
     "compliance": {
       "expired": "منتهية",
-      "within30": "≤ 30 يومًا",
-      "within90": "≤ 90 يومًا",
+      "within30": "≤30 يوم",
+      "within90": "≤90 يوم",
       "allClear": "لا توجد ملاحظات",
       "kinds": {
         "iqama": "الإقامة",

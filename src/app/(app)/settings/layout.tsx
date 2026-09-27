@@ -25,7 +25,7 @@ export default async function SettingsLayout({ children }: { children: ReactNode
   }
 
   return (
-    <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-7">
+    <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-6">
       <SettingsNav groups={groups} badges={badges} />
       <div className="min-w-0 flex-1">{children}</div>
     </div>

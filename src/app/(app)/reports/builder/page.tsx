@@ -32,7 +32,11 @@ const REFERENCE_FILTERS: Record<ReferenceList, 'department' | 'jobTitle' | 'loca
   requestTypes: 'requestType',
 };
 
-export default async function ReportsBuilderPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+export default async function ReportsBuilderPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const ctx = await requireAccess(ROUTE_ACCESS['/reports/builder']);
   const sp = await searchParams;
   const t = getTranslator(ctx.locale);
@@ -68,7 +72,12 @@ export default async function ReportsBuilderPage({ searchParams }: { searchParam
   const references = Object.fromEntries(
     Array.from(refs).map((r) => [
       r,
-      (options[REFERENCE_FILTERS[r]] ?? []).map((o): FacetOption => ({ value: o.value, label: o.inactive ? `${o.label} · ${t('reports.filters.inactive')}` : o.label })),
+      (options[REFERENCE_FILTERS[r]] ?? []).map(
+        (o): FacetOption => ({
+          value: o.value,
+          label: o.inactive ? `${o.label} · ${t('reports.filters.inactive')}` : o.label,
+        }),
+      ),
     ]),
   ) as Partial<Record<ReferenceList, FacetOption[]>>;
 

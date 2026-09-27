@@ -3,7 +3,7 @@
 import { ChevronRightIcon, HistoryIcon, SearchXIcon, WandSparklesIcon, XIcon } from 'lucide-react';
 import Link from 'next/link';
 import { useLocale } from 'next-intl';
-import { useMemo, useState, type ReactNode } from 'react';
+import { Fragment, useMemo, useState, type ReactNode } from 'react';
 import { EmptyState } from '@/components/shared/empty-state';
 import { SegmentedTabs } from '@/components/shared/link-tabs';
 import { SearchInput } from '@/components/shared/search-input';
@@ -36,7 +36,12 @@ function normalize(text: string) {
 
 function searchable(def: ReportDefinition, t: LooseT) {
   return normalize(
-    [t(`reports.items.${def.i18n}.title`), t(`reports.items.${def.i18n}.description`), t(`reports.groups.${def.group}`), def.key.replace(/-/g, ' ')].join(' '),
+    [
+      t(`reports.items.${def.i18n}.title`),
+      t(`reports.items.${def.i18n}.description`),
+      t(`reports.groups.${def.group}`),
+      def.key.replace(/-/g, ' '),
+    ].join(' '),
   );
 }
 
@@ -58,10 +63,10 @@ function ReportRow({ def, stats }: { def: ReportDefinition; stats: Record<string
         </span>
         <span className="min-w-0 flex-1">
           <span className="block truncate text-sm font-semibold text-foreground">{t(`reports.items.${def.i18n}.title`)}</span>
-          <span className="mt-0.5 block truncate text-meta text-muted-foreground">{t(`reports.items.${def.i18n}.description`)}</span>
+          <span className="mt-0.5 line-clamp-2 text-meta text-muted-foreground">{t(`reports.items.${def.i18n}.description`)}</span>
         </span>
         {def.preview ? (
-          <span className="hidden w-32 shrink-0 flex-col items-end text-end sm:flex">
+          <span className="hidden w-40 shrink-0 flex-col items-end text-end sm:flex">
             <span
               className={cn(
                 'text-lg leading-6 font-semibold tracking-tight numeric',
@@ -71,6 +76,16 @@ function ReportRow({ def, stats }: { def: ReportDefinition; stats: Record<string
               {hasValue ? formatNumber(value, locale, { maximumFractionDigits: 0 }) : t('reports.catalog.metricUnavailable')}
             </span>
             <span className="w-full truncate text-xs text-muted-foreground">{t(def.preview.labelKey)}</span>
+          </span>
+        ) : null}
+        {def.preview && hasValue ? (
+          <span
+            className={cn(
+              'shrink-0 text-base font-semibold numeric sm:hidden',
+              alert ? (def.preview.tone === 'danger' ? 'text-danger' : 'text-warning') : 'text-foreground',
+            )}
+          >
+            {formatNumber(value, locale, { maximumFractionDigits: 0 })}
           </span>
         ) : null}
         <ChevronRightIcon
@@ -143,11 +158,20 @@ export function ReportCatalog({ keys, stats, canBuild }: ReportCatalogProps) {
   const groups = REPORT_GROUPS.filter((g) => defs.some((d) => d.group === g));
 
   const q = normalize(query.trim());
-  const visible = defs.filter((d) => (group === 'all' || d.group === group) && (!q || q.split(/\s+/).every((w) => index.get(d.key)?.includes(w))));
+  const visible = defs.filter(
+    (d) => (group === 'all' || d.group === group) && (!q || q.split(/\s+/).every((w) => index.get(d.key)?.includes(w))),
+  );
   const recent = recentKeys.map((k) => defs.find((d) => d.key === k)).filter((d): d is ReportDefinition => Boolean(d));
 
   if (!defs.length) {
-    return <EmptyState variant="page" icon={SearchXIcon} title={t('reports.catalog.emptyTitle')} description={t('reports.catalog.emptyDescription')} />;
+    return (
+      <EmptyState
+        variant="page"
+        icon={SearchXIcon}
+        title={t('reports.catalog.emptyTitle')}
+        description={t('reports.catalog.emptyDescription')}
+      />
+    );
   }
 
   return (
@@ -168,7 +192,11 @@ export function ReportCatalog({ keys, stats, canBuild }: ReportCatalogProps) {
           onValueChange={(v) => setGroup(v as 'all' | ReportGroup)}
           items={[
             { value: 'all', label: t('common.all'), count: defs.length },
-            ...groups.map((g) => ({ value: g, label: t(`reports.groups.${g}`), count: defs.filter((d) => d.group === g).length })),
+            ...groups.map((g) => ({
+              value: g,
+              label: t(`reports.groups.${g}`),
+              count: defs.filter((d) => d.group === g).length,
+            })),
           ]}
         />
       </div>
@@ -220,7 +248,12 @@ export function ReportCatalog({ keys, stats, canBuild }: ReportCatalogProps) {
           }
         />
       ) : (
-        <GroupColumns groups={groups.filter((g) => visible.some((d) => d.group === g))} visible={visible} stats={stats} canBuild={canBuild && !q && group === 'all'} />
+        <GroupColumns
+          groups={groups.filter((g) => visible.some((d) => d.group === g))}
+          visible={visible}
+          stats={stats}
+          canBuild={canBuild && !q && group === 'all'}
+        />
       )}
     </div>
   );
@@ -228,31 +261,54 @@ export function ReportCatalog({ keys, stats, canBuild }: ReportCatalogProps) {
 
 /**
  * Group panels in two balanced columns on large screens (greedy by row count, order preserved
- * within each column) — no half-empty grid rows; a single column on smaller screens.
+ * within each column) — no half-empty grid rows. Rendered once: below `lg` the column wrappers use
+ * `display: contents` and each panel's `order` restores the natural single-column sequence.
  */
-function GroupColumns({ groups, visible, stats, canBuild }: { groups: ReportGroup[]; visible: ReportDefinition[]; stats: Record<string, number>; canBuild: boolean }) {
-  const panels = groups.map((g) => ({ key: g, weight: visible.filter((d) => d.group === g).length + 1.2, node: <GroupPanel key={g} group={g} items={visible.filter((d) => d.group === g)} stats={stats} /> }));
-  if (canBuild) panels.push({ key: 'builder' as ReportGroup, weight: 2.2, node: <BuilderPanel key="builder" /> });
-  if (panels.length < 2) return <div className="flex flex-col gap-4">{panels.map((p) => p.node)}</div>;
-  const cols: { weight: number; nodes: ReactNode[] }[] = [
-    { weight: 0, nodes: [] },
-    { weight: 0, nodes: [] },
-  ];
-  for (const p of panels) {
-    const target = cols[0]!.weight <= cols[1]!.weight ? cols[0]! : cols[1]!;
-    target.weight += p.weight;
-    target.nodes.push(p.node);
-  }
-  return (
-    <>
-      <div className="flex flex-col gap-4 lg:hidden">{panels.map((p) => p.node)}</div>
-      <div className="hidden items-start gap-4 lg:grid lg:grid-cols-2">
-        {cols.map((c, i) => (
-          <div key={i} className="flex min-w-0 flex-col gap-4">
-            {c.nodes}
-          </div>
+function GroupColumns({
+  groups,
+  visible,
+  stats,
+  canBuild,
+}: {
+  groups: ReportGroup[];
+  visible: ReportDefinition[];
+  stats: Record<string, number>;
+  canBuild: boolean;
+}) {
+  const panels = groups.map((g) => ({
+    key: g as string,
+    weight: visible.filter((d) => d.group === g).length + 1.2,
+    node: <GroupPanel group={g} items={visible.filter((d) => d.group === g)} stats={stats} />,
+  }));
+  if (canBuild) panels.push({ key: 'builder', weight: 2.2, node: <BuilderPanel /> });
+  if (panels.length < 2)
+    return (
+      <div className="flex flex-col gap-4">
+        {panels.map((p) => (
+          <Fragment key={p.key}>{p.node}</Fragment>
         ))}
       </div>
-    </>
+    );
+  const cols: { weight: number; items: { key: string; order: number; node: ReactNode }[] }[] = [
+    { weight: 0, items: [] },
+    { weight: 0, items: [] },
+  ];
+  panels.forEach((p, order) => {
+    const target = cols[0]!.weight <= cols[1]!.weight ? cols[0]! : cols[1]!;
+    target.weight += p.weight;
+    target.items.push({ key: p.key, order, node: p.node });
+  });
+  return (
+    <div className="flex flex-col gap-4 lg:grid lg:grid-cols-2 lg:items-start">
+      {cols.map((c, i) => (
+        <div key={i} className="contents lg:flex lg:min-w-0 lg:flex-col lg:gap-4">
+          {c.items.map((item) => (
+            <div key={item.key} className="min-w-0" style={{ order: item.order }}>
+              {item.node}
+            </div>
+          ))}
+        </div>
+      ))}
+    </div>
   );
 }

@@ -18,7 +18,8 @@
       "version": "Version",
       "status": "Status",
       "lastEdited": "Last edited",
-      "usage": "Issued"
+      "usage": "Issued",
+      "variantLanguage": "Variant · language"
     },
     "default": "Default",
     "defaultTooltip": "Offered first when issuing this certificate type",
@@ -174,35 +175,122 @@
       "company": "Company",
       "certificate": "Certificate"
     },
-    "employee_name_ar": { "label": "Employee name (Arabic)", "description": "Full Arabic name" },
-    "employee_name_en": { "label": "Employee name (English)", "description": "Full English name" },
-    "employee_id": { "label": "Employee ID", "description": "Employee number" },
-    "job_title_ar": { "label": "Job title (Arabic)", "description": "Current job title" },
-    "job_title_en": { "label": "Job title (English)", "description": "Current job title" },
-    "department_ar": { "label": "Department (Arabic)", "description": "Current department" },
-    "department_en": { "label": "Department (English)", "description": "Current department" },
-    "joining_date": { "label": "Joining date", "description": "Formatted in the section language" },
-    "nationality": { "label": "Nationality", "description": "As recorded on the employee file" },
-    "passport_number": { "label": "Passport number", "description": "For embassy and visa letters" },
-    "national_id": { "label": "Iqama / National ID", "description": "Identity document number" },
-    "basic_salary": { "label": "Basic salary", "description": "Monthly, with currency" },
-    "housing_allowance": { "label": "Housing allowance", "description": "Monthly, with currency" },
-    "transport_allowance": { "label": "Transportation allowance", "description": "Monthly, with currency" },
-    "other_allowance": { "label": "Other allowances", "description": "Monthly, with currency" },
-    "total_salary": { "label": "Total salary", "description": "Gross monthly salary" },
-    "company_name_ar": { "label": "Company name (Arabic)", "description": "Legal name when set" },
-    "company_name_en": { "label": "Company name (English)", "description": "Legal name when set" },
-    "company_address_ar": { "label": "Company address (Arabic)", "description": "From organization settings" },
-    "company_address_en": { "label": "Company address (English)", "description": "From organization settings" },
-    "company_cr": { "label": "Commercial registration", "description": "C.R. number" },
-    "company_vat": { "label": "VAT number", "description": "Tax registration number" },
-    "company_phone": { "label": "Company phone", "description": "From organization settings" },
-    "company_website": { "label": "Company website", "description": "From organization settings" },
-    "certificate_number": { "label": "Certificate number", "description": "CERT-YYYY-000001" },
-    "current_date": { "label": "Issue date", "description": "Gregorian; Arabic adds the Hijri date" },
-    "current_date_hijri": { "label": "Issue date (Hijri)", "description": "Umm al-Qura calendar" },
-    "addressed_to": { "label": "Addressed to", "description": "Recipient from the request" },
-    "purpose": { "label": "Purpose", "description": "Purpose from the request" }
+    "employee_name_ar": {
+      "label": "Employee name (Arabic)",
+      "description": "Full Arabic name"
+    },
+    "employee_name_en": {
+      "label": "Employee name (English)",
+      "description": "Full English name"
+    },
+    "employee_id": {
+      "label": "Employee ID",
+      "description": "Employee number"
+    },
+    "job_title_ar": {
+      "label": "Job title (Arabic)",
+      "description": "Current job title"
+    },
+    "job_title_en": {
+      "label": "Job title (English)",
+      "description": "Current job title"
+    },
+    "department_ar": {
+      "label": "Department (Arabic)",
+      "description": "Current department"
+    },
+    "department_en": {
+      "label": "Department (English)",
+      "description": "Current department"
+    },
+    "joining_date": {
+      "label": "Joining date",
+      "description": "Formatted in the section language"
+    },
+    "nationality": {
+      "label": "Nationality",
+      "description": "As recorded on the employee file"
+    },
+    "passport_number": {
+      "label": "Passport number",
+      "description": "For embassy and visa letters"
+    },
+    "national_id": {
+      "label": "Iqama / National ID",
+      "description": "Identity document number"
+    },
+    "basic_salary": {
+      "label": "Basic salary",
+      "description": "Monthly, with currency"
+    },
+    "housing_allowance": {
+      "label": "Housing allowance",
+      "description": "Monthly, with currency"
+    },
+    "transport_allowance": {
+      "label": "Transportation allowance",
+      "description": "Monthly, with currency"
+    },
+    "other_allowance": {
+      "label": "Other allowances",
+      "description": "Monthly, with currency"
+    },
+    "total_salary": {
+      "label": "Total salary",
+      "description": "Gross monthly salary"
+    },
+    "company_name_ar": {
+      "label": "Company name (Arabic)",
+      "description": "Legal name when set"
+    },
+    "company_name_en": {
+      "label": "Company name (English)",
+      "description": "Legal name when set"
+    },
+    "company_address_ar": {
+      "label": "Company address (Arabic)",
+      "description": "From organization settings"
+    },
+    "company_address_en": {
+      "label": "Company address (English)",
+      "description": "From organization settings"
+    },
+    "company_cr": {
+      "label": "Commercial registration",
+      "description": "C.R. number"
+    },
+    "company_vat": {
+      "label": "VAT number",
+      "description": "Tax registration number"
+    },
+    "company_phone": {
+      "label": "Company phone",
+      "description": "From organization settings"
+    },
+    "company_website": {
+      "label": "Company website",
+      "description": "From organization settings"
+    },
+    "certificate_number": {
+      "label": "Certificate number",
+      "description": "CERT-YYYY-000001"
+    },
+    "current_date": {
+      "label": "Issue date",
+      "description": "Gregorian; Arabic adds the Hijri date"
+    },
+    "current_date_hijri": {
+      "label": "Issue date (Hijri)",
+      "description": "Umm al-Qura calendar"
+    },
+    "addressed_to": {
+      "label": "Addressed to",
+      "description": "Recipient from the request"
+    },
+    "purpose": {
+      "label": "Purpose",
+      "description": "Purpose from the request"
+    }
   },
   "preview": {
     "title": "Template preview",
@@ -256,7 +344,8 @@
       "show_qr": "QR code",
       "certificate_type": "Type",
       "variant": "Variant"
-    }
+    },
+    "formattingOnly": "Formatting updated"
   },
   "starter": {
     "number": "Ref.:",

@@ -1,7 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { expectDocumentLocale, login, logout, setLocaleCookie, submitLogin } from './helpers/auth';
 import { watchPageHealth } from './helpers/page-health';
-import { storageStatePath } from './helpers/users';
 
 test.describe('authentication', () => {
   test('unauthenticated visitors are sent to /login with a next= return path', async ({ page }) => {
@@ -97,12 +96,9 @@ test.describe('authentication', () => {
     await expect(page).toHaveURL((u) => u.pathname === '/account-disabled' || u.pathname === '/login');
   });
 
-  test.describe('signed in', () => {
-    test.use({ storageState: storageStatePath('employee') });
-
-    test('visiting /login while signed in goes to the dashboard', async ({ page }) => {
-      await page.goto('/login');
-      await expect(page).toHaveURL(/\/dashboard$/);
-    });
+  test('visiting /login while signed in goes to the dashboard', async ({ page }) => {
+    await login(page, 'employee');
+    await page.goto('/login');
+    await expect(page).toHaveURL(/\/dashboard$/);
   });
 });

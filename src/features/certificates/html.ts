@@ -5,7 +5,7 @@
  *     1. parses the (TipTap / seeded) HTML into a small tree — tolerant of unclosed tags,
  *     2. sanitizes it with an allowlist (tags, attributes, safe inline styles) — scripts, event
  *        handlers, iframes, forms, external resources are dropped,
- *     3. applies conditional blocks (`data-if` / `data-if-not`),
+ *     3. applies conditional blocks (`data-if` / `data-if-not`) unless `keepConditionals`,
  *     4. substitutes `{{tokens}}` in text nodes with HTML-escaped values.
  *
  * Templates are authored by administrators, but the output is rendered by headless Chromium and in
@@ -172,7 +172,7 @@ export function parseHtml(html: string): Node[] {
 export type TemplateRenderMode =
   /** Final output: unknown tokens are removed. */
   | 'final'
-  /** Editor preview without an employee: tokens are shown as highlighted placeholders, all conditional blocks kept. */
+  /** Editor preview without an employee: tokens are shown as highlighted placeholders. */
   | 'placeholders';
 
 export type ProcessOptions = {
@@ -180,6 +180,8 @@ export type ProcessOptions = {
   resolve: (token: string) => string | null;
   /** Condition flags for `data-if` / `data-if-not`. */
   flags?: Record<string, boolean>;
+  /** Keep conditional blocks regardless of flags (sanitizing for storage). */
+  keepConditionals?: boolean;
   mode?: TemplateRenderMode;
   /** Label shown in placeholder mode (defaults to the token). */
   placeholderLabel?: (token: string) => string;
@@ -210,7 +212,7 @@ function serialize(nodes: Node[], options: ProcessOptions): string {
     if (DROP_TAGS.has(tag)) continue;
 
     // Conditional blocks.
-    if (options.mode !== 'placeholders') {
+    if (!options.keepConditionals) {
       const ifFlag = attrs['data-if'];
       if (ifFlag !== undefined && !(FLAG_RE.test(ifFlag) && options.flags?.[ifFlag])) continue;
       const ifNotFlag = attrs['data-if-not'];
@@ -266,6 +268,7 @@ export function sanitizeTemplateHtml(html: string | null | undefined): string {
   return serialize(parseHtml(html), {
     resolve: () => null,
     mode: 'placeholders',
+    keepConditionals: true,
     placeholderLabel: (t) => t,
   })
     // Keep tokens literally when sanitizing (placeholder spans → original token text).

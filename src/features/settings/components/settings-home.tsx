@@ -45,12 +45,19 @@ function name(locale: 'ar' | 'en', ar: string | null | undefined, en: string | n
   return (locale === 'ar' ? ar?.trim() || en?.trim() : en?.trim() || ar?.trim()) || null;
 }
 
-/** "Sun – Thu" for contiguous days, else a comma list (0 = Sunday). */
+/** "Sun – Thu" for a contiguous run of days (wrapping Sat → Sun), else a list (0 = Sunday). */
 function dayRange(days: number[], names: { short: string }[], locale: 'ar' | 'en'): string {
-  const sorted = [...days].sort((a, b) => a - b);
+  const set = new Set(days);
+  const sorted = [...set].sort((a, b) => a - b);
   if (!sorted.length) return '—';
-  const contiguous = sorted.every((d, i) => i === 0 || d === sorted[i - 1]! + 1);
-  if (contiguous && sorted.length > 2) return `${names[sorted[0]!]!.short} – ${names[sorted[sorted.length - 1]!]!.short}`;
+  if (sorted.length === 7) return `${names[0]!.short} – ${names[6]!.short}`;
+  // Start of the run = a day whose previous day (mod 7) is not included.
+  const starts = sorted.filter((d) => !set.has((d + 6) % 7));
+  if (starts.length === 1 && sorted.length > 2) {
+    const start = starts[0]!;
+    const end = (start + sorted.length - 1) % 7;
+    return `${names[start]!.short} – ${names[end]!.short}`;
+  }
   return sorted.map((d) => names[d]!.short).join(locale === 'ar' ? '، ' : ', ');
 }
 
@@ -197,10 +204,10 @@ export async function SettingsHome({ ctx }: { ctx: SessionContext }) {
       {org && st ? (
         <section
           aria-label={t('snapshot.title')}
-          className="relative flex flex-col gap-4 overflow-hidden rounded-lg border border-border bg-card p-4 shadow-card md:flex-row md:items-center md:gap-5 md:p-5"
+          className="relative flex flex-col gap-4 overflow-hidden rounded-lg border border-border bg-card p-4 shadow-card lg:flex-row lg:flex-wrap lg:items-center lg:gap-x-6 lg:p-5"
         >
           <span aria-hidden className="absolute inset-y-0 start-0 w-1 bg-gradient-to-b from-primary to-secondary" />
-          <div className="flex min-w-0 flex-1 items-center gap-3.5">
+          <div className="flex min-w-0 items-center gap-3.5 lg:min-w-64 lg:flex-1">
             <BrandMark name={companyName ?? portalName} logoUrl={logo} size="lg" />
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
@@ -216,14 +223,14 @@ export async function SettingsHome({ ctx }: { ctx: SessionContext }) {
               </p>
             </div>
           </div>
-          <dl className="grid grid-cols-2 gap-x-5 gap-y-2 text-meta sm:grid-cols-4 md:shrink-0">
+          <dl className="grid min-w-0 grid-cols-2 gap-x-6 gap-y-2 text-meta sm:grid-cols-[repeat(4,minmax(0,auto))]">
             {[
               { label: t('snapshot.workWeek'), value: dayRange(st.working_days, weekdays, locale) },
               { label: t('snapshot.hours'), value: `${st.work_start.slice(0, 5)} – ${st.work_end.slice(0, 5)}`, ltr: true },
               { label: t('snapshot.currency'), value: st.currency, ltr: true },
               { label: t('snapshot.timezone'), value: st.timezone.replace(/_/g, ' '), ltr: true },
             ].map((item) => (
-              <div key={item.label} className="min-w-0">
+              <div key={item.label} className="min-w-0 max-w-56">
                 <dt className="text-xs text-muted-foreground">{item.label}</dt>
                 <dd className="truncate font-medium text-foreground" dir={item.ltr ? 'ltr' : undefined}>
                   <span className={item.ltr ? 'ltr-isolate' : undefined}>{item.value}</span>
@@ -232,7 +239,7 @@ export async function SettingsHome({ ctx }: { ctx: SessionContext }) {
             ))}
           </dl>
           {can('organization') ? (
-            <Button asChild variant="outline" size="sm" className="self-start md:self-center">
+            <Button asChild variant="outline" size="sm" className="self-start lg:self-center">
               <Link href="/settings/organization">
                 {t('snapshot.edit')}
                 <ArrowUpRightIcon className="rtl:-scale-x-100" />
@@ -244,73 +251,80 @@ export async function SettingsHome({ ctx }: { ctx: SessionContext }) {
 
       <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-[minmax(0,1fr)_21rem] 2xl:grid-cols-[minmax(0,1fr)_23rem]">
         {/* Grouped section cards */}
-        <div className="columns-1 gap-4 md:columns-2 [&>*]:mb-4">
-          {cards.map((card) => {
-            const Icon = card.icon;
-            const single = card.items.length === 1 ? SETTINGS_ITEMS_BY_KEY[card.items[0]!] : null;
-            const singleStatus = single ? status[single.key] : null;
-            const header = (
-              <div className="flex items-start gap-3 px-4 py-3.5">
-                <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary-soft text-primary ring-1 ring-inset ring-current/10">
-                  <Icon className="size-[1.125rem]" strokeWidth={1.8} aria-hidden />
-                </span>
-                <div className="min-w-0 flex-1">
-                  <h2 className="text-card-title text-foreground">{tNav(`cards.${card.key}`)}</h2>
-                  <p className="mt-0.5 text-meta text-muted-foreground">{single ? tNav(`descriptions.${single.key}`) : tNav(`cardDescriptions.${card.key}`)}</p>
-                  {singleStatus ? <StatusLine status={singleStatus} className="mt-2" /> : null}
-                </div>
-                {single ? <ChevronRightIcon className={`${chevron} mt-2.5 group-hover:text-primary`} aria-hidden /> : null}
-              </div>
-            );
-            if (single) {
-              return (
-                <Link
-                  key={card.key}
-                  href={single.href}
-                  data-settings-card={card.key}
-                  className="group block break-inside-avoid rounded-lg border border-border bg-card shadow-card transition-colors outline-none hover:border-border-strong hover:bg-subtle focus-visible:ring-2 focus-visible:ring-ring/50"
-                >
-                  {header}
-                </Link>
-              );
-            }
-            return (
-              <section key={card.key} data-settings-card={card.key} className="break-inside-avoid rounded-lg border border-border bg-card shadow-card">
-                {header}
-                <ul className="border-t border-border px-1.5 py-1.5">
-                  {card.items.map((key) => {
-                    const item = SETTINGS_ITEMS_BY_KEY[key];
-                    const ItemIcon = item.icon;
-                    const s = status[key];
-                    return (
-                      <li key={key}>
-                        <Link
-                          href={item.href}
-                          className="group flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm transition-colors outline-none hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring/50"
-                        >
-                          <ItemIcon className="size-4 shrink-0 text-faint-foreground group-hover:text-primary" strokeWidth={1.85} aria-hidden />
-                          <span className="min-w-0 flex-1">
-                            <span className="block truncate font-medium text-foreground">{tNav(`items.${key}`)}</span>
-                            {s ? (
-                              <StatusLine status={s} />
-                            ) : (
-                              <span className="block truncate text-xs text-muted-foreground">{tNav(`descriptions.${key}`)}</span>
-                            )}
-                          </span>
-                          <ChevronRightIcon className={`${chevron} group-hover:text-primary`} aria-hidden />
-                        </Link>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </section>
-            );
-          })}
+        <div className="grid grid-cols-1 items-start gap-4 md:grid-cols-2">
+          {balanceColumns(cards).map((column, ci) => (
+            <div key={ci} className="flex min-w-0 flex-col gap-4">
+              {column.map((card) => {
+                const Icon = card.icon;
+                const single = card.items.length === 1 ? SETTINGS_ITEMS_BY_KEY[card.items[0]!] : null;
+                const singleStatus = single ? status[single.key] : null;
+                const header = (
+                  <div className="flex items-start gap-3 px-4 py-3.5">
+                    <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary-soft text-primary ring-1 ring-inset ring-current/10">
+                      <Icon className="size-[1.125rem]" strokeWidth={1.8} aria-hidden />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <h2 className="text-card-title text-foreground">{tNav(`cards.${card.key}`)}</h2>
+                      <p className="mt-0.5 text-meta text-muted-foreground">{single ? tNav(`descriptions.${single.key}`) : tNav(`cardDescriptions.${card.key}`)}</p>
+                      {singleStatus ? <StatusLine status={singleStatus} className="mt-2" /> : null}
+                    </div>
+                    {single ? <ChevronRightIcon className={`${chevron} mt-2.5 group-hover:text-primary`} aria-hidden /> : null}
+                  </div>
+                );
+                if (single) {
+                  return (
+                    <Link
+                      key={card.key}
+                      href={single.href}
+                      data-settings-card={card.key}
+                      className="group block rounded-lg border border-border bg-card shadow-card transition-colors outline-none hover:border-border-strong hover:bg-subtle focus-visible:ring-2 focus-visible:ring-ring/50"
+                    >
+                      {header}
+                    </Link>
+                  );
+                }
+                return (
+                  <section key={card.key} data-settings-card={card.key} className="rounded-lg border border-border bg-card shadow-card">
+                    {header}
+                    <ul className="border-t border-border px-1.5 py-1.5">
+                      {card.items.map((key) => {
+                        const item = SETTINGS_ITEMS_BY_KEY[key];
+                        const ItemIcon = item.icon;
+                        const s = status[key];
+                        return (
+                          <li key={key}>
+                            <Link
+                              href={item.href}
+                              className="group flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm transition-colors outline-none hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring/50"
+                            >
+                              <ItemIcon className="size-4 shrink-0 text-faint-foreground group-hover:text-primary" strokeWidth={1.85} aria-hidden />
+                              <span className="min-w-0 flex-1">
+                                <span className="block truncate font-medium text-foreground">{tNav(`items.${key}`)}</span>
+                                {s ? (
+                                  <StatusLine status={s} />
+                                ) : (
+                                  <span className="block truncate text-xs text-muted-foreground">{tNav(`descriptions.${key}`)}</span>
+                                )}
+                              </span>
+                              <ChevronRightIcon className={`${chevron} group-hover:text-primary`} aria-hidden />
+                            </Link>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </section>
+                );
+              })}
+            </div>
+          ))}
         </div>
 
         {/* Configuration health */}
         {checks.length ? (
-          <section aria-labelledby="config-health" className="rounded-lg border border-border bg-card shadow-card xl:sticky xl:top-[calc(var(--spacing-header)+1rem)]">
+          <section
+            aria-labelledby="config-health"
+            className="order-first rounded-lg border border-border bg-card shadow-card xl:sticky xl:top-[calc(var(--spacing-header)+1rem)] xl:order-none"
+          >
             <div className="flex items-start gap-3 border-b border-border px-4 py-3.5">
               <HealthRing score={score} />
               <div className="min-w-0 flex-1">
@@ -370,6 +384,28 @@ export async function SettingsHome({ ctx }: { ctx: SessionContext }) {
       </div>
     </div>
   );
+}
+
+/**
+ * Splits the cards into two columns of similar estimated height (order kept within each column),
+ * so the console never shows one long column next to a short one.
+ */
+function balanceColumns<T extends { items: unknown[] }>(cards: T[]): [T[], T[]] {
+  const height = (c: T) => (c.items.length === 1 ? 128 : 84 + c.items.length * 56);
+  const total = cards.reduce((sum, c) => sum + height(c), 0);
+  let best = { mask: 0, diff: Number.POSITIVE_INFINITY };
+  const n = Math.min(cards.length, 16);
+  for (let mask = 0; mask < 1 << n; mask++) {
+    let a = 0;
+    for (let i = 0; i < n; i++) if (mask & (1 << i)) a += height(cards[i]!);
+    const diff = Math.abs(total - 2 * a);
+    // Prefer the first card in the first column for a stable reading order.
+    if (diff < best.diff && mask & 1) best = { mask, diff };
+  }
+  const first: T[] = [];
+  const second: T[] = [];
+  cards.forEach((c, i) => ((i < n && best.mask & (1 << i)) || (i >= n && i % 2 === 0) ? first : second).push(c));
+  return [first, second];
 }
 
 async function logoUrl(supabase: Awaited<ReturnType<typeof createClient>>): Promise<string | null> {

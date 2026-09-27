@@ -11,7 +11,7 @@ import { resolveLocale } from '@/lib/i18n/config';
 import { localized } from '@/lib/i18n/localized';
 import { formatDays } from '@/lib/format';
 import { createClient } from '@/lib/supabase/server';
-import { getEmployeeBalances, getEmployeeRecentLeave, getLeaveAccess, getLeaveOrgSettings } from '../queries';
+import { getEmployeeBalances, getEmployeeRecentLeave, getLeaveAccess, getLeaveOrgSettings, listLeaveTypes } from '../queries';
 import { BalanceCards } from './balance-cards';
 import { InitializeBalancesButton, NoBalancesState } from './balance-dialogs';
 import { LeaveTypeDot } from './leave-type-dot';
@@ -27,12 +27,17 @@ export async function EmployeeLeaveTab({ employeeId }: { employeeId: string }) {
   const locale = resolveLocale(ctx.locale);
   const [t, access, settings] = await Promise.all([getTranslations('leave'), getLeaveAccess(ctx), getLeaveOrgSettings()]);
   const supabase = await createClient();
-  const [balances, recent, employeeRes] = await Promise.all([
+  const [balances, recent, employeeRes, types] = await Promise.all([
     getEmployeeBalances(employeeId, settings.year),
     getEmployeeRecentLeave(employeeId, 8),
-    supabase.from('employees').select('id, name_ar, name_en').eq('id', employeeId).maybeSingle(),
+    supabase.from('employees').select('id, name_ar, name_en, gender').eq('id', employeeId).maybeSingle(),
+    access.orgEdit ? listLeaveTypes({ activeOnly: true }) : Promise.resolve([]),
   ]);
   const employee = employeeRes.data;
+  const have = new Set(balances.map((b) => b.leave_type_id));
+  const missing = types.filter(
+    (lt) => lt.deducts_balance && !have.has(lt.id) && (!lt.gender_restriction || lt.gender_restriction === employee?.gender),
+  ).length;
   const isSelf = access.employeeId === employeeId;
   const canAdjust = access.orgEdit;
   const d = (v: number) => formatDays(v, locale);
@@ -44,7 +49,7 @@ export async function EmployeeLeaveTab({ employeeId }: { employeeId: string }) {
         description={t('employeeTab.balancesDescription')}
         icon={<WalletCardsIcon />}
         actions={
-          canAdjust && balances.length ? (
+          canAdjust && balances.length && missing > 0 ? (
             <InitializeBalancesButton year={settings.year} employeeId={employeeId} variant="outline" label={t('employeeTab.addMissing')} />
           ) : null
         }

@@ -66,8 +66,14 @@ export function issueParams(issue: Issue, type: ImportType, label: (key: string 
   return params;
 }
 
+/** Keeps ISO dates / Latin values readable inside right-to-left text (Unicode isolates). */
+function isolate(value: string | number): string | number {
+  return typeof value === 'string' && value && /[0-9A-Za-z]/.test(value) ? `\u2068${value}\u2069` : value;
+}
+
 /** Full sentence for an issue in the given locale. */
 export function issueText(issue: Issue, type: ImportType, locale: MessageLocale): string {
   const params = issueParams(issue, type, (k) => fieldName(type, k, locale), (k) => msg(locale, k));
+  if (locale === 'ar') for (const key of ['date', 'converted', 'value', 'rows', 'number', 'nationalId', 'name']) params[key] = isolate(params[key] ?? '');
   return msg(locale, `dataManagement.issues.${issue.code}`, params);
 }

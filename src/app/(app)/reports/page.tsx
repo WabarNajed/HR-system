@@ -22,12 +22,34 @@ import type { LucideIcon } from 'lucide-react';
 
 export const generateMetadata = (): Promise<Metadata> => pageMetadata('reports.title');
 
-type Highlight = { report: string; stat: string | string[]; labelKey: string; hintKey: string; icon: LucideIcon; tone: StatTone; alert?: boolean };
+type Highlight = {
+  report: string;
+  stat: string | string[];
+  labelKey: string;
+  hintKey: string;
+  icon: LucideIcon;
+  tone: StatTone;
+  alert?: boolean;
+};
 
 /** Headline metrics at the top of the Report Center (each opens its report). */
 const HIGHLIGHTS: Highlight[] = [
-  { report: 'headcount', stat: 'headcount', labelKey: 'reports.preview.headcount', hintKey: 'reports.items.headcount.title', icon: UsersIcon, tone: 'primary' },
-  { report: 'open-requests', stat: 'open', labelKey: 'reports.kpis.open', hintKey: 'reports.items.openRequests.title', icon: ClockIcon, tone: 'info' },
+  {
+    report: 'headcount',
+    stat: 'headcount',
+    labelKey: 'reports.preview.headcount',
+    hintKey: 'reports.items.headcount.title',
+    icon: UsersIcon,
+    tone: 'primary',
+  },
+  {
+    report: 'open-requests',
+    stat: 'open',
+    labelKey: 'reports.kpis.open',
+    hintKey: 'reports.items.openRequests.title',
+    icon: ClockIcon,
+    tone: 'info',
+  },
   {
     report: 'overdue-requests',
     stat: 'overdue',
@@ -37,7 +59,14 @@ const HIGHLIGHTS: Highlight[] = [
     tone: 'danger',
     alert: true,
   },
-  { report: 'iqama-expiry', stat: 'iqama90', labelKey: 'reports.preview.expiring90', hintKey: 'reports.items.iqamaExpiry.title', icon: IdCardIcon, tone: 'warning' },
+  {
+    report: 'iqama-expiry',
+    stat: 'iqama90',
+    labelKey: 'reports.preview.expiring90',
+    hintKey: 'reports.items.iqamaExpiry.title',
+    icon: IdCardIcon,
+    tone: 'warning',
+  },
 ];
 
 export default async function ReportsPage() {
@@ -57,6 +86,15 @@ export default async function ReportsPage() {
     const def = getReportDefinition(h.report);
     return def && canViewReport(ctx, def);
   });
+  // Only the metrics of reports this viewer may open reach the browser.
+  const statKeys = new Set<string>([
+    ...highlights.flatMap((h) => (typeof h.stat === 'string' ? [h.stat] : h.stat)),
+    ...keys.flatMap((key) => {
+      const stat = getReportDefinition(key)?.preview?.stat;
+      return stat ? [stat] : [];
+    }),
+  ]);
+  const visibleStats = Object.fromEntries(Object.entries(stats).filter(([key]) => statKeys.has(key)));
   const canBuild = canOpenReportCenter(ctx);
   const teamScope = !ctx.isHR;
 
@@ -90,12 +128,18 @@ export default async function ReportsPage() {
       {highlights.length >= 2 ? (
         <KpiGrid count={highlights.length === 3 ? 3 : 4}>
           {highlights.map((h) => {
-            const value = typeof h.stat === 'string' ? stats[h.stat] : undefined;
+            const value = typeof h.stat === 'string' ? visibleStats[h.stat] : undefined;
             return (
               <StatCard
                 key={h.report}
                 label={t(h.labelKey)}
-                value={typeof value === 'number' ? formatNumber(value, ctx.locale, { maximumFractionDigits: 0 }) : '—'}
+                value={
+                  typeof value === 'number'
+                    ? formatNumber(value, ctx.locale, {
+                        maximumFractionDigits: 0,
+                      })
+                    : '—'
+                }
                 icon={h.icon}
                 tone={h.alert && !value ? 'success' : h.tone}
                 hint={t(h.hintKey)}
@@ -106,7 +150,7 @@ export default async function ReportsPage() {
         </KpiGrid>
       ) : null}
 
-      <ReportCatalog keys={keys} stats={stats} canBuild={canBuild} />
+      <ReportCatalog keys={keys} stats={visibleStats} canBuild={canBuild} />
     </PageStack>
   );
 }

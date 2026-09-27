@@ -1,8 +1,7 @@
 'use client';
 
 import type { ColumnDef } from '@tanstack/react-table';
-import { CheckCheckIcon, CheckIcon, EyeIcon, Undo2Icon, XIcon } from 'lucide-react';
-import Link from 'next/link';
+import { CheckCheckIcon, CheckIcon, Undo2Icon, XIcon } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 import { DataTable, DataTableColumnHeader, type FilterDef } from '@/components/data-table';
@@ -123,7 +122,7 @@ export function ApprovalsTable({
           header: () => <span className="sr-only">{t('columns.actions')}</span>,
           enableSorting: false,
           enableHiding: false,
-          meta: { align: 'end', width: '9.5rem' },
+          meta: { align: 'end', width: '9rem' },
           cell: ({ row }) => {
             const caps = rowCapabilities(row.original, access);
             return (
@@ -164,13 +163,6 @@ export function ApprovalsTable({
                     onClick={() => setDecision({ row: row.original, action: 'reject' })}
                   >
                     <XIcon />
-                  </Button>
-                </SimpleTooltip>
-                <SimpleTooltip content={t('quick.open')}>
-                  <Button asChild size="icon-sm" variant="ghost" aria-label={t('quick.open')}>
-                    <Link href={`/requests/${row.original.id}`}>
-                      <EyeIcon />
-                    </Link>
                   </Button>
                 </SimpleTooltip>
               </div>

@@ -73,10 +73,10 @@ export function PermissionMatrix({ value, saved, onChange, readOnly }: Permissio
 
   return (
     <div className="overflow-x-auto">
-      <table className="w-full min-w-[36rem] table-fixed border-separate border-spacing-0 text-sm">
+      <table className="w-full min-w-[32rem] table-fixed border-separate border-spacing-0 text-sm sm:min-w-[36rem]">
         <thead>
           <tr>
-            <th scope="col" className="sticky start-0 z-10 bg-subtle px-4 py-2.5 text-start text-xs font-semibold text-muted-foreground">
+            <th scope="col" className="sticky start-0 z-10 w-[10rem] bg-subtle px-3 py-2.5 text-start text-xs font-semibold text-muted-foreground sm:w-auto sm:px-4">
               {t('module')}
             </th>
             {ACTIONS.map((a) => {
@@ -105,7 +105,7 @@ export function PermissionMatrix({ value, saved, onChange, readOnly }: Permissio
             const state = triState(countIn(perms), perms.length);
             return (
               <tr key={m} className="group">
-                <th scope="row" className="sticky start-0 z-[1] border-t border-border bg-card px-4 py-2 text-start font-normal group-hover:bg-subtle">
+                <th scope="row" className="sticky start-0 z-[1] border-t border-border bg-card px-3 py-2 text-start font-normal group-hover:bg-subtle sm:px-4">
                   <div className="flex min-w-0 items-center gap-2.5">
                     <Checkbox
                       checked={state}
@@ -113,7 +113,7 @@ export function PermissionMatrix({ value, saved, onChange, readOnly }: Permissio
                       onCheckedChange={() => setMany(perms, state !== true)}
                       aria-label={t('toggleRow', { module: tModule(m) })}
                     />
-                    <span className="flex size-7 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
+                    <span className="hidden size-7 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground sm:flex">
                       <Icon className="size-3.5" strokeWidth={1.85} aria-hidden />
                     </span>
                     <span className="min-w-0 flex-1" title={tHelp(m)}>

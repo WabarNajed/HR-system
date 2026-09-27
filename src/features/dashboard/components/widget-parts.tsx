@@ -98,9 +98,12 @@ export function WidgetListEnd({ icon: Icon, label }: { icon: LucideIcon; label: 
 /** Row of small counters at the top of a widget (label under a number). */
 export function WidgetStrip({ items }: { items: { key: string; label: ReactNode; value: ReactNode; tone?: 'danger' | 'warning' | 'default' }[] }) {
   return (
-    <div className="grid border-b border-border" style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }}>
-      {items.map((item, i) => (
-        <div key={item.key} className={cn('min-w-0 px-4 py-2.5', i > 0 && 'border-s border-border')}>
+    <div
+      className="grid grid-cols-2 gap-px border-b border-border bg-border sm:grid-cols-[repeat(var(--strip-n),minmax(0,1fr))]"
+      style={{ '--strip-n': items.length } as CSSProperties}
+    >
+      {items.map((item) => (
+        <div key={item.key} className="min-w-0 bg-card px-4 py-2.5">
           <div
             className={cn(
               'numeric text-lg leading-6 font-semibold',

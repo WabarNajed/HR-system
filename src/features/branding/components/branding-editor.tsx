@@ -29,7 +29,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { SimpleTooltip } from '@/components/ui/tooltip';
 import { useUnsavedChangesWarning } from '@/features/settings/components/use-unsaved-changes';
 import { localeShortNames, type Locale } from '@/lib/i18n/config';
-import { brandCssText, cn, DEFAULT_BRAND_COLORS, normalizeHex } from '@/lib/utils';
+import { brandCssVariables, cn, DEFAULT_BRAND_COLORS, normalizeHex } from '@/lib/utils';
 import { saveBranding } from '../actions';
 import type { BrandImageKind } from '../image-kinds';
 import { brandingFormSchema, type BrandingFormValues } from '../schemas';
@@ -65,16 +65,33 @@ type PreviewTab = 'shell' | 'login' | 'letter';
 const pick = (locale: Locale, ar: string | null | undefined, en: string | null | undefined): string | null =>
   (locale === 'ar' ? ar?.trim() || en?.trim() : en?.trim() || ar?.trim()) || null;
 
-/** Applies saved brand colours to the running document at once (the root layout re-renders too). */
+const BRAND_VARIABLES = [
+  '--brand-primary',
+  '--brand-primary-foreground',
+  '--brand-primary-dark',
+  '--brand-primary-dark-foreground',
+  '--brand-sidebar',
+  '--brand-secondary',
+  '--brand-secondary-foreground',
+  '--brand-secondary-dark',
+  '--brand-secondary-dark-foreground',
+] as const;
+
+/**
+ * Applies the saved brand colours to the running document at once (the root layout also
+ * re-renders on the next request). Variables not emitted for the defaults are set to `initial`
+ * so every `var(--brand-*, fallback)` returns to the Oasis palette.
+ */
 function applyBrandVariables(primary: string, secondary: string) {
-  const css = brandCssText({ primary, secondary });
-  let el = document.getElementById('brand-vars') as HTMLStyleElement | null;
-  if (!el && css) {
+  const vars = brandCssVariables({ primary, secondary });
+  const css = `:root{${BRAND_VARIABLES.map((k) => `${k}:${vars[k] ?? 'initial'}`).join(';')}}`;
+  let el = document.getElementById('brand-vars-live') as HTMLStyleElement | null;
+  if (!el) {
     el = document.createElement('style');
-    el.id = 'brand-vars';
+    el.id = 'brand-vars-live';
     document.head.appendChild(el);
   }
-  if (el) el.textContent = css;
+  el.textContent = css;
 }
 
 /** Settings › Branding: controls (start) + sticky live preview (end). */
@@ -356,7 +373,7 @@ export function BrandingEditor({ defaultValues, images: initialImages, company, 
           </div>
 
           {/* Live preview */}
-          <aside className="min-w-0 xl:sticky xl:top-[calc(var(--spacing-header)+1rem)]" aria-label={t('preview.title')}>
+          <aside id="brand-preview" className="min-w-0 scroll-mt-20 xl:sticky xl:top-[calc(var(--spacing-header)+1rem)]" aria-label={t('preview.title')}>
             <style dangerouslySetInnerHTML={{ __html: previewCss(primary, secondary) }} />
             <div data-brand-preview className="flex flex-col gap-3 rounded-lg border border-border bg-card p-4 shadow-card">
               <div className="flex items-center justify-between gap-2">

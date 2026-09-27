@@ -95,7 +95,7 @@ export function StepReview({
             <ImportOptionsPanel type={type} options={options} caps={caps} hasLeaveColumn={hasLeaveColumn} disabled={validating} onChange={onOptionsChange} />
             {dirty ? (
               <LoadingButton variant="secondary" className="mt-3 w-full" pending={validating} onClick={onRecheck}>
-                <RefreshCwIcon />
+                {validating ? null : <RefreshCwIcon />}
                 {t('options.apply')}
               </LoadingButton>
             ) : null}

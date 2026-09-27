@@ -28,9 +28,13 @@ export function formatValue(value: unknown, format: ValueFormat, locale: Locale,
     case 'percent':
       return formatPercent(n, locale, { fractionDigits: 1 });
     case 'days':
-      return t('reports.units.days', { value: formatNumber(n, locale, { maximumFractionDigits: 1 }) });
+      return t('reports.units.days', {
+        value: formatNumber(n, locale, { maximumFractionDigits: 1 }),
+      });
     case 'years':
-      return t('reports.units.years', { value: formatNumber(n, locale, { maximumFractionDigits: 1 }) });
+      return t('reports.units.years', {
+        value: formatNumber(n, locale, { maximumFractionDigits: 1 }),
+      });
     case 'decimal':
       return formatNumber(n, locale, { maximumFractionDigits: 1 });
     default:
@@ -47,7 +51,11 @@ export function useNumberFormat() {
       integer: (v: number) => formatNumber(v, locale, { maximumFractionDigits: 0 }),
       decimal: (v: number) => formatNumber(v, locale, { maximumFractionDigits: 1 }),
       percent: (v: number) => formatPercent(v, locale, { fractionDigits: 0 }),
-      compact: (v: number) => new Intl.NumberFormat(locale === 'ar' ? 'ar-SA-u-nu-latn' : 'en-US', { notation: 'compact', maximumFractionDigits: 1 }).format(v),
+      compact: (v: number) =>
+        new Intl.NumberFormat(locale === 'ar' ? 'ar-SA-u-nu-latn' : 'en-US', {
+          notation: 'compact',
+          maximumFractionDigits: 1,
+        }).format(v),
     }),
     [locale],
   );

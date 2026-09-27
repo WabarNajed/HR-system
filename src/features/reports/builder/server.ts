@@ -110,7 +110,10 @@ const SOURCE_IMPLS: Record<BuilderSourceKey, SourceImpl> = {
       department: named('department', 'department_id', 'department_id'),
       jobTitle: named('job_title', 'job_title_id', 'job_title_id'),
       location: named('location', 'location_id', 'location_id'),
-      costCenter: { ...named('cost_center', 'cost_center_id'), sortCol: undefined },
+      costCenter: {
+        ...named('cost_center', 'cost_center_id'),
+        sortCol: undefined,
+      },
       manager: {
         select: [{ alias: 'manager', rel: 'manager_id', cols: ['name_ar', 'name_en'] }],
         get: (row, locale) => {
@@ -153,7 +156,13 @@ const SOURCE_IMPLS: Record<BuilderSourceKey, SourceImpl> = {
         ).map(([key, column]) => [
           key,
           {
-            select: [{ alias: 'compensation', rel: 'employee_compensation', cols: [column] }],
+            select: [
+              {
+                alias: 'compensation',
+                rel: 'employee_compensation',
+                cols: [column],
+              },
+            ],
             get: (row: Row) => {
               const c = row.compensation as Record<string, unknown> | Record<string, unknown>[] | null;
               const obj = Array.isArray(c) ? c[0] : c;
@@ -172,7 +181,13 @@ const SOURCE_IMPLS: Record<BuilderSourceKey, SourceImpl> = {
         ).map(([key, column]) => [
           key,
           {
-            select: [{ alias: 'bank', rel: 'employee_bank_accounts', cols: ['bank_name', 'iban', 'is_primary'] }],
+            select: [
+              {
+                alias: 'bank',
+                rel: 'employee_bank_accounts',
+                cols: ['bank_name', 'iban', 'is_primary'],
+              },
+            ],
             get: (row: Row) => {
               const list = (row.bank as Array<Record<string, unknown>> | null) ?? [];
               const primary = list.find((b) => b.is_primary) ?? list[0];
@@ -224,7 +239,13 @@ const SOURCE_IMPLS: Record<BuilderSourceKey, SourceImpl> = {
     base: (q) => q.neq('request.status', 'draft').is('employee.archived_at', null),
     fields: {
       requestNumber: {
-        select: [{ alias: 'request', rel: 'hr_requests!inner', cols: ['request_number', 'status'] }],
+        select: [
+          {
+            alias: 'request',
+            rel: 'hr_requests!inner',
+            cols: ['request_number', 'status'],
+          },
+        ],
         get: (row) => (row.request as { request_number?: string | null } | null)?.request_number ?? null,
       },
       ...ownerFields,
@@ -234,7 +255,13 @@ const SOURCE_IMPLS: Record<BuilderSourceKey, SourceImpl> = {
       returnDate: col('return_date'),
       days: col('days'),
       requestStatus: {
-        select: [{ alias: 'request', rel: 'hr_requests!inner', cols: ['request_number', 'status'] }],
+        select: [
+          {
+            alias: 'request',
+            rel: 'hr_requests!inner',
+            cols: ['request_number', 'status'],
+          },
+        ],
         get: (row) => (row.request as { status?: string | null } | null)?.status ?? null,
         filterCol: 'request.status',
       },
@@ -300,7 +327,13 @@ const SOURCE_IMPLS: Record<BuilderSourceKey, SourceImpl> = {
     fields: {
       ...ownerFields,
       insuredDependent: {
-        select: [{ alias: 'dependent', rel: 'employee_dependents', cols: ['name_ar', 'name_en'] }],
+        select: [
+          {
+            alias: 'dependent',
+            rel: 'employee_dependents',
+            cols: ['name_ar', 'name_en'],
+          },
+        ],
         get: (row, locale) => {
           const d = row.dependent as Named;
           return d ? employeeDisplayName(d, locale) || null : null;
@@ -339,7 +372,10 @@ export const builderConfigSchema = z.object({
         field: z.string().max(64),
         op: z.string().max(32),
         value: z
-          .union([z.string().max(BUILDER_LIMITS.valueLength), z.array(z.string().max(BUILDER_LIMITS.valueLength)).max(BUILDER_LIMITS.listValues)])
+          .union([
+            z.string().max(BUILDER_LIMITS.valueLength),
+            z.array(z.string().max(BUILDER_LIMITS.valueLength)).max(BUILDER_LIMITS.listValues),
+          ])
           .nullish(),
       }),
     )
@@ -412,7 +448,8 @@ export function validateBuilderConfig(raw: unknown, ctx: SessionContext): Valida
     check(field);
     if (!field.dateRange) throw new ActionError('errors.validation');
   }
-  if (config.dateFrom && config.dateTo && config.dateFrom > config.dateTo) [config.dateFrom, config.dateTo] = [config.dateTo, config.dateFrom];
+  if (config.dateFrom && config.dateTo && config.dateFrom > config.dateTo)
+    [config.dateFrom, config.dateTo] = [config.dateTo, config.dateFrom];
 
   return { config: { ...config, columns }, source, fields };
 }
@@ -432,13 +469,23 @@ type LooseQuery = {
   in: (col: string, values: unknown[]) => LooseQuery;
   ilike: (col: string, pattern: string) => LooseQuery;
   order: (col: string, opts: { ascending: boolean; nullsFirst?: boolean }) => LooseQuery;
-  range: (from: number, to: number) => PromiseLike<{ data: Row[] | null; error: unknown; count: number | null }>;
+  range: (
+    from: number,
+    to: number,
+  ) => PromiseLike<{
+    data: Row[] | null;
+    error: unknown;
+    count: number | null;
+  }>;
 };
 
 /** Org-local (Asia/Riyadh by default) day boundary as an ISO timestamp for timestamptz filters. */
 function dayStart(iso: string, timeZone = 'Asia/Riyadh'): string {
   const probe = new Date(`${iso}T12:00:00Z`);
-  const tzName = new Intl.DateTimeFormat('en-US', { timeZone, timeZoneName: 'longOffset' })
+  const tzName = new Intl.DateTimeFormat('en-US', {
+    timeZone,
+    timeZoneName: 'longOffset',
+  })
     .formatToParts(probe)
     .find((p) => p.type === 'timeZoneName')?.value;
   const offset = tzName && /GMT[+-]\d{2}:\d{2}/.test(tzName) ? tzName.replace('GMT', '') : '+00:00';
@@ -458,7 +505,10 @@ function selectString(impls: FieldImpl[], rowId: string): string {
     for (const part of impl.select) {
       if (typeof part === 'string') base.add(part);
       else {
-        const e = embeds.get(part.alias) ?? { rel: part.rel, cols: new Set<string>() };
+        const e = embeds.get(part.alias) ?? {
+          rel: part.rel,
+          cols: new Set<string>(),
+        };
         part.cols.forEach((c) => e.cols.add(c));
         embeds.set(part.alias, e);
       }
@@ -467,10 +517,16 @@ function selectString(impls: FieldImpl[], rowId: string): string {
   return [...base, ...Array.from(embeds, ([alias, e]) => `${alias}:${e.rel}(${Array.from(e.cols).join(',')})`)].join(',');
 }
 
-function applyFilter(q: LooseQuery, field: BuilderField, impl: FieldImpl, op: string, value: string | string[] | null | undefined): LooseQuery {
+function applyFilter(
+  q: LooseQuery,
+  field: BuilderField,
+  impl: FieldImpl,
+  op: string,
+  value: string | string[] | null | undefined,
+): LooseQuery {
   const path = impl.filterCol;
   if (!path) throw new ActionError('errors.validation');
-  const v = Array.isArray(value) ? value : value ?? '';
+  const v = Array.isArray(value) ? value : (value ?? '');
   const isDateTime = field.type === 'datetime';
   switch (op) {
     case 'isEmpty':
@@ -522,7 +578,9 @@ function buildQuery(supabase: ServerSupabaseClient, validated: ValidatedBuilder,
   if (source.key === 'leave_requests') used.set('requestNumber', impl.fields.requestNumber!);
 
   const from = supabase.from as unknown as (table: string) => LooseQuery;
-  let q = from.call(supabase, impl.table).select(selectString(Array.from(used.values()), impl.rowId), count ? { count: 'exact' } : undefined);
+  let q = from
+    .call(supabase, impl.table)
+    .select(selectString(Array.from(used.values()), impl.rowId), count ? { count: 'exact' } : undefined);
   q = impl.base(q);
 
   for (const flt of config.filters) {
@@ -542,7 +600,11 @@ function buildQuery(supabase: ServerSupabaseClient, validated: ValidatedBuilder,
 
   const sortImpl = config.sort ? impl.fields[config.sort.field] : undefined;
   const sortCol = sortImpl?.sortCol ? (typeof sortImpl.sortCol === 'function' ? sortImpl.sortCol(locale) : sortImpl.sortCol) : null;
-  if (sortCol && config.sort) q = q.order(sortCol, { ascending: config.sort.dir === 'asc', nullsFirst: false });
+  if (sortCol && config.sort)
+    q = q.order(sortCol, {
+      ascending: config.sort.dir === 'asc',
+      nullsFirst: false,
+    });
   q = q.order(impl.rowId, { ascending: true });
   return q;
 }
@@ -582,7 +644,10 @@ export async function runBuilderQueryAll(
   const out: Row[] = [];
   for (let from = 0; from < limit; from += 1000) {
     const to = Math.min(from + 1000, limit) - 1;
-    const { rows } = await runBuilderQuery(supabase, validated, locale, { from, to });
+    const { rows } = await runBuilderQuery(supabase, validated, locale, {
+      from,
+      to,
+    });
     out.push(...rows);
     if (rows.length < to - from + 1) break;
   }

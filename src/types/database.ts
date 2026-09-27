@@ -3366,6 +3366,7 @@ export type Database = {
             department_ar: string
             department_en: string
             department_id: string
+            employee_id: string
             employee_number: string
             employment_status: string
             employment_type: string
@@ -3550,7 +3551,8 @@ export type Database = {
             actor_email: string
             actor_id: string
             actor_key: string
-            actor_name: string
+            actor_name_ar: string
+            actor_name_en: string
             changes: number
             employee_number: string
             events: number

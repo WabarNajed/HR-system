@@ -4,8 +4,31 @@ import { CheckCircle2Icon, DownloadIcon, LockIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { SimpleTooltip } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
+import { getSchema } from '../../lib/schemas';
 import type { ImportType } from '../../lib/types';
 import { templateHref, TYPE_GROUPS, TYPE_ICONS } from '../type-meta';
+import { useFieldLabel } from '../use-dm';
+
+const FEATURED_EMPLOYEE_COLUMNS = ['national_id', 'name_ar', 'nationality', 'iqama_profession', 'passport_number', 'iqama_expiry_date', 'iqama_expiry_hijri', 'is_outside_kingdom', 'company_email', 'leave_balance'];
+
+/** Key columns shown on the featured (single) card of a group. */
+function KeyColumns({ type }: { type: ImportType }) {
+  const label = useFieldLabel(type);
+  const all = getSchema(type).fields.filter((f) => f.template !== false && !f.informational);
+  const keys = (type === 'employees' ? FEATURED_EMPLOYEE_COLUMNS : all.slice(0, 9).map((f) => f.key)).slice(0, 10);
+  return (
+    <span className="mt-2.5 hidden flex-wrap gap-1 md:flex">
+      {keys.map((k) => (
+        <span key={k} className="rounded-sm bg-subtle px-1.5 py-0.5 text-xs text-muted-foreground ring-1 ring-border ring-inset">
+          {label(k)}
+        </span>
+      ))}
+      {all.length > keys.length ? (
+        <bdi dir="ltr" className="rounded-sm px-1.5 py-0.5 text-xs font-medium text-muted-foreground numeric">+{all.length - keys.length}</bdi>
+      ) : null}
+    </span>
+  );
+}
 
 export function StepType({
   allowed,
@@ -29,7 +52,14 @@ export function StepType({
       {groups.map((group) => (
         <section key={group.key} className="flex flex-col gap-2.5">
           <h3 className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">{t(`groups.${group.key}`)}</h3>
-          <div className={cn('grid grid-cols-1 gap-2.5 sm:grid-cols-2', group.types.length > 2 && 'xl:grid-cols-3')}>
+          <div
+            className={cn(
+              'grid grid-cols-1 gap-2.5',
+              group.types.length > 1 && 'sm:grid-cols-2',
+              group.types.length === 4 && 'xl:grid-cols-4',
+              group.types.length > 4 && 'xl:grid-cols-3',
+            )}
+          >
             {group.types.map((type) => {
               const Icon = TYPE_ICONS[type];
               const can = allowed.includes(type);
@@ -52,6 +82,7 @@ export function StepType({
                       {!can ? <LockIcon className="size-3.5 shrink-0 text-muted-foreground" aria-hidden /> : null}
                     </span>
                     <span className="mt-0.5 line-clamp-2 block text-meta text-muted-foreground">{t(`types.${type}.description`)}</span>
+                    {group.types.length === 1 ? <KeyColumns type={type} /> : null}
                   </span>
                 </div>
               );

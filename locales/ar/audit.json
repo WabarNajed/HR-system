@@ -55,7 +55,9 @@
     "metadata": "تفاصيل",
     "empty": "غير مسجل",
     "masked": "محجوب",
-    "close": "إغلاق"
+    "close": "إغلاق",
+    "value": "القيمة",
+    "previousValue": "القيمة السابقة"
   },
   "categories": {
     "access": "الدخول والحسابات",
@@ -158,7 +160,16 @@
     "unlink": "فك ربط",
     "renew": "تجديد",
     "rollback": "تراجع عن",
-    "complete_setup": "إكمال"
+    "complete_setup": "إكمال",
+    "export": "تصدير",
+    "import": "استيراد",
+    "reveal": "كشف",
+    "expiry_check": "فحص انتهاء",
+    "reset_denied": "رفض إعادة تعيين",
+    "invitation_sent": "إرسال دعوة",
+    "password_reset_sent": "إرسال إعادة تعيين كلمة المرور",
+    "iban_reveal": "كشف الآيبان",
+    "permissions_update": "تحديث صلاحيات"
   },
   "actionLabels": {
     "auth": {
@@ -172,7 +183,9 @@
       "roles_update": "تغيير أدوار مستخدم",
       "enable": "تفعيل مستخدم",
       "disable": "تعطيل مستخدم",
-      "bootstrap_super_admin": "إعداد المسؤول الأعلى"
+      "bootstrap_super_admin": "إعداد المسؤول الأعلى",
+      "invitation_sent": "إرسال دعوة",
+      "password_reset_sent": "إرسال رابط إعادة تعيين كلمة المرور"
     },
     "registration": {
       "submit": "تقديم طلب تسجيل",
@@ -210,7 +223,22 @@
       "upload": "رفع مستند",
       "approve": "اعتماد مستند",
       "reject": "رفض مستند",
-      "replace_file": "استبدال ملف مستند"
+      "replace_file": "استبدال ملف مستند",
+      "expiry_check": "فحص انتهاء المستندات"
+    },
+    "import": {
+      "any": "استيراد بيانات"
+    },
+    "employee": {
+      "iban_reveal": "كشف رقم الآيبان",
+      "import": "استيراد موظفين"
+    },
+    "backup": {
+      "export": "تصدير نسخة احتياطية",
+      "reset_denied": "رفض محاولة إعادة التهيئة"
+    },
+    "role": {
+      "permissions_update": "تحديث صلاحيات دور"
     }
   },
   "activity": {
@@ -231,6 +259,10 @@
     "changedFields": "{count, plural, one {حقل واحد معدل} two {حقلان معدلان} few {# حقول معدلة} many {# حقلًا معدلًا} other {# حقل معدل}}",
     "requestEvent": "{action} · {number}",
     "documentUploaded": "رفع مستند",
-    "documentStatus": "مستند {status}"
+    "documentStatus": "مستند {status}",
+    "totalEvents": "حدث مسجل",
+    "lastEvent": "آخر نشاط",
+    "byCategory": "حسب الفئة",
+    "otherCategory": "أخرى"
   }
 }

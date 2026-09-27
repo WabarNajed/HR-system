@@ -288,7 +288,7 @@ function RegistrationSheet({
                   {r.status === 'rejected' ? <XCircleIcon /> : <MessageCircleQuestionIcon />}
                   <AlertTitle>{r.status === 'rejected' ? t('sheet.rejectionReason') : t('sheet.infoNote')}</AlertTitle>
                   <AlertDescription>
-                    <p className="whitespace-pre-line">{r.reviewNote}</p>
+                    <p dir="auto" className="whitespace-pre-line text-start">{r.reviewNote}</p>
                     {r.reviewedAt ? <p className="mt-1 text-xs opacity-80 numeric">{fmt.dateTime(r.reviewedAt)}</p> : null}
                   </AlertDescription>
                 </Alert>
@@ -302,7 +302,7 @@ function RegistrationSheet({
                     { label: tc('email'), value: r.email, ltr: true, span: 2 },
                     { label: tc('mobile'), value: r.mobile, ltr: true },
                     { label: t('columns.enteredId'), value: r.enteredId, ltr: true },
-                    { label: t('sheet.note'), value: r.note, span: 2, hidden: !r.note },
+                    { label: t('sheet.note'), value: r.note ? <span dir="auto" className="block whitespace-pre-line">{r.note}</span> : null, span: 2, hidden: !r.note },
                     { label: t('sheet.updated'), value: fmt.dateTime(r.updatedAt), hidden: r.updatedAt === r.createdAt },
                   ]}
                 />

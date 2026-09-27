@@ -191,22 +191,25 @@
   font-weight: 600;
   color: var(--secondary-soft-foreground);
   pointer-events: none;
-  content: var(--cond-other, '');
 }
 
-.cert-editor .ProseMirror [data-if='include_salary']::before {
+.cert-editor .ProseMirror [data-if='include_salary']::before,
+.cert-editor .ProseMirror [data-if='include_salary']:not(table)::before {
   content: var(--cond-salary, '');
 }
 
-.cert-editor .ProseMirror [data-if='include_allowances']::before {
+.cert-editor .ProseMirror [data-if='include_allowances']::before,
+.cert-editor .ProseMirror [data-if='include_allowances']:not(table)::before {
   content: var(--cond-allowances, '');
 }
 
-.cert-editor .ProseMirror [data-if='addressed_to']::before {
+.cert-editor .ProseMirror [data-if='addressed_to']::before,
+.cert-editor .ProseMirror [data-if='addressed_to']:not(table)::before {
   content: var(--cond-addressed-to, '');
 }
 
-.cert-editor .ProseMirror [data-if-not='addressed_to']::before {
+.cert-editor .ProseMirror [data-if-not='addressed_to']::before,
+.cert-editor .ProseMirror [data-if-not='addressed_to']:not(table)::before {
   content: var(--cond-no-addressed-to, '');
 }
 
@@ -219,4 +222,17 @@
 .cert-editor .ProseMirror [data-if] > p:last-child,
 .cert-editor .ProseMirror [data-if-not] > p:last-child {
   margin-block-end: 0;
+}
+
+/* Conditional tables: the condition label renders as a small caption above the table. */
+.cert-editor .ProseMirror table[data-if]::before,
+.cert-editor .ProseMirror table[data-if-not]::before {
+  display: table-caption;
+  caption-side: top;
+  text-align: start;
+  padding-block-end: 0.35em;
+  font-size: 0.6875rem;
+  line-height: 1.2;
+  font-weight: 600;
+  color: var(--secondary-soft-foreground);
 }

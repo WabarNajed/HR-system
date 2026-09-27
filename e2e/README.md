@@ -33,7 +33,7 @@ compiles it, so a cold run is slower than a warm one.
 
 | Path | Purpose |
 |---|---|
-| `global.setup.ts` | `setup` project: signs in super admin, HR admin, HR officer, manager and employee once and stores the sessions in `e2e/.auth/<role>.json` (git-ignored). |
+| `global.setup.ts` | `setup` project: signs in super admin, HR admin, HR officer, manager and employee once and stores the sessions in `e2e/.auth/<role>.json` (git-ignored). The `app` project (every spec except the sign-in flows) depends on it; the `auth` project (`auth.spec.ts`, `language.spec.ts`) signs in by itself. |
 | `helpers/users.ts` | Fixture accounts, password, `storageStatePath(role)`. |
 | `helpers/auth.ts` | `login(page, role, { next, locale })`, `logout(page)`, `submitLogin`, `setLocaleCookie`, `expectDocumentLocale` (`<html lang dir>`). |
 | `helpers/page-health.ts` | `watchPageHealth(page)`: console errors, uncaught page errors and 5xx responses. |

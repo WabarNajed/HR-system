@@ -5,7 +5,7 @@ import type { ColumnDef } from '@tanstack/react-table';
 import { PencilIcon, PlusIcon, ShieldPlusIcon, Trash2Icon } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
-import { useMemo, useState, useTransition } from 'react';
+import { useMemo, useRef, useState, useTransition, type FormEvent } from 'react';
 import { useForm, useFormContext, type FieldPath } from 'react-hook-form';
 import { toast } from 'sonner';
 import { actionsColumn, DataTable } from '@/components/data-table';
@@ -19,6 +19,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Sheet, SheetBody, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import type { ActionResult } from '@/lib/action';
 import { useDateFormat } from '@/lib/i18n/use-date-format';
 import { employeeDisplayName } from '@/lib/i18n/localized';
 import { deleteInsurance, saveInsurance } from '../../actions';
@@ -108,11 +109,13 @@ export function InsuranceManager({
         meta: { label: t('fields.policyNumber') },
         cell: ({ row }) => (
           <div className="leading-tight">
-            {row.original.policy_number ? <bdi dir="ltr" className="block tabular-nums">{row.original.policy_number}</bdi> : dash}
+            <div>{row.original.policy_number ? <bdi dir="ltr" className="tabular-nums">{row.original.policy_number}</bdi> : dash}</div>
             {row.original.member_number ? (
-              <bdi dir="ltr" className="mt-0.5 block text-xs text-muted-foreground tabular-nums">
-                {row.original.member_number}
-              </bdi>
+              <div className="mt-0.5 text-xs text-muted-foreground">
+                <bdi dir="ltr" className="tabular-nums">
+                  {row.original.member_number}
+                </bdi>
+              </div>
             ) : null}
           </div>
         ),
@@ -275,15 +278,22 @@ function InsuranceForm({
   const te = useTranslations('enums');
   const ts = useTranslations('statuses.insurance');
   const tc = useTranslations('common');
+  const tToast = useTranslations('employees.toast');
   const locale = useLocale();
   const resolve = useErrorMessage();
   const [pending, startTransition] = useTransition();
   const form = useForm<InsuranceFormValues>({ resolver: zodResolver(insuranceFormSchema), defaultValues: defaults, mode: 'onTouched' });
 
-  const submit = form.handleSubmit((values) =>
+  // Guards double submits in the gap before `pending` renders (the sheet closes on success).
+  const submitting = useRef(false);
+  const onValid = (values: InsuranceFormValues) =>
     startTransition(async () => {
-      const result = await saveInsurance({ employeeId, id: policyId, values });
+      const result: ActionResult = await saveInsurance({ employeeId, id: policyId, values }).catch(() => ({
+        ok: false,
+        error: 'errors.generic',
+      }));
       if (!result.ok) {
+        submitting.current = false;
         for (const [name, message] of Object.entries(result.fieldErrors ?? {})) {
           form.setError(name.replace(/^values\./, '') as FieldPath<InsuranceFormValues>, { type: 'server', message });
         }
@@ -292,8 +302,17 @@ function InsuranceForm({
       }
       toast.success(resolve(result.message));
       onSaved();
-    }),
-  );
+    });
+  const submit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (submitting.current) return;
+    submitting.current = true;
+    void form.handleSubmit(onValid, () => {
+      submitting.current = false;
+      toast.error(tToast('invalidForm'));
+    })(event);
+  };
 
   return (
     <Form {...form}>

@@ -44,14 +44,23 @@ export default async function PendingApprovalPage() {
           <MessageCircleQuestionIcon />
           <AlertTitle>{t('hrNote')}</AlertTitle>
           <AlertDescription>
-            <p className="whitespace-pre-line">{ctx.profile.reviewNote || t('noNote')}</p>
+            <p dir="auto" className="whitespace-pre-line text-start">{ctx.profile.reviewNote || t('noNote')}</p>
           </AlertDescription>
         </Alert>
       ) : null}
 
       <div className="rounded-lg border border-border bg-card p-4 shadow-card">
         <div className="flex items-center justify-between gap-3 border-b border-border pb-3">
-          <div className="min-w-0 truncate text-meta text-muted-foreground">{t('signedInAs', { email: ctx.user.email ?? '' })}</div>
+          <div className="min-w-0 truncate text-meta text-muted-foreground">
+            {t.rich('signedInAs', {
+              email: ctx.user.email ?? '',
+              address: (chunks) => (
+                <bdi dir="ltr" className="font-medium text-foreground">
+                  {chunks}
+                </bdi>
+              ),
+            })}
+          </div>
           <StatusBadge domain="profile" status={status} />
         </div>
         <ol className="mt-4 flex flex-col gap-0">

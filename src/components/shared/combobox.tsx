@@ -2,7 +2,7 @@
 
 import { CheckIcon, ChevronsUpDownIcon, Loader2Icon, XIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
@@ -93,8 +93,17 @@ export function Combobox(props: ComboboxProps) {
   const belowMinChars = Boolean(loadOptions) && query.length < minChars;
   const options = loadOptions ? (belowMinChars ? [] : asyncOptions) : (staticOptions ?? []);
 
+  // Latest loader in a ref: callers often pass an inline function, which must not restart the
+  // search (or loop) on every parent render.
+  const loadRef = useRef(loadOptions);
   useEffect(() => {
-    if (!open || !loadOptions || query.length < minChars) return;
+    loadRef.current = loadOptions;
+  });
+  const hasLoader = Boolean(loadOptions);
+
+  useEffect(() => {
+    const load = loadRef.current;
+    if (!open || !load || query.length < minChars) return;
     const controller = new AbortController();
     let timeoutId: number | undefined;
     const timer = window.setTimeout(async () => {
@@ -102,7 +111,7 @@ export function Combobox(props: ComboboxProps) {
       setFailed(false);
       timeoutId = window.setTimeout(() => controller.abort(), timeout);
       try {
-        const result = await loadOptions(query, controller.signal);
+        const result = await load(query, controller.signal);
         if (!controller.signal.aborted) setAsyncOptions(result);
       } catch {
         setFailed(true);
@@ -116,7 +125,7 @@ export function Combobox(props: ComboboxProps) {
       window.clearTimeout(timeoutId);
       controller.abort();
     };
-  }, [open, query, loadOptions, minChars, debounce, timeout]);
+  }, [open, query, hasLoader, minChars, debounce, timeout]);
 
   const remember = (option: ComboboxOption | undefined) => {
     if (option) setRemembered((r) => [...r.filter((x) => x.value !== option.value), option]);

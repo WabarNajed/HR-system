@@ -56,7 +56,7 @@ export function IssuedCertificateList({
                     </bdi>
                     <StatusBadge domain="certificate" status={c.status} size="sm" />
                   </div>
-                  <div className="mt-1 truncate text-meta text-muted-foreground">
+                  <div className="mt-1 text-meta text-muted-foreground">
                     {showTemplate ? `${labels.type(c.certificate_type)} · ` : ''}
                     <span className="numeric">{fmt.date(c.issue_date)}</span> · {labels.language(c.language)}
                   </div>

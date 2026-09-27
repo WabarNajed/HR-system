@@ -33,7 +33,7 @@ export async function ComplianceRow() {
   const n = (v: number) => formatInteger(v, locale);
 
   return (
-    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:gap-4 xl:grid-cols-4">
+    <div className="grid grid-cols-2 gap-3 md:gap-4 xl:grid-cols-4">
       {KINDS.map(({ key, icon: Icon }) => {
         const c = expiring[key];
         const expired = c?.expired ?? 0;
@@ -48,7 +48,7 @@ export async function ComplianceRow() {
         ];
         return (
           <section key={key} className="flex min-w-0 flex-col rounded-lg border border-border bg-card shadow-card" aria-label={t(`kinds.${key}`)}>
-            <div className="flex items-center gap-2.5 px-4 pt-3.5 pb-2">
+            <div className="flex items-center gap-2 px-3 pt-3 pb-2 sm:gap-2.5 sm:px-4 sm:pt-3.5">
               <span
                 className={cn(
                   'flex size-7 shrink-0 items-center justify-center rounded-md',
@@ -58,14 +58,14 @@ export async function ComplianceRow() {
                 <Icon className="size-4" strokeWidth={1.9} aria-hidden />
               </span>
               <h3 className="min-w-0 flex-1 truncate text-sm font-semibold text-foreground">{t(`kinds.${key}`)}</h3>
-              {clear ? <span className="text-xs font-medium text-success">{t('allClear')}</span> : null}
+              {clear ? <span className="hidden text-xs font-medium text-success sm:inline">{t('allClear')}</span> : null}
             </div>
             <div className="grid grid-cols-3 divide-x divide-border border-t border-border">
               {cells.map((cell) => (
                 <Link
                   key={cell.label}
                   href={cell.href}
-                  className="group/cell flex min-w-0 flex-col px-3 py-2.5 outline-none transition-colors hover:bg-accent/60 focus-visible:bg-accent"
+                  className="group/cell flex min-w-0 flex-col px-2 py-2.5 outline-none sm:px-3 transition-colors hover:bg-accent/60 focus-visible:bg-accent"
                 >
                   <span className={cn('numeric text-lg leading-6 font-semibold', cell.tone)}>{n(cell.value)}</span>
                   <span className="truncate text-[0.6875rem] text-muted-foreground group-hover/cell:text-foreground">{cell.label}</span>

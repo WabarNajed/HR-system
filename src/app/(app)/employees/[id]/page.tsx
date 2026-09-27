@@ -31,6 +31,7 @@ import {
   getChildCounts,
   getDependents,
   getEmployeeRecord,
+  getEmployeeTitle,
   getInsurance,
   getManagerCard,
   getOrgCurrency,
@@ -39,7 +40,11 @@ import {
 } from '@/features/employees/queries';
 import { PROFILE_TABS, type ProfileTab } from '@/features/employees/types';
 
-export const generateMetadata = (): Promise<Metadata> => pageMetadata('employees.title');
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await params;
+  const name = isUuid(id) ? await getEmployeeTitle(id) : null;
+  return name ? { title: name } : pageMetadata('employees.title');
+}
 
 export default async function EmployeeProfilePage({
   params,

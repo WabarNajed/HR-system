@@ -194,6 +194,7 @@ function DecisionForm({
                 if (!res.ok) throw new Error(res.error);
                 return (res.data ?? []).map(assigneeOption);
               }}
+              timeout={20000}
               placeholder={t('reassign.placeholder')}
               searchPlaceholder={t('reassign.search')}
               emptyText={t('reassign.empty')}

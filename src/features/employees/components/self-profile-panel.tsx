@@ -117,6 +117,7 @@ export async function SelfProfilePanel({ employeeId }: { employeeId: string | nu
         <SectionCard title={t('self.employment')} icon={<BriefcaseIcon />}>
           <KeyValueGrid
             columns={2}
+            className="max-sm:grid-cols-2"
             items={[
               { label: t('fields.employeeNumber'), value: employee.employee_number, ltr: true },
               { label: t('fields.employmentStatus'), value: <StatusBadge domain="employment" status={employee.employment_status} /> },
@@ -135,6 +136,7 @@ export async function SelfProfilePanel({ employeeId }: { employeeId: string | nu
         <SectionCard title={t('self.identity')} icon={<IdCardIcon />}>
           <KeyValueGrid
             columns={2}
+            className="max-sm:grid-cols-2"
             items={[
               { label: t('fields.nameAr'), value: employee.name_ar },
               { label: t('fields.nameEn'), value: employee.name_en },
@@ -187,7 +189,7 @@ export async function SelfProfilePanel({ employeeId }: { employeeId: string | nu
           title={t('self.dependents')}
           icon={<HeartHandshakeIcon />}
           dense
-          actions={<span className="text-meta text-muted-foreground">{t('dependents.summary', { count: dependents.length })}</span>}
+          actions={dependents.length ? <span className="text-meta text-muted-foreground">{t('dependents.summary', { count: dependents.length })}</span> : null}
           className="xl:col-span-2"
         >
           {dependents.length ? (

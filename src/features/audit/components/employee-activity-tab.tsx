@@ -7,16 +7,18 @@ import { SectionCard } from '@/components/shared/section-card';
 import type { TimelineTone } from '@/components/shared/timeline';
 import { Button } from '@/components/ui/button';
 import { getSessionContext, type SessionContext } from '@/lib/auth/session';
+import { formatRelative } from '@/lib/dates';
+import { formatInteger } from '@/lib/format';
 import { localized } from '@/lib/i18n/localized';
 import { can } from '@/lib/permissions';
 import { createClient } from '@/lib/supabase/server';
-import type { AuditTranslator } from '../labels';
+import { auditCategory, auditCategoryLabel, type AuditCategory, type AuditTranslator } from '../labels';
 import type { AuditEventView } from '../types';
 import { AUDIT_COLUMNS, getActorProfiles, type AuditRow } from '../queries';
 import { toAuditView } from '../view';
 import { AuditActivityTimeline, SelfActivityTimeline, type SelfActivityItem } from './activity-timeline';
 
-const PAGE = 25;
+const PAGE = 20;
 
 const ACTION_TONES: Record<string, TimelineTone> = {
   create: 'neutral',
@@ -49,7 +51,7 @@ type HistoryRow = {
 type DocumentRow = { id: string; document_type: string; status: string; created_at: string };
 
 type ActivityResult =
-  | { kind: 'audit'; events: AuditEventView[]; total: number }
+  | { kind: 'audit'; events: AuditEventView[]; total: number; breakdown: { category: AuditCategory | 'other'; count: number }[] }
   | { kind: 'self'; items: SelfActivityItem[] }
   | { kind: 'error' };
 
@@ -66,20 +68,35 @@ async function loadActivity(
     const supabase = await createClient({ timeoutMs: 8000 });
 
     if (canAudit) {
-      const { data, error, count } = await supabase
-        .from('audit_logs')
-        .select(AUDIT_COLUMNS, { count: 'exact' })
-        .eq('employee_id', employeeId)
-        .order('created_at', { ascending: false })
-        .order('id', { ascending: false })
-        .limit(PAGE);
-      if (error) throw error;
-      const rows = (data ?? []) as AuditRow[];
+      const [list, recent] = await Promise.all([
+        supabase
+          .from('audit_logs')
+          .select(AUDIT_COLUMNS, { count: 'exact' })
+          .eq('employee_id', employeeId)
+          .order('created_at', { ascending: false })
+          .order('id', { ascending: false })
+          .limit(PAGE),
+        // Category breakdown of the latest 1,000 events (summary panel).
+        supabase.from('audit_logs').select('action').eq('employee_id', employeeId).order('created_at', { ascending: false }).limit(1000),
+      ]);
+      if (list.error) throw list.error;
+      if (recent.error) throw recent.error;
+      const rows = (list.data ?? []) as AuditRow[];
       const actors = await getActorProfiles(
         supabase,
         rows.map((r) => r.actor_id).filter((v): v is string => Boolean(v)),
       );
-      return { kind: 'audit', events: rows.map((r) => toAuditView(r, ctx, tr, actors)), total: count ?? rows.length };
+      const byCategory = new Map<AuditCategory | 'other', number>();
+      for (const r of recent.data ?? []) {
+        const c = auditCategory(r.action) ?? 'other';
+        byCategory.set(c, (byCategory.get(c) ?? 0) + 1);
+      }
+      return {
+        kind: 'audit',
+        events: rows.map((r) => toAuditView(r, ctx, tr, actors)),
+        total: list.count ?? rows.length,
+        breakdown: [...byCategory.entries()].sort((a, b) => b[1] - a[1]).map(([category, count]) => ({ category, count })),
+      };
     }
 
     // Self: own request history + own documents (RLS-scoped reads).
@@ -196,7 +213,44 @@ export async function EmployeeActivityTab({ employeeId }: { employeeId: string }
         }
       >
         {result.events.length ? (
-          <AuditActivityTimeline events={result.events} />
+          <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_18rem]">
+            <AuditActivityTimeline events={result.events} />
+            <aside className="flex flex-col gap-4 xl:border-s xl:border-border xl:ps-6">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="rounded-lg bg-subtle px-3 py-2.5">
+                  <div className="numeric text-xl font-semibold text-foreground">{formatInteger(result.total, ctx.locale)}</div>
+                  <div className="text-xs text-muted-foreground">{t('activity.totalEvents')}</div>
+                </div>
+                <div className="rounded-lg bg-subtle px-3 py-2.5">
+                  <div className="text-sm font-semibold text-foreground">{formatRelative(result.events[0]!.createdAt, ctx.locale)}</div>
+                  <div className="text-xs text-muted-foreground">{t('activity.lastEvent')}</div>
+                </div>
+              </div>
+              <div>
+                <h3 className="mb-2 text-xs font-semibold text-muted-foreground">{t('activity.byCategory')}</h3>
+                <ul className="flex flex-col gap-2">
+                  {result.breakdown.map(({ category, count }) => {
+                    const max = result.breakdown[0]?.count || 1;
+                    const label = category === 'other' ? t('activity.otherCategory') : auditCategoryLabel(tRoot as unknown as AuditTranslator, category);
+                    const href = category === 'other' ? auditHref : `${auditHref}&category=${category}`;
+                    return (
+                      <li key={category}>
+                        <Link href={href} className="-mx-2 block rounded-md px-2 py-1 hover:bg-accent/60 focus-visible:bg-accent focus-visible:outline-none">
+                          <div className="flex items-center justify-between gap-2 text-[0.8125rem]">
+                            <span className="truncate text-foreground">{label}</span>
+                            <span className="numeric font-semibold text-foreground">{formatInteger(count, ctx.locale)}</span>
+                          </div>
+                          <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-muted" aria-hidden>
+                            <div className="h-full rounded-full bg-primary" style={{ width: `${Math.max(4, (count / max) * 100)}%` }} />
+                          </div>
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            </aside>
+          </div>
         ) : (
           <EmptyState icon={HistoryIcon} tone="neutral" title={t('activity.empty')} description={t('activity.emptyDescription')} />
         )}

@@ -28,25 +28,34 @@
     "expired": "Expired",
     "expiredHint": "Needs renewal now",
     "missing": "Missing documents",
-    "missingHint": "{count, plural, =0 {All employees complete} one {# employee affected} other {# employees affected}}",
+    "missingHint": "{count, plural, =0 {All employees complete} one {# employee} other {# employees}}",
     "uploaded": "Documents on file",
-    "uploadedHint": "{count, plural, =0 {None uploaded this month} other {# uploaded this month}}",
+    "uploadedHint": "{count, plural, =0 {None this month} other {# this month}}",
     "pending": "Pending review",
     "pendingHint": "Awaiting HR review",
     "myTotal": "My documents",
     "myTotalHint": "{count, plural, =0 {Nothing pending review} other {# pending review}}",
-    "myExpiring": "Expiring within 30 days",
-    "myExpiringHint": "Across your records and documents",
+    "myExpiring": "Expiring soon",
+    "myExpiringHint": "Within the next 30 days",
     "myExpired": "Expired",
-    "myExpiredHint": "Renew and upload the new copy",
-    "myRejected": "Rejected uploads",
-    "myRejectedHint": "See the reason and upload again"
+    "myExpiredHint": "Renew and re-upload",
+    "myRejected": "Rejected",
+    "myRejectedHint": "Upload a corrected copy",
+    "expiringSoonShort": "Expiring soon",
+    "missingShort": "Missing",
+    "uploadedShort": "On file"
   },
   "tabs": {
     "documents": "Documents",
     "expiry": "Expiry monitor",
     "missing": "Missing documents",
     "review": "Review queue"
+  },
+  "tabsShort": {
+    "documents": "Documents",
+    "expiry": "Expiry",
+    "missing": "Missing",
+    "review": "Review"
   },
   "fields": {
     "employee": "Employee",
@@ -84,7 +93,7 @@
     "notes": "Optional context for HR…",
     "rejectReason": "Explain what needs to be corrected…",
     "approveNote": "Optional note for the record…",
-    "searchDocuments": "Search employee, document number or file…",
+    "searchDocuments": "Search employee or document…",
     "searchMyDocuments": "Search type, number or file…",
     "searchExpiry": "Search employee, dependent or reference…",
     "searchMissing": "Search employee…"
@@ -247,7 +256,7 @@
     "guide1": "Upload a clear scan or photo — PDF, JPG, PNG or WebP up to 10 MB.",
     "guide2": "HR reviews each upload and adds approved documents to your file.",
     "guide3": "If a document is rejected, you'll see the reason and can upload a corrected copy.",
-    "rejectedReason": "Reason: {reason}"
+    "reasonLabel": "Reason"
   },
   "profileTab": {
     "complianceTitle": "Compliance",

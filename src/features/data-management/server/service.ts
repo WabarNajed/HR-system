@@ -119,12 +119,17 @@ function text(v: unknown): string | null {
 
 /** Title / subtitle shown for a row in the review tables. */
 export function rowLabel(type: ImportType, mapped: MappedRow | null, raw: Record<string, JsonCell>): { title: string; subtitle: string | null } {
+  const label = baseRowLabel(type, mapped, raw);
+  return label.title ? label : { title: label.subtitle ?? '', subtitle: null };
+}
+
+function baseRowLabel(type: ImportType, mapped: MappedRow | null, raw: Record<string, JsonCell>): { title: string; subtitle: string | null } {
   const v = mapped?.values ?? {};
   const firstRaw = Object.values(raw).map((x) => cellText(x)).find(Boolean) ?? '';
   switch (type) {
     case 'employees':
       return {
-        title: text(v.name_ar) ?? text(v.name_en) ?? firstRaw,
+        title: text(v.name_ar) ?? text(v.name_en) ?? '',
         subtitle: [text(v.employee_number), text(v.national_id)].filter(Boolean).join(' · ') || null,
       };
     case 'departments':

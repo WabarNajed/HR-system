@@ -39,7 +39,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useDateFormat } from '@/lib/i18n/use-date-format';
-import { employeeDisplayName, localized } from '@/lib/i18n/localized';
+import { employeeAlternateName, employeeDisplayName, localized } from '@/lib/i18n/localized';
 import { fileRouteUrl } from '@/lib/storage';
 import { EMPLOYMENT_STATUSES, EMPLOYMENT_TYPES, GENDERS, IQAMA_FILTER_BUCKETS, type DirectoryRow, type Option } from '../types';
 import { ArchiveEmployeeDialog, type ArchiveTarget } from './archive-employee-dialog';
@@ -96,7 +96,7 @@ export function EmployeesTable({
           return (
             <EmployeeCell
               employee={{ id: r.id, name_ar: r.name_ar, name_en: r.name_en, avatarUrl: avatarUrl(r.avatar_path) }}
-              subtitle={r.company_email ? <bdi dir="ltr">{r.company_email}</bdi> : t('directory.noEmail')}
+              subtitle={r.company_email ? <bdi dir="ltr">{r.company_email}</bdi> : employeeAlternateName(r, locale)}
               className="max-w-[15rem]"
               addon={
                 r.archived_at ? (
@@ -157,6 +157,11 @@ export function EmployeesTable({
         cell: ({ row }) => <StatusBadge domain="employment" status={row.original.employment_status} size="sm" />,
       },
     ];
+    if (!orgView) {
+      // Team view: every row reports to the viewer — the manager column adds nothing.
+      const i = cols.findIndex((c) => c.id === 'manager');
+      if (i >= 0) cols.splice(i, 1);
+    }
     if (orgView) {
       cols.push({
         id: 'iqama_expiry_date',
@@ -234,7 +239,14 @@ export function EmployeesTable({
         const archived = Boolean(r.archived_at);
         const actions: RowAction<DirectoryRow>[] = [
           { label: t('actions.view'), icon: EyeIcon, href: `/employees/${r.id}` },
-          { label: t('actions.edit'), icon: PencilIcon, href: `/employees/${r.id}/edit`, hidden: !canEdit },
+          {
+            label: t('actions.edit'),
+            icon: PencilIcon,
+            href: archived ? undefined : `/employees/${r.id}/edit`,
+            hidden: !canEdit,
+            disabled: archived,
+            disabledReason: t('actions.editDisabledArchived'),
+          },
           {
             label: t('actions.newRequestFor'),
             icon: FilePlus2Icon,
@@ -268,10 +280,10 @@ export function EmployeesTable({
         icon: CircleDotIcon,
         options: EMPLOYMENT_STATUSES.map((s) => ({ value: s, label: ts(s) })),
       },
-      { key: 'manager', title: t('filters.manager'), options: options.managers, icon: UserRoundIcon },
+      ...(orgView ? [{ key: 'manager', title: t('filters.manager'), options: options.managers, icon: UserRoundIcon }] : []),
       { key: 'location', title: t('filters.location'), options: options.locations, icon: MapPinIcon },
     ],
-    [t, ts, options],
+    [t, ts, options, orgView],
   );
 
   const moreFilters = useMemo<FilterDef<DirectoryRow>[]>(() => {

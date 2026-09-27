@@ -26,10 +26,11 @@ import {
 } from '@/features/requests/components/request-details';
 import { RequestEditForm } from '@/features/requests/components/request-edit-form';
 import { RequestFormRenderer } from '@/features/requests/components/request-form-renderer';
-import { RequestSlaBadge, StepLabel, subtypeLabel, TypeIcon } from '@/features/requests/components/request-bits';
+import { RequestSlaBadge, StepLabel, TypeIcon } from '@/features/requests/components/request-bits';
+import { subtypeLabel } from '@/features/requests/labels';
 import { getRequestDetail, loadFormLookups } from '@/features/requests/queries';
 import { requireAccess } from '@/lib/auth/guards';
-import { formatDateTime } from '@/lib/dates';
+import { formatDate, formatDateTime } from '@/lib/dates';
 import { employeeDisplayName, localized } from '@/lib/i18n/localized';
 import { createClient } from '@/lib/supabase/server';
 
@@ -69,8 +70,18 @@ export default async function RequestDetailsPage({ params, searchParams }: Props
   const daysValue = typeof detail.values.days === 'number' ? detail.values.days : null;
   const onBehalf = detail.filedOnBehalf && detail.requesterName;
 
+  const hasActions =
+    caps.can_approve ||
+    caps.can_reject ||
+    caps.can_return ||
+    caps.can_start ||
+    caps.can_complete ||
+    caps.can_reassign ||
+    caps.can_delete ||
+    (caps.can_edit && !editing) ||
+    (caps.can_cancel && row.status !== 'draft');
   const actions = (compact: boolean) => (
-    <RequestActionsPanel requestId={row.id} number={row.request_number} summary={summary} status={row.status} caps={caps} compact={compact} />
+    <RequestActionsPanel requestId={row.id} number={row.request_number} summary={summary} status={row.status} caps={caps} compact={compact} editing={editing} />
   );
 
   return (
@@ -130,7 +141,7 @@ export default async function RequestDetailsPage({ params, searchParams }: Props
         </SummaryCell>
         <SummaryCell label={t('details.sla')}>
           <RequestSlaBadge row={row} size="md" />
-          {row.due_at ? <span className="mt-1 block text-xs text-muted-foreground numeric">{t('details.dueOn', { date: formatDateTime(row.due_at, locale) })}</span> : null}
+          {row.due_at ? <span className="mt-1 block text-xs text-muted-foreground numeric">{t('details.dueOn', { date: formatDate(row.due_at, locale) })}</span> : null}
         </SummaryCell>
         <SummaryCell label={t('details.currentStep')}>
           <StepLabel row={row} />
@@ -167,7 +178,7 @@ export default async function RequestDetailsPage({ params, searchParams }: Props
         </Alert>
       ) : null}
 
-      <div className="lg:hidden">{actions(true)}</div>
+      {hasActions ? <div className="lg:hidden">{actions(true)}</div> : null}
 
       <SplitLayout
         main={
@@ -185,7 +196,7 @@ export default async function RequestDetailsPage({ params, searchParams }: Props
                 allowAttachments={typeDef?.allow_attachments ?? true}
               />
             ) : (
-              <SectionCard title={t('details.dataTitle')} description={typeDef ? localized(typeDef, 'description', locale) || undefined : undefined}>
+              <SectionCard title={t('details.dataTitle')}>
                 <RequestFormRenderer
                   fields={detail.fields.filter((f) => f.field_type !== 'attachment')}
                   values={detail.values}

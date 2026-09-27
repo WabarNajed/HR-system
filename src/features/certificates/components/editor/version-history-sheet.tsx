@@ -34,24 +34,31 @@ function plain(html: unknown): string {
   return typeof html === 'string' ? html.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim() : '';
 }
 
-/** Which fields changed between two snapshots, plus the text-length delta of content fields. */
+/**
+ * Which fields changed between two snapshots (content fields compared by their text, so editor
+ * normalization of the markup is not reported), the text-length delta, and whether only the
+ * formatting of content fields changed.
+ */
 export function diffSnapshots(prev: Partial<TemplateDraft> | undefined, next: Partial<TemplateDraft>) {
-  if (!prev) return { fields: [] as string[], delta: 0 };
+  if (!prev) return { fields: [] as string[], delta: 0, formatting: false };
   const fields: string[] = [];
   let delta = 0;
+  let formatting = false;
   for (const f of DIFF_FIELDS) {
     const a = prev[f] ?? null;
     const b = next[f] ?? null;
     if (TEXT_FIELDS.has(f)) {
-      if ((a ?? '') !== (b ?? '')) {
+      if (plain(a) !== plain(b)) {
         fields.push(f);
         delta += plain(b).length - plain(a).length;
+      } else if ((a ?? '') !== (b ?? '')) {
+        formatting = true;
       }
     } else if (a !== b) {
       fields.push(f);
     }
   }
-  return { fields, delta };
+  return { fields, delta, formatting };
 }
 
 export function VersionHistorySheet({
@@ -83,7 +90,7 @@ export function VersionHistorySheet({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="end" className="w-full gap-0 sm:max-w-md">
+      <SheetContent side="end" className="w-full gap-0 sm:max-w-md" onOpenAutoFocus={(e) => e.preventDefault()}>
         <SheetHeader className="border-b border-border px-5 pt-5 pb-4">
           <SheetTitle className="flex items-center gap-2 pe-8">
             <HistoryIcon className="size-4.5 text-primary" aria-hidden />
@@ -95,7 +102,7 @@ export function VersionHistorySheet({
           <ol className="relative flex flex-col gap-3 border-s border-border ps-5">
             {versions.map((v, index) => {
               const prev = versions[index + 1];
-              const { fields, delta } = diffSnapshots(prev?.snapshot, v.snapshot);
+              const { fields, delta, formatting } = diffSnapshots(prev?.snapshot, v.snapshot);
               const isCurrent = v.version === currentVersion;
               const isPublished = v.version === publishedVersion;
               const blocked = !canRestore ? restoreBlockedReason : isCurrent ? t('restoreDisabledCurrent') : restoreBlockedReason;
@@ -142,7 +149,7 @@ export function VersionHistorySheet({
                     {v.change_notes ? <p className="mt-2 text-sm text-foreground">{v.change_notes}</p> : null}
                     {prev ? (
                       <p className="mt-2 text-[0.6875rem] leading-4 text-muted-foreground">
-                        {fields.length ? t('changed', { fields: fields.map(fieldName).join(locale === 'ar' ? '، ' : ', ') }) : t('noChanges')}
+                        {fields.length ? t('changed', { fields: fields.map(fieldName).join(locale === 'ar' ? '، ' : ', ') }) : formatting ? t('formattingOnly') : t('noChanges')}
                         {delta ? (
                           <span className={cn('ms-1.5 numeric font-medium', delta > 0 ? 'text-success' : 'text-danger')}>
                             ({t('chars', { sign: delta > 0 ? '+' : '−', count: Math.abs(delta) })})

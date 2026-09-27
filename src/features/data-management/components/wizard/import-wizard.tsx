@@ -421,10 +421,12 @@ export function ImportWizard({ initial, caps }: { initial: WizardInitial; caps: 
               <span className="hidden sm:inline">{t('wizard.cancelImport')}</span>
             </Button>
           ) : null}
-          <LoadingButton className="ms-auto" onClick={() => void next()} pending={validating} disabled={nextDisabled || uploading}>
-            {step === 'mapping' ? t('wizard.mapping.validate') : t('wizard.next')}
-            <ArrowRightIcon className="rtl:rotate-180" />
-          </LoadingButton>
+          {step !== 'upload' || inspection ? (
+            <LoadingButton className="ms-auto" onClick={() => void next()} pending={validating} disabled={nextDisabled || uploading}>
+              {step === 'mapping' ? t('wizard.mapping.validate') : t('wizard.next')}
+              <ArrowRightIcon className="rtl:rotate-180" />
+            </LoadingButton>
+          ) : null}
         </div>
       ) : null}
       {step === 'review' ? (
@@ -457,7 +459,8 @@ export function ImportWizard({ initial, caps }: { initial: WizardInitial; caps: 
         }
         confirmLabel={t('wizard.review.confirm')}
         onConfirm={() => {
-          start();
+          // Start outside the dialog's transition so the progress view renders immediately.
+          window.setTimeout(start, 0);
           return true;
         }}
       />

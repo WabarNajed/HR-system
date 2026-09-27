@@ -76,6 +76,7 @@ export function StepMapping({
         options={optionsFor(column.index)}
         onChange={(v) => onChange(column.index, v ?? (schema.extraData ? EXTRA : IGNORE))}
         searchPlaceholder={t('searchField')}
+        clearable={false}
         className="w-full"
         aria-describedby={`dm-col-${column.index}`}
       />

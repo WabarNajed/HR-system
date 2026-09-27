@@ -8,6 +8,7 @@ import { localized } from '@/lib/i18n/localized';
 import { useDateFormat } from '@/lib/i18n/use-date-format';
 import { cn } from '@/lib/utils';
 import { daysUntilDue, requestSla } from '../constants';
+import { subtypeLabel } from '../labels';
 import type { RequestListRow } from '../types';
 
 /** Tinted square with the request type's icon (color from the type, primary by default). */
@@ -28,13 +29,6 @@ export function TypeIcon({ icon, color, size = 'md', className }: { icon: string
       <DynamicIcon name={icon ?? undefined} strokeWidth={1.9} />
     </span>
   );
-}
-
-/** Localized subtype label for a row (falls back to the raw value). */
-export function subtypeLabel(row: Pick<RequestListRow, 'subtype' | 'type'>, locale: Locale): string | null {
-  if (!row.subtype) return null;
-  const o = row.type?.subtypes.find((s) => s.value === row.subtype);
-  return o ? localized(o, 'label', locale) || row.subtype : row.subtype;
 }
 
 /** Type icon + name (+ subtype) — the "Type" column cell. */

@@ -21,6 +21,8 @@ import { BUCKETS, removeFiles, storagePaths, UPLOAD_LIMITS, uploadFile, validate
 import { cn } from '@/lib/utils';
 import { removeEmployeeAvatar, setEmployeeAvatar } from '../../actions';
 
+const AVATAR_EXT: Record<string, string> = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' };
+
 /** Large profile avatar; HR editors get a camera button to upload/replace/remove the photo. */
 export function AvatarUploader({
   employeeId,
@@ -66,7 +68,9 @@ export function AvatarUploader({
       return;
     }
     startTransition(async () => {
-      const path = storagePaths.employeeAvatar(employeeId, file.name);
+      // Extension from the (validated) MIME type, not the file name: `photo.jfif` / `IMG.HEIC.jpg`
+      // style names would otherwise fail the server's path check after the upload.
+      const path = storagePaths.employeeAvatar(employeeId, `avatar.${AVATAR_EXT[file.type] ?? 'jpg'}`);
       const uploaded = await uploadFile(supabase, { bucket: BUCKETS.employeeDocuments, path, file, kind: 'avatar' });
       if (!uploaded.ok) {
         toast.error(resolve(uploaded.error));
@@ -84,7 +88,7 @@ export function AvatarUploader({
   };
 
   return (
-    <div className="relative shrink-0">
+    <div className="relative shrink-0 self-start">
       {avatar}
       {pending ? (
         <span className="absolute inset-0 flex items-center justify-center rounded-full bg-background/60 backdrop-blur-[1px]" role="status">

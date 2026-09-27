@@ -106,7 +106,7 @@ export async function DashboardHeader({
           <span aria-hidden>·</span>
           <span className="numeric">{t('hijriDate', { date: formatHijriDate(today, locale) })}</span>
         </p>
-        <h1 className="mt-1 truncate text-page-title text-foreground">{t(`greeting.${greetingKey(now)}`, { name })}</h1>
+        <h1 className="mt-1 line-clamp-2 text-[1.375rem] leading-8 font-semibold text-foreground sm:truncate sm:text-page-title">{t(`greeting.${greetingKey(now)}`, { name })}</h1>
         {roleLabel || jobTitle ? (
           <p className="mt-1 truncate text-sm text-muted-foreground">{[jobTitle, roleLabel].filter(Boolean).join(' · ')}</p>
         ) : null}

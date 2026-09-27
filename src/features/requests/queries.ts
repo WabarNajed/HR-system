@@ -31,6 +31,8 @@ import type {
 /* eslint-disable @typescript-eslint/no-explicit-any -- PostgREST builders are chained dynamically below. */
 type AnyQuery = any;
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 /* ─── Viewer access ───────────────────────────────────────────────────────── */
 
 export async function getRequestAccess(supabase: ServerSupabaseClient, userId: string): Promise<RequestAccess> {
@@ -342,6 +344,18 @@ function quoted(value: string): string {
   return `"${value.replace(/["\\]/g, '')}"`;
 }
 
+/** Only well-formed UUIDs (a hand-edited `?employee=abc` must not become a 22P02 → 500). */
+function uuids(values: string[] | undefined): string[] {
+  return (values ?? []).filter((v) => UUID_RE.test(v));
+}
+
+/** A real calendar date `yyyy-MM-dd` (the regex alone accepts 2026-13-45). */
+function isIsoDate(value: string | undefined): value is string {
+  if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const d = new Date(`${value}T00:00:00Z`);
+  return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === value;
+}
+
 async function searchEmployeeIds(supabase: ServerSupabaseClient, q: string): Promise<string[]> {
   const { data } = await supabase.from('employees').select('id').ilike('search_text', toIlikePattern(q.toLowerCase())).limit(200);
   return (data ?? []).map((r) => r.id);
@@ -406,10 +420,18 @@ async function applyFilters(
     if (!ids.length) return null;
     q = q.in('request_type_id', ids);
   }
-  if (f.employee?.length) q = q.in('employee_id', f.employee);
-  if (f.department?.length) q = q.in('employee.department_id', f.department);
+  if (f.employee?.length) {
+    const ids = uuids(f.employee);
+    if (!ids.length) return null;
+    q = q.in('employee_id', ids);
+  }
+  if (f.department?.length) {
+    const ids = uuids(f.department);
+    if (!ids.length) return null;
+    q = q.in('employee.department_id', ids);
+  }
   if (f.assigned?.length) {
-    const ids = f.assigned.map((v) => (v === 'me' ? options.access.userId : v)).filter((v) => v !== 'none' && /^[0-9a-f-]{36}$/i.test(v));
+    const ids = uuids(f.assigned.map((v) => (v === 'me' ? options.access.userId : v)));
     const parts: string[] = [];
     if (f.assigned.includes('none')) parts.push('assigned_to.is.null');
     if (ids.length) parts.push(`assigned_to.in.(${ids.join(',')})`);
@@ -417,7 +439,7 @@ async function applyFilters(
     q = q.or(parts.join(','));
   }
   const sla = f.sla?.[0];
-  if (sla) {
+  if (sla === 'overdue' || sla === 'due_soon' || sla === 'on_track') {
     const nowIso = now.toISOString();
     const soonIso = new Date(now.getTime() + 24 * 3600 * 1000).toISOString();
     q = q.in('status', OPEN_STATUSES as string[]);
@@ -427,8 +449,8 @@ async function applyFilters(
   }
   const from = f.createdFrom?.[0];
   const to = f.createdTo?.[0];
-  if (from && /^\d{4}-\d{2}-\d{2}$/.test(from)) q = q.gte('created_at', dayStartIso(from));
-  if (to && /^\d{4}-\d{2}-\d{2}$/.test(to)) q = q.lt('created_at', dayStartIso(nextDay(to)));
+  if (isIsoDate(from)) q = q.gte('created_at', dayStartIso(from));
+  if (isIsoDate(to)) q = q.lt('created_at', dayStartIso(nextDay(to)));
   return { q };
 }
 
@@ -446,6 +468,13 @@ export async function listRequests(
     .order(sort, { ascending: params.dir === 'asc', nullsFirst: false })
     .order('id', { ascending: true })
     .range(params.from, params.to);
+  if (error && params.from > 0) {
+    // Offset past the last row (stale `?page=`): PostgREST answers 416 / the gateway drops the
+    // connection. Report the real total so the table offers the existing pages instead of failing.
+    const head = await applyFilters(supabase, supabase.from('hr_requests').select(listSelect(inner), { count: 'exact', head: true }), params, options);
+    const res = head ? await head.q : null;
+    if (res && !res.error && (res.count ?? 0) <= params.from) return { rows: [], total: res.count ?? 0 };
+  }
   if (error) throw error;
   return { rows: ((data ?? []) as RawListRow[]).map((r) => toListRow(r, options.subtypes)), total: count ?? 0 };
 }
@@ -577,8 +606,14 @@ export async function listMyDecisions(
     if (!ids.length) return { rows: [], total: 0 };
     q = q.in('request.request_type_id', ids);
   }
-  if (f.employee?.length) q = q.in('request.employee_id', f.employee);
-  if (f.department?.length) q = q.in('request.employee.department_id', f.department);
+  if (f.employee?.length) {
+    if (!uuids(f.employee).length) return { rows: [], total: 0 };
+    q = q.in('request.employee_id', uuids(f.employee));
+  }
+  if (f.department?.length) {
+    if (!uuids(f.department).length) return { rows: [], total: 0 };
+    q = q.in('request.employee.department_id', uuids(f.department));
+  }
   if (params.q) {
     const pattern = toIlikePattern(params.q);
     const ids = await searchEmployeeIds(supabase, params.q);
@@ -588,7 +623,13 @@ export async function listMyDecisions(
   }
   const { data, count, error } = await q
     .order('decided_at', { ascending: params.dir === 'asc', nullsFirst: false })
+    .order('id')
     .range(params.from, params.to);
+  if (error && params.from > 0) {
+    // Stale `?page=` past the last decision (see listRequests).
+    const total = await countMyDecisions(supabase, options.access.userId, options.decisions);
+    if (total <= params.from) return { rows: [], total };
+  }
   if (error) throw error;
   const rows = ((data ?? []) as { decision: ApprovalDecisionRow['decision']; comment: string | null; decided_at: string | null; step_type: string | null; request: RawListRow | null }[])
     .filter((r) => r.request)
@@ -675,7 +716,7 @@ export type RequestDetail = {
 };
 
 export async function getRequestDetail(supabase: ServerSupabaseClient, id: string, userId: string): Promise<RequestDetail | null> {
-  if (!/^[0-9a-f-]{36}$/i.test(id)) return null;
+  if (!UUID_RE.test(id)) return null;
   const [reqRes, capsRes] = await Promise.all([
     supabase
       .from('hr_requests')
@@ -685,6 +726,7 @@ export async function getRequestDetail(supabase: ServerSupabaseClient, id: strin
     supabase.rpc('get_request_capabilities', { p_request_id: id }),
   ]);
   if (reqRes.error) throw reqRes.error;
+  if (capsRes.error) throw capsRes.error;
   if (!reqRes.data || !capsRes.data) return null;
   const raw = reqRes.data as unknown as RawListRow & { priority: string; requester: { full_name: string | null; employee_id: string | null } | null };
 
@@ -789,7 +831,7 @@ async function loadDetailLookups(supabase: ServerSupabaseClient, fields: Request
     fields
       .filter((f) => f.field_type === type)
       .map((f) => values[f.key])
-      .filter((v): v is string => typeof v === 'string' && /^[0-9a-f-]{36}$/i.test(v));
+      .filter((v): v is string => typeof v === 'string' && UUID_RE.test(v));
   const leaveIds = idsOf('leave_type');
   const dependentIds = idsOf('dependent');
   const employeeIds = idsOf('employee');
@@ -823,7 +865,7 @@ export type DraftForWizard = {
 };
 
 export async function getDraftForWizard(supabase: ServerSupabaseClient, id: string, userId: string): Promise<DraftForWizard | null> {
-  if (!/^[0-9a-f-]{36}$/i.test(id)) return null;
+  if (!UUID_RE.test(id)) return null;
   const { data } = await supabase
     .from('hr_requests')
     .select('id, request_type_id, employee_id, subtype, status, requester_id')

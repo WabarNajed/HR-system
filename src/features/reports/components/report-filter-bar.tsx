@@ -23,7 +23,16 @@ import { useState } from 'react';
 import { DateRangePicker } from '@/components/shared/date-picker';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetBody, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import {
+  Sheet,
+  SheetBody,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet';
 import { formatDateRange } from '@/lib/i18n/date-format';
 import type { Locale } from '@/lib/i18n/config';
 import { cn } from '@/lib/utils';
@@ -74,14 +83,25 @@ function staticOptions(def: ReportDefinition, key: ReportFilterKey, options: Pro
       return def.status.values.map((v) => ({
         value: v,
         label:
-          def.status!.kind === 'status' ? tOr(t, `statuses.${def.status!.domain}.${v}`, v) : tOr(t, `enums.${(def.status as { enumKey: string }).enumKey}.${v}`, v),
+          def.status!.kind === 'status'
+            ? tOr(t, `statuses.${def.status!.domain}.${v}`, v)
+            : tOr(t, `enums.${(def.status as { enumKey: string }).enumKey}.${v}`, v),
       }));
     case 'bucket':
-      return EXPIRY_BUCKETS.map((v) => ({ value: v, label: tOr(t, `reports.buckets.${v}`, v) }));
+      return EXPIRY_BUCKETS.map((v) => ({
+        value: v,
+        label: tOr(t, `reports.buckets.${v}`, v),
+      }));
     case 'category':
-      return AUDIT_CATEGORIES.map((v) => ({ value: v, label: tOr(t, `reports.categories.${v}`, v) }));
+      return AUDIT_CATEGORIES.map((v) => ({
+        value: v,
+        label: tOr(t, `reports.categories.${v}`, v),
+      }));
     case 'certificateType':
-      return CERTIFICATE_TYPES.map((v) => ({ value: v, label: tOr(t, `enums.certificateType.${v}`, v) }));
+      return CERTIFICATE_TYPES.map((v) => ({
+        value: v,
+        label: tOr(t, `enums.certificateType.${v}`, v),
+      }));
     default:
       return (options[key] ?? []).map((o) => ({
         value: o.value,
@@ -101,14 +121,26 @@ export function ReportFilterBar({ def, state, options, employeeOptions, onChange
 
   const setDate = (range: { from?: string | null; to?: string | null } | null) => {
     if (!range || (!range.from && !range.to)) {
-      onChange({ [DATE_FROM_KEY]: null, [DATE_TO_KEY]: null, [PERIOD_KEY]: def.dateRange?.defaultPreset ? 'all' : null });
+      onChange({
+        [DATE_FROM_KEY]: null,
+        [DATE_TO_KEY]: null,
+        [PERIOD_KEY]: def.dateRange?.defaultPreset ? 'all' : null,
+      });
     } else {
-      onChange({ [DATE_FROM_KEY]: range.from ?? null, [DATE_TO_KEY]: range.to ?? range.from ?? null, [PERIOD_KEY]: null });
+      onChange({
+        [DATE_FROM_KEY]: range.from ?? null,
+        [DATE_TO_KEY]: range.to ?? range.from ?? null,
+        [PERIOD_KEY]: null,
+      });
     }
   };
 
   const reset = () => {
-    const patch: FilterPatch = { [DATE_FROM_KEY]: null, [DATE_TO_KEY]: null, [PERIOD_KEY]: null };
+    const patch: FilterPatch = {
+      [DATE_FROM_KEY]: null,
+      [DATE_TO_KEY]: null,
+      [PERIOD_KEY]: null,
+    };
     for (const key of def.filters) patch[key] = null;
     onChange(patch);
   };
@@ -134,11 +166,15 @@ export function ReportFilterBar({ def, state, options, employeeOptions, onChange
           title={t(`reports.filters.${key}`)}
           icon={FILTER_ICONS[key]}
           options={key === 'employee' ? employeeOptions : staticOptions(def, key, options, t)}
-          value={state.values[key] ?? []}
+          value={state.values[key] ?? (key === 'year' ? [String(state.defaultYear)] : [])}
           multiple={key !== 'year'}
           search={key === 'employee' ? searchEmployees : undefined}
           searchPlaceholder={key === 'employee' ? t('reports.filters.employeePlaceholder') : undefined}
-          onChange={(v) => onChange({ [key]: v.length ? v : null })}
+          onChange={(v) =>
+            onChange({
+              [key]: v.length && !(key === 'year' && v[0] === String(state.defaultYear)) ? v : null,
+            })
+          }
           block={block}
         />
       ))}

@@ -51,9 +51,9 @@ export function ProfileHeaderSkeleton() {
     <div className="overflow-hidden rounded-lg border border-border bg-card shadow-card">
       <div className="h-16 bg-muted sm:h-20" />
       <div className="px-4 sm:px-6">
-        <div className="-mt-10 flex items-end gap-4 sm:-mt-12">
+        <div className="-mt-10 flex flex-col gap-3 sm:-mt-12 sm:flex-row sm:items-start sm:gap-4">
           <Skeleton className="size-20 rounded-full ring-4 ring-card sm:size-24" />
-          <div className="flex-1 space-y-2 pb-1">
+          <div className="flex-1 space-y-2 sm:pt-14">
             <Skeleton className="h-7 w-56 max-w-full" />
             <Skeleton className="h-4 w-40" />
           </div>

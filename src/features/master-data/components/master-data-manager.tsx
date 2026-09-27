@@ -4,6 +4,7 @@ import type { ColumnDef } from '@tanstack/react-table';
 import {
   CircleCheckIcon,
   CircleOffIcon,
+  EyeIcon,
   GitForkIcon,
   MoreHorizontalIcon,
   PencilIcon,
@@ -17,11 +18,12 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
-import { useMemo, useState, useTransition } from 'react';
+import { useMemo, useRef, useState, useTransition } from 'react';
 import { toast } from 'sonner';
 import { actionsColumn, DataTable, DataTableColumnHeader, selectColumn, type FilterDef, type RowAction } from '@/components/data-table';
+import type { ComboboxOption } from '@/components/shared/combobox';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog';
-import { EmployeeCell } from '@/components/shared/employee-cell';
+import { EmployeeAvatar } from '@/components/shared/employee-avatar';
 import { PageHeader } from '@/components/shared/page-header';
 import { KpiGrid } from '@/components/shared/responsive-grid';
 import { StatCard } from '@/components/shared/stat-card';
@@ -43,6 +45,8 @@ export type MasterDataManagerProps = {
   rows: MasterDataRow[];
   kpis: MasterDataKpis;
   departments: DepartmentOption[];
+  /** Locations: ISO 3166 country options (value = code, label = localized name). */
+  countries: ComboboxOption[];
   canEdit: boolean;
   canExport: boolean;
   /** `/admin/data-management?type=…` when the viewer may import, else null. */
@@ -52,7 +56,7 @@ export type MasterDataManagerProps = {
 type SheetState = { open: boolean; row: MasterDataRow | null };
 
 /** Header · KPI row · table · sheet · dialogs for one master data entity. */
-export function MasterDataManager({ entity, rows, kpis, departments, canEdit, canExport, importHref }: MasterDataManagerProps) {
+export function MasterDataManager({ entity, rows, kpis, departments, countries, canEdit, canExport, importHref }: MasterDataManagerProps) {
   const config = MASTER_ENTITY_CONFIG[entity];
   const t = useTranslations('masterData');
   const tc = useTranslations('common');
@@ -61,17 +65,23 @@ export function MasterDataManager({ entity, rows, kpis, departments, canEdit, ca
   const df = useDateFormat();
   const resolve = useErrorMessage();
   const [, startTransition] = useTransition();
+  const [bulkPending, startBulk] = useTransition();
 
   const [sheet, setSheet] = useState<SheetState>({ open: false, row: null });
   const [toDelete, setToDelete] = useState<MasterDataRow | null>(null);
   const [inUse, setInUse] = useState<MasterDataRow | null>(null);
   const [toDeactivate, setToDeactivate] = useState<MasterDataRow[] | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  /** Clears the table selection once a bulk deactivation (confirmed in a dialog) succeeds. */
+  const clearSelection = useRef<(() => void) | null>(null);
 
   const openCreate = () => setSheet({ open: true, row: null });
   const openEdit = (row: MasterDataRow) => setSheet({ open: true, row });
 
   const nameOf = (row: MasterDataRow) => localized(row, 'name', locale) || row.code || '—';
+  const countryNames = useMemo(() => new Map(countries.map((c) => [c.value, c.label])), [countries]);
+  /** Stored country (ISO code from the picker, or free text from imports) → display label. */
+  const countryOf = (value: string | null) => (value ? (countryNames.get(value.trim().toUpperCase()) ?? value) : null);
 
   async function applyActive(ids: string[], active: boolean): Promise<boolean> {
     const result = await setMasterDataActive({ entity, ids, active });
@@ -98,7 +108,7 @@ export function MasterDataManager({ entity, rows, kpis, departments, canEdit, ca
   };
 
   const rowActions = (row: MasterDataRow): RowAction<MasterDataRow>[] => [
-    { label: canEdit ? tc('edit') : tc('view'), icon: canEdit ? PencilIcon : UsersIcon, onSelect: openEdit },
+    { label: canEdit ? tc('edit') : tc('view'), icon: canEdit ? PencilIcon : EyeIcon, onSelect: openEdit },
     row.is_active
       ? { label: tc('deactivate'), icon: PowerOffIcon, onSelect: (r) => setToDeactivate([r]), hidden: !canEdit }
       : { label: tc('activate'), icon: PowerIcon, onSelect: activate, hidden: !canEdit, disabled: busyId === row.id },
@@ -122,7 +132,7 @@ export function MasterDataManager({ entity, rows, kpis, departments, canEdit, ca
           ) : (
             <span className="text-faint-foreground">—</span>
           ),
-        meta: { label: tc('code'), width: '8.5rem' },
+        meta: { label: tc('code') },
       },
       {
         id: 'name',
@@ -134,9 +144,9 @@ export function MasterDataManager({ entity, rows, kpis, departments, canEdit, ca
           const primary = localized(r, 'name', locale);
           const other = locale === 'ar' ? r.name_en : r.name_ar;
           return (
-            <div className="min-w-0 leading-tight">
-              <div className="truncate font-medium text-foreground">{primary}</div>
-              {other && other !== primary ? <div className="mt-0.5 truncate text-xs text-muted-foreground">{other}</div> : null}
+            <div className="max-w-80 min-w-36 leading-tight whitespace-normal">
+              <div className="line-clamp-2 font-medium break-words text-foreground">{primary}</div>
+              {other && other !== primary ? <div className="mt-0.5 line-clamp-1 text-xs break-all text-muted-foreground">{other}</div> : null}
             </div>
           );
         },
@@ -151,45 +161,56 @@ export function MasterDataManager({ entity, rows, kpis, departments, canEdit, ca
           header: ({ column }) => <DataTableColumnHeader column={column} title={t('columns.parent')} />,
           cell: ({ row }) =>
             row.original.parent ? (
-              <span className="inline-flex max-w-full items-center gap-1.5 text-foreground">
-                <GitForkIcon className="size-3.5 shrink-0 text-faint-foreground" aria-hidden />
-                <span className="truncate">{localized(row.original.parent, 'name', locale)}</span>
+              <span className="flex max-w-56 min-w-28 items-start gap-1.5 leading-snug whitespace-normal text-foreground">
+                <GitForkIcon className="mt-0.5 size-3.5 shrink-0 text-faint-foreground" aria-hidden />
+                <span className="line-clamp-2 break-words">{localized(row.original.parent, 'name', locale)}</span>
               </span>
             ) : (
               <span className="text-xs text-muted-foreground">{t('columns.topLevel')}</span>
             ),
-          meta: { label: t('columns.parent'), width: '12rem' },
+          meta: { label: t('columns.parent') },
         },
         {
           id: 'head',
           accessorFn: (r) => (r.head ? employeeDisplayName(r.head, locale) : ''),
           header: ({ column }) => <DataTableColumnHeader column={column} title={t('columns.head')} />,
-          cell: ({ row }) =>
-            row.original.head ? (
-              <EmployeeCell employee={row.original.head} subtitle={row.original.head.employee_number} size="sm" />
-            ) : (
-              <span className="text-xs text-muted-foreground">{t('columns.noHead')}</span>
-            ),
-          meta: { label: t('columns.head'), width: '14rem' },
+          cell: ({ row }) => {
+            const head = row.original.head;
+            if (!head) return <span className="text-xs text-muted-foreground">{t('columns.noHead')}</span>;
+            const headName = employeeDisplayName(head, locale);
+            return (
+              <div className="flex max-w-56 min-w-32 items-center gap-2 whitespace-normal">
+                <EmployeeAvatar name={headName} seed={head.id} size="xs" />
+                <div className="min-w-0 leading-tight">
+                  <div className="line-clamp-2 text-foreground break-words">{headName}</div>
+                  {head.employee_number ? (
+                    <div className="mt-0.5 truncate text-xs text-muted-foreground">{head.employee_number}</div>
+                  ) : null}
+                </div>
+              </div>
+            );
+          },
+          meta: { label: t('columns.head') },
         },
       );
     }
     if (config.hasPlace) {
       cols.push({
         id: 'city',
-        accessorFn: (r) => [r.city, r.country].filter(Boolean).join(' · '),
+        accessorFn: (r) => [r.city, countryOf(r.country)].filter(Boolean).join(' · '),
         header: ({ column }) => <DataTableColumnHeader column={column} title={t('columns.place')} />,
         cell: ({ row }) => {
-          const { city, country } = row.original;
+          const city = row.original.city;
+          const country = countryOf(row.original.country);
           if (!city && !country) return <span className="text-faint-foreground">—</span>;
           return (
-            <div className="min-w-0 leading-tight">
+            <div className="max-w-60 min-w-32 leading-tight">
               <div className="truncate text-foreground">{city || country}</div>
               {city && country ? <div className="mt-0.5 truncate text-xs text-muted-foreground">{country}</div> : null}
             </div>
           );
         },
-        meta: { label: t('columns.place'), width: '13rem' },
+        meta: { label: t('columns.place') },
       });
     }
     cols.push(
@@ -208,14 +229,14 @@ export function MasterDataManager({ entity, rows, kpis, departments, canEdit, ca
             </div>
           );
         },
-        meta: { label: t('columns.employees'), align: 'end', width: '8rem' },
+        meta: { label: t('columns.employees'), align: 'end', width: '6.5rem' },
       },
       {
         id: 'status',
         accessorFn: (r) => (r.is_active ? 0 : 1),
         header: ({ column }) => <DataTableColumnHeader column={column} title={tc('status')} />,
         cell: ({ row }) => <StatusBadge domain="record" status={row.original.is_active ? 'active' : 'inactive'} size="sm" />,
-        meta: { label: tc('status'), width: '7.5rem' },
+        meta: { label: tc('status'), width: '6.5rem' },
       },
       {
         id: 'description',
@@ -239,7 +260,7 @@ export function MasterDataManager({ entity, rows, kpis, departments, canEdit, ca
     );
     return cols;
     // eslint-disable-next-line react-hooks/exhaustive-deps -- rowActions depends on the same inputs
-  }, [canEdit, config.hasHierarchy, config.hasPlace, locale, t, tc, df, busyId]);
+  }, [canEdit, config.hasHierarchy, config.hasPlace, locale, t, tc, df, busyId, countryNames]);
 
   /* ─── Filters ─────────────────────────────────────────────────────────── */
   const filters = useMemo<FilterDef<MasterDataRow>[]>(() => {
@@ -281,7 +302,7 @@ export function MasterDataManager({ entity, rows, kpis, departments, canEdit, ca
   }, [config.hasHierarchy, config.hasPlace, kpis.active, kpis.inactive, rows, locale, t, tc]);
 
   const searchText = (r: MasterDataRow) =>
-    [r.code, r.name_ar, r.name_en, r.city, r.country, r.parent?.name_ar, r.parent?.name_en, r.head?.name_ar, r.head?.name_en, r.head?.employee_number]
+    [r.code, r.name_ar, r.name_en, r.city, r.country, countryOf(r.country), r.parent?.name_ar, r.parent?.name_en, r.head?.name_ar, r.head?.name_en, r.head?.employee_number]
       .filter(Boolean)
       .join(' ');
 
@@ -371,26 +392,58 @@ export function MasterDataManager({ entity, rows, kpis, departments, canEdit, ca
         defaultSort={{ id: 'code', desc: false }}
         enableRowSelection={canEdit}
         maxHeight="none"
-        bulkActions={(selected, clear) => (
-          <>
+        bulkActions={(selected, clear) => {
+          const toActivate = selected.filter((r) => !r.is_active);
+          const toDeactivateRows = selected.filter((r) => r.is_active);
+          const activateButton = (
             <Button
               size="sm"
               variant="outline"
+              loading={bulkPending}
+              disabled={bulkPending || !toActivate.length}
               onClick={() =>
-                startTransition(async () => {
-                  if (await applyActive(selected.map((r) => r.id), true)) clear();
+                startBulk(async () => {
+                  if (await applyActive(toActivate.map((r) => r.id), true)) clear();
                 })
               }
             >
               <PowerIcon />
               {tc('activate')}
             </Button>
-            <Button size="sm" variant="outline" onClick={() => setToDeactivate(selected)}>
+          );
+          const deactivateButton = (
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={bulkPending || !toDeactivateRows.length}
+              onClick={() => {
+                clearSelection.current = clear;
+                setToDeactivate(toDeactivateRows);
+              }}
+            >
               <PowerOffIcon />
               {tc('deactivate')}
             </Button>
-          </>
-        )}
+          );
+          return (
+            <>
+              {toActivate.length ? (
+                activateButton
+              ) : (
+                <SimpleTooltip content={t('bulk.allActive')}>
+                  <span tabIndex={0}>{activateButton}</span>
+                </SimpleTooltip>
+              )}
+              {toDeactivateRows.length ? (
+                deactivateButton
+              ) : (
+                <SimpleTooltip content={t('bulk.allInactive')}>
+                  <span tabIndex={0}>{deactivateButton}</span>
+                </SimpleTooltip>
+              )}
+            </>
+          );
+        }}
         emptyState={{
           icon: Icon,
           title: te('emptyTitle'),
@@ -426,7 +479,7 @@ export function MasterDataManager({ entity, rows, kpis, departments, canEdit, ca
                   ? localized(r.parent, 'name', locale)
                   : t('columns.topLevel')
                 : config.hasPlace
-                  ? [r.city, r.country].filter(Boolean).join(' · ') || null
+                  ? [r.city, countryOf(r.country)].filter(Boolean).join(' · ') || null
                   : null
             }
           />
@@ -438,6 +491,7 @@ export function MasterDataManager({ entity, rows, kpis, departments, canEdit, ca
         open={sheet.open}
         row={sheet.row}
         departments={departments}
+        countries={countries}
         readOnly={!canEdit}
         onOpenChange={(open) => setSheet((s) => ({ ...s, open }))}
       />
@@ -465,7 +519,11 @@ export function MasterDataManager({ entity, rows, kpis, departments, canEdit, ca
       {/* Deactivate (single or bulk) */}
       <ConfirmDialog
         open={Boolean(toDeactivate)}
-        onOpenChange={(open) => !open && setToDeactivate(null)}
+        onOpenChange={(open) => {
+          if (open) return;
+          setToDeactivate(null);
+          clearSelection.current = null;
+        }}
         title={
           toDeactivate && toDeactivate.length > 1
             ? t('confirm.bulkDeactivateTitle', { count: toDeactivate.length })
@@ -482,6 +540,8 @@ export function MasterDataManager({ entity, rows, kpis, departments, canEdit, ca
             false,
           );
           if (!ok) return false;
+          clearSelection.current?.();
+          clearSelection.current = null;
           setToDeactivate(null);
         }}
       />

@@ -17,7 +17,6 @@ import { formatDays } from '@/lib/format';
 import type { LeaveRequestListRow, LeaveScope, Option } from '../types';
 import { LeaveTypeLabel } from './leave-type-dot';
 import { SortHeader } from './sort-header';
-import { UrlSegmented } from './url-controls';
 
 const STATUS_OPTIONS = [
   'pending_manager_approval',
@@ -35,8 +34,6 @@ export type LeaveRequestsTableProps = {
   total: number;
   typeOptions: (Option & { color: string })[];
   departmentOptions: Option[];
-  scopes: LeaveScope[];
-  defaultScope: LeaveScope;
   scope: LeaveScope;
   canExport: boolean;
   canRequest: boolean;
@@ -49,8 +46,6 @@ export function LeaveRequestsTable({
   total,
   typeOptions,
   departmentOptions,
-  scopes,
-  defaultScope,
   scope,
   canExport,
   canRequest,
@@ -191,15 +186,6 @@ export function LeaveRequestsTable({
     ...(employeeOption ? [{ key: 'employee', title: t('fields.employee'), icon: UserRoundIcon, options: [employeeOption], multiple: false }] : []),
   ];
 
-  const scopeSwitch = (
-    <UrlSegmented
-      param="scope"
-      defaultValue={defaultScope}
-      aria-label={t('scope.label')}
-      options={scopes.map((s) => ({ value: s, label: t(`scope.${s}`) }))}
-    />
-  );
-
   const requestButton = canRequest ? (
     <Button size="sm" asChild>
       <Link href="/requests/new?type=leave">
@@ -222,7 +208,6 @@ export function LeaveRequestsTable({
       searchable={scope !== 'mine'}
       searchPlaceholder={t('requests.searchPlaceholder')}
       exportDataset={canExport ? 'leave_requests' : undefined}
-      toolbarActions={scopeSwitch}
       defaultSort={{ id: 'start_date', desc: true }}
       maxHeight="none"
       emptyState={{

@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { after } from 'next/server';
-import { ActionError, ok, withAction } from '@/lib/action';
+import { ActionError, ok, requirePermissionIn, withAction } from '@/lib/action';
 import { mapError } from '@/lib/errors';
 import { deliverEmailsForNotifications } from '@/lib/notifications';
 import { BUCKETS, removeFiles, validateFile } from '@/lib/storage';
@@ -20,6 +20,7 @@ import {
   searchAssigneesSchema,
   searchSchema,
 } from './schemas';
+import type { RequestActionKind } from './schemas';
 import type { EmployeeOption, FormLookups } from './types';
 
 /* ─── Helpers ─────────────────────────────────────────────────────────────── */
@@ -60,6 +61,17 @@ function revalidateRequest(id?: string | null) {
   if (id) revalidatePath(`/requests/${id}`);
 }
 
+/*
+ * Server-side permission gates (defence in depth). Only where the database itself decides by
+ * permission: creating/submitting (requests.create, leave.create for leave), fulfilment
+ * (start/complete: org requests.edit or requests.approve) and attachments. Approve / reject /
+ * return / reassign / cancel / comment depend on the ROW (current approver, designated user or
+ * role step, requester) — any active user may hold that position — so the RPCs alone decide there.
+ */
+const CREATE_PERMS = ['requests.create', 'leave.create'] as const;
+const FULFIL_PERMS = ['requests.edit', 'requests.approve'] as const;
+const FULFIL_ACTIONS: readonly RequestActionKind[] = ['start', 'complete'];
+
 async function requestNumber(supabase: ServerSupabaseClient, id: string): Promise<string | null> {
   const { data } = await supabase.from('hr_requests').select('request_number').eq('id', id).maybeSingle();
   return data?.request_number ?? null;
@@ -70,7 +82,8 @@ async function requestNumber(supabase: ServerSupabaseClient, id: string): Promis
 /** Creates the draft (first save) or replaces its values (update_request_draft). */
 export const saveRequestDraft = withAction(
   saveDraftSchema,
-  async (input) => {
+  async (input, { ctx }) => {
+    requirePermissionIn(ctx, ...CREATE_PERMS);
     const supabase = await createClient();
     if (input.requestId) {
       const { error } = await supabase.rpc('update_request_draft', {
@@ -98,7 +111,8 @@ export const saveRequestDraft = withAction(
 /** Submits (or resubmits a returned) request, then e-mails the notified people after the response. */
 export const submitRequest = withAction(
   requestIdSchema,
-  async ({ requestId }) => {
+  async ({ requestId }, { ctx }) => {
+    requirePermissionIn(ctx, ...CREATE_PERMS);
     const supabase = await createClient();
     const { data, error } = await supabase.rpc('submit_request', { p_request_id: requestId });
     if (error) rpcFailure(error);
@@ -113,10 +127,11 @@ export const submitRequest = withAction(
 /** Deletes a draft (requester only, RLS) and its stored files. */
 export const deleteDraft = withAction(
   requestIdSchema,
-  async ({ requestId }) => {
+  async ({ requestId }, { ctx }) => {
     const supabase = await createClient();
-    const { data: req } = await supabase.from('hr_requests').select('id, status').eq('id', requestId).maybeSingle();
+    const { data: req } = await supabase.from('hr_requests').select('id, status, requester_id').eq('id', requestId).maybeSingle();
     if (!req) throw new ActionError('errors.notFound');
+    if (req.requester_id !== ctx.user.id) throw new ActionError('errors.forbidden');
     if (req.status !== 'draft') throw new ActionError('errors.requestNotEditable');
     const { data: files } = await supabase.from('request_attachments').select('storage_path').eq('request_id', requestId);
     const paths = (files ?? []).map((f) => f.storage_path);
@@ -134,7 +149,8 @@ export const deleteDraft = withAction(
 
 export const actOnRequest = withAction(
   actOnRequestSchema,
-  async ({ requestId, action, comment, targetUserId }) => {
+  async ({ requestId, action, comment, targetUserId }, { ctx }) => {
+    if (FULFIL_ACTIONS.includes(action)) requirePermissionIn(ctx, ...FULFIL_PERMS);
     const supabase = await createClient();
     const { data, error } = await supabase.rpc('act_on_request', {
       p_request_id: requestId,
@@ -153,7 +169,9 @@ export const actOnRequest = withAction(
 
 export const addRequestComment = withAction(
   addCommentSchema,
-  async ({ requestId, body, internal }) => {
+  async ({ requestId, body, internal }, { ctx }) => {
+    // Internal notes are HR-only (org requests.view); the RPC re-checks.
+    if (internal) requirePermissionIn(ctx, 'requests.view');
     const supabase = await createClient();
     const { data, error } = await supabase.rpc('add_request_comment', { p_request_id: requestId, p_body: body, p_is_internal: internal });
     if (error) rpcFailure(error);
@@ -167,7 +185,8 @@ export const addRequestComment = withAction(
 
 export const registerAttachment = withAction(
   registerAttachmentSchema,
-  async ({ requestId, fieldKey, path, fileName, size, mime }) => {
+  async ({ requestId, fieldKey, path, fileName, size, mime }, { ctx }) => {
+    requirePermissionIn(ctx, ...CREATE_PERMS, 'requests.edit');
     if (!path.startsWith(`requests/${requestId}/`) || path.includes('..')) throw new ActionError('errors.validation');
     const invalid = validateFile({ name: fileName, size, type: mime ?? '' }, 'attachment');
     if (invalid) throw new ActionError(invalid);
@@ -189,7 +208,8 @@ export const registerAttachment = withAction(
 
 export const deleteAttachment = withAction(
   attachmentIdSchema,
-  async ({ attachmentId }) => {
+  async ({ attachmentId }, { ctx }) => {
+    requirePermissionIn(ctx, ...CREATE_PERMS, 'requests.edit');
     const supabase = await createClient();
     const { data: row } = await supabase.from('request_attachments').select('id, request_id, storage_path').eq('id', attachmentId).maybeSingle();
     if (!row) throw new ActionError('errors.notFound');
@@ -209,7 +229,8 @@ export type LookupsResult = FormLookups & { manager: { name_ar: string | null; n
 
 export const loadRequestLookups = withAction(
   lookupsSchema,
-  async ({ employeeId }) => {
+  async ({ employeeId }, { ctx }) => {
+    requirePermissionIn(ctx, ...CREATE_PERMS, 'requests.view');
     const supabase = await createClient();
     const [lookups, managerRes] = await Promise.all([
       loadFormLookups(supabase, employeeId ?? null),
@@ -223,7 +244,8 @@ export const loadRequestLookups = withAction(
 
 export const searchEmployees = withAction(
   searchSchema,
-  async ({ q }) => {
+  async ({ q }, { ctx }) => {
+    requirePermissionIn(ctx, ...CREATE_PERMS, 'requests.view');
     const supabase = await createClient();
     let query = supabase
       .from('employees')
@@ -276,7 +298,8 @@ export type LeavePreview = {
 
 export const previewLeave = withAction(
   previewLeaveSchema,
-  async ({ employeeId, leaveTypeId, start, end, requestId }) => {
+  async ({ employeeId, leaveTypeId, start, end, requestId }, { ctx }) => {
+    requirePermissionIn(ctx, ...CREATE_PERMS, 'leave.view');
     const supabase = await createClient();
     const year = Number((start ?? new Date().toISOString()).slice(0, 4));
     const hasRange = Boolean(start && end && end >= start);

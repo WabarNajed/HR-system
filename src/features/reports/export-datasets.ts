@@ -3,7 +3,7 @@ import 'server-only';
 import { ActionError } from '@/lib/action';
 import type { SessionContext } from '@/lib/auth/session';
 import { defineDataset, type AnyExportDataset, type ExportColumn, type ExportColumnType } from '@/lib/export/types';
-import { formatDateRange, formatMonthYear, todayIso } from '@/lib/i18n/date-format';
+import { formatDateRange, formatHijriDate, formatMonthYear, todayIso } from '@/lib/i18n/date-format';
 import { employeeDisplayName } from '@/lib/i18n/localized';
 import type { LooseTranslator } from '@/lib/i18n/translator';
 import type { ListParams } from '@/lib/list-params';
@@ -12,7 +12,7 @@ import type { Locale } from '@/lib/i18n/config';
 import { decodeBuilderConfig, type BuilderField } from './builder/sources';
 import { runBuilderQueryAll, validateBuilderConfig } from './builder/server';
 import { columnField, REPORTS, reportDatasetKey, type ReportColumn, type ReportDefinition } from './definitions';
-import { canOpenReportCenter, canViewReport, readReportFilters, REPORT_URL_KEYS, type ReportFilterState } from './filters';
+import { canExportReport, canOpenReportCenter, readReportFilters, REPORT_URL_KEYS, type ReportFilterState } from './filters';
 import { loadEmployeeOptions, loadFilterOptions } from './queries';
 import { fetchReportRows, sortableColumnIds, type ReportRow } from './registry';
 
@@ -27,7 +27,9 @@ type Row = ReportRow;
 function pickLocalized(row: Row, base: string, locale: Locale): string | null {
   const primary = row[`${base}_${locale}`];
   const other = row[`${base}_${locale === 'ar' ? 'en' : 'ar'}`];
-  const value = (typeof primary === 'string' && primary.trim() ? primary : typeof other === 'string' && other.trim() ? other : null) as string | null;
+  const value = (typeof primary === 'string' && primary.trim() ? primary : typeof other === 'string' && other.trim() ? other : null) as
+    | string
+    | null;
   return value;
 }
 
@@ -49,29 +51,66 @@ const TYPE_BY_KIND: Partial<Record<ReportColumn['kind'], ExportColumnType>> = {
 /** Report column → export column (localized text, translated enums/statuses, typed numbers/dates). */
 export function reportExportColumn(col: ReportColumn, t: LooseTranslator, locale: Locale): ExportColumn<Row> {
   const field = columnField(col);
-  const base: ExportColumn<Row> = { key: col.id, header: t(col.labelKey), width: col.width, type: TYPE_BY_KIND[col.kind] ?? 'text' };
+  const base: ExportColumn<Row> = {
+    key: col.id,
+    header: t(col.labelKey),
+    width: col.width,
+    type: TYPE_BY_KIND[col.kind] ?? 'text',
+  };
   const empty = (v: string | null) => v ?? (col.emptyKey ? t(col.emptyKey) : null);
   switch (col.kind) {
     case 'employee':
-      return { ...base, value: (r) => employeeDisplayName({ name_ar: r.name_ar as string, name_en: r.name_en as string }, locale) || null };
+      return {
+        ...base,
+        value: (r) => employeeDisplayName({ name_ar: r.name_ar as string, name_en: r.name_en as string }, locale) || null,
+      };
     case 'user':
-      return { ...base, value: (r) => (r.actor_name as string) || (r.actor_email as string) || t('reports.view.system') };
+      return {
+        ...base,
+        value: (r) => pickLocalized(r, 'actor_name', locale) || (r.actor_email as string) || t('reports.view.system'),
+      };
     case 'localized':
       return { ...base, value: (r) => empty(pickLocalized(r, field, locale)) };
     case 'status':
-      return { ...base, value: (r) => translated(t, `statuses.${col.statusDomain}.${r[field]}`, r[field]) };
+      return {
+        ...base,
+        value: (r) => translated(t, `statuses.${col.statusDomain}.${r[field]}`, r[field]),
+      };
     case 'enum':
-      return { ...base, value: (r) => translated(t, `enums.${col.enumKey}.${r[field]}`, r[field]) };
+      return {
+        ...base,
+        value: (r) => translated(t, `enums.${col.enumKey}.${r[field]}`, r[field]),
+      };
     case 'bucket':
-      return { ...base, value: (r) => translated(t, `reports.buckets.${r[field]}`, r[field]) };
+      return {
+        ...base,
+        value: (r) => translated(t, `reports.buckets.${r[field]}`, r[field]),
+      };
     case 'category':
-      return { ...base, value: (r) => translated(t, `reports.categories.${r[field]}`, r[field]) };
+      return {
+        ...base,
+        value: (r) => translated(t, `reports.categories.${r[field]}`, r[field]),
+      };
     case 'sla':
-      return { ...base, value: (r) => translated(t, `reports.sla.${r[field]}`, r[field]) };
+      return {
+        ...base,
+        value: (r) => translated(t, `reports.sla.${r[field]}`, r[field]),
+      };
+    case 'hijri':
+      return {
+        ...base,
+        value: (r) => (col.dateField && r[col.dateField] ? formatHijriDate(r[col.dateField] as string, locale) : null) || (r[field] as string | null),
+      };
     case 'month':
-      return { ...base, value: (r) => (r[field] ? formatMonthYear(r[field] as string, locale) : null) };
+      return {
+        ...base,
+        value: (r) => (r[field] ? formatMonthYear(r[field] as string, locale) : null),
+      };
     default:
-      return { ...base, value: (r) => (r[field] === undefined ? null : r[field]) };
+      return {
+        ...base,
+        value: (r) => (r[field] === undefined ? null : r[field]),
+      };
   }
 }
 
@@ -132,7 +171,8 @@ function listGetter(params: ListParams): (key: string) => string | null {
 const reportDatasets: AnyExportDataset[] = REPORTS.map((def) =>
   defineDataset<Row>({
     key: reportDatasetKey(def.key),
-    permission: 'reports.export',
+    // Checked by the route before any query (403); `fetchRows` re-checks full report + export access.
+    permission: def.exportPermission ?? 'reports.export',
     titleKey: `reports.items.${def.i18n}.title`,
     filterKeys: REPORT_URL_KEYS,
     allowedSorts: sortableColumnIds(def),
@@ -141,8 +181,8 @@ const reportDatasets: AnyExportDataset[] = REPORTS.map((def) =>
     landscape: true,
     columns: (t, ctx) => def.columns.map((col) => reportExportColumn(col, t, ctx.locale)),
     fetchRows: async (supabase, params, ctx) => {
-      // Report access on top of the dataset permission (e.g. User Activity also needs audit.view).
-      if (!canViewReport(ctx.session, def)) throw new ActionError('errors.forbidden');
+      // Report access + export rights on top of the dataset permission (e.g. User Activity needs audit.view).
+      if (!canExportReport(ctx.session, def)) throw new ActionError('errors.forbidden');
       const state = readReportFilters(def, listGetter(params), todayIso());
       const rows = await fetchReportRows(supabase, def, state, { q: params.q, sort: params.sort, dir: params.dir }, ctx.locale, ctx.limit);
       try {
@@ -169,8 +209,22 @@ export function builderExportColumn(field: BuilderField, t: LooseTranslator): Ex
     header: t(`reports.builder.fields.${field.labelId}`),
     type: BUILDER_TYPE[field.type] ?? 'text',
   };
-  if (field.type === 'enum') return { ...base, value: (r) => translated(t, `enums.${field.enumKey}.${r[field.key]}`, r[field.key]) };
-  if (field.type === 'status') return { ...base, value: (r) => translated(t, `statuses.${field.statusDomain}.${r[field.key]}`, r[field.key]) };
+  if (field.plain)
+    return {
+      ...base,
+      type: 'text',
+      value: (r) => (r[field.key] === null || r[field.key] === undefined ? null : String(r[field.key])),
+    };
+  if (field.type === 'enum')
+    return {
+      ...base,
+      value: (r) => translated(t, `enums.${field.enumKey}.${r[field.key]}`, r[field.key]),
+    };
+  if (field.type === 'status')
+    return {
+      ...base,
+      value: (r) => translated(t, `statuses.${field.statusDomain}.${r[field.key]}`, r[field.key]),
+    };
   return base;
 }
 
@@ -194,7 +248,12 @@ const builderDataset = defineDataset<Row>({
       const field = validated.source.fields.find((x) => x.key === dateField);
       if (field) lines.push(`${ctx.t(`reports.builder.fields.${field.labelId}`)}: ${formatDateRange(dateFrom, dateTo, ctx.locale)}`);
     }
-    if (validated.config.filters.length) lines.push(ctx.t('reports.builder.exportFilters', { count: validated.config.filters.length }));
+    if (validated.config.filters.length)
+      lines.push(
+        ctx.t('reports.builder.exportFilters', {
+          count: validated.config.filters.length,
+        }),
+      );
     FILTER_LINES.set(params, lines);
     return runBuilderQueryAll(supabase, validated, ctx.locale, ctx.limit);
   },

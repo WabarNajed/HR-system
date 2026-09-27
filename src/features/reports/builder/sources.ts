@@ -18,7 +18,16 @@ import { can, type Permission, type PermissionSubject } from '@/lib/permissions'
  * is only ever a field key, an operator from the fixed list and a validated value.
  */
 
-export const BUILDER_SOURCES = ['employees', 'requests', 'leave_balances', 'leave_requests', 'documents', 'certificates', 'dependents', 'insurance'] as const;
+export const BUILDER_SOURCES = [
+  'employees',
+  'requests',
+  'leave_balances',
+  'leave_requests',
+  'documents',
+  'certificates',
+  'dependents',
+  'insurance',
+] as const;
 export type BuilderSourceKey = (typeof BUILDER_SOURCES)[number];
 
 export type BuilderFieldType = 'text' | 'number' | 'date' | 'datetime' | 'boolean' | 'enum' | 'status' | 'reference';
@@ -45,6 +54,8 @@ export type BuilderField = {
   permission?: Permission;
   /** Pre-selected when the source is chosen. */
   preset?: boolean;
+  /** Numbers shown without grouping (years). */
+  plain?: boolean;
   /** Picker grouping. */
   section: 'record' | 'employee' | 'personal' | 'compensation' | 'dates';
 };
@@ -75,9 +86,22 @@ export function filterKindOf(field: BuilderField): FilterKind | null {
 }
 
 const EMPLOYMENT_STATUSES = ['active', 'probation', 'on_leave', 'suspended', 'resigned', 'terminated'];
-const REQUEST_STATUSES = ['submitted', 'pending_manager_approval', 'pending_hr_review', 'returned', 'approved', 'rejected', 'in_progress', 'completed', 'cancelled'];
+const REQUEST_STATUSES = [
+  'submitted',
+  'pending_manager_approval',
+  'pending_hr_review',
+  'returned',
+  'approved',
+  'rejected',
+  'in_progress',
+  'completed',
+  'cancelled',
+];
 
-type FieldInit = Omit<BuilderField, 'key' | 'type' | 'labelId' | 'section'> & { labelId?: string; section?: BuilderField['section'] };
+type FieldInit = Omit<BuilderField, 'key' | 'type' | 'labelId' | 'section'> & {
+  labelId?: string;
+  section?: BuilderField['section'];
+};
 const f = (key: string, type: BuilderFieldType, init: FieldInit = {}): BuilderField => ({
   ...init,
   key,
@@ -90,8 +114,17 @@ const f = (key: string, type: BuilderFieldType, init: FieldInit = {}): BuilderFi
 /* Employee sub-fields shared by employee-owned sources. */
 const OWNER_FIELDS: BuilderField[] = [
   f('employee', 'text', { section: 'employee', preset: true, sortable: true }),
-  f('employeeNumber', 'text', { section: 'employee', filter: 'text', preset: true }),
-  f('department', 'reference', { section: 'employee', reference: 'departments', filter: 'options', sortable: false }),
+  f('employeeNumber', 'text', {
+    section: 'employee',
+    filter: 'text',
+    preset: true,
+  }),
+  f('department', 'reference', {
+    section: 'employee',
+    reference: 'departments',
+    filter: 'options',
+    sortable: false,
+  }),
 ];
 
 const PERSONAL: Permission = 'personal_data.view';
@@ -108,40 +141,149 @@ export const BUILDER_SOURCE_DEFS: readonly BuilderSourceDef[] = [
       f('employeeNumber', 'text', { filter: 'text', preset: true }),
       f('nameAr', 'text', { filter: 'text', preset: true }),
       f('nameEn', 'text', { filter: 'text', preset: true }),
-      f('department', 'reference', { reference: 'departments', filter: 'options', preset: true }),
-      f('jobTitle', 'reference', { reference: 'jobTitles', filter: 'options', preset: true }),
+      f('department', 'reference', {
+        reference: 'departments',
+        filter: 'options',
+        preset: true,
+      }),
+      f('jobTitle', 'reference', {
+        reference: 'jobTitles',
+        filter: 'options',
+        preset: true,
+      }),
       f('location', 'reference', { reference: 'locations', filter: 'options' }),
       f('costCenter', 'text', { sortable: false }),
       f('manager', 'text'),
       f('grade', 'text', { filter: 'text' }),
       f('division', 'text', { filter: 'text' }),
       f('section', 'text', { filter: 'text' }),
-      f('employmentType', 'enum', { enumKey: 'employmentType', values: ['full_time', 'part_time', 'contract', 'temporary', 'intern'], filter: 'options' }),
-      f('employmentStatus', 'status', { statusDomain: 'employment', values: EMPLOYMENT_STATUSES, filter: 'options', preset: true }),
+      f('employmentType', 'enum', {
+        enumKey: 'employmentType',
+        values: ['full_time', 'part_time', 'contract', 'temporary', 'intern'],
+        filter: 'options',
+      }),
+      f('employmentStatus', 'status', {
+        statusDomain: 'employment',
+        values: EMPLOYMENT_STATUSES,
+        filter: 'options',
+        preset: true,
+      }),
       f('nationality', 'text', { filter: 'text' }),
-      f('gender', 'enum', { enumKey: 'gender', values: ['male', 'female'], filter: 'options' }),
+      f('gender', 'enum', {
+        enumKey: 'gender',
+        values: ['male', 'female'],
+        filter: 'options',
+      }),
       f('companyEmail', 'text', { filter: 'text' }),
       f('mobile', 'text', { filter: 'text' }),
-      f('joiningDate', 'date', { filter: 'date', dateRange: true, section: 'dates', preset: true }),
-      f('probationEndDate', 'date', { filter: 'date', dateRange: true, section: 'dates' }),
-      f('contractStartDate', 'date', { filter: 'date', dateRange: true, section: 'dates' }),
-      f('contractEndDate', 'date', { filter: 'date', dateRange: true, section: 'dates' }),
-      f('terminationDate', 'date', { filter: 'date', dateRange: true, section: 'dates' }),
-      f('dateOfBirth', 'date', { filter: 'date', dateRange: true, section: 'personal', permission: PERSONAL }),
-      f('maritalStatus', 'enum', { enumKey: 'maritalStatus', values: ['single', 'married', 'divorced', 'widowed'], filter: 'options', section: 'personal', permission: PERSONAL }),
-      f('personalEmail', 'text', { filter: 'text', section: 'personal', permission: PERSONAL }),
-      f('idType', 'enum', { enumKey: 'idType', values: ['iqama', 'national_id'], filter: 'options', section: 'personal', permission: PERSONAL }),
-      f('nationalId', 'text', { filter: 'text', section: 'personal', permission: PERSONAL }),
-      f('iqamaExpiryDate', 'date', { filter: 'date', dateRange: true, section: 'personal', permission: PERSONAL }),
-      f('passportNumber', 'text', { filter: 'text', section: 'personal', permission: PERSONAL }),
-      f('passportExpiryDate', 'date', { filter: 'date', dateRange: true, section: 'personal', permission: PERSONAL }),
-      f('basicSalary', 'number', { section: 'compensation', permission: BANK, sortable: false }),
-      f('housingAllowance', 'number', { section: 'compensation', permission: BANK, sortable: false }),
-      f('transportAllowance', 'number', { section: 'compensation', permission: BANK, sortable: false }),
-      f('otherAllowance', 'number', { section: 'compensation', permission: BANK, sortable: false }),
-      f('totalSalary', 'number', { section: 'compensation', permission: BANK, sortable: false }),
-      f('bankName', 'text', { section: 'compensation', permission: BANK, sortable: false }),
-      f('iban', 'text', { section: 'compensation', permission: BANK, sortable: false }),
+      f('joiningDate', 'date', {
+        filter: 'date',
+        dateRange: true,
+        section: 'dates',
+        preset: true,
+      }),
+      f('probationEndDate', 'date', {
+        filter: 'date',
+        dateRange: true,
+        section: 'dates',
+      }),
+      f('contractStartDate', 'date', {
+        filter: 'date',
+        dateRange: true,
+        section: 'dates',
+      }),
+      f('contractEndDate', 'date', {
+        filter: 'date',
+        dateRange: true,
+        section: 'dates',
+      }),
+      f('terminationDate', 'date', {
+        filter: 'date',
+        dateRange: true,
+        section: 'dates',
+      }),
+      f('dateOfBirth', 'date', {
+        filter: 'date',
+        dateRange: true,
+        section: 'personal',
+        permission: PERSONAL,
+      }),
+      f('maritalStatus', 'enum', {
+        enumKey: 'maritalStatus',
+        values: ['single', 'married', 'divorced', 'widowed'],
+        filter: 'options',
+        section: 'personal',
+        permission: PERSONAL,
+      }),
+      f('personalEmail', 'text', {
+        filter: 'text',
+        section: 'personal',
+        permission: PERSONAL,
+      }),
+      f('idType', 'enum', {
+        enumKey: 'idType',
+        values: ['iqama', 'national_id'],
+        filter: 'options',
+        section: 'personal',
+        permission: PERSONAL,
+      }),
+      f('nationalId', 'text', {
+        filter: 'text',
+        section: 'personal',
+        permission: PERSONAL,
+      }),
+      f('iqamaExpiryDate', 'date', {
+        filter: 'date',
+        dateRange: true,
+        section: 'personal',
+        permission: PERSONAL,
+      }),
+      f('passportNumber', 'text', {
+        filter: 'text',
+        section: 'personal',
+        permission: PERSONAL,
+      }),
+      f('passportExpiryDate', 'date', {
+        filter: 'date',
+        dateRange: true,
+        section: 'personal',
+        permission: PERSONAL,
+      }),
+      f('basicSalary', 'number', {
+        section: 'compensation',
+        permission: BANK,
+        sortable: false,
+      }),
+      f('housingAllowance', 'number', {
+        section: 'compensation',
+        permission: BANK,
+        sortable: false,
+      }),
+      f('transportAllowance', 'number', {
+        section: 'compensation',
+        permission: BANK,
+        sortable: false,
+      }),
+      f('otherAllowance', 'number', {
+        section: 'compensation',
+        permission: BANK,
+        sortable: false,
+      }),
+      f('totalSalary', 'number', {
+        section: 'compensation',
+        permission: BANK,
+        sortable: false,
+      }),
+      f('bankName', 'text', {
+        section: 'compensation',
+        permission: BANK,
+        sortable: false,
+      }),
+      f('iban', 'text', {
+        section: 'compensation',
+        permission: BANK,
+        sortable: false,
+      }),
     ],
   },
   {
@@ -152,17 +294,55 @@ export const BUILDER_SOURCE_DEFS: readonly BuilderSourceDef[] = [
     defaultDateField: 'submittedAt',
     fields: [
       f('requestNumber', 'text', { filter: 'text', preset: true }),
-      f('requestType', 'reference', { reference: 'requestTypes', filter: 'options', preset: true }),
+      f('requestType', 'reference', {
+        reference: 'requestTypes',
+        filter: 'options',
+        preset: true,
+      }),
       f('title', 'text', { filter: 'text' }),
-      f('requestStatus', 'status', { statusDomain: 'request', values: REQUEST_STATUSES, filter: 'options', preset: true }),
-      f('priority', 'enum', { enumKey: 'priority', values: ['low', 'normal', 'high', 'urgent'], filter: 'options' }),
-      f('currentStep', 'enum', { enumKey: 'stepType', values: ['manager', 'hr', 'role', 'user'], filter: 'options' }),
+      f('requestStatus', 'status', {
+        statusDomain: 'request',
+        values: REQUEST_STATUSES,
+        filter: 'options',
+        preset: true,
+      }),
+      f('priority', 'enum', {
+        enumKey: 'priority',
+        values: ['low', 'normal', 'high', 'urgent'],
+        filter: 'options',
+      }),
+      f('currentStep', 'enum', {
+        enumKey: 'stepType',
+        values: ['manager', 'hr', 'role', 'user'],
+        filter: 'options',
+      }),
       ...OWNER_FIELDS,
-      f('submittedAt', 'datetime', { filter: 'date', dateRange: true, section: 'dates', preset: true }),
-      f('dueAt', 'datetime', { filter: 'date', dateRange: true, section: 'dates' }),
-      f('completedAt', 'datetime', { filter: 'date', dateRange: true, section: 'dates' }),
-      f('cancelledAt', 'datetime', { filter: 'date', dateRange: true, section: 'dates' }),
-      f('createdAt', 'datetime', { filter: 'date', dateRange: true, section: 'dates' }),
+      f('submittedAt', 'datetime', {
+        filter: 'date',
+        dateRange: true,
+        section: 'dates',
+        preset: true,
+      }),
+      f('dueAt', 'datetime', {
+        filter: 'date',
+        dateRange: true,
+        section: 'dates',
+      }),
+      f('completedAt', 'datetime', {
+        filter: 'date',
+        dateRange: true,
+        section: 'dates',
+      }),
+      f('cancelledAt', 'datetime', {
+        filter: 'date',
+        dateRange: true,
+        section: 'dates',
+      }),
+      f('createdAt', 'datetime', {
+        filter: 'date',
+        dateRange: true,
+        section: 'dates',
+      }),
     ],
   },
   {
@@ -172,8 +352,12 @@ export const BUILDER_SOURCE_DEFS: readonly BuilderSourceDef[] = [
     defaultSort: 'year',
     fields: [
       ...OWNER_FIELDS,
-      f('leaveType', 'reference', { reference: 'leaveTypes', filter: 'options', preset: true }),
-      f('year', 'number', { filter: 'number', preset: true }),
+      f('leaveType', 'reference', {
+        reference: 'leaveTypes',
+        filter: 'options',
+        preset: true,
+      }),
+      f('year', 'number', { plain: true, filter: 'number', preset: true }),
       f('openingBalance', 'number', { filter: 'number' }),
       f('entitlement', 'number', { filter: 'number', preset: true }),
       f('adjustment', 'number', { filter: 'number' }),
@@ -191,14 +375,42 @@ export const BUILDER_SOURCE_DEFS: readonly BuilderSourceDef[] = [
     fields: [
       f('requestNumber', 'text', { preset: true, sortable: false }),
       ...OWNER_FIELDS,
-      f('leaveType', 'reference', { reference: 'leaveTypes', filter: 'options', preset: true }),
-      f('startDate', 'date', { filter: 'date', dateRange: true, section: 'dates', preset: true }),
-      f('endDate', 'date', { filter: 'date', dateRange: true, section: 'dates', preset: true }),
-      f('returnDate', 'date', { filter: 'date', dateRange: true, section: 'dates' }),
+      f('leaveType', 'reference', {
+        reference: 'leaveTypes',
+        filter: 'options',
+        preset: true,
+      }),
+      f('startDate', 'date', {
+        filter: 'date',
+        dateRange: true,
+        section: 'dates',
+        preset: true,
+      }),
+      f('endDate', 'date', {
+        filter: 'date',
+        dateRange: true,
+        section: 'dates',
+        preset: true,
+      }),
+      f('returnDate', 'date', {
+        filter: 'date',
+        dateRange: true,
+        section: 'dates',
+      }),
       f('days', 'number', { filter: 'number', preset: true }),
-      f('requestStatus', 'status', { statusDomain: 'request', values: REQUEST_STATUSES, filter: 'options', preset: true, sortable: false }),
-      f('balanceEffect', 'status', { statusDomain: 'leaveBalanceEffect', values: ['none', 'pending', 'used', 'reversed'], filter: 'options' }),
-      f('year', 'number', { filter: 'number' }),
+      f('requestStatus', 'status', {
+        statusDomain: 'request',
+        values: REQUEST_STATUSES,
+        filter: 'options',
+        preset: true,
+        sortable: false,
+      }),
+      f('balanceEffect', 'status', {
+        statusDomain: 'leaveBalanceEffect',
+        values: ['none', 'pending', 'used', 'reversed'],
+        filter: 'options',
+      }),
+      f('year', 'number', { plain: true, filter: 'number' }),
     ],
   },
   {
@@ -229,12 +441,30 @@ export const BUILDER_SOURCE_DEFS: readonly BuilderSourceDef[] = [
         preset: true,
       }),
       f('documentNumber', 'text', { filter: 'text' }),
-      f('issueDate', 'date', { filter: 'date', dateRange: true, section: 'dates' }),
-      f('expiryDate', 'date', { filter: 'date', dateRange: true, section: 'dates', preset: true }),
-      f('documentStatus', 'status', { statusDomain: 'document', values: ['valid', 'expired', 'pending_review', 'rejected', 'archived'], filter: 'options', preset: true }),
+      f('issueDate', 'date', {
+        filter: 'date',
+        dateRange: true,
+        section: 'dates',
+      }),
+      f('expiryDate', 'date', {
+        filter: 'date',
+        dateRange: true,
+        section: 'dates',
+        preset: true,
+      }),
+      f('documentStatus', 'status', {
+        statusDomain: 'document',
+        values: ['valid', 'expired', 'pending_review', 'rejected', 'archived'],
+        filter: 'options',
+        preset: true,
+      }),
       f('fileName', 'text', { filter: 'text' }),
       f('isConfidential', 'boolean', { filter: 'boolean' }),
-      f('uploadedAt', 'datetime', { filter: 'date', dateRange: true, section: 'dates' }),
+      f('uploadedAt', 'datetime', {
+        filter: 'date',
+        dateRange: true,
+        section: 'dates',
+      }),
     ],
   },
   {
@@ -246,13 +476,36 @@ export const BUILDER_SOURCE_DEFS: readonly BuilderSourceDef[] = [
     fields: [
       f('certificateNumber', 'text', { filter: 'text', preset: true }),
       ...OWNER_FIELDS,
-      f('certificateType', 'enum', { enumKey: 'certificateType', values: ['salary', 'employment', 'salary_employment', 'experience', 'custom'], filter: 'options', preset: true }),
-      f('language', 'enum', { enumKey: 'certificateLanguage', values: ['ar', 'en', 'bilingual'], filter: 'options' }),
-      f('issueDate', 'date', { filter: 'date', dateRange: true, section: 'dates', preset: true }),
-      f('certificateStatus', 'status', { statusDomain: 'certificate', values: ['valid', 'revoked'], filter: 'options', preset: true }),
+      f('certificateType', 'enum', {
+        enumKey: 'certificateType',
+        values: ['salary', 'employment', 'salary_employment', 'experience', 'custom'],
+        filter: 'options',
+        preset: true,
+      }),
+      f('language', 'enum', {
+        enumKey: 'certificateLanguage',
+        values: ['ar', 'en', 'bilingual'],
+        filter: 'options',
+      }),
+      f('issueDate', 'date', {
+        filter: 'date',
+        dateRange: true,
+        section: 'dates',
+        preset: true,
+      }),
+      f('certificateStatus', 'status', {
+        statusDomain: 'certificate',
+        values: ['valid', 'revoked'],
+        filter: 'options',
+        preset: true,
+      }),
       f('addressedTo', 'text', { filter: 'text' }),
       f('purpose', 'text', { filter: 'text' }),
-      f('revokedAt', 'datetime', { filter: 'date', dateRange: true, section: 'dates' }),
+      f('revokedAt', 'datetime', {
+        filter: 'date',
+        dateRange: true,
+        section: 'dates',
+      }),
     ],
   },
   {
@@ -264,14 +517,37 @@ export const BUILDER_SOURCE_DEFS: readonly BuilderSourceDef[] = [
       ...OWNER_FIELDS,
       f('dependentNameAr', 'text', { filter: 'text', preset: true }),
       f('dependentNameEn', 'text', { filter: 'text', preset: true }),
-      f('relationship', 'enum', { enumKey: 'relationship', values: ['spouse', 'son', 'daughter', 'father', 'mother', 'other'], filter: 'options', preset: true }),
-      f('dateOfBirth', 'date', { filter: 'date', dateRange: true, section: 'dates' }),
+      f('relationship', 'enum', {
+        enumKey: 'relationship',
+        values: ['spouse', 'son', 'daughter', 'father', 'mother', 'other'],
+        filter: 'options',
+        preset: true,
+      }),
+      f('dateOfBirth', 'date', {
+        filter: 'date',
+        dateRange: true,
+        section: 'dates',
+      }),
       f('nationality', 'text', { filter: 'text' }),
       f('nationalId', 'text', { filter: 'text' }),
-      f('iqamaExpiryDate', 'date', { filter: 'date', dateRange: true, section: 'dates', preset: true }),
+      f('iqamaExpiryDate', 'date', {
+        filter: 'date',
+        dateRange: true,
+        section: 'dates',
+        preset: true,
+      }),
       f('passportNumber', 'text', { filter: 'text' }),
-      f('passportExpiryDate', 'date', { filter: 'date', dateRange: true, section: 'dates' }),
-      f('insuranceStatus', 'enum', { enumKey: 'insuranceStatus', values: ['insured', 'not_insured', 'pending'], filter: 'options', preset: true }),
+      f('passportExpiryDate', 'date', {
+        filter: 'date',
+        dateRange: true,
+        section: 'dates',
+      }),
+      f('insuranceStatus', 'enum', {
+        enumKey: 'insuranceStatus',
+        values: ['insured', 'not_insured', 'pending'],
+        filter: 'options',
+        preset: true,
+      }),
       f('insuranceMemberNumber', 'text', { filter: 'text' }),
     ],
   },
@@ -288,9 +564,24 @@ export const BUILDER_SOURCE_DEFS: readonly BuilderSourceDef[] = [
       f('policyNumber', 'text', { filter: 'text' }),
       f('insuranceClass', 'text', { filter: 'text', preset: true }),
       f('memberNumber', 'text', { filter: 'text', preset: true }),
-      f('startDate', 'date', { filter: 'date', dateRange: true, section: 'dates' }),
-      f('expiryDate', 'date', { filter: 'date', dateRange: true, section: 'dates', preset: true }),
-      f('insuranceStatus', 'status', { labelId: 'policyStatus', statusDomain: 'insurance', values: ['active', 'expired', 'pending', 'cancelled'], filter: 'options', preset: true }),
+      f('startDate', 'date', {
+        filter: 'date',
+        dateRange: true,
+        section: 'dates',
+      }),
+      f('expiryDate', 'date', {
+        filter: 'date',
+        dateRange: true,
+        section: 'dates',
+        preset: true,
+      }),
+      f('insuranceStatus', 'status', {
+        labelId: 'policyStatus',
+        statusDomain: 'insurance',
+        values: ['active', 'expired', 'pending', 'cancelled'],
+        filter: 'options',
+        preset: true,
+      }),
     ],
   },
 ];
@@ -316,7 +607,11 @@ export function visibleFields(subject: PermissionSubject | null | undefined, sou
 
 /* ─── Config (URL-safe) ─────────────────────────────────────────────────── */
 
-export type BuilderFilter = { field: string; op: string; value?: string | string[] | null };
+export type BuilderFilter = {
+  field: string;
+  op: string;
+  value?: string | string[] | null;
+};
 
 export type BuilderConfig = {
   source: BuilderSourceKey;
@@ -328,7 +623,13 @@ export type BuilderConfig = {
   dateTo: string | null;
 };
 
-export const BUILDER_LIMITS = { columns: 40, filters: 12, previewRows: 50, valueLength: 200, listValues: 100 } as const;
+export const BUILDER_LIMITS = {
+  columns: 40,
+  filters: 12,
+  previewRows: 50,
+  valueLength: 200,
+  listValues: 100,
+} as const;
 
 function toBase64Url(text: string): string {
   const bytes = new TextEncoder().encode(text);
@@ -365,7 +666,10 @@ export function defaultBuilderConfig(subject: PermissionSubject | null | undefin
     source: source.key,
     columns: fields.filter((x) => x.preset).map((x) => x.key),
     filters: [],
-    sort: { field: source.defaultSort, dir: source.key === 'employees' || source.key === 'dependents' ? 'asc' : 'desc' },
+    sort: {
+      field: source.defaultSort,
+      dir: source.key === 'employees' || source.key === 'dependents' ? 'asc' : 'desc',
+    },
     dateField: source.defaultDateField ?? null,
     dateFrom: null,
     dateTo: null,

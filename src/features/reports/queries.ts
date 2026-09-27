@@ -6,15 +6,29 @@ import type { ServerSupabaseClient } from '@/lib/supabase/server';
 import type { ReportFilterKey } from './definitions';
 
 /** Option shown by a filter control (label already localized). */
-export type FilterOption = { value: string; label: string; description?: string; inactive?: boolean };
+export type FilterOption = {
+  value: string;
+  label: string;
+  description?: string;
+  inactive?: boolean;
+};
 
 export type FilterOptions = Partial<Record<ReportFilterKey, FilterOption[]>>;
 
-type NamedRow = { id: string; name_ar: string | null; name_en: string | null; is_active?: boolean | null };
+type NamedRow = {
+  id: string;
+  name_ar: string | null;
+  name_en: string | null;
+  is_active?: boolean | null;
+};
 
 function named(rows: NamedRow[] | null | undefined, locale: Locale): FilterOption[] {
   return (rows ?? [])
-    .map((r) => ({ value: r.id, label: localized(r, 'name', locale) || '—', inactive: r.is_active === false }))
+    .map((r) => ({
+      value: r.id,
+      label: localized(r, 'name', locale) || '—',
+      inactive: r.is_active === false,
+    }))
     .sort((a, b) => Number(a.inactive) - Number(b.inactive) || a.label.localeCompare(b.label, locale));
 }
 
@@ -66,15 +80,26 @@ export async function loadFilterOptions(
   if (want.has('leaveType')) {
     tasks.push(
       (async () => {
-        const { data } = await supabase.from('leave_types').select('id, name_ar, name_en, is_active, sort_order').order('sort_order').limit(200);
-        out.leaveType = (data ?? []).map((r) => ({ value: r.id, label: localized(r, 'name', locale) || '—', inactive: r.is_active === false }));
+        const { data } = await supabase
+          .from('leave_types')
+          .select('id, name_ar, name_en, is_active, sort_order')
+          .order('sort_order')
+          .limit(200);
+        out.leaveType = (data ?? []).map((r) => ({
+          value: r.id,
+          label: localized(r, 'name', locale) || '—',
+          inactive: r.is_active === false,
+        }));
       })(),
     );
   }
   if (want.has('nationality')) {
     tasks.push(
       (async () => {
-        const { data } = await supabase.rpc('report_employee_breakdown', { p_dimension: 'nationality', p_filters: {} as never });
+        const { data } = await supabase.rpc('report_employee_breakdown', {
+          p_dimension: 'nationality',
+          p_filters: {} as never,
+        });
         out.nationality = (data ?? [])
           .filter((r) => r.group_key)
           .sort((a, b) => (b.headcount ?? 0) - (a.headcount ?? 0))
@@ -86,12 +111,18 @@ export async function loadFilterOptions(
     tasks.push(
       (async () => {
         const { data } = await supabase
-          .rpc('report_employee_rows', { p_filters: { scope: 'records' } as never })
+          .rpc('report_employee_rows', {
+            p_filters: { scope: 'records' } as never,
+          })
           .select('manager_id, manager_name_ar, manager_name_en')
           .not('manager_id', 'is', null)
           .limit(10000);
         const seen = new Map<string, FilterOption>();
-        for (const r of (data ?? []) as Array<{ manager_id: string | null; manager_name_ar: string | null; manager_name_en: string | null }>) {
+        for (const r of (data ?? []) as Array<{
+          manager_id: string | null;
+          manager_name_ar: string | null;
+          manager_name_en: string | null;
+        }>) {
           if (!r.manager_id || seen.has(r.manager_id)) continue;
           const label = employeeDisplayName({ name_ar: r.manager_name_ar, name_en: r.manager_name_en }, locale);
           if (label) seen.set(r.manager_id, { value: r.manager_id, label });
@@ -117,10 +148,18 @@ export async function loadFilterOptions(
   return out;
 }
 
-export type EmployeeOption = { value: string; label: string; description?: string };
+export type EmployeeOption = {
+  value: string;
+  label: string;
+  description?: string;
+};
 
 /** Labels for already-selected employee ids (employee filter chips). */
-export async function loadEmployeeOptions(supabase: ServerSupabaseClient, ids: readonly string[], locale: Locale): Promise<EmployeeOption[]> {
+export async function loadEmployeeOptions(
+  supabase: ServerSupabaseClient,
+  ids: readonly string[],
+  locale: Locale,
+): Promise<EmployeeOption[]> {
   if (!ids.length) return [];
   const { data } = await supabase.from('employees').select('id, name_ar, name_en, employee_number').in('id', ids.slice(0, 20));
   return (data ?? []).map((e) => ({

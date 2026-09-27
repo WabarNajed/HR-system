@@ -95,7 +95,7 @@ export type DateRangeKind =
   | 'issueDate'
   | 'activityDate';
 
-export type RangePreset = 'last30Days' | 'last90Days' | 'last12Months' | 'thisYear';
+export type RangePreset = 'last30Days' | 'last90Days' | 'last12Months' | 'thisYear' | 'calendarYear';
 
 export type StatusFilterDef =
   | { kind: 'status'; domain: StatusDomain; values: readonly string[] }
@@ -122,7 +122,8 @@ export type ColumnKind =
   | 'request'
   | 'month'
   | 'sla'
-  | 'daysLeft';
+  | 'daysLeft'
+  | 'hijri';
 
 export type ReportColumn = {
   /** Table column id — also the `?sort=` value when sortable. */
@@ -140,6 +141,8 @@ export type ReportColumn = {
   /** Row field holding the linked record id (employee / request). */
   linkField?: string;
   defaultHidden?: boolean;
+  /** `hijri`: Gregorian date field converted when the stored Hijri text is empty. */
+  dateField?: string;
   /** i18n key shown instead of an empty value (e.g. "Employee" for self-insured rows). */
   emptyKey?: string;
   /** Export column width (characters). */
@@ -201,6 +204,11 @@ export type ReportDefinition = {
   managers: boolean;
   /** Extra permissions (all required) on top of report access. */
   requires: readonly Permission[];
+  /**
+   * Permission the export route checks before any query (default `reports.export`). Reports over
+   * more sensitive data use a stricter one; exports always need `reports.export` + report access too.
+   */
+  exportPermission?: Permission;
   dateRange?: { kind: DateRangeKind; defaultPreset?: RangePreset };
   filters: readonly ReportFilterKey[];
   status?: StatusFilterDef;
@@ -224,10 +232,24 @@ const C = (id: string, kind: ColumnKind, extra: Partial<ReportColumn> = {}): Rep
 });
 
 /* Shared column sets */
-const EMPLOYEE_COL = C('employee', 'employee', { linkField: 'employee_id', width: 30 });
-const EMPLOYEE_NUMBER_COL = C('employeeNumber', 'code', { field: 'employee_number', width: 14 });
-const DEPARTMENT_COL = C('department', 'localized', { field: 'department', width: 22 });
-const JOB_TITLE_COL = C('jobTitle', 'localized', { field: 'job_title', width: 22 });
+const EMPLOYEE_COL = C('employee', 'employee', {
+  linkField: 'employee_id',
+  width: 30,
+});
+/** Shown as the employee cell subtitle on screen; a separate column in exports. */
+const EMPLOYEE_NUMBER_COL = C('employeeNumber', 'code', {
+  field: 'employee_number',
+  width: 14,
+  defaultHidden: true,
+});
+const DEPARTMENT_COL = C('department', 'localized', {
+  field: 'department',
+  width: 22,
+});
+const JOB_TITLE_COL = C('jobTitle', 'localized', {
+  field: 'job_title',
+  width: 22,
+});
 
 const EMPLOYMENT_STATUSES = ['active', 'probation', 'on_leave', 'suspended', 'resigned', 'terminated'] as const;
 const CURRENT_STATUSES = ['active', 'probation', 'on_leave', 'suspended'] as const;
@@ -259,7 +281,12 @@ const K = (key: string, icon: LucideIcon, tone: StatTone, format: ValueFormat = 
   ...extra,
 });
 
-const S = (key: string, color?: ChartSeries['color']): ChartSeries => ({ key, labelKey: `reports.series.${key}`, color });
+/** Chart series: `label` → `reports.series.<label>`; `dataKey` is the point field (single series use `value`). */
+const S = (label: string, color?: ChartSeries['color'], dataKey = 'value'): ChartSeries => ({
+  key: dataKey,
+  labelKey: `reports.series.${label}`,
+  color,
+});
 
 function breakdownReport(
   key: string,
@@ -281,11 +308,28 @@ function breakdownReport(
     status: { kind: 'status', domain: 'employment', values: CURRENT_STATUSES },
     kpis: [
       K('headcount', UsersIcon, 'primary'),
-      K(groupsKpi, LayersIcon, 'info'),
-      K('largest', TrendingUpIcon, 'secondary', 'integer', { hintKey: 'reports.kpiHints.largest', hintValueKey: 'largest' }),
-      K('unassigned', TriangleAlertIcon, 'warning', 'integer', { hintKey: 'reports.kpiHints.unassigned' }),
+      K('groups', LayersIcon, 'info', 'integer', {
+        labelKey: `reports.kpis.${groupsKpi}`,
+      }),
+      K('largest', TrendingUpIcon, 'secondary', 'integer', {
+        hintKey: 'reports.kpiHints.largest',
+        hintValueKey: 'largest',
+      }),
+      K('unassigned', TriangleAlertIcon, 'warning', 'integer', {
+        hintKey: 'reports.kpiHints.unassigned',
+      }),
     ],
-    charts: [{ key: 'breakdown', titleKey: `reports.charts.${i18n}`, type: 'bar', category: 'localized', series: [S('employees')], format: 'integer', top: 12 }],
+    charts: [
+      {
+        key: 'breakdown',
+        titleKey: `reports.charts.${i18n}`,
+        type: 'bar',
+        category: 'localized',
+        series: [S('employees')],
+        format: 'integer',
+        top: 12,
+      },
+    ],
     columns: [
       dimensionColumn,
       C('headcount', 'integer', { width: 12 }),
@@ -352,13 +396,21 @@ function expiryReport(
     ],
     defaultSort: { id: 'expiryDate', desc: false },
     table: 'paged',
-    preview: { stat: previewStat, labelKey: 'reports.preview.expiring90', tone: 'warning' },
+    preview: {
+      stat: previewStat,
+      labelKey: 'reports.preview.expiring90',
+      tone: 'warning',
+    },
   };
 }
 
 function requestColumns(...extra: ReportColumn[]): ReportColumn[] {
   return [
-    C('requestNumber', 'request', { field: 'request_number', linkField: 'id', width: 18 }),
+    C('requestNumber', 'request', {
+      field: 'request_number',
+      linkField: 'id',
+      width: 18,
+    }),
     C('requestType', 'localized', { field: 'type', width: 26 }),
     EMPLOYEE_COL,
     { ...DEPARTMENT_COL, defaultHidden: true },
@@ -379,10 +431,16 @@ export const REPORTS: readonly ReportDefinition[] = [
     requires: ['employees.view'],
     dateRange: { kind: 'joiningDate' },
     filters: ['department', 'jobTitle', 'location', 'nationality', 'manager', 'status', 'employee'],
-    status: { kind: 'status', domain: 'employment', values: EMPLOYMENT_STATUSES },
+    status: {
+      kind: 'status',
+      domain: 'employment',
+      values: EMPLOYMENT_STATUSES,
+    },
     kpis: [
       K('total', UsersIcon, 'primary'),
-      K('activeWorkforce', UserCheckIcon, 'success'),
+      K('active', UserCheckIcon, 'success', 'integer', {
+        labelKey: 'reports.kpis.activeWorkforce',
+      }),
       K('probation', HourglassIcon, 'info'),
       K('departments', Building2Icon, 'secondary'),
       K('avgTenure', TimerIcon, 'neutral', 'years'),
@@ -393,15 +451,31 @@ export const REPORTS: readonly ReportDefinition[] = [
       EMPLOYEE_NUMBER_COL,
       DEPARTMENT_COL,
       JOB_TITLE_COL,
-      C('location', 'localized', { field: 'location', width: 18 }),
+      C('location', 'localized', {
+        field: 'location',
+        width: 18,
+        defaultHidden: true,
+      }),
       C('manager', 'localized', { field: 'manager_name', width: 26 }),
       C('nationality', 'text', { width: 16 }),
-      C('gender', 'enum', { enumKey: 'gender', width: 10, defaultHidden: true }),
-      C('employmentType', 'enum', { field: 'employment_type', enumKey: 'employmentType', width: 14 }),
+      C('gender', 'enum', {
+        enumKey: 'gender',
+        width: 10,
+        defaultHidden: true,
+      }),
+      C('employmentType', 'enum', { field: 'employment_type', enumKey: 'employmentType', width: 14, defaultHidden: true }),
       C('status', 'status', { field: 'employment_status', statusDomain: 'employment', width: 14 }),
       C('joiningDate', 'date', { field: 'joining_date', width: 14 }),
-      C('contractEnd', 'date', { field: 'contract_end_date', width: 14, defaultHidden: true }),
-      C('email', 'text', { field: 'company_email', width: 28, defaultHidden: true }),
+      C('contractEnd', 'date', {
+        field: 'contract_end_date',
+        width: 14,
+        defaultHidden: true,
+      }),
+      C('email', 'text', {
+        field: 'company_email',
+        width: 28,
+        defaultHidden: true,
+      }),
       C('mobile', 'text', { width: 16, defaultHidden: true }),
       C('tenure', 'decimal', { field: 'tenure_years', width: 10 }),
     ],
@@ -419,21 +493,38 @@ export const REPORTS: readonly ReportDefinition[] = [
     dateRange: { kind: 'trendPeriod', defaultPreset: 'last12Months' },
     filters: [...EMPLOYEE_FILTERS],
     kpis: [
-      K('headcount', UsersIcon, 'primary', 'integer', { hintKey: 'reports.kpiHints.currentHeadcount' }),
-      K('joiners', UserPlusIcon, 'success', 'integer', { hintKey: 'reports.kpiHints.inPeriod' }),
-      K('leavers', UserMinusIcon, 'danger', 'integer', { hintKey: 'reports.kpiHints.inPeriod' }),
-      K('netChange', SigmaIcon, 'info', 'integer', { hintKey: 'reports.kpiHints.inPeriod' }),
-      K('turnover', PercentIcon, 'warning', 'percent', { hintKey: 'reports.kpiHints.turnover' }),
+      K('headcount', UsersIcon, 'primary', 'integer', {
+        hintKey: 'reports.kpiHints.currentHeadcount',
+      }),
+      K('joiners', UserPlusIcon, 'success', 'integer', {
+        hintKey: 'reports.kpiHints.inPeriod',
+      }),
+      K('leavers', UserMinusIcon, 'danger', 'integer', {
+        hintKey: 'reports.kpiHints.inPeriod',
+      }),
+      K('netChange', SigmaIcon, 'info', 'integer', {
+        hintKey: 'reports.kpiHints.inPeriod',
+      }),
+      K('turnover', PercentIcon, 'warning', 'percent', {
+        hintKey: 'reports.kpiHints.turnover',
+      }),
     ],
     charts: [
-      { key: 'trend', titleKey: 'reports.charts.headcountTrend', type: 'area', category: 'month', series: [S('headcount')], format: 'integer' },
+      {
+        key: 'trend',
+        titleKey: 'reports.charts.headcountTrend',
+        type: 'area',
+        category: 'month',
+        series: [S('headcount', undefined, 'headcount')],
+        format: 'integer',
+      },
       {
         key: 'trend',
         tab: 'movement',
         titleKey: 'reports.charts.joinersLeavers',
         type: 'grouped',
         category: 'month',
-        series: [S('joiners', 0), S('leavers', 1)],
+        series: [S('joiners', 0, 'joiners'), S('leavers', 1, 'leavers')],
         format: 'integer',
       },
     ],
@@ -453,7 +544,11 @@ export const REPORTS: readonly ReportDefinition[] = [
     'employees-by-department',
     'byDepartment',
     Building2Icon,
-    C('department', 'localized', { field: 'label', width: 28 }),
+    C('department', 'localized', {
+      field: 'label',
+      width: 28,
+      emptyKey: 'reports.view.notSet',
+    }),
     'departments',
     ['location', 'nationality', 'manager', 'status'],
     'departments',
@@ -462,7 +557,11 @@ export const REPORTS: readonly ReportDefinition[] = [
     'employees-by-nationality',
     'byNationality',
     EarthIcon,
-    C('nationality', 'localized', { field: 'label', width: 24 }),
+    C('nationality', 'localized', {
+      field: 'label',
+      width: 24,
+      emptyKey: 'reports.view.notSet',
+    }),
     'nationalities',
     ['department', 'location', 'manager', 'status'],
     'nationalities',
@@ -471,7 +570,11 @@ export const REPORTS: readonly ReportDefinition[] = [
     'employees-by-job-title',
     'byJobTitle',
     BriefcaseIcon,
-    C('jobTitle', 'localized', { field: 'label', width: 28 }),
+    C('jobTitle', 'localized', {
+      field: 'label',
+      width: 28,
+      emptyKey: 'reports.view.notSet',
+    }),
     'jobTitles',
     ['department', 'location', 'nationality', 'manager', 'status'],
     'jobTitles',
@@ -485,14 +588,29 @@ export const REPORTS: readonly ReportDefinition[] = [
     requires: ['employees.view'],
     dateRange: { kind: 'joiningDate', defaultPreset: 'last12Months' },
     filters: [...EMPLOYEE_FILTERS, 'jobTitle', 'status'],
-    status: { kind: 'status', domain: 'employment', values: EMPLOYMENT_STATUSES },
+    status: {
+      kind: 'status',
+      domain: 'employment',
+      values: EMPLOYMENT_STATUSES,
+    },
     kpis: [
       K('joiners', UserPlusIcon, 'primary'),
-      K('inProbation', HourglassIcon, 'info'),
+      K('probation', HourglassIcon, 'info', 'integer', {
+        labelKey: 'reports.kpis.inProbation',
+      }),
       K('departments', Building2Icon, 'secondary'),
       K('stillEmployed', UserCheckIcon, 'success'),
     ],
-    charts: [{ key: 'byMonth', titleKey: 'reports.charts.joinersByMonth', type: 'column', category: 'month', series: [S('joiners')], format: 'integer' }],
+    charts: [
+      {
+        key: 'byMonth',
+        titleKey: 'reports.charts.joinersByMonth',
+        type: 'column',
+        category: 'month',
+        series: [S('joiners')],
+        format: 'integer',
+      },
+    ],
     columns: [
       EMPLOYEE_COL,
       EMPLOYEE_NUMBER_COL,
@@ -500,9 +618,21 @@ export const REPORTS: readonly ReportDefinition[] = [
       JOB_TITLE_COL,
       C('joiningDate', 'date', { field: 'joining_date', width: 14 }),
       C('probationEnd', 'date', { field: 'probation_end_date', width: 14 }),
-      C('employmentType', 'enum', { field: 'employment_type', enumKey: 'employmentType', width: 14 }),
-      C('status', 'status', { field: 'employment_status', statusDomain: 'employment', width: 14 }),
-      C('manager', 'localized', { field: 'manager_name', width: 26, defaultHidden: true }),
+      C('employmentType', 'enum', {
+        field: 'employment_type',
+        enumKey: 'employmentType',
+        width: 14,
+      }),
+      C('status', 'status', {
+        field: 'employment_status',
+        statusDomain: 'employment',
+        width: 14,
+      }),
+      C('manager', 'localized', {
+        field: 'manager_name',
+        width: 26,
+        defaultHidden: true,
+      }),
     ],
     defaultSort: { id: 'joiningDate', desc: true },
     table: 'paged',
@@ -517,12 +647,18 @@ export const REPORTS: readonly ReportDefinition[] = [
     requires: ['employees.view'],
     dateRange: { kind: 'terminationDate', defaultPreset: 'last12Months' },
     filters: [...EMPLOYEE_FILTERS, 'status'],
-    status: { kind: 'status', domain: 'employment', values: ['resigned', 'terminated'] },
+    status: {
+      kind: 'status',
+      domain: 'employment',
+      values: ['resigned', 'terminated'],
+    },
     kpis: [
       K('leavers', UserMinusIcon, 'primary'),
       K('resigned', UserXIcon, 'warning'),
       K('terminated', BanIcon, 'danger'),
-      K('avgTenure', TimerIcon, 'neutral', 'years', { hintKey: 'reports.kpiHints.atExit' }),
+      K('avgTenure', TimerIcon, 'neutral', 'years', {
+        hintKey: 'reports.kpiHints.atExit',
+      }),
     ],
     charts: [
       {
@@ -530,7 +666,7 @@ export const REPORTS: readonly ReportDefinition[] = [
         titleKey: 'reports.charts.leaversByMonth',
         type: 'stacked',
         category: 'month',
-        series: [S('resigned', 1), S('terminated', 3)],
+        series: [S('resigned', 1, 'resigned'), S('terminated', 3, 'terminated')],
         format: 'integer',
       },
     ],
@@ -541,7 +677,11 @@ export const REPORTS: readonly ReportDefinition[] = [
       JOB_TITLE_COL,
       C('joiningDate', 'date', { field: 'joining_date', width: 14 }),
       C('terminationDate', 'date', { field: 'termination_date', width: 14 }),
-      C('status', 'status', { field: 'employment_status', statusDomain: 'employment', width: 14 }),
+      C('status', 'status', {
+        field: 'employment_status',
+        statusDomain: 'employment',
+        width: 14,
+      }),
       C('tenure', 'decimal', { field: 'tenure_years', width: 10 }),
     ],
     defaultSort: { id: 'terminationDate', desc: true },
@@ -555,7 +695,13 @@ export const REPORTS: readonly ReportDefinition[] = [
     'contractExpiry',
     FileSignatureIcon,
     ['employees.view'],
-    [C('employmentType', 'enum', { field: 'employment_type', enumKey: 'employmentType', width: 14 })],
+    [
+      C('employmentType', 'enum', {
+        field: 'employment_type',
+        enumKey: 'employmentType',
+        width: 14,
+      }),
+    ],
     'contract90',
   ),
   expiryReport(
@@ -565,18 +711,35 @@ export const REPORTS: readonly ReportDefinition[] = [
     ['personal_data.view'],
     [
       C('iqamaNumber', 'code', { field: 'reference', width: 16 }),
-      C('hijriExpiry', 'text', { field: 'expiry_hijri', width: 14, sortable: false, defaultHidden: true }),
+      C('hijriExpiry', 'hijri', {
+        field: 'expiry_hijri',
+        dateField: 'expiry_date',
+        width: 18,
+        sortable: false,
+      }),
     ],
     'iqama90',
   ),
-  expiryReport('passport-expiry', 'passportExpiry', PlaneTakeoffIcon, ['personal_data.view'], [C('passportNumber', 'code', { field: 'reference', width: 16 })], 'passport90'),
+  expiryReport(
+    'passport-expiry',
+    'passportExpiry',
+    PlaneTakeoffIcon,
+    ['personal_data.view'],
+    [C('passportNumber', 'code', { field: 'reference', width: 16 })],
+    'passport90',
+  ),
   expiryReport(
     'insurance-expiry',
     'insuranceExpiry',
     ShieldPlusIcon,
     ['insurance.view'],
     [
-      C('insuredPerson', 'localized', { field: 'dependent_name', width: 24, sortable: false, emptyKey: 'reports.view.employeeSelf' }),
+      C('insuredPerson', 'localized', {
+        field: 'dependent_name',
+        width: 24,
+        sortable: false,
+        emptyKey: 'reports.view.employeeSelf',
+      }),
       C('provider', 'text', { width: 20 }),
       C('insuranceClass', 'text', { field: 'insurance_class', width: 10 }),
       C('memberNumber', 'code', { field: 'reference', width: 16 }),
@@ -594,7 +757,10 @@ export const REPORTS: readonly ReportDefinition[] = [
     requires: ['leave.view'],
     filters: ['year', 'leaveType', 'department', 'location', 'manager', 'employee'],
     kpis: [
-      K('available', CalendarRangeIcon, 'primary', 'days', { hintKey: 'reports.kpiHints.employeesCovered', hintValueKey: 'employees' }),
+      K('available', CalendarRangeIcon, 'primary', 'days', {
+        hintKey: 'reports.kpiHints.employeesCovered',
+        hintValueKey: 'employees',
+      }),
       K('used', CalendarCheckIcon, 'info', 'days'),
       K('pending', HourglassIcon, 'warning', 'days'),
       K('remaining', WalletIcon, 'success', 'days'),
@@ -606,7 +772,7 @@ export const REPORTS: readonly ReportDefinition[] = [
         titleKey: 'reports.charts.balanceByType',
         type: 'stackedBar',
         category: 'localized',
-        series: [S('used', 0), S('pending', 1), S('available', 2)],
+        series: [S('used', 0, 'used'), S('pending', 1, 'pending'), S('available', 2, 'remaining')],
         format: 'days',
       },
     ],
@@ -616,9 +782,13 @@ export const REPORTS: readonly ReportDefinition[] = [
       { ...DEPARTMENT_COL, defaultHidden: true },
       C('leaveType', 'localized', { field: 'leave_type', width: 20 }),
       C('year', 'text', { width: 8, defaultHidden: true }),
-      C('openingBalance', 'days', { field: 'opening_balance', width: 12 }),
+      C('openingBalance', 'days', {
+        field: 'opening_balance',
+        width: 12,
+        defaultHidden: true,
+      }),
       C('entitlement', 'days', { width: 12 }),
-      C('adjustment', 'days', { width: 12 }),
+      C('adjustment', 'days', { width: 12, defaultHidden: true }),
       C('totalAvailable', 'days', { field: 'total_available', width: 12 }),
       C('used', 'days', { width: 10 }),
       C('pending', 'days', { width: 10 }),
@@ -627,7 +797,10 @@ export const REPORTS: readonly ReportDefinition[] = [
     ],
     defaultSort: { id: 'employee', desc: false },
     table: 'paged',
-    preview: { stat: 'balanceEmployees', labelKey: 'reports.preview.balanceEmployees' },
+    preview: {
+      stat: 'balanceEmployees',
+      labelKey: 'reports.preview.balanceEmployees',
+    },
   },
   {
     key: 'leave-usage',
@@ -636,18 +809,41 @@ export const REPORTS: readonly ReportDefinition[] = [
     icon: CalendarRangeIcon,
     managers: true,
     requires: ['leave.view'],
-    dateRange: { kind: 'leaveDates', defaultPreset: 'thisYear' },
+    dateRange: { kind: 'leaveDates', defaultPreset: 'calendarYear' },
     filters: ['leaveType', 'status', 'department', 'location', 'manager', 'employee'],
     status: { kind: 'status', domain: 'request', values: REQUEST_STATUSES },
     kpis: [
       K('daysTaken', CalendarCheckIcon, 'primary', 'days'),
-      K('leaveRequests', InboxIcon, 'info', 'integer', { hintKey: 'reports.kpiHints.pendingDays', hintValueKey: 'daysPending' }),
-      K('employeesOnLeave', UsersIcon, 'secondary'),
-      K('avgDays', ScaleIcon, 'neutral', 'days', { hintKey: 'reports.kpiHints.perRequest' }),
+      K('requests', InboxIcon, 'info', 'integer', {
+        labelKey: 'reports.kpis.leaveRequests',
+        hintKey: 'reports.kpiHints.pendingDays',
+        hintValueKey: 'daysPending',
+      }),
+      K('employees', UsersIcon, 'secondary', 'integer', {
+        labelKey: 'reports.kpis.employeesOnLeave',
+      }),
+      K('avgDays', ScaleIcon, 'neutral', 'days', {
+        hintKey: 'reports.kpiHints.perRequest',
+      }),
     ],
     charts: [
-      { key: 'byMonth', titleKey: 'reports.charts.leaveByMonth', type: 'column', category: 'month', series: [S('days')], format: 'days' },
-      { key: 'byType', titleKey: 'reports.charts.leaveByType', type: 'bar', category: 'localized', series: [S('days')], format: 'days', top: 10 },
+      {
+        key: 'byMonth',
+        titleKey: 'reports.charts.leaveByMonth',
+        type: 'column',
+        category: 'month',
+        series: [S('days')],
+        format: 'days',
+      },
+      {
+        key: 'byType',
+        titleKey: 'reports.charts.leaveByType',
+        type: 'bar',
+        category: 'localized',
+        series: [S('days')],
+        format: 'days',
+        top: 10,
+      },
       {
         key: 'byDepartment',
         titleKey: 'reports.charts.leaveByDepartment',
@@ -659,7 +855,11 @@ export const REPORTS: readonly ReportDefinition[] = [
       },
     ],
     columns: [
-      C('requestNumber', 'request', { field: 'request_number', linkField: 'request_id', width: 18 }),
+      C('requestNumber', 'request', {
+        field: 'request_number',
+        linkField: 'request_id',
+        width: 18,
+      }),
       EMPLOYEE_COL,
       { ...DEPARTMENT_COL, defaultHidden: true },
       C('leaveType', 'localized', { field: 'leave_type', width: 20 }),
@@ -670,7 +870,10 @@ export const REPORTS: readonly ReportDefinition[] = [
     ],
     defaultSort: { id: 'startDate', desc: true },
     table: 'paged',
-    preview: { stat: 'leaveDaysYear', labelKey: 'reports.preview.leaveDaysYear' },
+    preview: {
+      stat: 'leaveDaysYear',
+      labelKey: 'reports.preview.leaveDaysYear',
+    },
   },
 
   /* ── Requests ──────────────────────────────────────────────────────────── */
@@ -692,16 +895,47 @@ export const REPORTS: readonly ReportDefinition[] = [
       K('overdue', AlarmClockIcon, 'warning'),
     ],
     charts: [
-      { key: 'byStatus', titleKey: 'reports.charts.requestsByStatus', type: 'bar', category: 'status', statusDomain: 'request', series: [S('requests')], format: 'integer' },
-      { key: 'byType', titleKey: 'reports.charts.requestsByType', type: 'bar', category: 'localized', series: [S('requests')], format: 'integer', top: 10 },
-      { key: 'byMonth', titleKey: 'reports.charts.requestsByMonth', type: 'column', category: 'month', series: [S('requests')], format: 'integer' },
+      {
+        key: 'byStatus',
+        titleKey: 'reports.charts.requestsByStatus',
+        type: 'bar',
+        category: 'status',
+        statusDomain: 'request',
+        series: [S('requests')],
+        format: 'integer',
+      },
+      {
+        key: 'byType',
+        titleKey: 'reports.charts.requestsByType',
+        type: 'bar',
+        category: 'localized',
+        series: [S('requests')],
+        format: 'integer',
+        top: 10,
+      },
+      {
+        key: 'byMonth',
+        titleKey: 'reports.charts.requestsByMonth',
+        type: 'column',
+        category: 'month',
+        series: [S('requests')],
+        format: 'integer',
+      },
     ],
     columns: requestColumns(
       C('status', 'status', { statusDomain: 'request', width: 18 }),
-      C('priority', 'enum', { enumKey: 'priority', width: 10, defaultHidden: true }),
+      C('priority', 'enum', {
+        enumKey: 'priority',
+        width: 10,
+        defaultHidden: true,
+      }),
       C('submittedAt', 'date', { field: 'submitted_at', width: 14 }),
       C('dueAt', 'date', { field: 'due_at', width: 14 }),
-      C('resolvedAt', 'date', { field: 'resolved_at', width: 14 }),
+      C('resolvedAt', 'date', {
+        field: 'resolved_at',
+        width: 14,
+        defaultHidden: true,
+      }),
       C('sla', 'sla', { field: 'sla_state', width: 14 }),
     ),
     defaultSort: { id: 'submittedAt', desc: true },
@@ -722,12 +956,33 @@ export const REPORTS: readonly ReportDefinition[] = [
       K('open', ClockIcon, 'primary'),
       K('pendingManager', UserCheckIcon, 'info'),
       K('pendingHr', BriefcaseIcon, 'secondary'),
-      K('overdue', AlarmClockIcon, 'danger', 'integer', { hintKey: 'reports.kpiHints.dueSoon', hintValueKey: 'dueSoon' }),
-      K('avgAge', TimerIcon, 'neutral', 'days', { hintKey: 'reports.kpiHints.sinceSubmission' }),
+      K('overdue', AlarmClockIcon, 'danger', 'integer', {
+        hintKey: 'reports.kpiHints.dueSoon',
+        hintValueKey: 'dueSoon',
+      }),
+      K('avgAge', TimerIcon, 'neutral', 'days', {
+        hintKey: 'reports.kpiHints.sinceSubmission',
+      }),
     ],
     charts: [
-      { key: 'byStatus', titleKey: 'reports.charts.openByStage', type: 'bar', category: 'status', statusDomain: 'request', series: [S('requests')], format: 'integer' },
-      { key: 'byType', titleKey: 'reports.charts.requestsByType', type: 'bar', category: 'localized', series: [S('requests')], format: 'integer', top: 10 },
+      {
+        key: 'byStatus',
+        titleKey: 'reports.charts.openByStage',
+        type: 'bar',
+        category: 'status',
+        statusDomain: 'request',
+        series: [S('requests')],
+        format: 'integer',
+      },
+      {
+        key: 'byType',
+        titleKey: 'reports.charts.requestsByType',
+        type: 'bar',
+        category: 'localized',
+        series: [S('requests')],
+        format: 'integer',
+        top: 10,
+      },
     ],
     columns: requestColumns(
       C('status', 'status', { statusDomain: 'request', width: 18 }),
@@ -749,22 +1004,46 @@ export const REPORTS: readonly ReportDefinition[] = [
     requires: ['requests.view'],
     dateRange: { kind: 'resolvedDate', defaultPreset: 'last12Months' },
     filters: REQUEST_FILTERS,
-    status: { kind: 'status', domain: 'request', values: ['approved', 'completed'] },
+    status: {
+      kind: 'status',
+      domain: 'request',
+      values: ['approved', 'completed'],
+    },
     kpis: [
       K('completed', CircleCheckBigIcon, 'primary'),
       K('onTimeRate', GaugeIcon, 'success', 'percent'),
-      K('avgResolution', TimerIcon, 'info', 'days', { hintKey: 'reports.kpiHints.businessDays' }),
+      K('avgResolution', TimerIcon, 'info', 'days', {
+        hintKey: 'reports.kpiHints.businessDays',
+      }),
       K('employees', UsersIcon, 'secondary'),
     ],
     charts: [
-      { key: 'byMonth', titleKey: 'reports.charts.completedByMonth', type: 'column', category: 'month', series: [S('requests')], format: 'integer' },
-      { key: 'byType', titleKey: 'reports.charts.requestsByType', type: 'bar', category: 'localized', series: [S('requests')], format: 'integer', top: 10 },
+      {
+        key: 'byMonth',
+        titleKey: 'reports.charts.completedByMonth',
+        type: 'column',
+        category: 'month',
+        series: [S('requests')],
+        format: 'integer',
+      },
+      {
+        key: 'byType',
+        titleKey: 'reports.charts.requestsByType',
+        type: 'bar',
+        category: 'localized',
+        series: [S('requests')],
+        format: 'integer',
+        top: 10,
+      },
     ],
     columns: requestColumns(
       C('status', 'status', { statusDomain: 'request', width: 18 }),
       C('submittedAt', 'date', { field: 'submitted_at', width: 14 }),
       C('resolvedAt', 'date', { field: 'resolved_at', width: 14 }),
-      C('resolutionDays', 'integer', { field: 'resolution_business_days', width: 12 }),
+      C('resolutionDays', 'integer', {
+        field: 'resolution_business_days',
+        width: 12,
+      }),
       C('sla', 'sla', { field: 'sla_state', width: 14 }),
     ),
     defaultSort: { id: 'resolvedAt', desc: true },
@@ -783,17 +1062,38 @@ export const REPORTS: readonly ReportDefinition[] = [
     kpis: [
       K('rejected', CircleXIcon, 'danger'),
       K('employees', UsersIcon, 'secondary'),
-      K('avgResolution', TimerIcon, 'info', 'days', { hintKey: 'reports.kpiHints.businessDays' }),
+      K('avgResolution', TimerIcon, 'info', 'days', {
+        hintKey: 'reports.kpiHints.businessDays',
+      }),
     ],
     charts: [
-      { key: 'byType', titleKey: 'reports.charts.rejectedByType', type: 'bar', category: 'localized', series: [S('requests')], format: 'integer', top: 10 },
-      { key: 'byMonth', titleKey: 'reports.charts.rejectedByMonth', type: 'column', category: 'month', series: [S('requests')], format: 'integer' },
+      {
+        key: 'byType',
+        titleKey: 'reports.charts.rejectedByType',
+        type: 'bar',
+        category: 'localized',
+        series: [S('requests')],
+        format: 'integer',
+        top: 10,
+      },
+      {
+        key: 'byMonth',
+        titleKey: 'reports.charts.rejectedByMonth',
+        type: 'column',
+        category: 'month',
+        series: [S('requests')],
+        format: 'integer',
+      },
     ],
     columns: requestColumns(
       C('submittedAt', 'date', { field: 'submitted_at', width: 14 }),
       C('rejectedAt', 'date', { field: 'resolved_at', width: 14 }),
       C('rejectedBy', 'text', { field: 'decision_by', width: 22 }),
-      C('rejectionReason', 'text', { field: 'decision_comment', width: 40, sortable: false }),
+      C('rejectionReason', 'text', {
+        field: 'decision_comment',
+        width: 40,
+        sortable: false,
+      }),
     ),
     defaultSort: { id: 'rejectedAt', desc: true },
     table: 'paged',
@@ -816,18 +1116,42 @@ export const REPORTS: readonly ReportDefinition[] = [
       K('employees', UsersIcon, 'secondary'),
     ],
     charts: [
-      { key: 'byType', titleKey: 'reports.charts.overdueByType', type: 'bar', category: 'localized', series: [S('requests')], format: 'integer', top: 10 },
-      { key: 'byStatus', titleKey: 'reports.charts.openByStage', type: 'bar', category: 'status', statusDomain: 'request', series: [S('requests')], format: 'integer' },
+      {
+        key: 'byType',
+        titleKey: 'reports.charts.overdueByType',
+        type: 'bar',
+        category: 'localized',
+        series: [S('requests')],
+        format: 'integer',
+        top: 10,
+      },
+      {
+        key: 'byStatus',
+        titleKey: 'reports.charts.openByStage',
+        type: 'bar',
+        category: 'status',
+        statusDomain: 'request',
+        series: [S('requests')],
+        format: 'integer',
+      },
     ],
     columns: requestColumns(
       C('status', 'status', { statusDomain: 'request', width: 18 }),
-      C('currentStep', 'enum', { field: 'current_step_type', enumKey: 'stepType', width: 16 }),
+      C('currentStep', 'enum', {
+        field: 'current_step_type',
+        enumKey: 'stepType',
+        width: 16,
+      }),
       C('dueAt', 'date', { field: 'due_at', width: 14 }),
       C('overdueDays', 'integer', { field: 'overdue_days', width: 12 }),
     ),
     defaultSort: { id: 'overdueDays', desc: true },
     table: 'paged',
-    preview: { stat: 'overdue', labelKey: 'reports.preview.overdue', tone: 'danger' },
+    preview: {
+      stat: 'overdue',
+      labelKey: 'reports.preview.overdue',
+      tone: 'danger',
+    },
   },
   {
     key: 'sla-performance',
@@ -839,12 +1163,29 @@ export const REPORTS: readonly ReportDefinition[] = [
     dateRange: { kind: 'submittedDate', defaultPreset: 'last12Months' },
     filters: ['requestType', 'department', 'location', 'manager'],
     kpis: [
-      K('onTimeRate', GaugeIcon, 'success', 'percent', { hintKey: 'reports.kpiHints.closedRequests', hintValueKey: 'closed' }),
-      K('avgResolution', TimerIcon, 'info', 'days', { hintKey: 'reports.kpiHints.businessDays' }),
+      K('onTimeRate', GaugeIcon, 'success', 'percent', {
+        hintKey: 'reports.kpiHints.closedRequests',
+        hintValueKey: 'closed',
+      }),
+      K('avgResolution', TimerIcon, 'info', 'days', {
+        hintKey: 'reports.kpiHints.businessDays',
+      }),
       K('late', TriangleAlertIcon, 'warning'),
-      K('overdue', AlarmClockIcon, 'danger', 'integer', { hintKey: 'reports.kpiHints.openNow' }),
+      K('overdue', AlarmClockIcon, 'danger', 'integer', {
+        hintKey: 'reports.kpiHints.openNow',
+      }),
     ],
-    charts: [{ key: 'byType', titleKey: 'reports.charts.onTimeByType', type: 'bar', category: 'localized', series: [S('onTimeRate')], format: 'percent', top: 12 }],
+    charts: [
+      {
+        key: 'byType',
+        titleKey: 'reports.charts.onTimeByType',
+        type: 'bar',
+        category: 'localized',
+        series: [S('onTimeRate')],
+        format: 'percent',
+        top: 12,
+      },
+    ],
     columns: [
       C('requestType', 'localized', { field: 'type', width: 26 }),
       C('slaDays', 'integer', { field: 'sla_business_days', width: 10 }),
@@ -853,14 +1194,21 @@ export const REPORTS: readonly ReportDefinition[] = [
       C('onTime', 'integer', { field: 'on_time', width: 10 }),
       C('late', 'integer', { width: 10 }),
       C('onTimeRate', 'percent', { field: 'on_time_rate', width: 12 }),
-      C('avgResolution', 'decimal', { field: 'avg_resolution_days', width: 14 }),
+      C('avgResolution', 'decimal', {
+        field: 'avg_resolution_days',
+        width: 14,
+      }),
       C('openNow', 'integer', { field: 'open', width: 10 }),
       C('overdueNow', 'integer', { field: 'overdue', width: 10 }),
     ],
     defaultSort: { id: 'total', desc: true },
     table: 'all',
     tableTitleKey: 'reports.view.byTypeTable',
-    preview: { stat: 'overdue', labelKey: 'reports.preview.overdue', tone: 'danger' },
+    preview: {
+      stat: 'overdue',
+      labelKey: 'reports.preview.overdue',
+      tone: 'danger',
+    },
   },
 
   /* ── Certificates ──────────────────────────────────────────────────────── */
@@ -873,30 +1221,65 @@ export const REPORTS: readonly ReportDefinition[] = [
     requires: ['certificates.view'],
     dateRange: { kind: 'issueDate', defaultPreset: 'thisYear' },
     filters: ['certificateType', 'status', 'department', 'location', 'employee'],
-    status: { kind: 'status', domain: 'certificate', values: ['valid', 'revoked'] },
+    status: {
+      kind: 'status',
+      domain: 'certificate',
+      values: ['valid', 'revoked'],
+    },
     kpis: [
       K('issued', AwardIcon, 'primary'),
-      K('valid', BadgeCheckIcon, 'success'),
+      K('valid', BadgeCheckIcon, 'success', 'integer', {
+        labelKey: 'reports.kpis.validCertificates',
+      }),
       K('revoked', BanIcon, 'danger'),
       K('employees', UsersIcon, 'secondary'),
     ],
     charts: [
-      { key: 'byType', titleKey: 'reports.charts.certificatesByType', type: 'bar', category: 'enum', enumKey: 'certificateType', series: [S('certificates')], format: 'integer' },
-      { key: 'byMonth', titleKey: 'reports.charts.certificatesByMonth', type: 'column', category: 'month', series: [S('certificates')], format: 'integer' },
+      {
+        key: 'byType',
+        titleKey: 'reports.charts.certificatesByType',
+        type: 'bar',
+        category: 'enum',
+        enumKey: 'certificateType',
+        series: [S('certificates')],
+        format: 'integer',
+      },
+      {
+        key: 'byMonth',
+        titleKey: 'reports.charts.certificatesByMonth',
+        type: 'column',
+        category: 'month',
+        series: [S('certificates')],
+        format: 'integer',
+      },
     ],
     columns: [
-      C('certificateNumber', 'code', { field: 'certificate_number', width: 18 }),
+      C('certificateNumber', 'code', {
+        field: 'certificate_number',
+        width: 18,
+      }),
       EMPLOYEE_COL,
       { ...DEPARTMENT_COL, defaultHidden: true },
-      C('certificateType', 'enum', { field: 'certificate_type', enumKey: 'certificateType', width: 26 }),
+      C('certificateType', 'enum', {
+        field: 'certificate_type',
+        enumKey: 'certificateType',
+        width: 26,
+      }),
       C('language', 'enum', { enumKey: 'certificateLanguage', width: 14 }),
       C('issueDate', 'date', { field: 'issue_date', width: 14 }),
       C('status', 'status', { statusDomain: 'certificate', width: 12 }),
-      C('requestNumber', 'request', { field: 'request_number', linkField: 'request_id', width: 18 }),
+      C('requestNumber', 'request', {
+        field: 'request_number',
+        linkField: 'request_id',
+        width: 18,
+      }),
     ],
     defaultSort: { id: 'issueDate', desc: true },
     table: 'paged',
-    preview: { stat: 'certificatesYear', labelKey: 'reports.preview.certificatesYear' },
+    preview: {
+      stat: 'certificatesYear',
+      labelKey: 'reports.preview.certificatesYear',
+    },
   },
 
   /* ── Audit ─────────────────────────────────────────────────────────────── */
@@ -907,18 +1290,35 @@ export const REPORTS: readonly ReportDefinition[] = [
     icon: ActivityIcon,
     managers: false,
     requires: ['audit.view'],
+    exportPermission: 'audit.export',
     dateRange: { kind: 'activityDate', defaultPreset: 'last30Days' },
     filters: ['category', 'employee'],
     kpis: [
       K('events', ActivityIcon, 'primary'),
-      K('activeUsers', UsersIcon, 'info'),
+      K('users', UsersIcon, 'info', 'integer', {
+        labelKey: 'reports.kpis.activeUsers',
+      }),
       K('logins', LogInIcon, 'secondary'),
       K('changes', PencilLineIcon, 'success'),
       K('exports', DownloadIcon, 'neutral'),
     ],
     charts: [
-      { key: 'byDay', titleKey: 'reports.charts.eventsByDay', type: 'column', category: 'day', series: [S('events')], format: 'integer' },
-      { key: 'byCategory', titleKey: 'reports.charts.eventsByCategory', type: 'bar', category: 'category', series: [S('events')], format: 'integer' },
+      {
+        key: 'byDay',
+        titleKey: 'reports.charts.eventsByDay',
+        type: 'column',
+        category: 'day',
+        series: [S('events')],
+        format: 'integer',
+      },
+      {
+        key: 'byCategory',
+        titleKey: 'reports.charts.eventsByCategory',
+        type: 'bar',
+        category: 'category',
+        series: [S('events')],
+        format: 'integer',
+      },
     ],
     columns: [
       C('user', 'user', { width: 30 }),

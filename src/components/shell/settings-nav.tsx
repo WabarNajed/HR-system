@@ -85,7 +85,7 @@ export function SettingsNav({ groups, badges = {} }: { groups: VisibleSettingsGr
       </div>
 
       {/* Desktop: grouped vertical nav */}
-      <nav aria-label={t('sections')} className="sticky top-[4.75rem] hidden max-h-[calc(100dvh-6rem)] w-56 shrink-0 overflow-y-auto pe-1 pb-4 lg:block xl:w-60">
+      <nav aria-label={t('sections')} className="sticky top-[4.75rem] hidden max-h-[calc(100dvh-6rem)] w-52 shrink-0 overflow-y-auto pe-1 pb-4 lg:block 2xl:w-60">
         <Link
           href="/settings"
           className="mb-3 flex items-center gap-2 rounded-md px-2.5 py-1 text-card-title text-foreground outline-none hover:text-primary focus-visible:ring-2 focus-visible:ring-ring/50"

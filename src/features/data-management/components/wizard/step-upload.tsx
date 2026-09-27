@@ -87,11 +87,16 @@ export function StepUpload({
         <div>
           <div className="mb-1.5 text-xs font-semibold text-muted-foreground">{t('wizard.mapping.fieldGroups.fields')}</div>
           <div className="flex flex-wrap gap-1">
-            {columns.map((f) => (
+            {columns.slice(0, 12).map((f) => (
               <Badge key={f.key} variant="outline" size="sm" className="font-normal">
                 {label(f.key)}
               </Badge>
             ))}
+            {columns.length > 12 ? (
+              <Badge variant="neutral" size="sm" className="numeric">
+                <bdi dir="ltr">+{columns.length - 12}</bdi>
+              </Badge>
+            ) : null}
           </div>
         </div>
       </aside>

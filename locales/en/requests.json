@@ -16,8 +16,8 @@
     "overdue": "Overdue",
     "overdueHint": "Past the SLA due date",
     "overdueNone": "Everything is within SLA",
-    "completedMonth": "Completed this month",
-    "completedMonthHint": "Closed since the 1st"
+    "completedMonth": "Completed",
+    "completedMonthHint": "This month"
   },
   "tabs": {
     "label": "Request status",
@@ -52,13 +52,34 @@
     "searchOwnPlaceholder": "Search number or title…"
   },
   "empty": {
-    "all": { "title": "No requests yet", "description": "Submitted requests appear here with their status and SLA." },
-    "pending": { "title": "Nothing pending", "description": "Requests waiting for a manager or HR decision appear here." },
-    "in_progress": { "title": "Nothing in progress", "description": "Approved requests that HR is fulfilling appear here." },
-    "completed": { "title": "No completed requests", "description": "Requests closed by HR appear here." },
-    "rejected": { "title": "No rejected requests", "description": "Rejected requests appear here with the reason." },
-    "returned": { "title": "Nothing returned", "description": "Requests sent back for more information appear here." },
-    "drafts": { "title": "No drafts", "description": "Requests you save without submitting stay here." }
+    "all": {
+      "title": "No requests yet",
+      "description": "Submitted requests appear here with their status and SLA."
+    },
+    "pending": {
+      "title": "Nothing pending",
+      "description": "Requests waiting for a manager or HR decision appear here."
+    },
+    "in_progress": {
+      "title": "Nothing in progress",
+      "description": "Approved requests that HR is fulfilling appear here."
+    },
+    "completed": {
+      "title": "No completed requests",
+      "description": "Requests closed by HR appear here."
+    },
+    "rejected": {
+      "title": "No rejected requests",
+      "description": "Rejected requests appear here with the reason."
+    },
+    "returned": {
+      "title": "Nothing returned",
+      "description": "Requests sent back for more information appear here."
+    },
+    "drafts": {
+      "title": "No drafts",
+      "description": "Requests you save without submitting stay here."
+    }
   },
   "rowActions": {
     "view": "View details",
@@ -141,12 +162,12 @@
     "daysUnit": "days",
     "noDeduction": "Not deducted",
     "noDeductionHint": "This leave type doesn't deduct from your balance.",
-    "availableNow": "Available now: {days} days",
+    "availableNow": "{days, plural, =0 {No balance available} one {Available now: # day} other {Available now: # days}}",
     "usedOf": "{used} of {total} used or on hold",
-    "pendingHold": "{days} days are on hold for other pending requests.",
+    "pendingHold": "{days, plural, one {# day is on hold for other pending requests.} other {# days are on hold for other pending requests.}}",
     "noWorkingDays": "The selected period has no working days.",
-    "insufficient": "Insufficient balance: {available} days available, {requested} requested.",
-    "maxDays": "This leave type allows at most {max} days per request.",
+    "insufficient": "Insufficient balance: {available} available, {requested} requested.",
+    "maxDays": "{max, plural, one {This leave type allows at most # day per request.} other {This leave type allows at most # days per request.}}",
     "overlap": "These dates overlap another leave request:",
     "attachmentRequired": "A supporting document is required for this leave type.",
     "calendarDays": "calendar days",
@@ -304,7 +325,7 @@
     "empty": "No activity yet.",
     "system": "System",
     "reassignedTo": "Assigned to {name}",
-    "balanceEffect": "Leave balance: {from} → {to} ({days} days)",
+    "balanceEffect": "Leave balance: {from} → {to} ({days, plural, one {# day} other {# days}})",
     "skipReasons": {
       "no_manager": "No direct manager on record",
       "manager_without_active_account": "The manager has no active account",

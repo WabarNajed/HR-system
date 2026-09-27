@@ -41,12 +41,12 @@ export async function login(page: Page, user: FixtureUser, options: { next?: str
   // Submit only after hydration: a native (pre-hydration) submit is not the sign-in action.
   await page.waitForLoadState('networkidle').catch(() => {});
   await submitLogin(page, user);
-  await page.waitForURL((u) => !u.pathname.startsWith('/login'), { timeout: 90_000 });
+  await page.waitForURL((u) => !u.pathname.startsWith('/login'), { timeout: 150_000 });
 }
 
 /** Signs out through the header user menu and waits for /login. */
 export async function logout(page: Page): Promise<void> {
   await page.getByTestId('user-menu').click();
   await page.getByTestId('logout').click();
-  await page.waitForURL((u) => u.pathname === '/login', { timeout: 60_000 });
+  await page.waitForURL((u) => u.pathname === '/login', { timeout: 150_000 });
 }

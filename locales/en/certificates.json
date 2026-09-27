@@ -55,7 +55,9 @@
     "requestStatus": "Status",
     "submitted": "Submitted",
     "searchIssued": "Search by certificate # or employee…",
-    "searchRequests": "Search by request # or employee…"
+    "searchRequests": "Search by request # or employee…",
+    "searchOwn": "Search by certificate #…",
+    "searchOwnRequests": "Search by request #…"
   },
   "actions": {
     "download": "Download PDF",
@@ -150,7 +152,10 @@
     "employeeReady": "Your certificate is ready to download.",
     "requestClosed": "This request is {status}.",
     "reissue": "Issue another",
-    "revokedNote": "Revoked"
+    "revokedNote": "Revoked",
+    "orgMissingTitle": "Company name isn’t set",
+    "orgMissing": "Certificates will show an empty company name until the organization profile is completed.",
+    "orgMissingAction": "Open organization settings"
   },
   "preview": {
     "title": "Certificate preview",

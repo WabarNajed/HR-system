@@ -48,6 +48,7 @@ export async function PersonalTab({
       <SectionCard title={t('profile.personal.info')} icon={<UserRoundIcon />}>
         <KeyValueGrid
           columns={3}
+          className="max-sm:grid-cols-2"
           items={[
             { label: t('fields.gender'), value: en('gender', employee.gender) },
             { label: t('fields.nationality'), value: employee.nationality },
@@ -69,6 +70,7 @@ export async function PersonalTab({
       <SectionCard title={t('profile.personal.governmentIds')} icon={<IdCardIcon />}>
         <KeyValueGrid
           columns={3}
+          className="max-sm:grid-cols-2"
           items={[
             { label: t('fields.idType'), value: en('idType', employee.id_type) },
             { label: t('fields.nationalId'), value: employee.national_id, ltr: true },
@@ -94,6 +96,7 @@ export async function PersonalTab({
       <SectionCard title={t('profile.personal.emergency')} icon={<PhoneCallIcon />}>
         <KeyValueGrid
           columns={3}
+          className="max-sm:grid-cols-2"
           items={[
             { label: t('fields.emergencyName'), value: employee.emergency_contact_name },
             { label: t('fields.emergencyRelationship'), value: employee.emergency_contact_relationship },

@@ -38,7 +38,7 @@ export function AccountDetailsForm({ email, fullName, mobile }: { email: string 
   return (
     <SectionCard title={t('title')} description={t('description')} icon={<UserRoundIcon />}>
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} noValidate className="flex flex-col gap-4" aria-busy={pending}>
+        <form method="post" onSubmit={form.handleSubmit(onSubmit)} noValidate className="flex flex-col gap-4" aria-busy={pending}>
           <div className="flex flex-col gap-1.5">
             <span className="text-sm font-medium text-foreground">{tc('email')}</span>
             <bdi dir="ltr" className="flex h-9 items-center rounded-md border border-border bg-subtle px-3 text-sm text-muted-foreground">
@@ -115,7 +115,7 @@ export function ChangePasswordForm({ email }: { email: string | null }) {
   return (
     <SectionCard title={t('title')} description={t('description')} icon={<KeyRoundIcon />}>
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} noValidate className="flex max-w-xl flex-col gap-4" aria-busy={pending}>
+        <form method="post" onSubmit={form.handleSubmit(onSubmit)} noValidate className="flex max-w-xl flex-col gap-4" aria-busy={pending}>
           {email ? <input type="email" name="username" autoComplete="username" value={email} readOnly hidden /> : null}
           <FormField
             control={form.control}

@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { forbidden, notFound } from 'next/navigation';
+import { forbidden, notFound, redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { BreadcrumbLabel } from '@/components/shell/breadcrumb-context';
 import { PageHeader } from '@/components/shared/page-header';
@@ -34,6 +34,8 @@ export default async function EmployeesIdEditPage({ params }: { params: Promise<
   const loaded = await getEmployeeRecord(id, viewer);
   if (!loaded) notFound();
   const { employee } = loaded;
+  // Archived records are read-only until restored (the profile explains why and offers Restore).
+  if (employee.archived_at) redirect(`/employees/${id}`);
   const bankEdit = viewer.orgCan('bank.edit');
 
   const [t, options, currency, manager, compensation, bank] = await Promise.all([

@@ -98,11 +98,18 @@ export async function DocumentCenter({
     })(),
   ]);
 
+  /** Full label from `sm` up, compact label on phones (keeps all tabs visible at 390px). */
+  const dual = (full: string, short: string) => (
+    <>
+      <span className="sm:hidden">{short}</span>
+      <span className="max-sm:hidden">{full}</span>
+    </>
+  );
   const tabs = [
-    { value: 'documents', label: t('tabs.documents') },
-    { value: 'expiry', label: t('tabs.expiry'), count: stats.expired + stats.expiringSoon || null },
-    { value: 'missing', label: t('tabs.missing'), count: stats.missingEmployees || null },
-    { value: 'review', label: t('tabs.review'), count: stats.pendingReview || null },
+    { value: 'documents', label: dual(t('tabs.documents'), t('tabsShort.documents')) },
+    { value: 'expiry', label: dual(t('tabs.expiry'), t('tabsShort.expiry')), count: stats.expired + stats.expiringSoon || null },
+    { value: 'missing', label: dual(t('tabs.missing'), t('tabsShort.missing')), count: stats.missingEmployees || null },
+    { value: 'review', label: dual(t('tabs.review'), t('tabsShort.review')), count: stats.pendingReview || null },
   ];
 
   const scheduleDays = (days.length ? days : [90, 60, 30, 14, 7]).join(locale === 'ar' ? '، ' : ', ');
@@ -128,7 +135,7 @@ export async function DocumentCenter({
 
         <KpiGrid count={4}>
           <StatCard
-            label={t('kpi.expiringSoon')}
+            label={dual(t('kpi.expiringSoon'), t('kpi.expiringSoonShort'))}
             value={stats.expiringSoon}
             icon={CalendarClockIcon}
             tone="warning"
@@ -144,7 +151,7 @@ export async function DocumentCenter({
             href="/documents?tab=expiry&bucket=expired"
           />
           <StatCard
-            label={t('kpi.missing')}
+            label={dual(t('kpi.missing'), t('kpi.missingShort'))}
             value={stats.missingDocuments}
             icon={FileWarningIcon}
             tone="secondary"
@@ -152,7 +159,7 @@ export async function DocumentCenter({
             href="/documents?tab=missing"
           />
           <StatCard
-            label={t('kpi.uploaded')}
+            label={dual(t('kpi.uploaded'), t('kpi.uploadedShort'))}
             value={stats.uploadedTotal}
             icon={FileCheck2Icon}
             tone="primary"

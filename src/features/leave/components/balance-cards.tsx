@@ -130,8 +130,10 @@ function BalanceCard({
           <div key={s.key} className="min-w-0">
             <dt className="truncate text-xs text-muted-foreground">{s.label}</dt>
             <dd className={cn('mt-0.5 text-sm font-medium numeric', s.tone ?? 'text-foreground', s.key === 'remaining' && 'font-semibold')}>
-              {s.key === 'adjustment' && s.value > 0 ? '+' : ''}
-              {d(s.value)}
+              <bdi dir="ltr">
+                {s.key === 'adjustment' && s.value > 0 ? '+' : ''}
+                {d(s.value)}
+              </bdi>
             </dd>
           </div>
         ))}

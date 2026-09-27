@@ -16,11 +16,13 @@ const baseURL = process.env.E2E_BASE_URL ?? 'http://localhost:3000';
 const executablePath =
   process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH ?? (fs.existsSync('/opt/pw-browsers/chromium') ? '/opt/pw-browsers/chromium' : undefined);
 
+const desktop = { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 }, launchOptions: { executablePath, args: ['--no-sandbox'] } };
+
 export default defineConfig({
   testDir: './e2e',
   outputDir: './test-results',
-  // A dev server compiles routes on first hit, so navigation budgets are generous.
-  timeout: 120_000,
+  // A dev server compiles routes on first hit (and may be shared), so budgets are generous.
+  timeout: 180_000,
   expect: { timeout: 20_000 },
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
@@ -32,7 +34,7 @@ export default defineConfig({
     locale: 'ar-SA',
     timezoneId: 'Asia/Riyadh',
     viewport: { width: 1440, height: 900 },
-    navigationTimeout: 60_000,
+    navigationTimeout: 120_000,
     actionTimeout: 20_000,
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
@@ -41,10 +43,9 @@ export default defineConfig({
   projects: [
     // Signs in every fixture role once and stores the sessions in e2e/.auth/<role>.json.
     { name: 'setup', testMatch: /global\.setup\.ts/ },
-    {
-      name: 'chromium',
-      use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 }, launchOptions: { executablePath, args: ['--no-sandbox'] } },
-      dependencies: ['setup'],
-    },
+    // Sign-in flows: sign in themselves, so they don't wait for (or depend on) the setup project.
+    { name: 'auth', testMatch: /(auth|language)\.spec\.ts/, use: { ...desktop } },
+    // Everything else reuses the stored sessions.
+    { name: 'app', testIgnore: /(auth|language)\.spec\.ts|global\.setup\.ts/, use: { ...desktop }, dependencies: ['setup'] },
   ],
 });

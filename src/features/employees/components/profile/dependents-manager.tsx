@@ -5,7 +5,7 @@ import type { ColumnDef } from '@tanstack/react-table';
 import { HeartHandshakeIcon, PencilIcon, PlusIcon, Trash2Icon } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
-import { useMemo, useState, useTransition, type ReactNode } from 'react';
+import { useMemo, useRef, useState, useTransition, type ReactNode, type FormEvent } from 'react';
 import { useForm, useFormContext, type FieldPath } from 'react-hook-form';
 import { toast } from 'sonner';
 import { actionsColumn, DataTable } from '@/components/data-table';
@@ -20,6 +20,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Sheet, SheetBody, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Textarea } from '@/components/ui/textarea';
+import type { ActionResult } from '@/lib/action';
 import { useDateFormat } from '@/lib/i18n/use-date-format';
 import { employeeAlternateName, employeeDisplayName } from '@/lib/i18n/localized';
 import { deleteDependent, saveDependent } from '../../actions';
@@ -157,16 +158,21 @@ export function DependentsManager({
         meta: { label: t('fields.insuranceStatus') },
         cell: ({ row }) => {
           const s = row.original.insurance_status;
-          if (!s) return dash;
+          const member = row.original.insurance_member_number;
+          if (!s && !member) return dash;
           return (
             <div className="leading-tight">
-              <Badge variant={INSURANCE_TONE[s] ?? 'neutral'} size="sm" dot>
-                {te(`insuranceStatus.${s as (typeof DEPENDENT_INSURANCE_STATUSES)[number]}`)}
-              </Badge>
-              {row.original.insurance_member_number ? (
-                <bdi dir="ltr" className="mt-1 block text-xs text-muted-foreground tabular-nums">
-                  {row.original.insurance_member_number}
-                </bdi>
+              {s ? (
+                <Badge variant={INSURANCE_TONE[s] ?? 'neutral'} size="sm" dot>
+                  {te(`insuranceStatus.${s as (typeof DEPENDENT_INSURANCE_STATUSES)[number]}`)}
+                </Badge>
+              ) : null}
+              {member ? (
+                <div className={s ? 'mt-1 text-xs text-muted-foreground' : 'text-sm'}>
+                  <bdi dir="ltr" className="tabular-nums">
+                    {member}
+                  </bdi>
+                </div>
               ) : null}
             </div>
           );
@@ -330,10 +336,16 @@ function DependentForm({
   const [pending, startTransition] = useTransition();
   const form = useForm<DependentFormValues>({ resolver: zodResolver(dependentFormSchema), defaultValues: defaults, mode: 'onTouched' });
 
-  const submit = form.handleSubmit((values) =>
+  // Guards double submits in the gap before `pending` renders (the sheet closes on success).
+  const submitting = useRef(false);
+  const onValid = (values: DependentFormValues) =>
     startTransition(async () => {
-      const result = await saveDependent({ employeeId, id: dependentId, values });
+      const result: ActionResult = await saveDependent({ employeeId, id: dependentId, values }).catch(() => ({
+        ok: false,
+        error: 'errors.generic',
+      }));
       if (!result.ok) {
+        submitting.current = false;
         for (const [name, message] of Object.entries(result.fieldErrors ?? {})) {
           form.setError(name.replace(/^values\./, '') as FieldPath<DependentFormValues>, { type: 'server', message });
         }
@@ -342,8 +354,17 @@ function DependentForm({
       }
       toast.success(resolve(result.message));
       onSaved();
-    }),
-  );
+    });
+  const submit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    if (submitting.current) return;
+    submitting.current = true;
+    void form.handleSubmit(onValid, () => {
+      submitting.current = false;
+      toast.error(t('toast.invalidForm'));
+    })(event);
+  };
 
   return (
     <Form {...form}>

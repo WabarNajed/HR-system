@@ -22,6 +22,7 @@ import { ConfirmDialog } from '@/components/shared/confirm-dialog';
 import { EmployeeCell } from '@/components/shared/employee-cell';
 import { StatusBadge } from '@/components/shared/status-badge';
 import { Button } from '@/components/ui/button';
+import { SimpleTooltip } from '@/components/ui/tooltip';
 import { useErrorMessage } from '@/components/ui/form';
 import type { Locale } from '@/lib/i18n/config';
 import { employeeDisplayName, localized } from '@/lib/i18n/localized';
@@ -32,7 +33,8 @@ import { FILTER_STATUSES, SLA_STATES, TAB_STATUSES, type RequestTab } from '../c
 import type { RequestActionKind } from '../schemas';
 import type { RequestAccess, RequestListRow } from '../types';
 import { DecisionDialog } from './decision-dialog';
-import { RequestSlaBadge, StepLabel, subtypeLabel, TypeCell, TypeIcon } from './request-bits';
+import { subtypeLabel } from '../labels';
+import { RequestSlaBadge, StepLabel, TypeCell, TypeIcon } from './request-bits';
 
 export type RequestFilterOptions = {
   types: { key: string; name_ar: string; name_en: string }[];
@@ -80,7 +82,7 @@ export function RequestsTable({
         id: 'request_number',
         accessorKey: 'request_number',
         header: ({ column }) => <DataTableColumnHeader column={column} title={t('columns.number')} />,
-        meta: { label: t('columns.number'), width: '10.5rem' },
+        meta: { label: t('columns.number') },
         cell: ({ row }) =>
           row.original.request_number ? (
             <bdi className="font-semibold text-foreground numeric">{row.original.request_number}</bdi>
@@ -98,7 +100,7 @@ export function RequestsTable({
         cell: ({ row }) =>
           row.original.employee ? (
             <EmployeeCell
-              className="max-w-60"
+              className="max-w-48"
               employee={{ ...row.original.employee, avatarUrl: row.original.employee.avatar_url }}
               size="sm"
               subtitle={[row.original.employee.employee_number, row.original.employee.department ? localized(row.original.employee.department, 'name', locale) : null]
@@ -116,28 +118,33 @@ export function RequestsTable({
         header: t('columns.type'),
         enableSorting: false,
         meta: { label: t('columns.type') },
-        cell: ({ row }) => <TypeCell row={row.original} className="max-w-56" />,
+        cell: ({ row }) => <TypeCell row={row.original} className="max-w-44" />,
       },
       {
         id: 'created_at',
         accessorKey: 'created_at',
         header: ({ column }) => <DataTableColumnHeader column={column} title={t('columns.created')} />,
         meta: { label: t('columns.created') },
-        cell: ({ row }) => <span className="text-muted-foreground numeric">{fmt.date(row.original.created_at)}</span>,
+        cell: ({ row }) => (
+          <SimpleTooltip content={fmt.dateTime(row.original.created_at)}>
+            <span className="text-muted-foreground numeric">{fmt.date(row.original.created_at)}</span>
+          </SimpleTooltip>
+        ),
       },
       {
         id: 'step',
         header: t('columns.step'),
         enableSorting: false,
-        meta: { label: t('columns.step') },
-        cell: ({ row }) => <StepLabel row={row.original} className="max-w-44" />,
+        // Shown under the status badge by default (keeps the table within 1440px); can be enabled here.
+        meta: { label: t('columns.step'), defaultHidden: true },
+        cell: ({ row }) => <StepLabel row={row.original} className="max-w-40" />,
       },
       {
         id: 'status',
         accessorKey: 'status',
         header: ({ column }) => <DataTableColumnHeader column={column} title={t('columns.status')} />,
         meta: { label: t('columns.status') },
-        cell: ({ row }) => <StatusBadge domain="request" status={row.original.status} />,
+        cell: ({ row }) => <StatusWithStep row={row.original} />,
       },
       {
         id: 'assigned',
@@ -146,7 +153,7 @@ export function RequestsTable({
         meta: { label: t('columns.assigned'), defaultHidden: !access.orgView },
         cell: ({ row }) =>
           row.original.assignee_name ? (
-            <span className="block max-w-36 truncate text-sm text-foreground">{row.original.assignee_name}</span>
+            <span className="block max-w-32 truncate text-sm text-foreground">{row.original.assignee_name}</span>
           ) : (
             <span className="text-meta text-faint-foreground">{t('unassigned')}</span>
           ),
@@ -278,6 +285,22 @@ export function RequestsTable({
         }}
       />
     </>
+  );
+}
+
+/** Status badge with the current workflow step (and approver) underneath while it is pending. */
+function StatusWithStep({ row }: { row: RequestListRow }) {
+  const locale = useLocale() as Locale;
+  const ts = useTranslations('enums.stepType');
+  const pending = row.status === 'pending_manager_approval' || row.status === 'pending_hr_review';
+  const stepName = row.step ? localized({ name_ar: row.step.name_ar, name_en: row.step.name_en }, 'name', locale) : '';
+  const typeLabel = row.current_step_type && ts.has(row.current_step_type as never) ? ts(row.current_step_type as never) : '';
+  const detail = pending ? [stepName || typeLabel, row.approver_name].filter(Boolean).join(' · ') : '';
+  return (
+    <div className="flex max-w-52 min-w-0 flex-col items-start gap-1">
+      <StatusBadge domain="request" status={row.status} />
+      {detail ? <span className="max-w-full truncate text-xs text-muted-foreground">{detail}</span> : null}
+    </div>
   );
 }
 

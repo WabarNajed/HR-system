@@ -6,6 +6,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useEffect, useTransition } from 'react';
 import { useForm } from 'react-hook-form';
 import { SegmentedTabs } from '@/components/shared/link-tabs';
+import { localeNames } from '@/lib/i18n/config';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogBody, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -153,8 +154,8 @@ export function InviteUserDialog({ open, onOpenChange, roles, isSuperAdmin, defa
                         value={field.value}
                         onValueChange={(v) => field.onChange(v)}
                         items={[
-                          { value: 'ar', label: tc('arabic') },
-                          { value: 'en', label: tc('english') },
+                          { value: 'ar', label: <span lang="ar">{localeNames.ar}</span> },
+                          { value: 'en', label: <span lang="en">{localeNames.en}</span> },
                         ]}
                         aria-label={t('language')}
                       />

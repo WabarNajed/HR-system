@@ -37,7 +37,7 @@ export default async function AccountDisabledPage() {
           <UserXIcon />
           <AlertTitle>{t('reason')}</AlertTitle>
           <AlertDescription>
-            <p className="whitespace-pre-line">{ctx.profile.reviewNote}</p>
+            <p dir="auto" className="whitespace-pre-line text-start">{ctx.profile.reviewNote}</p>
           </AlertDescription>
         </Alert>
       ) : null}

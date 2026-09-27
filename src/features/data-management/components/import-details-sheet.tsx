@@ -36,19 +36,29 @@ function Metric({ label, value, tone }: { label: string; value: number; tone?: '
   );
 }
 
-export function ImportDetailsSheet({ importId, onOpenChange }: { importId: string | null; onOpenChange: (open: boolean) => void }) {
+export function ImportDetailsSheet({
+  importId,
+  seed,
+  onOpenChange,
+}: {
+  importId: string | null;
+  /** Row data already on screen (shown immediately while the details load). */
+  seed?: ImportView | null;
+  onOpenChange: (open: boolean) => void;
+}) {
   const t = useTranslations('dataManagement');
   const types = useLooseT('dataManagement.types');
   const fmt = useDateFormat();
   const run = useRunAction();
-  const [data, setData] = useState<(ImportView & { skipped: number }) | null>(null);
+  const [loaded, setLoaded] = useState<(ImportView & { skipped: number }) | null>(null);
+  const data = loaded && loaded.id === importId ? loaded : seed && seed.id === importId ? { ...seed, skipped: 0 } : null;
+  const detailsReady = Boolean(loaded && loaded.id === importId);
 
   useEffect(() => {
     let alive = true;
     if (!importId) return;
-    setData(null);
     void run(getImportAction({ importId })).then((res) => {
-      if (alive && res.ok && res.data) setData(res.data);
+      if (alive && res.ok && res.data) setLoaded(res.data);
       if (alive && !res.ok) onOpenChange(false);
     });
     return () => {
@@ -149,7 +159,15 @@ export function ImportDetailsSheet({ importId, onOpenChange }: { importId: strin
                 </div>
               </dl>
               <div className="-mx-5 border-t border-border">
-                <ImportRowsList importId={data.id} type={data.type} tabs={tabs} defaultTab={data.totals.error ? 'error' : 'all'} />
+                {detailsReady ? (
+                  <ImportRowsList importId={data.id} type={data.type} tabs={tabs} defaultTab={data.totals.error ? 'error' : 'all'} />
+                ) : (
+                  <div className="flex flex-col gap-2 p-4">
+                    <Skeleton className="h-8 w-72 max-w-full" />
+                    <Skeleton className="h-11 w-full" />
+                    <Skeleton className="h-11 w-full" />
+                  </div>
+                )}
               </div>
             </>
           )}

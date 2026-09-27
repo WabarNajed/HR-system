@@ -201,7 +201,9 @@ function DataTableView<TData>({
     } catch {
       /* storage unavailable — keep defaults */
     }
-  }, [storageKey, defaultVisibility]);
+    // Keyed by content, not identity: callers may build `columns` inline on every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storageKey, JSON.stringify(defaultVisibility)]);
   const onVisibilityChange = useCallback(
     (updater: Updater<VisibilityState>) => {
       setColumnVisibility((prev) => {
@@ -227,7 +229,9 @@ function DataTableView<TData>({
 
   /* Selection resets when the visible data set changes */
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
-  useEffect(() => setRowSelection({}), [rows]);
+  // Keyed by row ids, not array identity, so a parent re-render with the same rows keeps the selection.
+  const rowKey = rows.map((row, index) => (getRowId ? getRowId(row, index) : String(index))).join('|');
+  useEffect(() => setRowSelection({}), [rowKey]);
 
   const sorting = useMemo<SortingState>(() => (state.sort ? [{ id: state.sort.id, desc: state.sort.desc }] : []), [state.sort]);
   const onSortingChange = useCallback(

@@ -7,7 +7,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
-import { BUILDER_LIMITS, OPERATORS, VALUELESS_OPERATORS, type BuilderField, type BuilderFilter, type ReferenceList } from '../../builder/sources';
+import {
+  BUILDER_LIMITS,
+  OPERATORS,
+  VALUELESS_OPERATORS,
+  type BuilderField,
+  type BuilderFilter,
+  type ReferenceList,
+} from '../../builder/sources';
 import type { FacetOption } from '../facet-filter';
 import { tOr, useReportT, type LooseT } from '../format';
 
@@ -30,8 +37,15 @@ export function isFilterComplete(filter: BuilderFilter): boolean {
 function optionsFor(field: BuilderField, references: Props['references'], t: LooseT): FacetOption[] {
   if (field.type === 'reference' && field.reference) return references[field.reference] ?? [];
   const values = field.values ?? [];
-  if (field.type === 'status') return values.map((v) => ({ value: v, label: tOr(t, `statuses.${field.statusDomain}.${v}`, v) }));
-  return values.map((v) => ({ value: v, label: tOr(t, `enums.${field.enumKey}.${v}`, v) }));
+  if (field.type === 'status')
+    return values.map((v) => ({
+      value: v,
+      label: tOr(t, `statuses.${field.statusDomain}.${v}`, v),
+    }));
+  return values.map((v) => ({
+    value: v,
+    label: tOr(t, `enums.${field.enumKey}.${v}`, v),
+  }));
 }
 
 /** Filter rows: field · condition · value (inputs adapt to the field type). */
@@ -62,7 +76,7 @@ export function BuilderFilters({ fields, value, onChange, references, showErrors
               <li
                 key={index}
                 className={cn(
-                  'grid grid-cols-[minmax(0,1fr)_auto] gap-2 rounded-md border border-border bg-subtle/40 p-2 sm:grid-cols-[minmax(0,1.1fr)_minmax(0,0.8fr)_minmax(0,1.3fr)_auto]',
+                  'grid grid-cols-[minmax(0,1fr)_minmax(0,8.5rem)_auto] gap-2 rounded-md border border-border bg-subtle/40 p-2',
                   invalid && 'border-danger/50 bg-danger-soft/30',
                 )}
               >
@@ -71,7 +85,11 @@ export function BuilderFilters({ fields, value, onChange, references, showErrors
                   onValueChange={(key) => {
                     const next = byKey.get(key);
                     if (!next?.filter) return;
-                    update(index, { field: key, op: OPERATORS[next.filter][0]!, value: null });
+                    update(index, {
+                      field: key,
+                      op: OPERATORS[next.filter][0]!,
+                      value: null,
+                    });
                   }}
                 >
                   <SelectTrigger size="sm" className="w-full min-w-0 bg-card" aria-label={t('reports.builder.filterField')}>
@@ -93,17 +111,15 @@ export function BuilderFilters({ fields, value, onChange, references, showErrors
                   </SelectContent>
                 </Select>
 
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  className="text-muted-foreground hover:text-danger sm:order-last"
-                  onClick={() => remove(index)}
-                  aria-label={t('reports.builder.removeFilter')}
+                <Select
+                  value={flt.op}
+                  onValueChange={(op) =>
+                    update(index, {
+                      op,
+                      value: VALUELESS_OPERATORS.has(op) ? null : flt.value,
+                    })
+                  }
                 >
-                  <Trash2Icon />
-                </Button>
-
-                <Select value={flt.op} onValueChange={(op) => update(index, { op, value: VALUELESS_OPERATORS.has(op) ? null : flt.value })}>
                   <SelectTrigger size="sm" className="w-full min-w-0 bg-card" aria-label={t('reports.builder.filterOperator')}>
                     <SelectValue />
                   </SelectTrigger>
@@ -116,17 +132,29 @@ export function BuilderFilters({ fields, value, onChange, references, showErrors
                   </SelectContent>
                 </Select>
 
-                <div className="min-w-0 max-sm:col-span-2">
-                  {!field || VALUELESS_OPERATORS.has(flt.op) ? (
-                    <div className="hidden h-8 sm:block" />
-                  ) : kind === 'options' ? (
+                <Button
+                  variant="ghost"
+                  size="icon-sm"
+                  className="text-muted-foreground hover:text-danger"
+                  onClick={() => remove(index)}
+                  aria-label={t('reports.builder.removeFilter')}
+                >
+                  <Trash2Icon />
+                </Button>
+
+                <div className="col-span-3 min-w-0 empty:hidden">
+                  {!field || VALUELESS_OPERATORS.has(flt.op) ? null : kind === 'options' ? (
                     <Combobox
                       multiple
                       size="sm"
                       className="bg-card"
                       options={optionsFor(field, references, t)}
                       value={Array.isArray(flt.value) ? flt.value : flt.value ? [flt.value] : []}
-                      onChange={(v) => update(index, { value: v.slice(0, BUILDER_LIMITS.listValues) })}
+                      onChange={(v) =>
+                        update(index, {
+                          value: v.slice(0, BUILDER_LIMITS.listValues),
+                        })
+                      }
                       placeholder={t('reports.builder.selectValues')}
                       aria-invalid={invalid}
                     />

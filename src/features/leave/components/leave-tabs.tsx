@@ -1,4 +1,5 @@
 import { InfoIcon, UserRoundXIcon } from 'lucide-react';
+import type { ReactNode } from 'react';
 import { getTranslations } from 'next-intl/server';
 import { EmptyState } from '@/components/shared/empty-state';
 import { SectionCard } from '@/components/shared/section-card';
@@ -78,19 +79,29 @@ export async function RequestsTab({ sp, access, locale }: TabProps) {
     scope === 'org' ? listDepartmentOptions(locale) : Promise.resolve([]),
     employeeId ? getEmployeeOption(employeeId, locale) : Promise.resolve(null),
   ]);
+  const scopeSwitch =
+    access.scopes.length > 1 ? (
+      <UrlSegmented
+        param="scope"
+        defaultValue={access.defaultScope}
+        aria-label={t('scope.label')}
+        options={access.scopes.map((s) => ({ value: s, label: t(`scope.${s}`) }))}
+      />
+    ) : null;
   return (
-    <LeaveRequestsTable
-      employeeOption={employeeOption}
-      rows={rows}
-      total={total}
-      typeOptions={typeOptions(types, locale)}
-      departmentOptions={departments}
-      scopes={access.scopes}
-      defaultScope={access.defaultScope}
-      scope={scope}
-      canExport={access.canExport}
-      canRequest={access.canRequest}
-    />
+    <div className="flex flex-col gap-3">
+      <SubToolbar start={scopeSwitch} />
+      <LeaveRequestsTable
+        employeeOption={employeeOption}
+        rows={rows}
+        total={total}
+        typeOptions={typeOptions(types, locale)}
+        departmentOptions={departments}
+        scope={scope}
+        canExport={access.canExport}
+        canRequest={access.canRequest}
+      />
+    </div>
   );
 }
 
@@ -121,10 +132,7 @@ export async function BalancesTab({ sp, ctx, access, settings, locale }: TabProp
     const rows = await getEmployeeBalances(access.employeeId, year);
     return (
       <div className="flex flex-col gap-4">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <p className="text-meta text-muted-foreground">{t('balances.mineIntro', { year })}</p>
-          <div className="flex flex-wrap items-center gap-2">{controls}</div>
-        </div>
+        <SubToolbar start={controls} end={<p className="text-meta text-muted-foreground">{t('balances.mineIntro', { year })}</p>} />
         {rows.length ? (
           <BalanceCards rows={rows} employeeName={ctx.employee ? { name_ar: ctx.employee.name_ar, name_en: ctx.employee.name_en } : null} />
         ) : (
@@ -148,21 +156,18 @@ export async function BalancesTab({ sp, ctx, access, settings, locale }: TabProp
   const deducting = types.filter((lt) => lt.deducts_balance);
   const initialize = access.orgEdit && scope === 'org' ? <InitializeBalancesButton year={year} /> : null;
   return (
-    <BalancesTable
-      rows={rows}
-      total={total}
-      typeOptions={typeOptions(deducting.length ? deducting : types, locale).map(({ value, label }) => ({ value, label }))}
-      departmentOptions={departments}
-      canEdit={access.orgEdit}
-      canExport={access.canExport}
-      toolbar={
-        <>
-          {controls}
-          {initialize}
-        </>
-      }
-      emptyAction={access.orgEdit && scope === 'org' ? <InitializeBalancesButton year={year} variant="default" /> : undefined}
-    />
+    <div className="flex flex-col gap-3">
+      <SubToolbar start={controls} end={initialize} />
+      <BalancesTable
+        rows={rows}
+        total={total}
+        typeOptions={typeOptions(deducting.length ? deducting : types, locale).map(({ value, label }) => ({ value, label }))}
+        departmentOptions={departments}
+        canEdit={access.orgEdit}
+        canExport={access.canExport}
+        emptyAction={access.orgEdit && scope === 'org' ? <InitializeBalancesButton year={year} variant="default" /> : undefined}
+      />
+    </div>
   );
 }
 
@@ -223,6 +228,17 @@ export async function HolidaysTab({ sp, access, settings }: TabProps) {
   years.sort((a, b) => b - a);
   return (
     <HolidaysManager rows={rows} year={year} years={years} currentYear={settings.year} today={settings.today} canEdit={access.canConfigure} />
+  );
+}
+
+/** Row above a tab's table: view controls at the start, tab actions / context at the end. */
+function SubToolbar({ start, end }: { start?: ReactNode; end?: ReactNode }) {
+  if (!start && !end) return null;
+  return (
+    <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+      <div className="flex flex-wrap items-center gap-2">{start}</div>
+      {end ? <div className="flex flex-wrap items-center gap-2">{end}</div> : null}
+    </div>
   );
 }
 

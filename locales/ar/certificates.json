@@ -55,7 +55,9 @@
     "requestStatus": "الحالة",
     "submitted": "تاريخ التقديم",
     "searchIssued": "ابحث برقم الشهادة أو اسم الموظف…",
-    "searchRequests": "ابحث برقم الطلب أو اسم الموظف…"
+    "searchRequests": "ابحث برقم الطلب أو اسم الموظف…",
+    "searchOwn": "ابحث برقم الشهادة…",
+    "searchOwnRequests": "ابحث برقم الطلب…"
   },
   "actions": {
     "download": "تحميل PDF",
@@ -84,7 +86,7 @@
   "templatesTab": {
     "description": "القوالب المعتمدة عند إصدار الشهادات. تُستخدم الإصدارات المنشورة للشهادات الجديدة.",
     "openEditor": "فتح المحرر",
-    "versionShort": "إ{version}",
+    "versionShort": "الإصدار {version}",
     "default": "افتراضي",
     "issued": "{count, plural, =0 {لم يُستخدم بعد} one {استُخدم مرة واحدة} two {استُخدم مرتين} few {استُخدم # مرات} many {استُخدم # مرة} other {استُخدم # مرة}}"
   },
@@ -150,7 +152,10 @@
     "employeeReady": "شهادتك جاهزة للتحميل.",
     "requestClosed": "حالة هذا الطلب: {status}.",
     "reissue": "إصدار شهادة أخرى",
-    "revokedNote": "ملغاة"
+    "revokedNote": "ملغاة",
+    "orgMissingTitle": "اسم المنشأة غير محدد",
+    "orgMissing": "ستظهر الشهادات دون اسم المنشأة حتى تُستكمل بيانات المنشأة.",
+    "orgMissingAction": "فتح إعدادات المنشأة"
   },
   "preview": {
     "title": "معاينة الشهادة",

@@ -30,6 +30,8 @@ type Props = {
   row: MasterDataRow | null;
   /** Departments (for the parent picker). */
   departments: DepartmentOption[];
+  /** Locations: ISO country options (localized labels). */
+  countries?: ComboboxOption[];
   readOnly?: boolean;
 };
 
@@ -69,7 +71,7 @@ function subtreeIds(departments: DepartmentOption[], id: string | null): Set<str
 }
 
 /** Create / edit sheet shared by the four master data lists. */
-export function MasterDataSheet({ entity, open, onOpenChange, row, departments, readOnly = false }: Props) {
+export function MasterDataSheet({ entity, open, onOpenChange, row, departments, countries = [], readOnly = false }: Props) {
   const config = MASTER_ENTITY_CONFIG[entity];
   const t = useTranslations('masterData');
   const tc = useTranslations('common');
@@ -104,6 +106,13 @@ export function MasterDataSheet({ entity, open, onOpenChange, row, departments, 
       }))
       .sort((a, b) => a.label.localeCompare(b.label, locale));
   }, [config.hasHierarchy, departments, row, locale]);
+
+  // Imported rows may hold a free-text country: keep it selectable next to the ISO list.
+  const countryOptions = useMemo<ComboboxOption[]>(() => {
+    const current = row?.country?.trim();
+    if (!config.hasPlace || !current || countries.some((c) => c.value === current)) return countries;
+    return [{ value: current, label: current }, ...countries];
+  }, [config.hasPlace, countries, row]);
 
   const headSelected = useMemo<ComboboxOption[]>(
     () => (row?.head ? [{ value: row.head.id, label: employeeDisplayName(row.head, locale), description: row.head.employee_number ?? undefined }] : []),
@@ -164,7 +173,7 @@ export function MasterDataSheet({ entity, open, onOpenChange, row, departments, 
                       <FormItem>
                         <FormLabel optional>{t('fields.code')}</FormLabel>
                         <FormControl>
-                          <Input {...field} dir="ltr" autoComplete="off" spellCheck={false} placeholder={te('codePlaceholder')} className="max-w-56 font-mono uppercase" />
+                          <Input {...field} dir="ltr" autoComplete="off" spellCheck={false} placeholder={te('codePlaceholder')} className="max-w-56 font-mono" />
                         </FormControl>
                         <FormDescription>{t('fields.codeHint')}</FormDescription>
                         <FormMessage />
@@ -274,7 +283,14 @@ export function MasterDataSheet({ entity, open, onOpenChange, row, departments, 
                         <FormItem>
                           <FormLabel optional>{t('fields.country')}</FormLabel>
                           <FormControl>
-                            <Input {...field} autoComplete="country-name" />
+                            <Combobox
+                              options={countryOptions}
+                              value={field.value || null}
+                              onChange={(value) => field.onChange(value ?? '')}
+                              placeholder={t('fields.countryPlaceholder')}
+                              searchPlaceholder={t('fields.countrySearch')}
+                              disabled={disabled}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>

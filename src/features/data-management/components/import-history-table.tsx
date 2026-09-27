@@ -124,9 +124,17 @@ export function ImportHistoryTable({ rows, total, errorsOnly, canStart }: Props)
           const r = row.original;
           return (
             <div className="flex items-center gap-1.5 text-xs font-medium numeric">
-              <span className="rounded-sm bg-success-soft px-1.5 py-0.5 text-success-soft-foreground">{r.totals.imported}</span>
-              {r.totals.warning ? <span className="rounded-sm bg-warning-soft px-1.5 py-0.5 text-warning-soft-foreground">{r.totals.warning}</span> : null}
-              {r.totals.error ? <span className="rounded-sm bg-danger-soft px-1.5 py-0.5 text-danger-soft-foreground">{r.totals.error}</span> : null}
+              <span title={t('report.imported')} className="rounded-sm bg-success-soft px-1.5 py-0.5 text-success-soft-foreground">{r.totals.imported}</span>
+              {r.totals.warning ? (
+                <span title={t('report.warnings')} className="rounded-sm bg-warning-soft px-1.5 py-0.5 text-warning-soft-foreground">
+                  {r.totals.warning}
+                </span>
+              ) : null}
+              {r.totals.error ? (
+                <span title={t('report.errors')} className="rounded-sm bg-danger-soft px-1.5 py-0.5 text-danger-soft-foreground">
+                  {r.totals.error}
+                </span>
+              ) : null}
               <span className="sr-only">{t('history.resultSummary', { imported: r.totals.imported, errors: r.totals.error })}</span>
             </div>
           );
@@ -220,7 +228,7 @@ export function ImportHistoryTable({ rows, total, errorsOnly, canStart }: Props)
           );
         }}
       />
-      <ImportDetailsSheet importId={detailsId} onOpenChange={closeDetails} />
+      <ImportDetailsSheet importId={detailsId} seed={rows.find((r) => r.id === detailsId) ?? null} onOpenChange={closeDetails} />
       <ConfirmDialog
         open={Boolean(cancelId)}
         onOpenChange={(o) => !o && setCancelId(null)}

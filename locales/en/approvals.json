@@ -4,15 +4,15 @@
   "descriptionHr": "Requests waiting for your decision or the HR review queue, most urgent first.",
   "descriptionManager": "Your team's requests waiting for your decision, most urgent first.",
   "kpi": {
-    "pending": "Awaiting my decision",
+    "pending": "Awaiting me",
     "pendingHint": "Manager steps and review queues",
     "overdue": "Overdue",
     "overdueHint": "Past the SLA due date — act first",
     "overdueNone": "Nothing overdue",
-    "dueSoon": "Due within 24 hours",
+    "dueSoon": "Due in 24 hours",
     "dueSoonHint": "Approaching the SLA due date",
-    "decidedMonth": "Decided this month",
-    "decidedMonthHint": "Approved, rejected or returned by you"
+    "decidedMonth": "My decisions",
+    "decidedMonthHint": "This month"
   },
   "tabs": {
     "label": "Approval views",
@@ -33,8 +33,7 @@
     "approve": "Approve",
     "return": "Return for information",
     "returnDisabled": "This step doesn't allow returning",
-    "reject": "Reject",
-    "open": "Open request"
+    "reject": "Reject"
   },
   "empty": {
     "pending": {
