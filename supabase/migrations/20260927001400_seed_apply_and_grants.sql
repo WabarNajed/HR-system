@@ -126,7 +126,30 @@ grant execute on all functions in schema public to authenticated, service_role;
 grant execute on function public.verify_certificate(text) to anon;
 grant execute on function public.get_public_branding() to anon;
 
--- private: not exposed through the Data API; authenticated needs EXECUTE because RLS policies,
--- storage policies and security-invoker RPCs call these helpers.
-revoke all on all functions in schema private from public, anon;
-grant execute on all functions in schema private to authenticated, service_role;
+-- private: never exposed through the Data API. authenticated only gets EXECUTE on the read-only
+-- helpers that RLS policies, storage policies, invoker guard triggers and security-invoker RPCs call;
+-- everything that mutates data (workflow engine, notify, audit writer, seeds) is reachable only from
+-- inside security-definer RPCs.
+revoke all on all functions in schema private from public, anon, authenticated;
+grant execute on all functions in schema private to service_role;
+do $$
+declare
+  f text;
+begin
+  foreach f in array array[
+    'user_is_active', 'user_has_role', 'user_has_permission', 'user_is_hr', 'current_profile_status', 'is_active_user',
+    'has_role', 'is_super_admin', 'is_hr', 'has_permission', 'has_org_permission', 'current_employee_id', 'is_manager_of',
+    'can_view_employee', 'org_timezone', 'org_today', 'is_business_day', 'add_business_days', 'sla_due_at', 'try_uuid',
+    'normalize_search', 'nullif_blank', 'expiry_buckets', 'request_type_has_manager_step', 'is_request_participant',
+    'can_act_on_role_step', 'can_view_request_row', 'can_view_request', 'can_attach_to_request', 'can_import',
+    'visible_profile_ids', 'my_direct_report_ids', 'my_approval_request_ids', 'manager_step_request_type_ids',
+    'my_role_step_ids', 'can_read_employee_file', 'can_write_employee_file', 'can_read_certificate_file',
+    'can_write_certificate_file'
+  ] loop
+    execute (
+      select string_agg(format('grant execute on function %s to authenticated', p.oid::regprocedure), '; ')
+      from pg_proc p where p.pronamespace = 'private'::regnamespace and p.proname = f
+    );
+  end loop;
+end;
+$$;

@@ -10,6 +10,7 @@ import {
   SearchXIcon,
   UserRoundIcon,
   UsersIcon,
+  XIcon,
   type LucideIcon,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -164,14 +165,27 @@ export function GlobalSearch({ visibleNavIds }: { visibleNavIds: readonly string
       <CommandDialog
         open={open}
         onOpenChange={onOpenChange}
+        shouldFilter={false}
         title={tNav('nav.header.search')}
-        className="max-sm:top-0 max-sm:h-dvh max-sm:max-w-none max-sm:translate-y-0 max-sm:rounded-none sm:max-w-2xl"
+        className="max-sm:top-0 max-sm:h-dvh max-sm:max-h-dvh max-sm:w-full max-sm:rounded-none max-sm:border-0 sm:max-w-2xl"
       >
         <div className="relative">
-          <CommandInput value={query} onValueChange={setQuery} placeholder={t('placeholder')} className="pe-8" />
+          <CommandInput value={query} onValueChange={setQuery} placeholder={t('placeholder')} className="pe-8 max-sm:pe-16" />
           {state.status === 'loading' ? (
-            <Loader2Icon aria-label={t('loading')} className="absolute end-3 top-1/2 size-4 -translate-y-1/2 animate-spin text-muted-foreground" />
+            <Loader2Icon
+              aria-label={t('loading')}
+              className="absolute end-3 top-1/2 size-4 -translate-y-1/2 animate-spin text-muted-foreground max-sm:end-12"
+            />
           ) : null}
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            className="absolute end-2 top-1/2 -translate-y-1/2 text-muted-foreground sm:hidden"
+            onClick={() => onOpenChange(false)}
+            aria-label={tNav('common.close')}
+          >
+            <XIcon />
+          </Button>
         </div>
         <CommandList className="max-h-[min(28rem,70dvh)] max-sm:max-h-none max-sm:flex-1">
           {state.status === 'idle' ? (

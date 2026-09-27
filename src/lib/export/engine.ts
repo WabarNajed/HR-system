@@ -288,7 +288,9 @@ export function buildPdfHtml<Row>(input: BuildPdfInput<Row>): string {
   const primary = /^#[0-9a-f]{6}$/i.test(input.primaryColor ?? '') ? input.primaryColor! : '#0F5E6B';
   const yesNo = input.yesNo ?? ['Yes', 'No'];
   const numericTypes: (ExportColumnType | undefined)[] = ['number', 'integer', 'currency', 'percent'];
-  const ltrTypes: (ExportColumnType | undefined)[] = [...numericTypes, 'date', 'datetime'];
+  // Pure numbers are isolated LTR; localized dates/currency keep the paragraph direction (Arabic month
+  // names and currency symbols would otherwise be reordered by the bidi algorithm).
+  const ltrTypes: (ExportColumnType | undefined)[] = rtl ? ['number', 'integer', 'percent'] : [...numericTypes, 'date', 'datetime'];
 
   const head = input.columns
     .map((c) => `<th class="${numericTypes.includes(c.type) ? 'n' : ''}">${escapeHtml(c.header)}</th>`)

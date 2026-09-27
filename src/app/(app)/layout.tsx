@@ -1,4 +1,5 @@
 import { cookies } from 'next/headers';
+import { unstable_rethrow } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import type { ReactNode } from 'react';
 import { ConfigurationRequired } from '@/components/shared/configuration-required';
@@ -18,7 +19,8 @@ async function unreadCount(): Promise<number | null> {
     const supabase = await createClient({ timeoutMs: 3000 });
     const { count, error } = await supabase.from('notifications').select('id', { count: 'exact', head: true }).is('read_at', null);
     return error ? null : (count ?? 0);
-  } catch {
+  } catch (error) {
+    unstable_rethrow(error);
     return null;
   }
 }

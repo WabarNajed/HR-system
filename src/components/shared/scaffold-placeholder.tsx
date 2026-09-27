@@ -15,6 +15,8 @@ export type ScaffoldPlaceholderProps = {
   description?: ReactNode;
   /** Header actions, if any real ones exist already. */
   actions?: ReactNode;
+  /** Show the "Back to dashboard" link (default true; false on public pages). */
+  showHomeLink?: boolean;
   className?: string;
 };
 
@@ -22,7 +24,7 @@ export type ScaffoldPlaceholderProps = {
  * TEMPORARY route scaffold: a translated, compact "This section is being set up" card (with the
  * page header). Module agents replace every usage with the real page.
  */
-export function ScaffoldPlaceholder({ module, title, description, actions, className }: ScaffoldPlaceholderProps) {
+export function ScaffoldPlaceholder({ module, title, description, actions, showHomeLink = true, className }: ScaffoldPlaceholderProps) {
   const t = useTranslations('common');
   const card = (
     <section
@@ -42,12 +44,14 @@ export function ScaffoldPlaceholder({ module, title, description, actions, class
         </div>
         <p className="mt-1 max-w-2xl text-meta text-muted-foreground">{t('scaffold.description')}</p>
       </div>
-      <Button asChild variant="outline" size="sm" className="shrink-0">
-        <Link href="/dashboard">
-          <ArrowLeftIcon className="rtl:rotate-180" />
-          {t('states.backToDashboard')}
-        </Link>
-      </Button>
+      {showHomeLink ? (
+        <Button asChild variant="outline" size="sm" className="shrink-0">
+          <Link href="/dashboard">
+            <ArrowLeftIcon className="rtl:rotate-180" />
+            {t('states.backToDashboard')}
+          </Link>
+        </Button>
+      ) : null}
     </section>
   );
 

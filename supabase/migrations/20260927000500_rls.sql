@@ -56,7 +56,75 @@ as $$
   )
 $$;
 
--- Single source of truth for request visibility (used by the hr_requests policy with the row's columns).
+-- Profiles a non-HR active user may see: HR staff, their own manager and their direct reports
+create or replace function private.visible_profile_ids()
+returns setof uuid
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select ur.user_id
+  from public.user_roles ur
+  join public.roles r on r.id = ur.role_id and r.data_scope = 'organization'
+  join public.profiles p on p.id = ur.user_id and p.status = 'active'
+  where private.is_active_user()
+  union
+  select p.id
+  from public.profiles p
+  join public.employees e on e.id = p.employee_id
+  where private.current_employee_id() is not null
+    and (e.manager_id = private.current_employee_id()
+         or e.id = (select me.manager_id from public.employees me where me.id = private.current_employee_id()))
+$$;
+
+-- Set-returning helpers used by policies as `col in (select …)` so Postgres evaluates them once per
+-- statement (hashed sub-plan) instead of once per row.
+create or replace function private.my_direct_report_ids()
+returns setof uuid
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select e.id from public.employees e
+  where private.current_employee_id() is not null and e.manager_id = private.current_employee_id()
+$$;
+
+create or replace function private.my_approval_request_ids()
+returns setof uuid
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select distinct a.request_id from public.request_approvals a
+  where a.approver_id = auth.uid() and private.is_active_user()
+$$;
+
+create or replace function private.manager_step_request_type_ids()
+returns setof uuid
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select t.id from public.request_types t where private.request_type_has_manager_step(t.id)
+$$;
+
+create or replace function private.my_role_step_ids()
+returns setof uuid
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select s.id from public.request_workflow_steps s
+  where s.step_type = 'role' and private.has_role(s.approver_role_key)
+$$;
+
+-- Request visibility for ONE request (RPC checks, storage policies). The hr_requests SELECT policy below
+-- implements the same rule in set-based form; tests assert both agree.
 create or replace function private.can_view_request_row(
   p_request_id uuid,
   p_requester_id uuid,
@@ -212,7 +280,7 @@ create policy profiles_select on public.profiles for select to authenticated
       and (
         (select private.has_org_permission('users', 'view'))
         or (select private.is_hr())
-        or private.can_view_profile(id, employee_id)
+        or id in (select private.visible_profile_ids())
       )
     )
   );
@@ -372,9 +440,9 @@ create policy leave_balances_select on public.leave_balances for select to authe
   using (
     (select private.is_active_user())
     and (
-      employee_id = (select private.current_employee_id())
-      or private.is_manager_of(employee_id)
-      or (select private.has_org_permission('leave', 'view'))
+      (select private.has_org_permission('leave', 'view'))
+      or employee_id = (select private.current_employee_id())
+      or employee_id in (select private.my_direct_report_ids())
     )
   );
 drop policy if exists leave_balances_insert on public.leave_balances;
@@ -402,9 +470,9 @@ create policy leave_requests_select on public.leave_requests for select to authe
   using (
     (select private.is_active_user())
     and (
-      employee_id = (select private.current_employee_id())
-      or private.is_manager_of(employee_id)
-      or (select private.has_org_permission('leave', 'view'))
+      (select private.has_org_permission('leave', 'view'))
+      or employee_id = (select private.current_employee_id())
+      or employee_id in (select private.my_direct_report_ids())
     )
   );
 
@@ -432,11 +500,21 @@ create policy request_workflow_steps_select on public.request_workflow_steps for
 drop policy if exists hr_requests_select on public.hr_requests;
 create policy hr_requests_select on public.hr_requests for select to authenticated
   using (
-    -- cheap, statement-cached checks first (HR / own requests), then the full per-row rule
     ((select private.has_org_permission('requests', 'view')) and status <> 'draft')
-    or ((select private.is_active_user()) and requester_id = (select auth.uid()))
-    or private.can_view_request_row(id, requester_id, employee_id, status, request_type_id,
-                                    current_approver_id, current_step_type, current_step_id)
+    or (
+      (select private.is_active_user())
+      and (
+        requester_id = (select auth.uid())
+        or (status <> 'draft' and (
+          employee_id = (select private.current_employee_id())
+          or current_approver_id = (select auth.uid())
+          or id in (select private.my_approval_request_ids())
+          or (employee_id in (select private.my_direct_report_ids())
+              and request_type_id in (select private.manager_step_request_type_ids()))
+          or (current_step_type = 'role' and current_step_id in (select private.my_role_step_ids()))
+        ))
+      )
+    )
   );
 drop policy if exists hr_requests_update on public.hr_requests;
 create policy hr_requests_update on public.hr_requests for update to authenticated

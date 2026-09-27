@@ -120,7 +120,7 @@ export function AppShell({ branding, user, permissions, visibleNavIds, initialCo
               <SimpleTooltip content={t('newRequest')}>
                 <Button asChild size="sm" className="ms-1 max-md:size-9 max-md:px-0 md:ms-1.5">
                   <Link href="/requests/new" aria-label={t('newRequest')}>
-                    <FilePlus2Icon className="max-md:size-4" />
+                    <FilePlus2Icon className="size-4" />
                     <span className="hidden md:inline">{t('newRequest')}</span>
                   </Link>
                 </Button>

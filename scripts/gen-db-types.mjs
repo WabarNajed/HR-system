@@ -247,11 +247,7 @@ function renderTable(rel, indent) {
     : '[]';
   const block = (name, entries) =>
     `${pad(indent)}${name}: {\n${objectLines(entries, indent + 2)}\n${pad(indent)}}`;
-  const parts = [block('Row', row)];
-  if (!isView || true) {
-    parts.push(block('Insert', writeCols('insert')));
-    parts.push(block('Update', writeCols('update')));
-  }
+  const parts = [block('Row', row), block('Insert', writeCols('insert')), block('Update', writeCols('update'))];
   parts.push(`${pad(indent)}Relationships: ${relLines}`);
   return parts.join('\n');
 }

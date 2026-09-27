@@ -39,6 +39,8 @@ $$;
 do $$
 declare
   e1 uuid := pg_temp.id('e_emp1');
+  v_types bigint := (select count(*) from public.request_types where is_active);
+  v_leave bigint := (select count(*) from public.leave_types where is_active);
 begin
   perform pg_temp.as_user('emp1');
   perform pg_temp.check('employee sees exactly one employee row (own)',
@@ -83,7 +85,7 @@ begin
     and pg_temp.cnt(format('select 1 from public.profiles where id = %L', pg_temp.id('hro'))) = 1
     and pg_temp.cnt(format('select 1 from public.profiles where id in (%L, %L)', pg_temp.id('emp2'), pg_temp.id('emp3'))) = 0);
   perform pg_temp.check('employee reads active configuration (request types, leave types, org settings)',
-    pg_temp.cnt('select 1 from public.request_types') = 12 and pg_temp.cnt('select 1 from public.leave_types') = 11
+    pg_temp.cnt('select 1 from public.request_types') = v_types and pg_temp.cnt('select 1 from public.leave_types') = v_leave
     and pg_temp.cnt('select 1 from public.organization_settings') = 1);
   perform pg_temp.check('employee sees manager card via get_employee_manager',
     (public.get_employee_manager(e1) ->> 'id')::uuid = pg_temp.id('e_mgr'));
@@ -137,14 +139,17 @@ $$;
 -- HR visibility
 -- ---------------------------------------------------------------------------------------------------
 do $$
+declare
+  v_employees bigint := (select count(*) from public.employees);
+  v_requests  bigint := (select count(*) from public.hr_requests where status <> 'draft');
+  v_internal  bigint := (select count(*) from public.request_comments where is_internal);
 begin
   perform pg_temp.as_user('hro');
-  perform pg_temp.check('HR officer sees all employees',
-    pg_temp.cnt('select 1 from public.employees') = (select count(*) from public.employees where employee_number like 'T-%'));
+  perform pg_temp.check('HR officer sees all employees', pg_temp.cnt('select 1 from public.employees') = v_employees);
   perform pg_temp.check('HR officer sees internal comments',
-    pg_temp.cnt('select 1 from public.request_comments where is_internal') = 1);
+    pg_temp.cnt('select 1 from public.request_comments where is_internal') = v_internal and v_internal >= 1);
   perform pg_temp.check('HR officer sees all submitted requests',
-    pg_temp.cnt('select 1 from public.hr_requests') = 3);
+    pg_temp.cnt('select 1 from public.hr_requests where status <> ''draft''') = v_requests);
   perform pg_temp.check('HR officer sees confidential documents (documents.view)',
     pg_temp.cnt('select 1 from public.employee_documents where is_confidential') >= 1);
   perform pg_temp.as_postgres();

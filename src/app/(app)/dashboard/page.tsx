@@ -11,5 +11,5 @@ export const generateMetadata = (): Promise<Metadata> => pageMetadata('dashboard
 export default async function DashboardPage() {
   await requireAccess(ROUTE_ACCESS['/dashboard']);
   const t = await getTranslations();
-  return <ScaffoldPlaceholder module="dashboard" title={t('dashboard.title')} description={t('dashboard.description')} />;
+  return <ScaffoldPlaceholder module="dashboard" title={t('dashboard.title')} description={t('dashboard.description')} showHomeLink={false} />;
 }

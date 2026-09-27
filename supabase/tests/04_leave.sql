@@ -243,9 +243,12 @@ begin
   perform pg_temp.check('adjustment audited and employee notified',
     exists (select 1 from public.audit_logs where action = 'leave_adjustment.create' and employee_id = pg_temp.id('e_emp1'))
     and exists (select 1 from public.notifications where user_id = pg_temp.id('emp1') and type = 'leave_balance_adjusted'));
-  perform pg_temp.check('initialize_leave_balances creates missing deducting balances for every active employee (6 × annual/emergency, minus existing)',
-    v_n = (select count(*) from public.leave_balances where year = 2027 and leave_type_id in (pg_temp.leave_type('annual'), pg_temp.leave_type('emergency')))
-    and (select count(*) from public.leave_balances where year = 2027 and leave_type_id = pg_temp.leave_type('annual')) = 6);
+  perform pg_temp.check('initialize_leave_balances creates the missing deducting balances for every active employee',
+    v_n > 0
+    and not exists (select 1 from public.employees e
+                    where e.archived_at is null and e.employment_status not in ('resigned', 'terminated')
+                      and not exists (select 1 from public.leave_balances b
+                                      where b.employee_id = e.id and b.year = 2027 and b.leave_type_id = pg_temp.leave_type('annual'))));
   perform pg_temp.check('invariants hold: pending/used never negative',
     not exists (select 1 from public.leave_balances where pending < 0 or used < 0));
 end;

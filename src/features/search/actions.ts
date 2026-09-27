@@ -23,9 +23,9 @@ type Row = { kind: string | null; id: string | null; title: string | null; subti
 
 export const globalSearch = withAction(
   schema,
-  async ({ query }) => {
+  async ({ query }, { ctx }) => {
     const supabase = await createClient({ timeoutMs: 6000 });
-    const { data, error } = await supabase.rpc('global_search', { p_query: query });
+    const { data, error } = await supabase.rpc('global_search', { p_query: query, p_locale: ctx.locale, p_limit: 10 });
     if (error) throw error;
     const rows = ((data ?? []) as Row[])
       .filter((r) => r.id && r.title && r.href && r.href.startsWith('/'))

@@ -158,7 +158,8 @@ by Branding settings (primary/secondary colors injected as CSS variables in the 
 Conventions: `uuid` PKs (`gen_random_uuid()`), `created_at`, `updated_at` (trigger), `created_by`,
 `updated_by` (default `auth.uid()`, trigger-maintained) on all business tables; soft delete via
 `archived_at` / `is_active` where appropriate; text + CHECK constraints instead of Postgres enums (easier
-to evolve); all FKs indexed.
+to evolve); all FKs indexed. Full column-level detail, RLS, RPC and workflow reference: `docs/DATABASE.md`
+(generated TS types: `src/types/database.ts`).
 
 ### Organization & settings
 * `organizations` (singleton; `singleton boolean unique default true check (singleton)`): name_ar/en,
@@ -176,11 +177,14 @@ to evolve); all FKs indexed.
 ### Identity & access
 * `profiles` (id = `auth.users.id`): email, full_name, mobile, employee_id (FK employees, **unique**,
   nullable), status (`pending|info_requested|active|rejected|disabled`), registration_employee_number,
-  registration_note, reviewed_by, reviewed_at, preferred_language, theme, last_login_at, invited_at.
+  registration_note, matched_employee_id (registration match suggestion), review_note (HR note to the
+  applicant), reviewed_by, reviewed_at, preferred_language (`ar|en|null`), theme (`light|dark|system`),
+  last_login_at, invited_at.
   Created by trigger on `auth.users` insert (status `pending` for self sign-up; `active` when created by an
-  admin invite via `raw_app_meta_data.invited_by_admin`).
+  admin invite via `raw_app_meta_data.invited_by_admin`). `raw_user_meta_data` is untrusted input.
 * `roles` (key unique: `super_admin|hr_admin|hr_officer|manager|employee` + custom), name_ar/en,
-  description_ar/en, is_system, rank int.
+  description_ar/en, is_system, rank int, **data_scope** (`own|team|organization`: which rows the role's
+  permissions reach — HR roles `organization`, manager `team`, employee `own`; see §7).
 * `user_roles` (user_id, role_id) unique pair.
 * `role_permissions` (role_id, module, action) unique triple.
   * modules: `employees, personal_data, bank, insurance, documents, requests, approvals, leave,
@@ -203,8 +207,9 @@ to evolve); all FKs indexed.
   iqama_issue_date, iqama_expiry_date, iqama_expiry_hijri (text, as provided), iqama_profession,
   passport_number, passport_expiry_date, employer_number, is_outside_kingdom (bool, nullable);
   emergency_contact_name, emergency_contact_relationship, emergency_contact_mobile;
-  avatar_path, extra_data jsonb (unmapped import columns preserved verbatim), import_id,
-  archived_at, archived_by + audit columns.
+  avatar_path (`{id}/avatar/…`), extra_data jsonb (unmapped import columns preserved verbatim), import_id,
+  archived_at, archived_by, search_text (generated lower-case number/names/company e-mail, trigram
+  indexed) + audit columns.
 * `employee_compensation` (employee_id PK): basic_salary, housing_allowance, transport_allowance,
   other_allowance, total_salary (generated), currency, effective_date. **HR + owner only.**
 * `employee_bank_accounts`: employee_id, bank_name, iban, account_holder, is_primary. **HR + owner only.**
@@ -236,9 +241,9 @@ to evolve); all FKs indexed.
 * `public_holidays`: name_ar/en, start_date, end_date, is_active.
 
 ### Requests & workflow
-* `request_types`: key unique, category, name_ar/en, description_ar/en, icon (lucide name), color,
+* `request_types`: key unique, category, name_ar/en, description_ar/en, icon (lucide kebab-case name), color,
   sla_business_days, requires_manager_approval, requires_hr_approval, allow_attachments,
-  is_active, sort_order, workflow_id.
+  is_active, sort_order, workflow_id, is_system (seeded types with built-in effects; deactivate, never delete).
 * `request_fields`: request_type_id, key, field_type
   (`short_text|long_text|number|currency|date|datetime|time|dropdown|multi_select|yes_no|attachment|
   leave_type|dependent|employee|email|phone`), label_ar/en, help_ar/en, placeholder_ar/en, required,
@@ -249,17 +254,20 @@ to evolve); all FKs indexed.
 * `request_workflows`: request_type_id, name_ar/en, is_active.
 * `request_workflow_steps`: workflow_id, step_order, step_type (`manager|hr|role|user`), name_ar/en,
   approver_role_key, approver_user_id, sla_business_days, can_return, can_reassign.
-* `hr_requests`: request_number (`HR-YYYY-000001`), request_type_id, subtype, employee_id,
-  requester_id (profile), status (`draft|submitted|pending_manager_approval|pending_hr_review|returned|
-  approved|rejected|in_progress|completed|cancelled`), current_step_id, current_step_order,
+* `hr_requests`: request_number (`HR-YYYY-000001`, assigned on first submission — drafts have none),
+  request_type_id, subtype, employee_id, requester_id (profile), status (`draft|submitted|
+  pending_manager_approval|pending_hr_review|returned|approved|rejected|in_progress|completed|cancelled`),
+  current_step_id, current_step_order, current_step_type (`manager|hr|role|user` while pending),
   returned_from_step_order, assigned_to (profile), current_approver_id (profile, for manager/user steps),
-  priority, submitted_at, due_at, completed_at, cancelled_at, title (computed summary).
+  priority (`low|normal|high|urgent`), submitted_at, due_at, completed_at, cancelled_at, title (computed summary).
 * `hr_request_values`: request_id, field_key, value jsonb, unique (request_id, field_key).
-* `request_attachments`: request_id, storage_path, file_name, file_size, mime_type, uploaded_by.
-* `request_comments`: request_id, author_id, body, is_internal (HR-only when true).
-* `request_history`: request_id, action, from_status, to_status, actor_id, note, metadata jsonb.
-* `request_approvals`: request_id, step_id, step_order, approver_id, decision
-  (`pending|approved|rejected|returned|reassigned|skipped`), comment, decided_at.
+* `request_attachments`: request_id, field_key, storage_path (`requests/{request_id}/…`, enforced), file_name,
+  file_size, mime_type, uploaded_by.
+* `request_comments`: request_id, author_id, author_name (snapshot), body, is_internal (HR-only when true).
+* `request_history`: request_id, action, from_status, to_status, actor_id, actor_name (snapshot), note,
+  metadata jsonb.
+* `request_approvals`: request_id, step_id, step_order, step_type, approver_id, approver_name (snapshot),
+  decision (`pending|approved|rejected|returned|reassigned|skipped`), comment, decided_at.
 * `document_sequences`: prefix, year, last_value (PK prefix+year) — for `HR-` and `CERT-` numbers.
 
 ### Certificates & templates
@@ -282,7 +290,7 @@ to evolve); all FKs indexed.
   registration_submitted, registration_approved, registration_rejected, registration_info_requested,
   certificate_issued, leave_balance_adjusted, expiry_alert, account_invited`.
 * `notification_settings`: event_key unique, in_app_enabled, email_enabled, recipients jsonb.
-* `email_templates`: key unique (`account_invitation, registration_submitted, registration_approved,
+* `email_templates` (+ placeholders jsonb): key unique (`account_invitation, registration_submitted, registration_approved,
   registration_rejected, password_reset, request_submitted, approval_required, request_approved,
   request_rejected, request_returned, request_completed, iqama_expiry, passport_expiry,
   insurance_expiry, contract_expiry, document_expiry`), name_ar/en, subject_ar/en, body_ar/en (HTML),
@@ -298,8 +306,9 @@ to evolve); all FKs indexed.
 * `import_rows`: import_id, row_number, raw jsonb, mapped jsonb, status (`valid|warning|error|imported|
   skipped`), errors jsonb, warnings jsonb, entity_id.
 * `audit_logs` (bigint identity PK): actor_id, actor_email, action (dot-namespaced, e.g.
-  `employee.update`), entity_type, entity_id, summary, changes jsonb (sensitive fields masked), ip,
-  user_agent, created_at. **Append-only**: no UPDATE/DELETE grants or policies for anyone.
+  `employee.update`), entity_type, entity_id, employee_id (related employee → Activity tab), summary,
+  changes jsonb (sensitive fields masked), ip, user_agent, created_at. **Append-only**: no UPDATE/DELETE
+  grants or policies for anyone (plus a guard trigger).
 
 ---
 
@@ -307,51 +316,65 @@ to evolve); all FKs indexed.
 
 ### Helper functions (schema `private`, `security definer`, `stable`, `set search_path = ''`)
 `private.current_profile_status()`, `private.is_active_user()`, `private.has_role(key)`,
-`private.is_super_admin()`, `private.is_hr()` (active super_admin/hr_admin/hr_officer),
-`private.has_permission(module, action)` (super_admin ⇒ true), `private.current_employee_id()`,
-`private.is_manager_of(employee_id)` (direct report), `private.can_view_employee(employee_id)`
-(self ∨ manager_of ∨ has_permission('employees','view')).
+`private.is_super_admin()`, `private.is_hr()` (active holder of an organization-scoped role:
+super_admin/hr_admin/hr_officer or a custom HR role), `private.has_permission(module, action)` (via any
+role; super_admin ⇒ true), `private.has_org_permission(module, action)` (via an organization-scoped role
+only; super_admin ⇒ true), `private.current_employee_id()`, `private.is_manager_of(employee_id)` (direct
+report), `private.can_view_employee(employee_id)` (self ∨ manager_of ∨ has_org_permission('employees','view')),
+`private.can_view_request(request_id)`.
 
 Every helper returns false for users whose profile status ≠ `active`.
+
+**Permissions vs. data scope**: `role_permissions` says which modules/actions a role may use (UI gating,
+RPC checks → `has_permission`); *which rows* depends on `roles.data_scope`. Org-wide row access in RLS
+always uses `has_org_permission`, so e.g. the manager role's `employees.view` means "my team", not "everyone".
 
 ### RLS matrix (enforced in the database — UI hiding is cosmetic only)
 
 | Table | Employee | Manager | HR officer / HR admin | Super admin |
 |---|---|---|---|---|
-| employees | own row | + direct reports (read) | per `employees.*` perms | all |
+| employees | own row | + direct reports (read) | per `employees.*` perms (identity columns need `personal_data.edit`) | all |
 | employee_compensation, employee_bank_accounts | own (read) | ✗ | `bank.*` perms | all |
 | employee_insurance | own (read) | ✗ | `insurance.*` perms | all |
 | employee_dependents | own (read) | ✗ | `personal_data.*` perms | all |
 | employee_documents | own (read, non-confidential + own uploads) | ✗ | `documents.*` perms | all |
-| hr_requests (+values, attachments) | own | + where current approver / team requests they approved | `requests.*` perms | all |
+| hr_requests (+values, attachments, history, approvals) | own (drafts: requester only) | + current/previous approver; direct reports' requests whose type has a manager step | `requests.*` perms (no drafts) | all |
 | request_comments | own request, `is_internal=false` only | same as requests, non-internal | all incl. internal | all |
 | leave_balances / leave_requests | own | direct reports (read) | `leave.*` | all |
 | certificates | own (valid) | ✗ | `certificates.*` | all |
 | notifications | own only | own | own | own |
 | audit_logs | ✗ | ✗ | `audit.view` | all (read only) |
 | config tables (types, templates, settings, master data) | read active rows | read | read; write per `settings.*` | all |
+| profiles | own + manager + direct reports + HR staff | same | all | all — self may update only full_name, mobile, preferred_language, theme (and registration fields while pending) |
+| user_roles / role_permissions | own roles / read | same | `users.view` / write `users.administer` | all |
 
 Mutations with multi-row effects run through **`security definer` RPCs** that check authorization
 explicitly and do all side effects atomically (status, history, approvals, audit, notifications, leave
 balance, sequences):
 
-* `public.create_request_draft(p_request_type_id uuid, p_values jsonb, p_subtype text, p_employee_id uuid default null) → uuid`
-* `public.update_request_draft(p_request_id uuid, p_values jsonb, p_subtype text) → void`
+* `public.create_request_draft(p_request_type_id uuid, p_values jsonb, p_subtype text default null, p_employee_id uuid default null) → uuid`
+* `public.update_request_draft(p_request_id uuid, p_values jsonb, p_subtype text default null) → void` (p_values replaces the stored values)
 * `public.submit_request(p_request_id uuid) → jsonb` (`{status, notification_ids}`) — also resubmits returned requests, resuming at `returned_from_step_order`
 * `public.act_on_request(p_request_id uuid, p_action text, p_comment text default null, p_target_user uuid default null) → jsonb`
   actions: `approve|reject|return|reassign|start|complete|cancel`
 * `public.add_request_comment(p_request_id uuid, p_body text, p_is_internal boolean) → uuid`
 * `public.count_leave_days(p_leave_type_id uuid, p_start date, p_end date) → numeric`
 * `public.adjust_leave_balance(p_employee_id uuid, p_leave_type_id uuid, p_year int, p_amount numeric, p_reason text) → uuid`
-* `public.approve_registration(p_profile_id uuid, p_employee_id uuid, p_role_key text default 'employee') → void`, `public.reject_registration(p_profile_id uuid, p_reason text)`, `public.request_registration_info(p_profile_id uuid, p_note text)`
+* `public.approve_registration(p_profile_id uuid, p_employee_id uuid default null, p_role_key text default 'employee') → void`, `public.reject_registration(p_profile_id uuid, p_reason text)`, `public.request_registration_info(p_profile_id uuid, p_note text)`
 * `public.set_user_roles(p_user_id uuid, p_role_keys text[])` (only super_admin may grant/revoke `super_admin`; the last super admin can never be removed or disabled)
 * `public.next_document_number(p_prefix text) → text`
-* `public.log_audit_event(p_action text, p_entity_type text, p_entity_id text, p_summary text, p_changes jsonb default null) → void`
-* `public.global_search(p_query text) → table(kind, id, title, subtitle, href)` (security invoker → RLS applies)
+* `public.log_audit_event(p_action text, p_entity_type text default null, p_entity_id text default null, p_summary text default null, p_changes jsonb default null) → void`
+* `public.global_search(p_query text, p_locale text default 'ar', p_limit int default 20) → table(kind, id, title, subtitle, href)` (security invoker → RLS applies)
 * `public.verify_certificate(p_number text) → table(certificate_number, employee_name, certificate_type, issue_date, status)` — granted to `anon`; returns nothing else
 * `public.get_public_branding() → jsonb` — granted to `anon` (portal names, logo URL, colors, login texts)
 * `public.dashboard_stats() → jsonb` (role-aware counts)
 * `public.reset_organization(p_confirmation text) → void` (super_admin only, phrase `RESET ORGANIZATION`)
+* Additional RPCs (see `docs/DATABASE.md` §7): `set_user_status(p_user_id, p_status, p_note default null)`,
+  `set_user_employee(p_user_id, p_employee_id)`, `record_login()`, `get_employee_manager(p_employee_id) → jsonb`,
+  `get_request_workflow(p_request_id) → table`, `set_leave_balance(…)`, `initialize_leave_balances(p_year, p_employee_id default null)`,
+  `claim_notification_emails(p_notification_ids uuid[]) → table`, `log_email(…)`, `generate_expiry_alerts()` (cron),
+  `publish_certificate_template(p_template_id, p_change_notes default null)`, `restore_certificate_template_version(p_template_id, p_version)`.
+* RPC errors are raised as `hr:errors.<key>` (list in `docs/DATABASE.md` §13).
 
 Server-side TypeScript still checks permissions before calling anything (defense in depth) using
 `requirePermission(module, action)`; the service-role client (`lib/supabase/admin.ts`) is used **only**
@@ -361,7 +384,7 @@ always after an explicit role check.
 ### Storage (all buckets private; access via short-lived signed URLs)
 | Bucket | Path | Read | Write |
 |---|---|---|---|
-| `employee-documents` | `{employee_id}/{document_id}/{file}` · avatars `{employee_id}/avatar/{file}` | owner, HR (`documents.view`) | HR, owner (own folder, uploads land as `pending_review`) |
+| `employee-documents` | `{employee_id}/{document_id}/{file}` · avatars `{employee_id}/avatar/{file}` | owner (non-confidential / own uploads), HR (`documents.view`); avatars: whoever can view the employee | HR, owner (own folder, into a `pending_review` document row created first) |
 | `request-attachments` | `requests/{request_id}/{uuid}-{file}` | requester, current/previous approvers, HR | requester (draft/returned), HR |
 | `certificate-files` | `certificates/{employee_id}/{certificate_number}.pdf`, `branding/stamp.*`, `branding/signature.*` | owner (certificates), HR | HR / service |
 | `branding` (**public**) | `logo/*`, `login/*` | anyone | super_admin / `settings.administer` |

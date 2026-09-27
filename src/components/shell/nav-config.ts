@@ -312,6 +312,9 @@ export const ROUTE_LABELS: Record<string, string> = {
   ...Object.fromEntries(SETTINGS_NAV.flatMap((g) => g.items.filter((i) => i.href.startsWith('/settings/')).map((i) => [i.href, `nav.settings.items.${i.key}`]))),
 };
 
+/** Crumbs that have no page of their own (rendered as plain text, not links). */
+export const NON_LINK_PATHS: ReadonlySet<string> = new Set(['/admin']);
+
 /** Segment label used after a dynamic segment (e.g. `/employees/[id]/edit`). */
 export const SEGMENT_LABELS: Record<string, string> = {
   edit: 'common.edit',

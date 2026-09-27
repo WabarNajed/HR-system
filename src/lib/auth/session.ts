@@ -1,5 +1,6 @@
 import 'server-only';
 
+import { unstable_rethrow } from 'next/navigation';
 import { getLocale } from 'next-intl/server';
 import { cache } from 'react';
 import { isLocale, type Locale } from '@/lib/i18n/config';
@@ -256,6 +257,7 @@ export const getSessionState = cache(async (): Promise<SessionState> => {
     };
     return { status: 'authenticated', ctx };
   } catch (error) {
+    unstable_rethrow(error);
     console.error('[session] failed to load session:', error instanceof Error ? error.message : error);
     return { status: 'unavailable', reason: 'backend' };
   }

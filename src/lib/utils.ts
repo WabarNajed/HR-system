@@ -74,14 +74,65 @@ export function mixHex(a: string, b: string, weight: number): string {
   return rgbToHex([0, 1, 2].map((i) => ra[i]! + (rb[i]! - ra[i]!) * weight) as Rgb);
 }
 
-/** Lightens `hex` towards white until it reaches at least `minContrast` on `surface`. */
-function liftForDarkSurface(hex: string, surface = '#101b1f', minContrast = 4.5): string {
-  let out = hex;
-  for (let w = 0; w <= 0.9 && contrastRatio(out, surface) < minContrast; w += 0.05) {
-    out = mixHex(hex, '#ffffff', w);
-  }
-  return out;
+/* OKLab / OKLCH conversions (for perceptual lightening that keeps the hue vivid). */
+function srgbToLinear(c: number) {
+  return channelToLinear(c * 255);
 }
+function linearToSrgb(c: number) {
+  const v = c <= 0.0031308 ? 12.92 * c : 1.055 * c ** (1 / 2.4) - 0.055;
+  return v * 255;
+}
+function hexToOklch(hex: string): [number, number, number] {
+  const [r, g, b] = hexToRgb(hex).map((c) => srgbToLinear(c / 255)) as Rgb;
+  const l = Math.cbrt(0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b);
+  const m = Math.cbrt(0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b);
+  const s = Math.cbrt(0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b);
+  const L = 0.2104542553 * l + 0.793617785 * m - 0.0040720468 * s;
+  const A = 1.9779984951 * l - 2.428592205 * m + 0.4505937099 * s;
+  const B = 0.0259040371 * l + 0.7827717662 * m - 0.808675766 * s;
+  return [L, Math.hypot(A, B), Math.atan2(B, A)];
+}
+/** OKLCH → sRGB channels (0–255, unclamped) — out-of-range values mean "out of gamut". */
+function oklchToRgbRaw(L: number, C: number, h: number): Rgb {
+  const A = C * Math.cos(h);
+  const B = C * Math.sin(h);
+  const l = (L + 0.3963377774 * A + 0.2158037573 * B) ** 3;
+  const m = (L - 0.1055613458 * A - 0.0638541728 * B) ** 3;
+  const s = (L - 0.0894841775 * A - 1.291485548 * B) ** 3;
+  return [
+    linearToSrgb(4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s),
+    linearToSrgb(-1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s),
+    linearToSrgb(-0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s),
+  ];
+}
+function oklchToHex(L: number, C: number, h: number): string {
+  // Reduce chroma until the color fits in sRGB.
+  let c = C;
+  for (let i = 0; i < 40; i++) {
+    const rgb = oklchToRgbRaw(L, c, h);
+    if (rgb.every((v) => v >= -0.5 && v <= 255.5)) return rgbToHex(rgb);
+    c *= 0.93;
+  }
+  return rgbToHex(oklchToRgbRaw(L, 0, h));
+}
+
+/**
+ * Dark-mode variant of a brand color: raises OKLCH lightness (keeping the hue, slightly boosting
+ * chroma so it stays vivid) until it reaches `minContrast` on the dark `surface`.
+ */
+function liftForDarkSurface(hex: string, surface = '#101b1f', minContrast = 4.5): string {
+  if (contrastRatio(hex, surface) >= minContrast) return hex;
+  const [L0, C0, h] = hexToOklch(hex);
+  const C = Math.min(C0 * 1.35, 0.19);
+  for (let L = Math.max(L0, 0.45); L <= 0.95; L += 0.01) {
+    const candidate = oklchToHex(L, C, h);
+    if (contrastRatio(candidate, surface) >= minContrast) return candidate;
+  }
+  return mixHex(hex, '#ffffff', 0.7);
+}
+
+/** Oasis default brand colors (globals.css) — no runtime override is emitted for these. */
+export const DEFAULT_BRAND_COLORS = { primary: '#0f5e6b', secondary: '#b8862f' } as const;
 
 export type BrandColors = { primary?: string | null; secondary?: string | null };
 
@@ -95,8 +146,11 @@ export type BrandColors = { primary?: string | null; secondary?: string | null }
  */
 export function brandCssVariables({ primary, secondary }: BrandColors): Record<string, string> {
   const vars: Record<string, string> = {};
-  const p = normalizeHex(primary);
-  const s = normalizeHex(secondary);
+  // The Oasis defaults have hand-tuned light/dark palettes in globals.css — don't override them.
+  const pRaw = normalizeHex(primary);
+  const sRaw = normalizeHex(secondary);
+  const p = pRaw === DEFAULT_BRAND_COLORS.primary ? null : pRaw;
+  const s = sRaw === DEFAULT_BRAND_COLORS.secondary ? null : sRaw;
   if (p) {
     const pDark = liftForDarkSurface(p);
     vars['--brand-primary'] = p;

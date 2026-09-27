@@ -31,7 +31,7 @@ function UserMenuContent({ user, compactExtras, align }: { user: ShellUser; comp
   const { theme, setTheme } = useTheme();
 
   return (
-    <DropdownMenuContent align={align} className="w-64">
+    <DropdownMenuContent align={align} className="w-72">
       <DropdownMenuLabel className="flex items-center gap-3 px-2 py-2 font-normal">
         <EmployeeAvatar name={user.name} seed={user.seed} src={user.avatarUrl} size="md" />
         <div className="min-w-0 flex-1">
@@ -88,7 +88,7 @@ function UserMenuContent({ user, compactExtras, align }: { user: ShellUser; comp
                 onClick={() => setTheme(value)}
                 aria-pressed={theme === value}
                 className={cn(
-                  'flex h-8 items-center justify-center gap-1 rounded-md border border-border text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-foreground',
+                  'flex h-8 items-center justify-center gap-1.5 rounded-md border border-border px-1 text-xs whitespace-nowrap text-muted-foreground transition-colors hover:bg-accent hover:text-foreground',
                   theme === value && 'border-primary/40 bg-primary-soft text-primary-soft-foreground',
                 )}
               >

@@ -421,5 +421,27 @@ begin
 end;
 $$;
 
+-- the hr_requests policy (set-based) and private.can_view_request (per request, used by RPCs/storage)
+-- must agree for every user and every request
+do $$
+declare
+  k text;
+  v_bad bigint;
+begin
+  foreach k in array array['sa', 'hra', 'hro', 'mgr', 'emp1', 'emp2', 'emp3', 'pend', 'dis'] loop
+    perform pg_temp.as_postgres();
+    create temp table if not exists all_requests (id uuid);
+    truncate all_requests;
+    insert into all_requests select id from public.hr_requests;
+    grant select on all_requests to authenticated;
+    perform pg_temp.as_user(k);
+    select count(*) into v_bad from all_requests a
+    where exists (select 1 from public.hr_requests r where r.id = a.id) is distinct from private.can_view_request(a.id);
+    perform pg_temp.check(k || ': table policy and can_view_request agree on every request', v_bad = 0, v_bad || ' mismatches');
+  end loop;
+  perform pg_temp.as_postgres();
+end;
+$$;
+
 select pg_temp.finish('03_requests_workflow');
 rollback;

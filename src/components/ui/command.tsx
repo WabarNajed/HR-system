@@ -22,12 +22,15 @@ function CommandDialog({
   children,
   className,
   showCloseButton = false,
+  shouldFilter,
   ...props
 }: ComponentProps<typeof Dialog> & {
   title: string;
   description?: string;
   className?: string;
   showCloseButton?: boolean;
+  /** Set `false` when results are filtered server-side (e.g. global search). */
+  shouldFilter?: boolean;
 }) {
   return (
     <Dialog {...props}>
@@ -40,7 +43,9 @@ function CommandDialog({
           <DialogTitle>{title}</DialogTitle>
           {description ? <DialogDescription>{description}</DialogDescription> : null}
         </DialogHeader>
-        <Command className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-input-wrapper]_svg]:size-4 [&_[cmdk-item]]:px-2.5 [&_[cmdk-item]]:py-2">
+        <Command
+          shouldFilter={shouldFilter}
+          className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-muted-foreground [&_[cmdk-input-wrapper]_svg]:size-4 [&_[cmdk-item]]:px-2.5 [&_[cmdk-item]]:py-2">
           {children}
         </Command>
       </DialogContent>

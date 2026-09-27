@@ -1,7 +1,7 @@
 import 'server-only';
 
 import { headers } from 'next/headers';
-import { forbidden, redirect } from 'next/navigation';
+import { forbidden, redirect, unstable_rethrow } from 'next/navigation';
 import {
   checkAccess,
   hasAny,
@@ -52,7 +52,8 @@ async function currentPath(): Promise<string | null> {
   try {
     const h = await headers();
     return h.get(PATHNAME_HEADER);
-  } catch {
+  } catch (error) {
+    unstable_rethrow(error);
     return null;
   }
 }

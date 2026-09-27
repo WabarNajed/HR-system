@@ -1,6 +1,7 @@
 import 'server-only';
 
 import { cookies } from 'next/headers';
+import { unstable_rethrow } from 'next/navigation';
 import { cache } from 'react';
 import { getPublicBranding } from '@/lib/branding';
 import { isSupabaseConfigured } from '@/lib/supabase/env';
@@ -35,7 +36,8 @@ export const resolveRequestLocale = cache(async (): Promise<Locale> => {
         const preferred = (data as { preferred_language?: string | null } | null)?.preferred_language;
         if (isLocale(preferred)) return preferred;
       }
-    } catch {
+    } catch (error) {
+      unstable_rethrow(error);
       // fall through to the organization default
     }
   }

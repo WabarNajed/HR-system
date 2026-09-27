@@ -48,7 +48,7 @@ export default async function AuthLayout({ children }: { children: ReactNode }) 
           </div>
         </header>
 
-        <main className="flex flex-1 items-center justify-center px-4 pt-4 pb-10 sm:px-8">
+        <main className="flex flex-1 items-start justify-center px-5 pt-[9vh] pb-10 sm:px-8 lg:items-center lg:pt-4">
           <div className="w-full max-w-[25rem]">{children}</div>
         </main>
 

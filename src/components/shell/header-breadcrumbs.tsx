@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/breadcrumb';
 import { cn } from '@/lib/utils';
 import { useBreadcrumbLabels } from './breadcrumb-context';
-import { ROUTE_LABELS, SEGMENT_LABELS } from './nav-config';
+import { NON_LINK_PATHS, ROUTE_LABELS, SEGMENT_LABELS } from './nav-config';
 
 type Crumb = { href: string; label: string };
 
@@ -56,6 +56,8 @@ export function HeaderBreadcrumbs({ className }: { className?: string }) {
               <BreadcrumbItem className={cn('min-w-0', !last && 'hidden md:inline-flex')}>
                 {last ? (
                   <BreadcrumbPage className="truncate font-medium">{crumb.label}</BreadcrumbPage>
+                ) : NON_LINK_PATHS.has(crumb.href) ? (
+                  <span className="truncate">{crumb.label}</span>
                 ) : (
                   <BreadcrumbLink asChild>
                     <Link href={crumb.href} className="truncate">

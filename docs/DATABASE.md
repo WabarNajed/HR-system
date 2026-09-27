@@ -1,0 +1,760 @@
+# HR Portal — Database, Authorization & RPC Reference
+
+The database is the security boundary. Every table in `public` has Row Level Security, sensitive
+columns are protected with column privileges and guard triggers, and every multi-row mutation runs
+through a `security definer` RPC that checks authorization explicitly. The UI hides things for comfort
+only. This document describes what the migrations in `supabase/migrations/` build; `ARCHITECTURE.md`
+§6–§7 is the contract, and this file gives the detail.
+
+**Contents:**
+1. Migrations and tooling
+2. Data model overview
+3. Roles, permissions and data scope
+4. Authorization helpers
+5. RLS matrix
+6. Storage
+7. RPC reference
+8. Request workflow engine
+9. Leave balance state machine
+10. Dynamic request forms
+11. Notifications and e-mail
+12. Audit trail
+13. Error keys
+14. Default configuration seeds
+15. Registration, invitations and Super Admin bootstrap
+16. Applying the schema to hosted Supabase
+17. Tests, generated types and local fixtures
+18. Writing new migrations
+19. Known limitations
+
+---
+
+## 1. Migrations and tooling
+
+The migrations are the only source of the schema. Apply them in lexical order. Each file runs in one
+transaction.
+
+| File | Content |
+|---|---|
+| `20260927000100_foundation.sql` | `pg_trgm` and `unaccent` (in `extensions`), the `private` schema, and generic trigger helpers: `set_audit_fields`, `touch_updated_at`, `try_uuid`, `normalize_search` |
+| `20260927000200_tables.sql` | All 43 tables, check constraints, indexes on every FK, trigram indexes, `created_by`/`updated_by` triggers, normalisation triggers (IBAN, e-mails, confidential medical reports, timezone validation) |
+| `20260927000300_auth_helpers.sql` | Authorization helpers, the organization calendar (business days, SLA), notification and audit writers |
+| `20260927000400_audit.sql` | Row-change audit triggers with masking, the append-only guard on `audit_logs`, and `log_audit_event` |
+| `20260927000500_rls.sql` | RLS on every table, privilege tightening, all policies, guard triggers (profiles, employees, roles, request configuration, certificates, last super admin) |
+| `20260927000600_request_engine.sql` | Numbering, leave-day counting, dynamic-form validation, the leave state machine, request effects, the workflow engine, and the request RPCs |
+| `20260927000700_admin_rpcs.sql` | Registration review, users and roles, leave balances, notification e-mail claim, search, public RPCs, dashboard, expiry alerts, template versioning |
+| `20260927000800_auth_hooks.sql` | `auth.users` insert hook (creates the profile) and e-mail sync |
+| `20260927000900_storage.sql` | The four buckets and the `storage.objects` policies |
+| `20260927001000`–`001300_seed_*.sql` | Default configuration as idempotent seed functions |
+| `20260927001400_seed_apply_and_grants.sql` | Runs the seeds, adds `reset_organization`, and does the final EXECUTE-privilege sweep |
+
+Commands:
+
+```bash
+pnpm db:types                  # regenerate src/types/database.ts (node scripts/gen-db-types.mjs; add --check in CI)
+supabase/tests/run.sh          # database test suite (psql, rolled back, PASS/FAIL per check)
+node scripts/dev/seed-local-fixtures.mjs --verify   # LOCAL ONLY QA users and data (see scripts/dev/README.md)
+```
+
+`DATABASE_URL` defaults to `postgresql://postgres:postgres@localhost:54322/postgres`, the same as `supabase start`.
+
+## 2. Data model overview
+
+The tables follow ARCHITECTURE §6. All PKs are `uuid` except `audit_logs.id`, which is a `bigint`
+identity. Business tables carry `created_at`, `updated_at`, `created_by` and `updated_by`. The trigger
+`private.set_audit_fields` maintains them, and an authenticated caller can never spoof them.
+Enumerations are `text` with a `CHECK`. Bilingual text uses `*_ar`/`*_en`. Master-data names and
+employee names need at least one language: CHECK `coalesce(name_ar, name_en) is not null`.
+
+| Area | Tables |
+|---|---|
+| Organization | `organizations` (singleton), `organization_settings` (singleton), `system_settings` |
+| Identity & access | `profiles`, `roles`, `user_roles`, `role_permissions` |
+| Structure | `departments`, `job_titles`, `locations`, `cost_centers` |
+| Employees | `employees`, `employee_compensation`, `employee_bank_accounts`, `employee_insurance`, `employee_dependents`, `employee_documents` |
+| Leave | `leave_types`, `leave_balances`, `leave_adjustments`, `leave_requests`, `public_holidays` |
+| Requests | `request_types`, `request_fields`, `request_workflows`, `request_workflow_steps`, `hr_requests`, `hr_request_values`, `request_attachments`, `request_comments`, `request_history`, `request_approvals`, `document_sequences` |
+| Certificates | `certificate_templates`, `certificate_template_versions`, `certificates` |
+| Communication | `notifications`, `notification_settings`, `email_templates`, `email_logs` |
+| Data & audit | `imports`, `import_rows`, `audit_logs` |
+
+Additions to the §6 column lists. All are additive, and the ARCHITECTURE file mentions each one:
+
+- `roles.data_scope` (`own | team | organization`). See section 3.
+- `profiles.matched_employee_id` (registration suggestion) and `profiles.review_note` (rejection reason or information request shown to the applicant).
+- `employees.search_text`: a generated, lower-cased haystack of `employee_number`, both names and `company_email`, with a GIN trigram index. Use `.ilike('search_text', '%' + q.toLowerCase() + '%')`.
+- `hr_requests.current_step_type`: the step type the request is waiting on. `request_number` is assigned on first **submission**, so drafts have `null`.
+- `request_history.actor_name`, `request_comments.author_name` and `request_approvals.approver_name`: name snapshots. They exist because requesters cannot read other people's profiles. `request_approvals.step_type` is also added.
+- `request_attachments.field_key`: which attachment field the file belongs to.
+- `request_types.is_system`: the seeded types with built-in effects cannot be deleted, only deactivated.
+- `email_templates.placeholders`: the variables the editor offers.
+- `audit_logs.employee_id`: the employee an event concerns. It powers the employee Activity tab.
+- Path checks keep the database and storage in step:
+  - `employee_documents.storage_path` must start with `{employee_id}/{id}/`.
+  - `request_attachments.storage_path` must start with `requests/{request_id}/`.
+  - `certificates.storage_path` must start with `certificates/{employee_id}/`.
+  - `employees.avatar_path` must start with `{id}/avatar/`.
+
+Useful facts:
+
+- `leave_balances.remaining = opening_balance + entitlement + adjustment − used` is a generated column. `pending` is **not** subtracted, so availability for a new request is `remaining − pending`.
+- `employee_compensation.total_salary` is generated.
+- `employee_bank_accounts.iban` is normalised to upper case without spaces. The format is `^[A-Z]{2}[0-9]{2}[A-Z0-9]{11,30}$`, and one primary account per employee is enforced by a partial unique index.
+- `employee_documents.is_confidential` is forced to `true` on insert for `medical_report`. `uploaded_by` is always the caller.
+- `request_approvals` allows one `pending` row per request (partial unique index). This is the concurrency guard for the approval steps.
+- Every FK column has an index. List columns (status, dates, expiry dates) have indexes too.
+
+## 3. Roles, permissions and data scope
+
+The permission matrix lives in `role_permissions (role_id, module, action)`:
+
+- **Modules:** `employees, personal_data, bank, insurance, documents, requests, approvals, leave, certificates, reports, settings, audit, users`
+- **Actions:** `view, create, edit, approve, export, administer`
+
+A permission answers "may this role use this module or action". **Which rows** that applies to depends
+on the role's `data_scope`:
+
+| data_scope | Meaning | Seeded roles |
+|---|---|---|
+| `organization` | the role's permissions apply to every row (HR) | `super_admin` (rank 100), `hr_admin` (80), `hr_officer` (60) |
+| `team` | own rows plus direct reports (structural, via `employees.manager_id`) | `manager` (40) |
+| `own` | own rows only | `employee` (20) |
+
+This is why the default `manager` role can hold `employees.view` without seeing every employee. The UI
+should use `has_permission` semantics for navigation, and RLS decides the rows. New custom roles default
+to `own`. Only a super admin can create an organization-scoped role or change the `data_scope` of a
+system role.
+
+Default matrix (seeded):
+
+| Role | Permissions |
+|---|---|
+| super_admin | everything; also implicit in every helper |
+| hr_admin | every module × action. Super-admin ownership is still protected by the RPCs |
+| hr_officer | employees view/create/edit/export · personal_data view/edit · bank view · insurance view/edit · documents view/create/edit · requests view/edit/approve · approvals view/approve · leave view/create/edit/approve · certificates view/create · reports view/export |
+| manager | employees view · requests view/approve · approvals view/approve · leave view/approve |
+| employee | requests view/create · leave view/create · documents view · certificates view |
+
+A person has as many roles as they need. A line manager is `manager` + `employee`, and an HR officer who
+files their own requests is `hr_officer` + `employee`. `approve_registration` assigns `employee`, and HR
+adds the rest with `set_user_roles`.
+
+## 4. Authorization helpers (schema `private`)
+
+All helpers are `security definer`, `stable` and `set search_path = ''`. Every helper returns
+false/NULL when the caller's profile is not `active`.
+
+| Helper | Returns |
+|---|---|
+| `current_profile_status()` | caller's `profiles.status` |
+| `is_active_user()` | status = active |
+| `has_role(key)`, `is_super_admin()` | role membership (active users only) |
+| `is_hr()` | holds any role with `data_scope = 'organization'` (super_admin / hr_admin / hr_officer / custom HR roles) |
+| `has_permission(module, action)` | permission through **any** role; super_admin ⇒ true (UI gating and RPC action checks) |
+| `has_org_permission(module, action)` | permission through an **organization-scoped** role; super_admin ⇒ true (org-wide row access in RLS) |
+| `current_employee_id()` | the caller's linked employee |
+| `is_manager_of(employee_id)` | the employee's `manager_id` is the caller's employee (direct report) |
+| `can_view_employee(employee_id)` | self ∨ manager_of ∨ `has_org_permission('employees','view')` |
+| `can_view_request(request_id)` | request visibility for one request (RPCs and storage). The `hr_requests` policy implements the same rule set-based, and a test asserts they agree |
+| `can_attach_to_request(request_id)` | requester while `draft`/`returned`, or HR with `requests.edit` |
+| `my_direct_report_ids()`, `my_approval_request_ids()`, `manager_step_request_type_ids()`, `my_role_step_ids()`, `visible_profile_ids()` | sets used by policies as `col in (select …)` (evaluated once per statement) |
+| `org_timezone()`, `org_today()`, `is_business_day(date)`, `add_business_days(date, n)`, `sla_due_at(ts, n)` | organization calendar |
+
+`authenticated` has EXECUTE only on these read-only helpers. The workflow engine, notification and
+audit writers and the seeds are callable only from inside the security-definer RPCs. `private` must
+never be added to the Data API's exposed schemas.
+
+## 5. RLS matrix (as implemented)
+
+`anon` has **no** table privileges and can execute only `verify_certificate` and
+`get_public_branding`.
+
+A user whose status is `pending`, `info_requested`, `rejected` or `disabled` sees only their own
+`profiles` row.
+
+| Table | Employee | Manager | HR (org-scoped perms) | Writes |
+|---|---|---|---|---|
+| employees | own row | + direct reports | `employees.view` | insert `employees.create`, update `employees.edit` (identity/personal columns also need `personal_data.edit`, via trigger), delete `employees.administer` |
+| employee_compensation, employee_bank_accounts | own | ✗ | `bank.view` | `bank.create`/`bank.edit` |
+| employee_insurance | own | ✗ | `insurance.view` | `insurance.*` |
+| employee_dependents | own | ✗ | `personal_data.view` | `personal_data.*` |
+| employee_documents | own, non-confidential or uploaded by self | ✗ | `documents.view` | HR `documents.create/edit`; owner may insert/delete own rows with `status = 'pending_review'` |
+| hr_requests | own (drafts: requester only) | current/previous approver; direct reports' requests whose type has a manager step; role-step queue | `requests.view` (not drafts) | RPCs only; HR `requests.edit` may update `priority`; requester may delete own draft |
+| hr_request_values, request_history, request_approvals | follow hr_requests | follow hr_requests | follow hr_requests | RPC only |
+| request_attachments | follow hr_requests | follow hr_requests | follow hr_requests | requester (draft/returned), HR `requests.edit` |
+| request_comments | follow hr_requests, `is_internal = false` only | same, non-internal | all incl. internal (`requests.view`) | `add_request_comment` |
+| leave_balances, leave_requests | own | direct reports | `leave.view` | balances: HR `leave.edit` on `opening_balance`/`entitlement` only (column grants); `used`/`pending`/`adjustment` only through RPCs |
+| leave_adjustments | own | ✗ | `leave.view` | `adjust_leave_balance` |
+| certificates | own, `valid` only | ✗ | `certificates.view` | insert `certificates.create`; update `certificates.edit`/`create` |
+| notifications | own | own | own | update `read_at`, delete own |
+| profiles | self + manager + direct reports + HR staff | same | all (`is_hr` or `users.view`) | self: `full_name, mobile, preferred_language, theme` (+ `registration_*` while pending/info_requested); everything else only through RPCs |
+| user_roles | own | own | `users.view` | `set_user_roles` / `approve_registration` only |
+| roles, role_permissions | read | read | read | `users.administer` (the super_admin role and system-role keys/scopes are protected) |
+| organizations, organization_settings, system_settings | read | read | read | `settings.edit` |
+| departments, job_titles, locations, cost_centers, leave_types, request_types, request_fields, request_workflows, certificate_templates | active rows | active rows | all rows with `settings.view` (+ `employees.view` / `leave.view` / `requests.view` / `certificates.view` as relevant) | `settings.edit` |
+| public_holidays, request_workflow_steps | read | read | read | `settings.edit` |
+| certificate_template_versions | ✗ | ✗ | `settings.view` / `certificates.view` | insert `settings.edit`, or `publish_certificate_template` |
+| notification_settings, email_templates | ✗ | ✗ | `settings.view` | `settings.edit` |
+| email_logs | ✗ | ✗ | `settings.view` / `audit.view` | `log_email` |
+| imports, import_rows | ✗ | ✗ | `employees.create` or `settings.edit` | same |
+| audit_logs | ✗ | ✗ | `audit.view` | append-only (see section 12) |
+| document_sequences | ✗ | ✗ | ✗ | `next_document_number` only |
+
+Guard triggers add a second line of defence against direct Data API writes by `authenticated`. They
+are security invoker: `current_user = 'authenticated'` marks a direct write, and statements inside
+definer RPCs or from service-role code skip them.
+
+- **profiles:** identity, status and link columns are immutable. Answering an information request moves `info_requested` back to `pending` and notifies the reviewers again.
+- **employees:** identity-document and personal columns need `personal_data.edit`. `archived_by` is stamped.
+- **roles:** system role keys are immutable, system roles cannot be deleted, and data scope changes are super-admin only.
+- **role_permissions:** the super_admin role's rows are fixed.
+- **request_types, request_fields:** system rows cannot be deleted, and system keys and types cannot change.
+- **certificates:** the number and employee are immutable, `revoked` is final, and `revoked_at` is stamped.
+- **Last super admin:** deleting the last active super admin's role, or deactivating that account, raises `hr:errors.lastSuperAdmin`. This applies to the service role too.
+
+## 6. Storage
+
+All buckets are private except `branding`. Private files are served through 60-second signed URLs
+created with the **user's** client, so the SELECT policies below are the access check.
+
+| Bucket | Path | Read | Write | Limit / types |
+|---|---|---|---|---|
+| `employee-documents` | `{employee_id}/{document_id}/{file}`; avatars `{employee_id}/avatar/{file}` | owner (non-confidential or own upload), HR `documents.view`; avatars: anyone who can view the employee | HR `documents.create/edit`; owner into a `pending_review` row they created; avatars: HR `employees.edit` | 20 MiB; pdf, jpeg, png, webp, heic, doc/x, xls/x |
+| `request-attachments` | `requests/{request_id}/{uuid}-{file}` | whoever can view the request (requester, employee, current/previous approvers, HR) | requester (draft/returned), HR `requests.edit` | 20 MiB; as above + txt/csv |
+| `certificate-files` | `certificates/{employee_id}/{certificate_number}.pdf`, `branding/stamp.*`, `branding/signature.*` | certificates: owner (only while `valid`), HR `certificates.view`; branding: `certificates.view` or `settings.view` | certificates: `certificates.create`; branding: `settings.edit` | 20 MiB; pdf, png, jpeg, webp |
+| `branding` (**public**) | `logo/*`, `login/*` | anyone | super_admin or `settings.administer` | 5 MiB; png, jpeg, webp, svg |
+
+**Employee self-upload flow:**
+1. Generate `docId`.
+2. Insert the `employee_documents` row: `{id: docId, employee_id, document_type, status: 'pending_review', storage_path: `${employeeId}/${docId}/${file}`}`.
+3. Upload to that path.
+
+**HR flow:** the same steps with any status.
+
+**Request attachments:** upload to `requests/{requestId}/{uuid}-{file}`, then insert the
+`request_attachments` row with `field_key`.
+
+**Deleting a draft request:** the delete cascades to its `request_attachments` rows, but the files stay in
+Storage. Remove them in the same server action.
+
+**Organization reset:** the SQL cannot delete Storage objects, because Storage protects direct deletes.
+The server action removes files through the Storage API with the service role.
+
+## 7. RPC reference
+
+Every RPC is `security definer` with `search_path = ''`. Every one checks the caller explicitly and is
+atomic. Errors are `hr:errors.<key>` (section 13), and `DETAIL` carries a field key where relevant.
+Forbidden errors use SQLSTATE `42501`, so PostgREST answers 403. Not-found errors use `P0002`, and the
+others use `P0001`, which PostgREST answers with 400.
+
+Arguments marked `= null` / `= …` have defaults. Everything else is required.
+
+### Requests
+
+| Function | Who | Returns | Errors |
+|---|---|---|---|
+| `create_request_draft(p_request_type_id uuid, p_values jsonb, p_subtype text = null, p_employee_id uuid = null)` | own request: `requests.create` (or `leave.create` for leave types); on behalf of someone else: org `requests.create` | draft id | forbidden, notFound, requestTypeInactive, employeeNotLinked, validation |
+| `update_request_draft(p_request_id uuid, p_values jsonb, p_subtype text = null)` | requester, status draft/returned. `p_values` **replaces** the stored values | void | forbidden, notFound, requestNotEditable, validation |
+| `submit_request(p_request_id uuid)` | requester. Assigns `HR-YYYY-000001`, sets `due_at`, and resumes returned requests at `returned_from_step_order` | `{status, notification_ids}` | forbidden, notFound, requestNotEditable, requestTypeInactive, requiredFieldMissing, validation, + leave errors |
+| `act_on_request(p_request_id uuid, p_action text, p_comment text = null, p_target_user uuid = null)` | see section 8. Actions: `approve reject return reassign start complete cancel` | `{status, notification_ids}` | notFound (not visible), forbidden, invalidTransition, commentRequired (reject/return), returnNotAllowed, reassignNotAllowed, invalidAssignee, insufficientBalance |
+| `add_request_comment(p_request_id uuid, p_body text, p_is_internal boolean)` | anyone who can view the request; internal comments need org `requests.view` | comment id | notFound, forbidden, validation |
+| `get_request_workflow(p_request_id uuid)` | anyone who can view the request | rows `(step_order, step_type, name_ar, name_en, state, approver_id, approver_name, decided_at, comment)`; state ∈ `current, upcoming, approved, rejected, returned, skipped` | — (empty when not visible) |
+| `count_leave_days(p_leave_type_id uuid, p_start date, p_end date)` | authenticated | numeric (0 when the range is invalid) | notFound, invalidDateRange (> 400 days) |
+| `next_document_number(p_prefix text)` | `CERT`: org `certificates.create`; `HR`: org `requests.edit` | `CERT-YYYY-000001` | forbidden, validation |
+
+### Leave
+
+| Function | Who | Returns | Errors |
+|---|---|---|---|
+| `adjust_leave_balance(p_employee_id uuid, p_leave_type_id uuid, p_year int, p_amount numeric, p_reason text)` | org `leave.edit`. Creates the balance if missing, records old/new remaining, notifies the employee | adjustment id | forbidden, validation, reasonRequired, notFound |
+| `set_leave_balance(p_employee_id, p_leave_type_id, p_year, p_opening_balance numeric, p_entitlement numeric = null)` | org `leave.edit` (imports, balance editor) | balance id | forbidden, validation, notFound |
+| `initialize_leave_balances(p_year int, p_employee_id uuid = null)` | org `leave.edit`. Creates missing balances for active deducting types with the default entitlement, honouring gender restrictions | rows created | forbidden, validation |
+
+### Users and registration
+
+| Function | Who | Returns | Errors |
+|---|---|---|---|
+| `approve_registration(p_profile_id uuid, p_employee_id uuid = null, p_role_key text = 'employee')` | org `users.approve` or `users.edit`. Allowed from pending/info_requested/rejected (or active without a link); assigning `super_admin` requires a super admin | void | forbidden, notFound, invalidTransition, roleNotFound, employeeAlreadyLinked |
+| `reject_registration(p_profile_id uuid, p_reason text)` | same | void | forbidden, notFound, invalidTransition, reasonRequired |
+| `request_registration_info(p_profile_id uuid, p_note text)` | same | void | same |
+| `set_user_roles(p_user_id uuid, p_role_keys text[])` | org `users.administer`. Only a super admin may grant or revoke `super_admin` or change a super admin's roles; the last super admin is protected | void | forbidden, notFound, roleNotFound, lastSuperAdmin |
+| `set_user_status(p_user_id uuid, p_status text, p_note text = null)` | org `users.edit`. `active` or `disabled`; not on yourself; super admins only by a super admin | void | forbidden, validation, notFound, lastSuperAdmin |
+| `set_user_employee(p_user_id uuid, p_employee_id uuid)` | org `users.edit`; `null` unlinks | void | forbidden, notFound, employeeAlreadyLinked |
+| `record_login()` | any signed-in user, right after sign-in. Sets `last_login_at` and writes `auth.login` | void | unauthorized |
+| `get_employee_manager(p_employee_id uuid)` | anyone who can view the employee | `{id, employee_number, name_ar, name_en, job_title_ar, job_title_en, company_email, avatar_path}` or null | — |
+
+### Search, dashboard and administration
+
+| Function | Who | Returns | Errors |
+|---|---|---|---|
+| `global_search(p_query text, p_locale text = 'ar', p_limit int = 20)` | **security invoker**, so RLS applies. Employees by name (Arabic hamza/ya/ta-marbuta folding), number or company e-mail; requests by number; certificates by number. National-ID matches only with `personal_data.view` | rows `(kind, id, title, subtitle, href)`; kind ∈ `employee, request, certificate` | — |
+| `dashboard_stats()` | **security invoker**. The sections present depend on the caller: `employee`, `manager`, `hr`, `admin` (see below) | jsonb | — |
+| `log_audit_event(p_action text, p_entity_type text = null, p_entity_id text = null, p_summary text = null, p_changes jsonb = null)` | any signed-in user or the service role. Action format `a.b[.c]`; sensitive keys are masked | void | forbidden, validation |
+| `claim_notification_emails(p_notification_ids uuid[])` | the actor who caused the notifications (`created_by`), or the service role. Marks them `emailed_at` and returns what is needed to render the e-mail (section 11) | rows | forbidden |
+| `log_email(p_recipient, p_status, p_subject = null, p_template_key = null, p_related_entity_type = null, p_related_entity_id = null, p_provider = null, p_provider_message_id = null, p_error = null)` | active user or the service role | log id | forbidden, validation |
+| `generate_expiry_alerts()` | service role (cron) or super admin | notifications created | forbidden |
+| `publish_certificate_template(p_template_id uuid, p_change_notes text = null)` | org `settings.edit`. Snapshots a new version | new version | forbidden, notFound |
+| `restore_certificate_template_version(p_template_id uuid, p_version int)` | org `settings.edit`. Restores, then publishes as a new version | void | forbidden, notFound |
+| `reset_organization(p_confirmation text)` | super admin; phrase `RESET ORGANIZATION` (section 14) | void | forbidden, confirmationMismatch |
+
+### Public
+
+| Function | Who | Returns |
+|---|---|---|
+| `verify_certificate(p_number text)` | **anon** and authenticated | at most one row `(certificate_number, employee_name, certificate_type, issue_date, status)`. The name follows the certificate language (`ar`, `en`, or `"ar / en"`). Nothing else is exposed |
+| `get_public_branding()` | **anon** and authenticated | `{portal_name_ar/en, company_name_ar/en, logo_bucket: 'branding', logo_path, login_image_path, primary_color, secondary_color, login_title_ar/en, login_subtitle_ar/en, default_language, allow_self_registration, setup_completed}`. Public logo URL: `${SUPABASE_URL}/storage/v1/object/public/branding/${logo_path}` |
+
+`dashboard_stats()` sections:
+
+- **`employee`:** `open_requests, returned_requests, draft_requests, certificates, documents_expiring, upcoming_leave, unread_notifications, leave_balances[] {leave_type_id, code, name_ar, name_en, color, remaining, pending, used, available}`.
+- **`manager`**, when the caller has direct reports: `direct_reports, pending_approvals, team_on_leave_today, team_upcoming_leave, team_open_requests`.
+- **`hr`**, with org `employees.view` or `requests.view`:
+  - `total_employees, employees_by_status, new_joiners_30d`
+  - `pending_requests, pending_hr_review, pending_my_action, in_progress_requests, overdue_requests, due_soon_requests`
+  - `on_leave_today, upcoming_leave_7d, certificates_issued_30d, pending_registrations`
+  - `expiring.{iqama, passport, contract, insurance, documents}.{expired, within7, within14, within30, within60, within90}`. The buckets are **exclusive**: 0–7, 8–14, 15–30, 31–60 and 61–90 days.
+- **`admin`**, for a super admin or `users.view`: `users_total, users_by_status, roles, setup_completed, active_request_types, active_leave_types, departments, imports_last_30d, audit_events_24h`.
+
+Every result also carries `generated_at` and `today` (the organization's date). Inactive users get
+`{"scope": "none"}`.
+
+## 8. Request workflow engine
+
+**Statuses:** `draft → submitted → pending_manager_approval | pending_hr_review → approved → in_progress → completed`,
+plus `returned`, `rejected` and `cancelled`. `submitted` is transient: `submit_request` moves the
+request straight to the first actionable step.
+
+**Step resolution** (`private.resolve_steps`) uses the active workflow of `request_types.workflow_id`,
+otherwise the latest active `request_workflows` row of the type. If neither exists, it synthesizes a
+manager step (if `requires_manager_approval`) followed by an HR step (if `requires_hr_approval`, or if
+nothing else is configured).
+
+| Step type | Approver | Status while waiting | Skipped when (history `skip` + approval `skipped`) |
+|---|---|---|---|
+| `manager` | active profile linked to `employees.manager_id` (`current_approver_id`) | pending_manager_approval | no manager / manager has no active account / manager is the requester |
+| `user` | `approver_user_id` | pending_hr_review if that user is HR, else pending_manager_approval | inactive, or is the requester/employee |
+| `role` | any active holder of `approver_role_key` (queue) | pending_hr_review for org-scoped roles, else pending_manager_approval | nobody holds the role |
+| `hr` | HR queue: org `requests.approve` or `approvals.approve`. Optional `assigned_to` | pending_hr_review | never |
+
+**Actions** (`act_on_request`):
+
+| Action | Allowed when / by | Effect | Notification |
+|---|---|---|---|
+| approve | pending step; the step's approver (see above). **Nobody approves their own request** (super admin excepted) | approval row `approved`, next step entered, or final approval → `approved` + effects | next approvers `approval_required`; on final approval requester + employee `request_approved` |
+| reject | same, comment required | `rejected`; leave hold released | `request_rejected` |
+| return | same, comment required, `can_return` | `returned`, `returned_from_step_order` = current step; leave hold released (effect → `none`) | `request_returned` |
+| reassign | pending: the current approver or HR `requests.edit`, `can_reassign`, target active and not the requester (HR step: target must hold org `requests.approve`); approved/in_progress: HR `requests.edit` sets `assigned_to` | `reassigned` + new `pending` approval | target `request_assigned` |
+| start | `approved`; HR `requests.edit`/`approve` | `in_progress`, `assigned_to` defaults to the actor | `request_in_progress` |
+| complete | `approved`/`in_progress`; HR | `completed`, `completed_at` | `request_completed` |
+| cancel | requester/employee while draft/submitted/pending/returned; HR `requests.edit` for any non-final status (incl. approved/in_progress) | `cancelled`, `cancelled_at`; leave pending/used reversed | owner cancel → current approver/assignee; HR cancel → requester + employee (`request_cancelled`) |
+
+**Other rules:**
+
+- **Final states:** `rejected`, `completed` and `cancelled`. Acting on a request that is no longer at
+  the expected step raises `invalidTransition` (or `forbidden` if the caller is no longer the
+  approver). The request row is locked (`FOR UPDATE`), so a double click or concurrent approvers cannot
+  apply an effect twice.
+- **Resubmitting a returned request** re-validates it and resumes at `returned_from_step_order`. The
+  request keeps its number, and approvers of earlier steps are not asked again.
+- **SLA:** `due_at = private.sla_due_at(submit time, request_types.sla_business_days)`. That is the end
+  of the working day (`organization_settings.work_end`, organization timezone) N business days later.
+  Business days are `working_days` minus `weekend_days` minus active `public_holidays`. It is
+  recomputed on resubmission. The UI derives On track / Due soon / Overdue from `due_at`.
+- **History actions** (`request_history.action`): `create, update` (returned requests only),
+  `submit, resubmit, approve, reject, return, reassign, start, complete, cancel, comment, skip`.
+  `metadata` carries step info and `effects`.
+- **Audit actions:** `request.create|update|submit|resubmit|approve|reject|return|reassign|start|complete|cancel`.
+
+**Effects on final approval:**
+
+| Type key | Effect |
+|---|---|
+| `leave` (or any type with a `leave_type` system field) | leave state machine `pending → used` (section 9) |
+| `bank_update` | upsert the primary `employee_bank_accounts` row from `bank_name`, `iban`, `account_holder`. History keeps the old/new values with the IBAN masked (`****1234`) |
+| `employee_info_update` | by subtype: `mobile → employees.mobile`, `email → personal_email`, `address`, `marital_status` (`requested_marital_status`), `emergency_contact` (3 fields), `passport` (`passport_number`, `passport_expiry`); `dependent`/`other` have no automatic effect. Old/new values go into the history metadata, with the passport number masked |
+| others | none; HR completes them. For certificates, HR generates the certificate, then completes |
+
+## 9. Leave balance state machine
+
+`leave_requests.balance_effect` changes only through these transitions, each applied once, with the
+row locked:
+
+```
+none ──submit (deducting type)──▶ pending ──final approval──▶ used ──cancel (HR)──▶ reversed
+                                     │
+                                     ├──reject / cancel──▶ reversed
+                                     └──return──────────▶ none   (hold released; resubmit re-validates and holds again)
+```
+
+| Event | Balance change |
+|---|---|
+| submit | `pending += days`. The balance row for the start year is created with `default_entitlement` if missing |
+| final approval | `pending −= days`, `used += days`. Requires `remaining ≥ days` at that moment |
+| reject / cancel before approval | `pending −= days` |
+| cancel after approval | `used −= days` |
+
+Validation happens at submit, in this order:
+
+1. Active leave type.
+2. `end ≥ start`.
+3. Gender restriction: an employee with a null gender is also rejected.
+4. `count_leave_days > 0`.
+5. `max_days_per_request`.
+6. `requires_attachment`.
+7. No overlap with another non-draft, non-rejected, non-cancelled leave.
+8. For deducting types, `remaining − pending ≥ days`.
+
+`return_date` defaults to the next business day. The computed `days` is stored in the leave row and in
+`hr_request_values.days`. Non-deducting types (sick, marriage, …) never touch balances.
+
+`count_leave_days` counts every day on a `calendar` basis. On a `working` basis it skips weekend days,
+non-working days and active public holidays.
+
+## 10. Dynamic request forms
+
+`request_fields` rows drive the form. The UI must follow these rules exactly, because the RPCs apply
+the same ones.
+
+**Stored value format per `field_type`:**
+
+| Field type | Stored value |
+|---|---|
+| short_text, long_text, phone | string |
+| email | lower-cased string |
+| number, currency | number |
+| date | `YYYY-MM-DD` |
+| datetime | ISO timestamp |
+| time | `HH:MM` |
+| yes_no | boolean |
+| dropdown | option `value` |
+| multi_select | array of option values |
+| leave_type, dependent, employee | uuid string |
+| attachment | free (attachment ids); the files are `request_attachments` rows with `field_key` |
+
+**Other rules:**
+
+- Empty values (`null`, `""`, `[]`) are not stored. Unknown keys raise `validation`.
+- `validation` jsonb supports `pattern` (regex, text), `min`/`max` (numbers), and UI hints `readonly`,
+  `computed: "leave_days"`, `granularity: "month"`, `step`.
+- **Subtype:** a system `subtype` dropdown field, when present, drives `hr_requests.subtype`. Pass it as
+  `p_subtype`, not inside `p_values`.
+- **Visibility** (`visibility` jsonb): `null` means always visible.
+  - `{"field": "<key>|subtype", "in": [...]}`
+  - `{"field": ..., "not_in": [...]}`
+  - `{"all": [rule, ...]}`
+  - `{"any": [rule, ...]}`
+
+  Values match by JSON equality or by text form, and array values match on any element.
+- **Required fields are enforced only when visible.** A required attachment field is satisfied by a
+  value or by an attachment row with that `field_key` (or no `field_key`).
+- Seeded examples:
+  - `business_trip.advance_amount` is visible when `advance_required` is `true`.
+  - `medical_insurance.dependent` uses an `any` rule.
+- Categories used by the seeded types, for the UI labels: `time_off, documents, government, benefits,
+  payroll, attendance, personal_data, travel, separation, general`.
+
+## 11. Notifications and e-mail
+
+`notifications` rows are created only by RPCs and triggers, never by clients. The text is rendered
+client-side from `locales/*/notifications.json` (`types.<type>.title/body`) with `params`.
+
+- **Request events** have these `params`: `request_id, request_number, request_type_key, request_type_name_ar, request_type_name_en, status, actor_name, employee_name_ar, employee_name_en, employee_number`. Some events add `comment`, `step_name_ar/en` or `is_internal`.
+- **Registration events:** `full_name, email, employee_number, matched | resubmitted | reason | note`.
+- **`certificate_issued`:** `certificate_number, certificate_type, employee_name_ar/en, actor_name`.
+- **`leave_balance_adjusted`:** `leave_type_name_ar/en, amount, year, old_remaining, new_remaining, actor_name`.
+- **`expiry_alert`:** `kind (iqama|passport|contract|insurance|document), expiry_date, days_left, document_type, employee_id, employee_name_ar/en, employee_number`.
+- `link` is an app route such as `/requests/{id}`, `/settings/pending-registrations`, `/leave`,
+  `/certificates` or `/employees/{id}`.
+- `request_submitted` is also sent to the requester as a confirmation.
+- Nobody else is notified about their own actions.
+
+`notification_settings.event_key` equals the notification type:
+
+- `in_app_enabled = false` with e-mail on stores the row already read.
+- Both flags off suppresses the event.
+
+**E-mail delivery** (`lib/notifications.ts`, no service role needed):
+1. Take `notification_ids` from the RPC result.
+2. Call `claim_notification_emails(ids)`. It returns `recipient_email, recipient_name, language, type, params, link, template_key` for types whose `email_enabled` is on, and marks them `emailed_at` (idempotent).
+3. Render `email_templates[template_key]` in `language` and send it.
+4. Call `log_email(...)`.
+
+Template mapping: `account_invited → account_invitation`, `expiry_alert → {kind}_expiry`, and
+otherwise the same key as the type.
+
+Registration e-mails come from a trigger with no actor, so the server claims them with the service
+role.
+
+## 12. Audit trail
+
+**Row triggers** write `'<entity>.create|update|delete|archive|restore'` for these tables:
+
+- employees and the five sub-record tables
+- user_roles, roles, role_permissions, and profile status/link changes
+- organizations, organization_settings, system_settings
+- departments, job_titles, locations, cost_centers
+- leave_types, public_holidays, leave_adjustments
+- request_types, request_fields, request_workflows, request_workflow_steps
+- certificate_templates, certificates, email_templates, notification_settings
+
+`archive` and `restore` are recorded when `archived_at` flips. Each row records:
+
+- `changes`: `{field: {old, new}}` for the fields that changed.
+- `summary`: a readable label.
+- `employee_id`: the related employee.
+- `actor_id` and `actor_email`.
+- `ip` and `user_agent`, taken from PostgREST request headers.
+
+**Masking:** `iban`, `basic_salary`, `housing_allowance`, `transport_allowance`, `other_allowance`,
+`total_salary`, `national_id` and `passport_number` are stored as `"***"`, but the field is still
+named. `log_audit_event` masks the same keys.
+
+**RPC events:** `request.*`, `registration.submit|approve|reject|request_info`, `user.invite`,
+`user.roles_update`, `user.enable|disable`, `auth.login`, `leave_balance.initialize|update`,
+`organization.reset`.
+
+**App events** go through `log_audit_event`: `export.<dataset>`, `auth.logout`, `backup.*`, `import.*`.
+
+**Append-only:** UPDATE, DELETE and TRUNCATE are revoked from `authenticated`, `service_role` and the
+owner. A trigger also rejects UPDATE, DELETE and TRUNCATE even if privileges are re-granted. Seeds and
+`reset_organization` run with `hr.suppress_audit` so bulk system work does not flood the log. The reset
+itself is audited.
+
+## 13. Error keys
+
+The RPCs and triggers raise `hr:errors.<key>`. The app strips the `hr:` prefix and translates the
+remaining `errors.<key>`.
+
+| Key | When |
+|---|---|
+| forbidden | missing permission, not the approver, self-approval, protected super-admin actions |
+| unauthorized | no signed-in user (`record_login`) |
+| notFound | record missing or not visible to the caller |
+| validation | bad value or format, unknown field, bad subtype or option, bad action (DETAIL = field key) |
+| requiredFieldMissing | required visible field empty at submit (DETAIL = field key) |
+| requestNotEditable | edit or submit of a request that is not draft/returned |
+| requestTypeInactive | creating or submitting with a deactivated type |
+| invalidTransition | action not allowed in the current status (incl. acting twice) |
+| commentRequired | reject/return without a comment |
+| returnNotAllowed / reassignNotAllowed | step has `can_return` / `can_reassign` = false |
+| invalidAssignee | reassign target missing, inactive, requester, or lacking HR permission |
+| insufficientBalance | leave exceeds available balance (DETAIL = `{"available", "requested"}`) |
+| overlappingLeave | leave overlaps another active leave request |
+| invalidDateRange | end before start, no working days, return before end, range > 400 days |
+| leaveMaxDaysExceeded | more than `max_days_per_request` (DETAIL = max) |
+| leaveGenderRestricted | leave type restricted to the other gender |
+| attachmentRequired | leave type requires an attachment |
+| employeeNotLinked | caller has no linked employee |
+| employeeAlreadyLinked | employee already linked to another account |
+| roleNotFound | unknown role key |
+| reasonRequired | rejection, information request or leave adjustment without a reason |
+| lastSuperAdmin | would remove or disable the last active super admin |
+| systemRecord | deleting or renaming a system role, request type or field |
+| confirmationMismatch | wrong organization-reset phrase |
+
+Constraint violations surface as SQLSTATE codes, and `lib/errors.ts` maps them:
+
+- `23505` unique violation → `errors.duplicate`
+- `23503` FK violation, e.g. deleting master data in use → `errors.inUse`
+- `23514` check violation → `errors.validation`
+- `42501` / RLS violation → `errors.forbidden`
+
+## 14. Default configuration seeds
+
+The seeds are real product defaults, all editable at runtime. They are idempotent functions: re-running
+never overwrites an admin's edits.
+
+- **Organization:** empty company names (the setup wizard fills them); settings SAR, `Asia/Riyadh`,
+  `ar`, Sun–Thu working days, Fri/Sat weekend, 08:00–17:00, portal names `بوابة الموارد البشرية` /
+  `HR Portal`, colours `#0F5E6B` / `#B8862F`, expiry alerts 90/60/30/14/7 days, self-registration on,
+  `setup_completed_at` null.
+- **Roles and permissions:** as in section 3.
+- **Leave types** (aligned with the Saudi Labor Law):
+
+  | Code | Paid | Deducts | Entitlement | Max per request | Basis | Attachment | Gender |
+  |---|---|---|---|---|---|---|---|
+  | annual | ✓ | ✓ | 21 | – | working | – | – |
+  | sick | ✓ | – | – | – | calendar | ✓ | – |
+  | emergency | ✓ | ✓ | 5 | 3 | working | – | – |
+  | unpaid | – | – | – | – | calendar | – | – |
+  | marriage | ✓ | – | – | 5 | calendar | ✓ | – |
+  | maternity | ✓ | – | – | 84 | calendar | ✓ | female |
+  | paternity | ✓ | – | – | 3 | calendar | ✓ | male |
+  | bereavement | ✓ | – | – | 5 | calendar | – | – |
+  | hajj | ✓ | – | – | 15 | calendar | – | – |
+  | exam | ✓ | – | – | – | calendar | ✓ | – |
+  | other | – | – | – | – | calendar | – | – |
+
+- **Request types** (key · category · SLA business days · workflow · field count):
+
+  | Key | Category | SLA | Workflow | Fields |
+  |---|---|---|---|---|
+  | leave | time_off | 2 | manager→hr | 8 |
+  | certificate | documents | 3 | hr | 7 |
+  | iqama_visa | government | 5 | hr | 11 |
+  | medical_insurance | benefits | 3 | hr | 10 |
+  | payroll | payroll | 5 | hr | 5 |
+  | attendance | attendance | 2 | manager→hr | 7 |
+  | bank_update | personal_data | 3 | hr | 5 |
+  | employee_info_update | personal_data | 3 | hr | 11 |
+  | overtime | attendance | 3 | manager→hr | 6 |
+  | business_trip | travel | 3 | manager→hr | 12 |
+  | resignation | separation | 5 | manager→hr | 5 |
+  | other | general | 5 | hr | 3 |
+
+  That is 90 fields in total, with bilingual labels, help, placeholders and options. Icons are kebab-case
+  lucide names from `ICON_REGISTRY`.
+- **Certificate templates** (bilingual formal wording, version 1 published):
+  - `salary_general` (default for salary), `salary_bank`, `salary_embassy`
+  - `employment`, `salary_employment`, `experience`, `custom_letter`
+
+  The renderer must honour `data-if="include_salary|include_allowances|addressed_to"` and
+  `data-if-not="addressed_to"`: drop the element when the flag is false or empty, or true, respectively.
+  `header_html` and `footer_html` use the company name and address variables.
+- **E-mail templates:** the 16 keys from §6 with formal Arabic and English subjects and bodies.
+  `{{recipient_name}}` is added to the common placeholders.
+- **Notification settings:** one row per notification type. E-mail is on for submitted, approval
+  required, approved, rejected, returned, completed, registration submitted/approved/rejected, expiry
+  alert and account invited.
+- **No departments, job titles or employees are seeded:** they are specific to each organization.
+
+**`reset_organization`** deletes the following, then re-runs the configuration seeds:
+
+- all business data: employees and sub-records, requests, leave, documents metadata, certificates,
+  notifications, e-mail logs, imports
+- master data, holidays and every configuration table
+- every non-super-admin auth account
+
+It keeps the super-admin accounts, roles, role permissions and the audit trail.
+
+## 15. Registration, invitations and Super Admin bootstrap
+
+- **Self sign-up** (`supabase.auth.signUp` with `options.data = {full_name, mobile, employee_number}`):
+  1. The `on_auth_user_created` trigger creates `profiles` with `status = 'pending'` and copies those
+     values into `full_name`, `mobile` and `registration_employee_number`. They are **untrusted**
+     input: `user_metadata` can never set the status or roles.
+  2. It suggests `matched_employee_id` when the input uniquely matches an unlinked employee's
+     `employee_number` (case-insensitive) or `national_id`.
+  3. Reviewers holding org `users.approve` are notified (`registration_submitted`).
+  4. HR then calls `approve_registration`, `reject_registration` or `request_registration_info`. When an
+     applicant answers an information request by updating their registration fields, the profile goes
+     back to `pending` and the reviewers are notified again.
+- **Admin-provisioned users** (invite or create from Users). Server code, after `requirePermission('users', 'create')`:
+  1. Creates the Auth user with the **service role**. Use
+     `auth.admin.createUser({ email, email_confirm: true, app_metadata: { invited_by_admin: true }, user_metadata: { full_name } })`
+     and then `auth.admin.generateLink({ type: 'invite' | 'recovery' })`, or use `inviteUserByEmail`.
+     `app_metadata` can only be set with the service role. When `invited_by_admin` is present at
+     insert, the trigger creates the profile as `active` with `invited_at`. Otherwise it is `pending`.
+  2. Links the employee and assigns roles with the **user's** client, so the actor is audited:
+     `approve_registration(profile_id, employee_id, role)`, which also works for an active profile
+     that is not linked yet, then `set_user_roles`.
+  3. Inserts an `account_invited` notification or e-mail through the service role.
+- **Super Admin bootstrap** (`pnpm bootstrap:super-admin --email <addr>`, service role):
+  1. Find or create the Auth user by e-mail, with `app_metadata.invited_by_admin = true`.
+  2. Upsert the `profiles` row with `status = 'active'`. The trigger created it, and a pre-existing
+     user is promoted.
+  3. Insert `user_roles (user_id, role 'super_admin')`.
+  4. Send an invite or recovery link.
+  5. Record the bootstrap: `insert into audit_logs (action = 'user.bootstrap_super_admin', …)` with the
+     service role, or call `log_audit_event` through a service-role client.
+
+  Direct writes to `profiles.status` and `user_roles` are allowed for the service role and blocked for
+  signed-in users. The last-super-admin guard means the script can only ever add super admins.
+- **Disabling access:** `set_user_status(user, 'disabled')` blocks all data access immediately, because
+  every policy requires an active profile. To stop GoTrue from issuing tokens as well, the server
+  action should also call `auth.admin.updateUserById(id, { ban_duration: '876000h' })`, and `'none'` to
+  re-enable.
+
+## 16. Applying the schema to hosted Supabase
+
+**Option A: Supabase CLI (recommended).**
+
+```bash
+supabase login
+supabase link --project-ref <project-ref>        # asks for the database password
+supabase db push                                 # applies supabase/migrations/* in order, records them
+pnpm db:types                                    # with DATABASE_URL pointing at the project (or supabase gen types)
+```
+
+**Option B: SQL editor.** Open each file in `supabase/migrations/` **in filename order**, paste it and
+run it. They run as `postgres`, the same role `db push` uses. No superuser is needed: extensions go
+into `extensions`, and the trigger on `auth.users` and the `storage.objects` policies are allowed for
+`postgres`.
+
+**After the first push, set these in the dashboard to match `supabase/config.toml`:**
+- **Authentication → URL configuration:** Site URL = `NEXT_PUBLIC_SITE_URL`. Redirect URLs =
+  `<site>/auth/callback`, `<site>/auth/confirm` and `<site>/reset-password`.
+- **Authentication → Sign in/up:** e-mail sign-up on, "Confirm email" on, minimum password 8 with
+  lower/upper/digits.
+- **Authentication → SMTP:** your SMTP or Resend SMTP, so invitations and resets are deliverable.
+- **Storage:** the buckets are created by the migrations. The global file size limit must be ≥ 20 MB.
+- **API → Exposed schemas:** `public` and `graphql_public` only. Never expose `private`.
+
+**Then:**
+1. Run `pnpm bootstrap:super-admin --email …`.
+2. Sign in and complete the setup wizard.
+3. Import employees.
+
+The hosted Data API returns at most 1000 rows per request, so lists and exports page with `.range()`.
+
+## 17. Tests, generated types and local fixtures
+
+**Tests:** `supabase/tests/run.sh` runs every `NN_*.sql` file with `psql` against `DATABASE_URL`. Each
+file:
+1. Opens a transaction.
+2. Includes `_helpers.sql` (pg_temp helpers).
+3. Creates its own auth users, employees and data.
+4. Impersonates users with `set_config('role', 'authenticated')` and
+   `request.jwt.claims = {"sub": <uuid>, "role": "authenticated"}`.
+5. Prints `PASS`/`FAIL` per check, then **rolls back**.
+
+The script exits non-zero on any failure. Assertions are relative to what already exists, so the
+suite also passes on a database that holds the QA fixtures or other data.
+
+| File | Covers |
+|---|---|
+| `01_rls_isolation.sql` | employee isolation (rows, compensation, bank, insurance, dependents, documents, requests, leave, comments, notifications); manager visibility (reports' rows, leave and team requests; no compensation, bank, insurance, documents or internal comments); HR visibility; pending/disabled see only their profile; anon limited to the two public RPCs |
+| `02_permissions.sql` | hr_officer vs hr_admin driven by `role_permissions` (and changing rows changes access); audit masking and append-only for super admin, service role and owner; escalation attempts (profile status/link, user_roles inserts, super-admin grants, last super admin via RPC and service role, custom org roles, document path hijacking, certificate issuing); function-privilege lint |
+| `03_requests_workflow.sql` | numbering, manager→HR routing, notifications and params, self-approval, HR acting on a manager step, acting twice, start/complete/final states, skipped manager steps, non-report manager, return and resume at the right step, reassign, cancel rules, drafts, form validation and visibility, bank and info-update effects, SLA business-day math with holidays, policy vs `can_view_request` equivalence |
+| `04_leave.sql` | day counting (working/calendar, holidays); submit/approve/reject/cancel-before/cancel-after/return-resubmit maths with no double deduction; availability with holds; overlap, gender, max days, empty range, attachment; non-deducting types; adjustments, set/initialize balances, direct-edit restrictions |
+| `05_storage.sql` | `storage.objects` policies per bucket and role (own vs others' documents, confidential files, avatars, request attachments by requester/approver/HR, certificate PDFs valid vs revoked, stamp, branding public read and admin write) |
+| `06_registration_public_admin.sql` | sign-up hook (pending, untrusted metadata, matching, reviewer notifications, invited users, e-mail sync), review flow, `verify_certificate` output, `global_search` scoping and Arabic folding, `dashboard_stats` per role, e-mail claim, expiry alerts, template versioning, `reset_organization` |
+
+**Types:** `scripts/gen-db-types.mjs` introspects `public` with `psql -At` and writes
+`src/types/database.ts` in the Supabase CLI shape:
+- `Database → public → Tables/Views/Functions/Enums/CompositeTypes`
+- the `Tables<>`, `TablesInsert<>`, `TablesUpdate<>`, `Enums<>` and `CompositeTypes<>` helpers
+- `__InternalSupabase.PostgrestVersion = "13"`
+
+Generated and identity-always columns are `?: never` in Insert and Update. Table-returning functions
+return arrays of row objects, and functions without arguments have `Args: never`. `--check` fails when
+the file is stale.
+
+**Local fixtures:** `scripts/dev/seed-local-fixtures.mjs` is local only (see `scripts/dev/README.md`).
+
+## 18. Writing new migrations
+
+- Add a new file `supabase/migrations/<yyyymmddhhmmss>_<name>.sql`. Never edit an applied one.
+- New table:
+  1. `alter table … enable row level security`, with explicit policies `to authenticated` using the
+     helpers wrapped in `(select …)`.
+  2. `revoke all on <table> from anon`, and revoke `truncate, references, trigger` from `authenticated`.
+  3. Index every FK.
+  4. Attach `private.set_audit_fields` and, for key data, `private.audit_row_change('<entity>')`.
+- New function: `set search_path = ''` and schema-qualified names. For security definer RPCs, check
+  the caller first and raise `hr:errors.<key>`. **Supabase grants EXECUTE on new functions to `anon`**:
+  add `revoke execute on function … from public, anon;` unless the function is meant to be public.
+- Keep sensitive column names in the masking list (`private.mask_changes`) up to date.
+- Run `supabase/tests/run.sh` and `pnpm db:types` before committing.
+
+## 19. Known limitations
+
+- **Managers can read the whole `employees` row of their direct reports.** That includes the
+  identity-document columns (national ID, passport). RLS is row-level. Manager-facing screens should
+  select directory columns only.
+- **Leave spanning two calendar years is charged to the start date's year.**
+- **`verify_certificate` is keyed by the sequential certificate number.** Anyone can enumerate numbers
+  and learn employee names and certificate types, and nothing else. A per-certificate verification
+  token in the QR URL would close this if needed.
+- **Workflow edits apply to requests already in flight.** The next step is resolved when the request
+  gets there; no snapshot is taken at submission.

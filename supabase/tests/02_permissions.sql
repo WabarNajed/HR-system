@@ -11,10 +11,11 @@ select pg_temp.standard_fixtures();
 do $$
 declare
   e1 uuid := pg_temp.id('e_emp1');
+  v_bank bigint := (select count(*) from public.employee_bank_accounts);
 begin
   perform pg_temp.as_user('hro');
   perform pg_temp.check('hr_officer reads all bank accounts (bank.view)',
-    pg_temp.cnt('select 1 from public.employee_bank_accounts') = 6);
+    pg_temp.cnt('select 1 from public.employee_bank_accounts') = v_bank);
   perform pg_temp.check('hr_officer cannot update bank accounts (no bank.edit)',
     pg_temp.affected(format('update public.employee_bank_accounts set bank_name = ''X'' where employee_id = %L', e1)) = 0);
   perform pg_temp.throws('hr_officer cannot insert bank accounts (no bank.create)',
@@ -195,6 +196,10 @@ begin
   perform pg_temp.check('role change audited as user.roles_update',
     exists (select 1 from public.audit_logs where action = 'user.roles_update' and entity_id = pg_temp.id('emp1')::text));
 
+  -- make the fixture 'sa' the only active super admin inside this transaction (other data may exist)
+  update public.profiles set status = 'disabled'
+  where id <> pg_temp.id('sa') and status = 'active'
+    and id in (select ur.user_id from public.user_roles ur join public.roles r on r.id = ur.role_id where r.key = 'super_admin');
   perform pg_temp.as_user('sa');
   perform pg_temp.throws('last super admin cannot drop the super_admin role',
     format('select public.set_user_roles(%L, array[''employee''])', pg_temp.id('sa')), 'hr:errors.lastSuperAdmin');
@@ -216,6 +221,26 @@ begin
   perform pg_temp.throws('service_role cannot disable the last super admin either',
     format('update public.profiles set status = ''disabled'' where id = %L', pg_temp.id('sa')), 'hr:errors.lastSuperAdmin');
   perform pg_temp.as_postgres();
+end;
+$$;
+
+-- ---------------------------------------------------------------------------------------------------
+-- Function privileges: mutating internals are unreachable for signed-in users
+-- ---------------------------------------------------------------------------------------------------
+do $$
+begin
+  perform pg_temp.check('authenticated cannot execute workflow/notification/audit/seed internals',
+    not exists (select 1 from pg_proc p where p.pronamespace = 'private'::regnamespace
+                and p.proname in ('enter_steps', 'finalize_approval', 'notify', 'notify_many', 'write_audit', 'seed_defaults',
+                                  'seed_roles_permissions', 'leave_consume', 'leave_release', 'apply_bank_update',
+                                  'save_request_values', 'next_document_number', 'ensure_leave_balance')
+                and has_function_privilege('authenticated', p.oid, 'execute')));
+  perform pg_temp.check('private schema is not exposed to anon', not has_schema_privilege('anon', 'private', 'usage'));
+  perform pg_temp.check('every public table has RLS enabled',
+    not exists (select 1 from pg_tables where schemaname = 'public' and not rowsecurity));
+  perform pg_temp.check('every security-definer function pins search_path',
+    not exists (select 1 from pg_proc p where p.pronamespace in ('public'::regnamespace, 'private'::regnamespace)
+                and p.prosecdef and not exists (select 1 from unnest(p.proconfig) c where c like 'search_path=%')));
 end;
 $$;
 

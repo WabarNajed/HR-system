@@ -188,24 +188,6 @@ as $$
   )
 $$;
 
--- Profiles visible to a non-HR active user: their manager's, their direct reports' and HR staff profiles.
-create or replace function private.can_view_profile(p_profile_id uuid, p_employee_id uuid)
-returns boolean
-language sql
-stable
-security definer
-set search_path = ''
-as $$
-  select private.is_active_user() and (
-    p_profile_id = auth.uid()
-    or private.user_is_hr(p_profile_id)
-    or (p_employee_id is not null and private.is_manager_of(p_employee_id))
-    or (p_employee_id is not null and exists (
-          select 1 from public.employees me
-          where me.id = private.current_employee_id() and me.manager_id = p_employee_id))
-  )
-$$;
-
 -- Active profile linked to an employee (NULL if none).
 create or replace function private.employee_profile_id(p_employee_id uuid)
 returns uuid

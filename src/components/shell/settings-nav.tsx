@@ -5,7 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
-import { SETTINGS_ITEMS_BY_KEY, SETTINGS_NAV, type SettingsItemKey, type SettingsNavGroup } from './nav-config';
+import { SETTINGS_ITEMS_BY_KEY, type SettingsItemKey, type SettingsNavGroup } from './nav-config';
 
 export type VisibleSettingsGroup = { key: SettingsNavGroup['key']; items: SettingsItemKey[] };
 
@@ -94,4 +94,3 @@ export function SettingsNav({ groups }: { groups: VisibleSettingsGroup[] }) {
   );
 }
 
-export { SETTINGS_NAV };

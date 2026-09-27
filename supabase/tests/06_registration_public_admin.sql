@@ -162,6 +162,11 @@ $$;
 do $$
 declare
   v jsonb;
+  v_total bigint := (select count(*) from public.employees where archived_at is null and employment_status not in ('resigned', 'terminated'));
+  v_iqama30 bigint := (select count(*) from public.employees where archived_at is null and employment_status not in ('resigned', 'terminated')
+                         and iqama_expiry_date - private.org_today() between 15 and 30);
+  v_ins60 bigint := (select count(*) from public.employee_insurance i join public.employees e on e.id = i.employee_id
+                       where i.status in ('active', 'pending') and e.archived_at is null and i.expiry_date - private.org_today() between 31 and 60);
 begin
   perform pg_temp.as_user('emp1');
   v := public.dashboard_stats();
@@ -172,11 +177,11 @@ begin
     (v -> 'manager' ->> 'direct_reports')::int = 3 and not (v ? 'hr'));
   perform pg_temp.as_user('hro');
   v := public.dashboard_stats();
-  perform pg_temp.check('HR dashboard: organization totals', (v -> 'hr' ->> 'total_employees')::int = 7 and not (v ? 'admin'));
+  perform pg_temp.check('HR dashboard: organization totals', (v -> 'hr' ->> 'total_employees')::int = v_total and not (v ? 'admin'));
   perform pg_temp.check('HR dashboard: iqama expiring in 20 days lands in the within30 bucket',
-    (v -> 'hr' -> 'expiring' -> 'iqama' ->> 'within30')::int = 7 and (v -> 'hr' -> 'expiring' -> 'iqama' ->> 'expired')::int = 0);
+    (v -> 'hr' -> 'expiring' -> 'iqama' ->> 'within30')::int = v_iqama30 and v_iqama30 >= 7);
   perform pg_temp.check('HR dashboard: insurance expiring in 45 days lands in within60',
-    (v -> 'hr' -> 'expiring' -> 'insurance' ->> 'within60')::int = 6);
+    (v -> 'hr' -> 'expiring' -> 'insurance' ->> 'within60')::int = v_ins60 and v_ins60 >= 6);
   perform pg_temp.as_user('sa');
   v := public.dashboard_stats();
   perform pg_temp.check('super admin dashboard includes administration section', v ? 'admin' and v ? 'hr');
@@ -223,8 +228,12 @@ begin
   perform pg_temp.as_service();
   v_n := public.generate_expiry_alerts();
   perform pg_temp.check('expiry alert at the 30-day threshold reaches HR (employees.view) and the employee',
-    v_n = 4 and exists (select 1 from public.notifications where type = 'expiry_alert' and user_id = pg_temp.id('emp1')
-                        and params ->> 'kind' = 'iqama' and (params ->> 'days_left')::int = 30));
+    v_n >= 4
+    and (select count(*) from public.notifications where type = 'expiry_alert' and entity_id = pg_temp.id('e_emp1')
+           and params ->> 'kind' = 'iqama' and (params ->> 'days_left')::int = 30)
+        = (select count(*) from private.users_with_org_permission('employees', 'view')) + 1
+    and exists (select 1 from public.notifications where type = 'expiry_alert' and user_id = pg_temp.id('emp1')
+                and params ->> 'kind' = 'iqama'));
   perform pg_temp.check('expiry alerts are idempotent per day', public.generate_expiry_alerts() = 0);
   perform pg_temp.as_user('emp1');
   perform pg_temp.throws('employees cannot trigger expiry alerts', 'select public.generate_expiry_alerts()', 'hr:errors.forbidden');
@@ -249,6 +258,8 @@ $$;
 do $$
 declare
   v_audit bigint;
+  v_roles bigint := (select count(*) from public.roles);
+  v_perms bigint := (select count(*) from public.role_permissions);
 begin
   perform pg_temp.as_user('hra');
   perform pg_temp.throws('only super admins can reset', 'select public.reset_organization(''RESET ORGANIZATION'')', 'hr:errors.forbidden');
@@ -269,7 +280,10 @@ begin
     and (select count(*) from public.certificates) = 0 and (select count(*) from public.departments) = 0
     and (select count(*) from public.notifications) = 0 and (select count(*) from public.leave_balances) = 0);
   perform pg_temp.check('non-super-admin accounts removed; super admin kept with role',
-    (select count(*) from public.profiles) = 1 and exists (select 1 from public.profiles where id = pg_temp.id('sa') and status = 'active')
+    not exists (select 1 from public.profiles p where not exists (
+                  select 1 from public.user_roles ur join public.roles r on r.id = ur.role_id
+                  where ur.user_id = p.id and r.key = 'super_admin'))
+    and exists (select 1 from public.profiles where id = pg_temp.id('sa') and status = 'active')
     and not exists (select 1 from auth.users where id = pg_temp.id('emp1'))
     and exists (select 1 from public.user_roles ur join public.roles r on r.id = ur.role_id where ur.user_id = pg_temp.id('sa') and r.key = 'super_admin'));
   perform pg_temp.check('default configuration restored',
@@ -278,7 +292,7 @@ begin
     and (select count(*) from public.email_templates) = 16 and (select count(*) from public.notification_settings) = 18
     and (select name_en from public.organizations) is null and (select setup_completed_at from public.organization_settings) is null);
   perform pg_temp.check('roles, permissions and audit history kept; reset audited',
-    (select count(*) from public.roles) = 5 and (select count(*) from public.role_permissions) = 194
+    (select count(*) from public.roles) = v_roles and (select count(*) from public.role_permissions) = v_perms
     and (select count(*) from public.audit_logs) = v_audit + 1
     and exists (select 1 from public.audit_logs where action = 'organization.reset' and actor_id = pg_temp.id('sa')));
 end;

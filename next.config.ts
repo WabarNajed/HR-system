@@ -17,6 +17,8 @@ const nextConfig: NextConfig = {
       './node_modules/@fontsource/ibm-plex-sans-arabic/files/*-{arabic,latin}-{400,500,600,700}-normal.woff2',
     ],
   },
+  // Never echo Server Action arguments (e.g. sign-in passwords) into the dev server log.
+  logging: { serverFunctions: false },
   experimental: {
     // `forbidden()` from next/navigation → (app)/forbidden.tsx renders the shared Forbidden state
     // inside the shell (used by requirePermission / requireRole guards).
