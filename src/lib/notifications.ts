@@ -62,6 +62,7 @@ type ClaimedRow = {
 };
 
 type ResolvedTemplate = { subject: string; body: string; active: boolean };
+type SenderSettings = { email_from_name?: string | null; email_reply_to?: string | null };
 
 type TemplateRow = { key: string; subject_ar: string; subject_en: string; body_ar: string; body_en: string; is_active: boolean };
 
@@ -170,10 +171,10 @@ export async function deliverEmailsForNotifications(
     };
 
     const branding = await getPublicBranding();
-    let senderSettings: { email_from_name?: string | null; email_reply_to?: string | null } | null = null;
+    let senderSettings: SenderSettings | null = null;
     if (claimed.some((c) => c.email_from_name === undefined)) {
       const res = await claimClient.from('organization_settings').select('email_from_name, email_reply_to').maybeSingle();
-      senderSettings = (res.data ?? null) as typeof senderSettings;
+      senderSettings = (res.data ?? null) as SenderSettings | null;
     }
 
     for (const row of claimed) {

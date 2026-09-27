@@ -78,30 +78,28 @@ stable
 security invoker
 set search_path = ''
 as $$
-  with d as (select private.org_today() as today),
-  e as (
+  with e as (
     select
       e.employment_status,
       e.archived_at,
-      e.iqama_expiry_date,
+      e.iqama_expiry_date - private.org_today() as iqama_days,
       exists (select 1 from public.profiles p where p.employee_id = e.id) as has_portal
     from public.employees e
     where p_manager_id is null or e.manager_id = p_manager_id
   )
+  -- aggregates without GROUP BY always return exactly one row (zeros for an empty directory)
   select jsonb_build_object(
     'total', count(*) filter (where e.archived_at is null),
     'active', count(*) filter (where e.archived_at is null and e.employment_status in ('active', 'probation', 'on_leave')),
     'probation', count(*) filter (where e.archived_at is null and e.employment_status = 'probation'),
     'on_leave', count(*) filter (where e.archived_at is null and e.employment_status = 'on_leave'),
-    'iqama_expiring_30', count(*) filter (
-      where e.archived_at is null and e.iqama_expiry_date between d.today and d.today + 30),
-    'iqama_expired', count(*) filter (where e.archived_at is null and e.iqama_expiry_date < d.today),
+    'iqama_expiring_30', count(*) filter (where e.archived_at is null and e.iqama_days between 0 and 30),
+    'iqama_expired', count(*) filter (where e.archived_at is null and e.iqama_days < 0),
     'without_portal', count(*) filter (where e.archived_at is null and not e.has_portal),
     'archived', count(*) filter (where e.archived_at is not null),
-    'today', d.today
+    'today', private.org_today()
   )
-  from e cross join d
-  group by d.today
+  from e
 $$;
 
 -- ---------------------------------------------------------------------------------------------------
