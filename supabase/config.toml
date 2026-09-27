@@ -1,0 +1,135 @@
+# Supabase CLI configuration for local development (`supabase start`).
+# Hosted projects are configured in the Supabase dashboard; keep the values below in sync with it
+# (Auth → URL configuration / Email, Storage limits). See docs/DATABASE.md.
+project_id = "hr-portal"
+
+[api]
+enabled = true
+port = 54321
+# Schemas exposed through the Data API. `private` (RLS helpers, workflow engine) is intentionally NOT exposed.
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+# Same cap as hosted projects — list/report/export code pages with .range().
+max_rows = 1000
+
+[api.tls]
+enabled = false
+
+[db]
+port = 54322
+shadow_port = 54320
+major_version = 17
+
+[db.pooler]
+enabled = false
+port = 54329
+pool_mode = "transaction"
+default_pool_size = 20
+max_client_conn = 100
+
+[db.migrations]
+enabled = true
+schema_paths = []
+
+[db.seed]
+# Default configuration (roles, permissions, leave/request types, templates) is seeded by the migrations
+# themselves; QA fixtures are created with scripts/dev/seed-local-fixtures.mjs. No seed.sql.
+enabled = false
+sql_paths = []
+
+[realtime]
+# The app does not depend on Realtime (notifications are fetched).
+enabled = false
+
+[studio]
+enabled = true
+port = 54323
+api_url = "http://127.0.0.1"
+
+[inbucket]
+# Local mail catcher (Mailpit) for auth e-mails and SMTP testing: http://localhost:54324
+enabled = true
+port = 54324
+smtp_port = 54325
+pop3_port = 54326
+
+[storage]
+enabled = true
+file_size_limit = "20MiB"
+
+[storage.image_transformation]
+enabled = false
+
+[auth]
+enabled = true
+site_url = "http://localhost:3000"
+additional_redirect_urls = [
+  "http://localhost:3000",
+  "http://localhost:3000/auth/callback",
+  "http://localhost:3000/auth/confirm",
+  "http://localhost:3000/reset-password",
+  "http://127.0.0.1:3000",
+  "http://127.0.0.1:3000/auth/callback",
+  "http://127.0.0.1:3000/auth/confirm",
+  "http://127.0.0.1:3000/reset-password",
+]
+jwt_expiry = 3600
+enable_refresh_token_rotation = true
+refresh_token_reuse_interval = 10
+# Self-registration is allowed (accounts start as `pending` until HR approves them).
+enable_signup = true
+enable_anonymous_sign_ins = false
+enable_manual_linking = false
+minimum_password_length = 8
+password_requirements = "lower_upper_letters_digits"
+
+[auth.rate_limit]
+email_sent = 30
+sms_sent = 30
+anonymous_users = 30
+token_refresh = 150
+sign_in_sign_ups = 30
+token_verifications = 30
+
+[auth.email]
+enable_signup = true
+double_confirm_changes = true
+# Self-registered users must confirm their e-mail address before signing in; HR approval is still
+# required afterwards (profiles.status = 'pending'). Admin-provisioned users are created confirmed.
+enable_confirmations = true
+secure_password_change = true
+max_frequency = "1m0s"
+otp_length = 6
+otp_expiry = 3600
+
+[auth.sms]
+enable_signup = false
+enable_confirmations = false
+
+[auth.mfa]
+max_enrolled_factors = 10
+
+[auth.mfa.totp]
+enroll_enabled = false
+verify_enabled = false
+
+[auth.external.apple]
+enabled = false
+client_id = ""
+secret = ""
+
+[auth.external.azure]
+enabled = false
+client_id = ""
+secret = ""
+
+[auth.external.google]
+enabled = false
+client_id = ""
+secret = ""
+
+[edge_runtime]
+enabled = false
+
+[analytics]
+enabled = false

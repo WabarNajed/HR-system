@@ -1,0 +1,217 @@
+{
+  "title": "القوائم",
+  "gender": {
+    "male": "ذكر",
+    "female": "أنثى"
+  },
+  "genderRestriction": {
+    "all": "جميع الموظفين",
+    "male": "للذكور فقط",
+    "female": "للإناث فقط"
+  },
+  "maritalStatus": {
+    "single": "أعزب",
+    "married": "متزوج",
+    "divorced": "مطلق",
+    "widowed": "أرمل"
+  },
+  "employmentType": {
+    "full_time": "دوام كامل",
+    "part_time": "دوام جزئي",
+    "contract": "عقد محدد المدة",
+    "temporary": "مؤقت",
+    "intern": "متدرب"
+  },
+  "relationship": {
+    "spouse": "الزوج / الزوجة",
+    "son": "ابن",
+    "daughter": "ابنة",
+    "father": "الأب",
+    "mother": "الأم",
+    "other": "أخرى"
+  },
+  "documentType": {
+    "employment_contract": "عقد العمل",
+    "national_id": "الهوية الوطنية",
+    "iqama": "الإقامة",
+    "passport": "جواز السفر",
+    "medical_insurance": "التأمين الطبي",
+    "iban_certificate": "شهادة الآيبان",
+    "educational_certificate": "المؤهل العلمي",
+    "professional_certificate": "الشهادة المهنية",
+    "medical_report": "تقرير طبي",
+    "visa": "التأشيرة",
+    "signed_hr_form": "نموذج موارد بشرية موقّع",
+    "other": "أخرى"
+  },
+  "idType": {
+    "iqama": "إقامة",
+    "national_id": "هوية وطنية"
+  },
+  "dayCountBasis": {
+    "working": "أيام العمل",
+    "calendar": "الأيام التقويمية"
+  },
+  "fieldType": {
+    "short_text": "نص قصير",
+    "long_text": "نص طويل",
+    "number": "رقم",
+    "currency": "مبلغ مالي",
+    "date": "تاريخ",
+    "datetime": "تاريخ ووقت",
+    "time": "وقت",
+    "dropdown": "قائمة منسدلة",
+    "multi_select": "اختيار متعدد",
+    "yes_no": "نعم / لا",
+    "attachment": "مرفق",
+    "leave_type": "نوع الإجازة",
+    "dependent": "مرافق",
+    "employee": "موظف",
+    "email": "بريد إلكتروني",
+    "phone": "رقم هاتف"
+  },
+  "stepType": {
+    "manager": "المدير المباشر",
+    "hr": "فريق الموارد البشرية",
+    "role": "دور",
+    "user": "مستخدم محدد"
+  },
+  "certificateType": {
+    "salary": "تعريف بالراتب",
+    "employment": "شهادة تعريف بالعمل",
+    "salary_employment": "تعريف بالعمل والراتب",
+    "experience": "شهادة خبرة",
+    "custom": "خطاب موارد بشرية مخصص"
+  },
+  "certificateVariant": {
+    "general": "عام",
+    "bank": "للبنك",
+    "embassy": "للسفارة"
+  },
+  "certificateLanguage": {
+    "ar": "العربية",
+    "en": "الإنجليزية",
+    "bilingual": "العربية والإنجليزية"
+  },
+  "insuranceStatus": {
+    "insured": "مؤمَّن عليه",
+    "not_insured": "غير مؤمَّن عليه",
+    "pending": "قيد الإجراء"
+  },
+  "expiryBucket": {
+    "expired": "منتهي",
+    "within7": "خلال 7 أيام",
+    "within14": "خلال 14 يومًا",
+    "within30": "خلال 30 يومًا",
+    "within60": "خلال 60 يومًا",
+    "within90": "خلال 90 يومًا",
+    "valid": "ساري",
+    "missing": "غير متوفر"
+  },
+  "priority": {
+    "low": "منخفضة",
+    "normal": "عادية",
+    "high": "مرتفعة",
+    "urgent": "عاجلة"
+  },
+  "requestAction": {
+    "create": "تم الإنشاء",
+    "update": "تم التحديث",
+    "submit": "تم الإرسال",
+    "resubmit": "أعيد الإرسال",
+    "approve": "تمت الموافقة",
+    "reject": "تم الرفض",
+    "return": "أعيد لاستكمال المعلومات",
+    "reassign": "أعيد الإسناد",
+    "start": "بدأ التنفيذ",
+    "complete": "تم الإكمال",
+    "cancel": "تم الإلغاء",
+    "comment": "أضاف تعليقًا"
+  },
+  "weekday": {
+    "sunday": "الأحد",
+    "monday": "الاثنين",
+    "tuesday": "الثلاثاء",
+    "wednesday": "الأربعاء",
+    "thursday": "الخميس",
+    "friday": "الجمعة",
+    "saturday": "السبت"
+  },
+  "weekdayShort": {
+    "sunday": "أحد",
+    "monday": "اثنين",
+    "tuesday": "ثلاثاء",
+    "wednesday": "أربعاء",
+    "thursday": "خميس",
+    "friday": "جمعة",
+    "saturday": "سبت"
+  },
+  "role": {
+    "super_admin": "مدير النظام",
+    "hr_admin": "مدير الموارد البشرية",
+    "hr_officer": "أخصائي الموارد البشرية",
+    "manager": "مدير مباشر",
+    "employee": "موظف"
+  },
+  "permissionModule": {
+    "employees": "الموظفون",
+    "personal_data": "البيانات الشخصية",
+    "bank": "البيانات البنكية",
+    "insurance": "التأمين",
+    "documents": "المستندات",
+    "requests": "الطلبات",
+    "approvals": "الموافقات",
+    "leave": "الإجازات",
+    "certificates": "الشهادات",
+    "reports": "التقارير",
+    "settings": "الإعدادات",
+    "audit": "سجل التدقيق",
+    "users": "المستخدمون"
+  },
+  "permissionAction": {
+    "view": "عرض",
+    "create": "إنشاء",
+    "edit": "تعديل",
+    "approve": "اعتماد",
+    "export": "تصدير",
+    "administer": "إدارة"
+  },
+  "language": {
+    "ar": "العربية",
+    "en": "الإنجليزية"
+  },
+  "theme": {
+    "light": "فاتح",
+    "dark": "داكن",
+    "system": "حسب النظام"
+  },
+  "exportFormat": {
+    "xlsx": "Excel",
+    "csv": "CSV",
+    "pdf": "PDF"
+  },
+  "importType": {
+    "employees": "الموظفون",
+    "departments": "الإدارات",
+    "job_titles": "المسميات الوظيفية",
+    "locations": "المواقع",
+    "cost_centers": "مراكز التكلفة",
+    "leave_balances": "أرصدة الإجازات",
+    "dependents": "المرافقون",
+    "insurance": "التأمين",
+    "documents": "بيانات مستندات الموظفين",
+    "public_holidays": "العطل الرسمية"
+  },
+  "notificationChannel": {
+    "in_app": "داخل البوابة",
+    "email": "البريد الإلكتروني"
+  },
+  "yesNo": {
+    "yes": "نعم",
+    "no": "لا"
+  },
+  "outsideKingdom": {
+    "inside": "داخل المملكة",
+    "outside": "خارج المملكة"
+  }
+}

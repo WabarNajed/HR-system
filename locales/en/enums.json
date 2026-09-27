@@ -1,0 +1,217 @@
+{
+  "title": "Lists",
+  "gender": {
+    "male": "Male",
+    "female": "Female"
+  },
+  "genderRestriction": {
+    "all": "All employees",
+    "male": "Male only",
+    "female": "Female only"
+  },
+  "maritalStatus": {
+    "single": "Single",
+    "married": "Married",
+    "divorced": "Divorced",
+    "widowed": "Widowed"
+  },
+  "employmentType": {
+    "full_time": "Full-time",
+    "part_time": "Part-time",
+    "contract": "Contract",
+    "temporary": "Temporary",
+    "intern": "Intern"
+  },
+  "relationship": {
+    "spouse": "Spouse",
+    "son": "Son",
+    "daughter": "Daughter",
+    "father": "Father",
+    "mother": "Mother",
+    "other": "Other"
+  },
+  "documentType": {
+    "employment_contract": "Employment contract",
+    "national_id": "National ID",
+    "iqama": "Iqama",
+    "passport": "Passport",
+    "medical_insurance": "Medical insurance",
+    "iban_certificate": "IBAN certificate",
+    "educational_certificate": "Educational certificate",
+    "professional_certificate": "Professional certificate",
+    "medical_report": "Medical report",
+    "visa": "Visa",
+    "signed_hr_form": "Signed HR form",
+    "other": "Other"
+  },
+  "idType": {
+    "iqama": "Iqama",
+    "national_id": "National ID"
+  },
+  "dayCountBasis": {
+    "working": "Working days",
+    "calendar": "Calendar days"
+  },
+  "fieldType": {
+    "short_text": "Short text",
+    "long_text": "Long text",
+    "number": "Number",
+    "currency": "Currency",
+    "date": "Date",
+    "datetime": "Date & time",
+    "time": "Time",
+    "dropdown": "Dropdown",
+    "multi_select": "Multi-select",
+    "yes_no": "Yes / No",
+    "attachment": "Attachment",
+    "leave_type": "Leave type",
+    "dependent": "Dependent",
+    "employee": "Employee",
+    "email": "Email",
+    "phone": "Phone"
+  },
+  "stepType": {
+    "manager": "Direct manager",
+    "hr": "HR team",
+    "role": "Role",
+    "user": "Specific user"
+  },
+  "certificateType": {
+    "salary": "Salary certificate",
+    "employment": "Employment certificate",
+    "salary_employment": "Salary & employment certificate",
+    "experience": "Experience certificate",
+    "custom": "Custom HR letter"
+  },
+  "certificateVariant": {
+    "general": "General",
+    "bank": "Bank",
+    "embassy": "Embassy"
+  },
+  "certificateLanguage": {
+    "ar": "Arabic",
+    "en": "English",
+    "bilingual": "Arabic & English"
+  },
+  "insuranceStatus": {
+    "insured": "Insured",
+    "not_insured": "Not insured",
+    "pending": "Pending"
+  },
+  "expiryBucket": {
+    "expired": "Expired",
+    "within7": "Within 7 days",
+    "within14": "Within 14 days",
+    "within30": "Within 30 days",
+    "within60": "Within 60 days",
+    "within90": "Within 90 days",
+    "valid": "Valid",
+    "missing": "Missing"
+  },
+  "priority": {
+    "low": "Low",
+    "normal": "Normal",
+    "high": "High",
+    "urgent": "Urgent"
+  },
+  "requestAction": {
+    "create": "Created",
+    "update": "Updated",
+    "submit": "Submitted",
+    "resubmit": "Resubmitted",
+    "approve": "Approved",
+    "reject": "Rejected",
+    "return": "Returned for information",
+    "reassign": "Reassigned",
+    "start": "Marked in progress",
+    "complete": "Completed",
+    "cancel": "Cancelled",
+    "comment": "Commented"
+  },
+  "weekday": {
+    "sunday": "Sunday",
+    "monday": "Monday",
+    "tuesday": "Tuesday",
+    "wednesday": "Wednesday",
+    "thursday": "Thursday",
+    "friday": "Friday",
+    "saturday": "Saturday"
+  },
+  "weekdayShort": {
+    "sunday": "Sun",
+    "monday": "Mon",
+    "tuesday": "Tue",
+    "wednesday": "Wed",
+    "thursday": "Thu",
+    "friday": "Fri",
+    "saturday": "Sat"
+  },
+  "role": {
+    "super_admin": "Super Admin",
+    "hr_admin": "HR Admin",
+    "hr_officer": "HR Officer",
+    "manager": "Manager",
+    "employee": "Employee"
+  },
+  "permissionModule": {
+    "employees": "Employees",
+    "personal_data": "Personal data",
+    "bank": "Bank",
+    "insurance": "Insurance",
+    "documents": "Documents",
+    "requests": "Requests",
+    "approvals": "Approvals",
+    "leave": "Leave",
+    "certificates": "Certificates",
+    "reports": "Reports",
+    "settings": "Settings",
+    "audit": "Audit",
+    "users": "Users"
+  },
+  "permissionAction": {
+    "view": "View",
+    "create": "Create",
+    "edit": "Edit",
+    "approve": "Approve",
+    "export": "Export",
+    "administer": "Administer"
+  },
+  "language": {
+    "ar": "Arabic",
+    "en": "English"
+  },
+  "theme": {
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System"
+  },
+  "exportFormat": {
+    "xlsx": "Excel",
+    "csv": "CSV",
+    "pdf": "PDF"
+  },
+  "importType": {
+    "employees": "Employees",
+    "departments": "Departments",
+    "job_titles": "Job titles",
+    "locations": "Locations",
+    "cost_centers": "Cost centers",
+    "leave_balances": "Leave balances",
+    "dependents": "Dependents",
+    "insurance": "Insurance",
+    "documents": "Employee documents metadata",
+    "public_holidays": "Public holidays"
+  },
+  "notificationChannel": {
+    "in_app": "In-app",
+    "email": "Email"
+  },
+  "yesNo": {
+    "yes": "Yes",
+    "no": "No"
+  },
+  "outsideKingdom": {
+    "inside": "Inside the Kingdom",
+    "outside": "Outside the Kingdom"
+  }
+}

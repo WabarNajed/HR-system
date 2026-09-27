@@ -1,0 +1,106 @@
+{
+  "title": "الإشعارات",
+  "description": "مستجدات طلباتك وموافقاتك وتنبيهاتك.",
+  "bell": {
+    "title": "الإشعارات",
+    "unreadCount": "{count, plural, =0 {لا توجد غير مقروءة} one {# غير مقروء} two {# غير مقروءين} few {# غير مقروءة} many {# غير مقروءة} other {# غير مقروءة}}",
+    "markAllRead": "تعليم الكل كمقروء",
+    "markedAllRead": "تم تعليم جميع الإشعارات كمقروءة",
+    "viewAll": "عرض كل الإشعارات",
+    "emptyTitle": "لا جديد لديك",
+    "emptyDescription": "ستظهر هنا التحديثات على طلباتك وموافقاتك والتنبيهات.",
+    "error": "تعذر تحميل الإشعارات.",
+    "loading": "جارٍ تحميل الإشعارات"
+  },
+  "fallback": {
+    "actor": "الموارد البشرية",
+    "employee": "أحد الموظفين",
+    "requestType": "الطلب",
+    "document": "مستند"
+  },
+  "expiryKinds": {
+    "iqama": "الإقامة",
+    "passport": "جواز السفر",
+    "contract": "العقد",
+    "insurance": "التأمين الطبي",
+    "document": "المستند"
+  },
+  "types": {
+    "request_submitted": {
+      "title": "تم إرسال الطلب {number}",
+      "body": "{requestType} الخاص بـ {employee} قيد المراجعة الآن."
+    },
+    "approval_required": {
+      "title": "مطلوب موافقتك: {number}",
+      "body": "{requestType} من {employee} بانتظار قرارك."
+    },
+    "request_approved": {
+      "title": "تمت الموافقة على الطلب {number}",
+      "body": "وافق {actor} على {requestType}."
+    },
+    "request_rejected": {
+      "title": "تم رفض الطلب {number}",
+      "body": "رفض {actor} {requestType}."
+    },
+    "request_returned": {
+      "title": "أُعيد الطلب {number}",
+      "body": "يحتاج {actor} إلى معلومات إضافية بخصوص {requestType}."
+    },
+    "request_assigned": {
+      "title": "تم إسناد الطلب {number} إليك",
+      "body": "{requestType} الخاص بـ {employee}."
+    },
+    "request_in_progress": {
+      "title": "الطلب {number} قيد التنفيذ",
+      "body": "بدأت الموارد البشرية العمل على {requestType}."
+    },
+    "request_completed": {
+      "title": "اكتمل الطلب {number}",
+      "body": "تم إنجاز {requestType} الخاص بك."
+    },
+    "request_cancelled": {
+      "title": "تم إلغاء الطلب {number}",
+      "body": "أُلغي {requestType} الخاص بـ {employee}."
+    },
+    "request_comment": {
+      "title": "تعليق جديد على {number}",
+      "body": "علّق {actor} على {requestType}."
+    },
+    "registration_submitted": {
+      "title": "تسجيل جديد بانتظار المراجعة",
+      "body": "سجّل {name} وينتظر الموافقة."
+    },
+    "registration_approved": {
+      "title": "تم تفعيل حسابك",
+      "body": "مرحبًا بك! أصبح بإمكانك الآن استخدام بوابة الموارد البشرية."
+    },
+    "registration_rejected": {
+      "title": "لم تتم الموافقة على التسجيل",
+      "body": "تعذر على الموارد البشرية الموافقة على تسجيلك. تواصل معهم لمعرفة التفاصيل."
+    },
+    "registration_info_requested": {
+      "title": "الموارد البشرية بحاجة إلى معلومات إضافية",
+      "body": "افتح البوابة للاطلاع على ما تحتاجه الموارد البشرية لإكمال تسجيلك."
+    },
+    "certificate_issued": {
+      "title": "الشهادة جاهزة",
+      "body": "تم إصدار الشهادة {certificateNumber} وهي جاهزة للتنزيل."
+    },
+    "leave_balance_adjusted": {
+      "title": "تم تحديث رصيد الإجازة",
+      "body": "تم تعديل رصيد {leaveType} الخاص بك."
+    },
+    "expiry_alert": {
+      "title": "{document} على وشك الانتهاء",
+      "body": "{employee} · تنتهي في {date}."
+    },
+    "account_invited": {
+      "title": "تمت دعوتك إلى بوابة الموارد البشرية",
+      "body": "عيّن كلمة المرور لبدء استخدام البوابة."
+    }
+  },
+  "email": {
+    "open": "فتح في البوابة",
+    "footer": "تصلك هذه الرسالة لأن لديك حسابًا في {portal}."
+  }
+}

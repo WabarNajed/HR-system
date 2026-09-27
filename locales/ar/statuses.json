@@ -1,0 +1,105 @@
+{
+  "title": "الحالات",
+  "request": {
+    "draft": "مسودة",
+    "submitted": "مُرسل",
+    "pending_manager_approval": "بانتظار موافقة المدير",
+    "pending_hr_review": "بانتظار مراجعة الموارد البشرية",
+    "returned": "معاد لاستكمال المعلومات",
+    "approved": "معتمد",
+    "rejected": "مرفوض",
+    "in_progress": "قيد التنفيذ",
+    "completed": "مكتمل",
+    "cancelled": "ملغى"
+  },
+  "profile": {
+    "pending": "بانتظار الاعتماد",
+    "info_requested": "مطلوب معلومات إضافية",
+    "active": "نشط",
+    "rejected": "مرفوض",
+    "disabled": "معطّل"
+  },
+  "employment": {
+    "active": "على رأس العمل",
+    "probation": "تحت التجربة",
+    "on_leave": "في إجازة",
+    "suspended": "موقوف",
+    "resigned": "مستقيل",
+    "terminated": "منتهية خدمته"
+  },
+  "document": {
+    "valid": "ساري",
+    "expired": "منتهي",
+    "pending_review": "بانتظار المراجعة",
+    "rejected": "مرفوض",
+    "archived": "مؤرشف"
+  },
+  "certificate": {
+    "valid": "سارية",
+    "revoked": "ملغاة"
+  },
+  "import": {
+    "uploaded": "تم الرفع",
+    "validated": "تم التحقق",
+    "importing": "جارٍ الاستيراد",
+    "completed": "مكتمل",
+    "failed": "فشل",
+    "cancelled": "ملغى"
+  },
+  "importRow": {
+    "valid": "صالح",
+    "warning": "تحذير",
+    "error": "خطأ",
+    "imported": "تم الاستيراد",
+    "skipped": "تم التخطي"
+  },
+  "sla": {
+    "on_track": "ضمن المهلة",
+    "due_soon": "قارب الاستحقاق",
+    "overdue": "متأخر"
+  },
+  "leaveBalanceEffect": {
+    "none": "بدون أثر",
+    "pending": "معلّق",
+    "used": "مخصوم",
+    "reversed": "مُسترد"
+  },
+  "approval": {
+    "pending": "بانتظار القرار",
+    "approved": "تمت الموافقة",
+    "rejected": "مرفوض",
+    "returned": "معاد",
+    "reassigned": "أعيد إسناده",
+    "skipped": "تم التخطي"
+  },
+  "email": {
+    "sent": "تم الإرسال",
+    "failed": "فشل الإرسال",
+    "skipped": "لم يُرسل"
+  },
+  "insurance": {
+    "active": "ساري",
+    "expired": "منتهي",
+    "pending": "قيد الإجراء",
+    "cancelled": "ملغى"
+  },
+  "template": {
+    "draft": "مسودة",
+    "published": "منشور",
+    "inactive": "غير نشط"
+  },
+  "record": {
+    "active": "نشط",
+    "inactive": "غير نشط",
+    "archived": "مؤرشف"
+  },
+  "portalAccess": {
+    "linked": "مستخدم للبوابة",
+    "not_linked": "بدون حساب في البوابة",
+    "invited": "تم إرسال الدعوة"
+  },
+  "notification": {
+    "read": "مقروء",
+    "unread": "غير مقروء"
+  }
+}

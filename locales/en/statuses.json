@@ -1,0 +1,105 @@
+{
+  "title": "Statuses",
+  "request": {
+    "draft": "Draft",
+    "submitted": "Submitted",
+    "pending_manager_approval": "Pending manager approval",
+    "pending_hr_review": "Pending HR review",
+    "returned": "Returned for information",
+    "approved": "Approved",
+    "rejected": "Rejected",
+    "in_progress": "In progress",
+    "completed": "Completed",
+    "cancelled": "Cancelled"
+  },
+  "profile": {
+    "pending": "Pending approval",
+    "info_requested": "Information requested",
+    "active": "Active",
+    "rejected": "Rejected",
+    "disabled": "Disabled"
+  },
+  "employment": {
+    "active": "Active",
+    "probation": "On probation",
+    "on_leave": "On leave",
+    "suspended": "Suspended",
+    "resigned": "Resigned",
+    "terminated": "Terminated"
+  },
+  "document": {
+    "valid": "Valid",
+    "expired": "Expired",
+    "pending_review": "Pending review",
+    "rejected": "Rejected",
+    "archived": "Archived"
+  },
+  "certificate": {
+    "valid": "Valid",
+    "revoked": "Revoked"
+  },
+  "import": {
+    "uploaded": "Uploaded",
+    "validated": "Validated",
+    "importing": "Importing",
+    "completed": "Completed",
+    "failed": "Failed",
+    "cancelled": "Cancelled"
+  },
+  "importRow": {
+    "valid": "Valid",
+    "warning": "Warning",
+    "error": "Error",
+    "imported": "Imported",
+    "skipped": "Skipped"
+  },
+  "sla": {
+    "on_track": "On track",
+    "due_soon": "Due soon",
+    "overdue": "Overdue"
+  },
+  "leaveBalanceEffect": {
+    "none": "No effect",
+    "pending": "Pending",
+    "used": "Deducted",
+    "reversed": "Reversed"
+  },
+  "approval": {
+    "pending": "Pending",
+    "approved": "Approved",
+    "rejected": "Rejected",
+    "returned": "Returned",
+    "reassigned": "Reassigned",
+    "skipped": "Skipped"
+  },
+  "email": {
+    "sent": "Sent",
+    "failed": "Failed",
+    "skipped": "Skipped"
+  },
+  "insurance": {
+    "active": "Active",
+    "expired": "Expired",
+    "pending": "Pending",
+    "cancelled": "Cancelled"
+  },
+  "template": {
+    "draft": "Draft",
+    "published": "Published",
+    "inactive": "Inactive"
+  },
+  "record": {
+    "active": "Active",
+    "inactive": "Inactive",
+    "archived": "Archived"
+  },
+  "portalAccess": {
+    "linked": "Portal user",
+    "not_linked": "No portal access",
+    "invited": "Invitation sent"
+  },
+  "notification": {
+    "read": "Read",
+    "unread": "Unread"
+  }
+}

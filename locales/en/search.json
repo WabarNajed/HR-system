@@ -1,0 +1,21 @@
+{
+  "title": "Search",
+  "description": "Find employees, requests and certificates.",
+  "placeholder": "Search employees, requests, certificates…",
+  "minChars": "Type at least 2 characters to search",
+  "loading": "Searching…",
+  "empty": "No results for “{query}”",
+  "emptyDescription": "Try a name, employee ID, Iqama, request number or certificate number.",
+  "error": "Search is unavailable right now. Please try again.",
+  "groups": {
+    "employee": "Employees",
+    "request": "Requests",
+    "certificate": "Certificates",
+    "other": "Other results"
+  },
+  "quickActions": "Quick actions",
+  "pages": "Pages",
+  "hintNavigate": "Navigate",
+  "hintOpen": "Open",
+  "hintClose": "Close"
+}

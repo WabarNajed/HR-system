@@ -1,0 +1,106 @@
+{
+  "title": "Notifications",
+  "description": "Updates on your requests, approvals and alerts.",
+  "bell": {
+    "title": "Notifications",
+    "unreadCount": "{count, plural, =0 {No unread} one {# unread} other {# unread}}",
+    "markAllRead": "Mark all as read",
+    "markedAllRead": "All notifications marked as read",
+    "viewAll": "View all notifications",
+    "emptyTitle": "You're all caught up",
+    "emptyDescription": "Updates on your requests, approvals and alerts will appear here.",
+    "error": "Couldn't load notifications.",
+    "loading": "Loading notifications"
+  },
+  "fallback": {
+    "actor": "HR",
+    "employee": "an employee",
+    "requestType": "request",
+    "document": "A document"
+  },
+  "expiryKinds": {
+    "iqama": "Iqama",
+    "passport": "Passport",
+    "contract": "Contract",
+    "insurance": "Medical insurance",
+    "document": "Document"
+  },
+  "types": {
+    "request_submitted": {
+      "title": "Request {number} submitted",
+      "body": "{requestType} for {employee} is now in review."
+    },
+    "approval_required": {
+      "title": "Approval needed: {number}",
+      "body": "{requestType} from {employee} is waiting for your decision."
+    },
+    "request_approved": {
+      "title": "Request {number} approved",
+      "body": "{requestType} was approved by {actor}."
+    },
+    "request_rejected": {
+      "title": "Request {number} rejected",
+      "body": "{requestType} was rejected by {actor}."
+    },
+    "request_returned": {
+      "title": "Request {number} returned",
+      "body": "{actor} needs more information on your {requestType}."
+    },
+    "request_assigned": {
+      "title": "Request {number} assigned to you",
+      "body": "{requestType} for {employee}."
+    },
+    "request_in_progress": {
+      "title": "Request {number} in progress",
+      "body": "HR started working on your {requestType}."
+    },
+    "request_completed": {
+      "title": "Request {number} completed",
+      "body": "Your {requestType} is complete."
+    },
+    "request_cancelled": {
+      "title": "Request {number} cancelled",
+      "body": "{requestType} for {employee} was cancelled."
+    },
+    "request_comment": {
+      "title": "New comment on {number}",
+      "body": "{actor} commented on {requestType}."
+    },
+    "registration_submitted": {
+      "title": "New registration awaiting review",
+      "body": "{name} registered and is waiting for approval."
+    },
+    "registration_approved": {
+      "title": "Your account is active",
+      "body": "Welcome aboard! You now have access to the HR portal."
+    },
+    "registration_rejected": {
+      "title": "Registration not approved",
+      "body": "HR couldn't approve your registration. Contact HR for details."
+    },
+    "registration_info_requested": {
+      "title": "HR needs more information",
+      "body": "Open the portal to see what HR needs to complete your registration."
+    },
+    "certificate_issued": {
+      "title": "Certificate ready",
+      "body": "{certificateNumber} has been issued and is ready to download."
+    },
+    "leave_balance_adjusted": {
+      "title": "Leave balance updated",
+      "body": "Your {leaveType} balance was adjusted."
+    },
+    "expiry_alert": {
+      "title": "{document} expiring soon",
+      "body": "{employee} · expires on {date}."
+    },
+    "account_invited": {
+      "title": "You're invited to the HR portal",
+      "body": "Set your password to start using the portal."
+    }
+  },
+  "email": {
+    "open": "Open in the portal",
+    "footer": "You're receiving this email because you have an account on {portal}."
+  }
+}

@@ -1,0 +1,520 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+/*
+ * ────────────────────────────────────────────────────────────────────────────
+ *  "Oasis" design tokens (ARCHITECTURE §5)
+ *
+ *  Brand override: the root layout may inject on <html> / :root
+ *    --brand-primary, --brand-primary-foreground,
+ *    --brand-primary-dark, --brand-primary-dark-foreground,
+ *    --brand-secondary, --brand-secondary-foreground,
+ *    --brand-secondary-dark, --brand-secondary-dark-foreground,
+ *    --brand-sidebar
+ *  (see `brandCssVariables()` in src/lib/utils.ts). Every token below falls back to the
+ *  Oasis defaults when a variable is not set. Soft tints are derived with color-mix().
+ *
+ *  Naming (shadcn-compatible):
+ *    background = page canvas · card = surface · popover/raised = elevated surfaces
+ *    muted = subtle fills + muted-foreground (secondary text) · accent = neutral hover/selected
+ *    fill (NOT the gold brand accent) · primary = brand teal · secondary = brand gold
+ *    success / warning / danger(destructive) / info — each with -foreground (text on solid),
+ *    -soft (tinted background) and -soft-foreground (text on the tint).
+ * ────────────────────────────────────────────────────────────────────────────
+ */
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  color-scheme: light;
+
+  /* Surfaces */
+  --background: #f5f7f8;
+  --foreground: #0f1b1f;
+  --card: #ffffff;
+  --card-foreground: #0f1b1f;
+  --popover: #ffffff;
+  --popover-foreground: #0f1b1f;
+  --raised: #ffffff;
+  --subtle: #f8fafa;
+  --muted: #eef2f3;
+  --muted-foreground: #5b6b70;
+  --faint-foreground: #7d8c91;
+  --accent: #edf2f3;
+  --accent-foreground: #0f1b1f;
+
+  /* Lines */
+  --border: #e3e8ea;
+  --border-strong: #cfd8db;
+  --input: #d3dcdf;
+
+  /* Brand */
+  --primary: var(--brand-primary, #0f5e6b);
+  --primary-foreground: var(--brand-primary-foreground, #ffffff);
+  --primary-hover: color-mix(in oklab, var(--primary) 88%, black);
+  --primary-soft: color-mix(in oklab, var(--primary) 9%, white);
+  --primary-soft-foreground: color-mix(in oklab, var(--primary) 92%, black);
+  --secondary: var(--brand-secondary, #b8862f);
+  --secondary-foreground: var(--brand-secondary-foreground, #ffffff);
+  --secondary-soft: color-mix(in oklab, var(--secondary) 12%, white);
+  --secondary-soft-foreground: color-mix(in oklab, var(--secondary) 70%, black);
+  --ring: color-mix(in oklab, var(--primary) 60%, transparent);
+
+  /* Status */
+  --success: #12805c;
+  --success-foreground: #ffffff;
+  --success-soft: #e7f4ee;
+  --success-soft-foreground: #0c6a4b;
+  --warning: #b25e09;
+  --warning-foreground: #ffffff;
+  --warning-soft: #fdf1e3;
+  --warning-soft-foreground: #93500b;
+  --danger: #c8322b;
+  --danger-foreground: #ffffff;
+  --danger-soft: #fcecea;
+  --danger-soft-foreground: #a82a24;
+  --info: #1f6fd1;
+  --info-foreground: #ffffff;
+  --info-soft: #e9f1fc;
+  --info-soft-foreground: #1a5cae;
+  --neutral-soft: #eef2f3;
+  --neutral-soft-foreground: #45555a;
+
+  /* Sidebar — deep teal-night surface in light mode */
+  --sidebar: var(--brand-sidebar, #0b2a31);
+  --sidebar-foreground: #c9dade;
+  --sidebar-muted-foreground: #83a0a7;
+  --sidebar-accent: color-mix(in oklab, white 7%, transparent);
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-primary: color-mix(in oklab, white 11%, transparent);
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-indicator: var(--secondary);
+  --sidebar-border: color-mix(in oklab, white 8%, transparent);
+  --sidebar-ring: color-mix(in oklab, white 45%, transparent);
+
+  /* Charts — validated categorical order (CVD-safe adjacent pairs); see src/lib/chart-colors.ts */
+  --chart-1: #008c9e;
+  --chart-2: #b7821f;
+  --chart-3: #2a6fd6;
+  --chart-4: #d55181;
+  --chart-5: #7e9a12;
+  --chart-6: #5b46c2;
+  --chart-7: #e0662f;
+  --chart-8: #0b8f74;
+  --chart-grid: #e6ebed;
+  --chart-axis: #c5d0d3;
+
+  /* Elevation */
+  --shadow-color: 196 40% 12%;
+  --shadow-xs: 0 1px 2px hsl(var(--shadow-color) / 0.05);
+  --shadow-card: 0 1px 2px hsl(var(--shadow-color) / 0.04), 0 1px 3px hsl(var(--shadow-color) / 0.03);
+  --shadow-raised: 0 2px 4px hsl(var(--shadow-color) / 0.04), 0 8px 20px -6px hsl(var(--shadow-color) / 0.1);
+  --shadow-overlay: 0 4px 8px hsl(var(--shadow-color) / 0.05), 0 18px 44px -12px hsl(var(--shadow-color) / 0.24);
+
+  --scrollbar: #c7d1d4;
+  --scrollbar-hover: #a8b6ba;
+  --selection: color-mix(in oklab, var(--primary) 20%, transparent);
+
+  /* Typography — Arabic renders slightly larger for the same optical size */
+  --fs-xs: 0.75rem;
+  --fs-meta: 0.8125rem;
+  --fs-sm: 0.875rem;
+  --fs-base: 0.9375rem;
+  --lh-body: 1.55;
+}
+
+:root:lang(ar) {
+  --fs-xs: 0.78125rem; /* 12.5px */
+  --fs-meta: 0.84375rem; /* 13.5px */
+  --fs-sm: 0.90625rem; /* 14.5px */
+  --fs-base: 0.96875rem; /* 15.5px */
+  --lh-body: 1.7;
+}
+
+/* Designed dark mode — not an inversion */
+.dark {
+  color-scheme: dark;
+
+  --background: #0a1215;
+  --foreground: #e6eef0;
+  --card: #101b1f;
+  --card-foreground: #e6eef0;
+  --popover: #15242a;
+  --popover-foreground: #e6eef0;
+  --raised: #15242a;
+  --subtle: #0d171a;
+  --muted: #172529;
+  --muted-foreground: #93a5aa;
+  --faint-foreground: #71858b;
+  --accent: #1a2b31;
+  --accent-foreground: #e6eef0;
+
+  --border: #1f3037;
+  --border-strong: #2a3f47;
+  --input: #2a3d44;
+
+  --primary: var(--brand-primary-dark, #38a3b1);
+  --primary-foreground: var(--brand-primary-dark-foreground, #04171b);
+  --primary-hover: color-mix(in oklab, var(--primary) 88%, white);
+  --primary-soft: color-mix(in oklab, var(--primary) 16%, #101b1f);
+  --primary-soft-foreground: color-mix(in oklab, var(--primary) 78%, white);
+  --secondary: var(--brand-secondary-dark, #d4a553);
+  --secondary-foreground: var(--brand-secondary-dark-foreground, #1d1405);
+  --secondary-soft: color-mix(in oklab, var(--secondary) 15%, #101b1f);
+  --secondary-soft-foreground: color-mix(in oklab, var(--secondary) 82%, white);
+  --ring: color-mix(in oklab, var(--primary) 65%, transparent);
+
+  --success: #34b98a;
+  --success-foreground: #03140e;
+  --success-soft: color-mix(in oklab, #34b98a 15%, #101b1f);
+  --success-soft-foreground: #6fd6ae;
+  --warning: #e39a45;
+  --warning-foreground: #1c0f02;
+  --warning-soft: color-mix(in oklab, #e39a45 15%, #101b1f);
+  --warning-soft-foreground: #f1bb7a;
+  --danger: #ef6a61;
+  --danger-foreground: #1f0504;
+  --danger-soft: color-mix(in oklab, #ef6a61 15%, #101b1f);
+  --danger-soft-foreground: #f6a19b;
+  --info: #5b9cf0;
+  --info-foreground: #030f20;
+  --info-soft: color-mix(in oklab, #5b9cf0 15%, #101b1f);
+  --info-soft-foreground: #93bef6;
+  --neutral-soft: #1a2a30;
+  --neutral-soft-foreground: #a9babf;
+
+  --sidebar: #0c171b;
+  --sidebar-foreground: #b9cace;
+  --sidebar-muted-foreground: #6f878d;
+  --sidebar-accent: color-mix(in oklab, white 5%, transparent);
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-primary: color-mix(in oklab, var(--primary) 16%, transparent);
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-indicator: var(--secondary);
+  --sidebar-border: #182a30;
+  --sidebar-ring: color-mix(in oklab, var(--primary) 60%, transparent);
+
+  --chart-1: #1c9dae;
+  --chart-2: #ba862a;
+  --chart-3: #4a88e6;
+  --chart-4: #d8658f;
+  --chart-5: #84a022;
+  --chart-6: #8e7cf0;
+  --chart-7: #e06c3e;
+  --chart-8: #1e9e82;
+  --chart-grid: #1b2b31;
+  --chart-axis: #2c4048;
+
+  --shadow-color: 200 60% 2%;
+  --shadow-xs: 0 1px 2px hsl(var(--shadow-color) / 0.4);
+  --shadow-card: 0 1px 2px hsl(var(--shadow-color) / 0.35);
+  --shadow-raised: 0 2px 4px hsl(var(--shadow-color) / 0.3), 0 10px 24px -8px hsl(var(--shadow-color) / 0.55);
+  --shadow-overlay: 0 4px 10px hsl(var(--shadow-color) / 0.35), 0 24px 56px -12px hsl(var(--shadow-color) / 0.7);
+
+  --scrollbar: #26393f;
+  --scrollbar-hover: #334b53;
+  --selection: color-mix(in oklab, var(--primary) 32%, transparent);
+}
+
+@theme inline {
+  --font-sans: var(--font-plex-arabic), var(--font-plex-latin), ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Tahoma, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-raised: var(--raised);
+  --color-subtle: var(--subtle);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-faint-foreground: var(--faint-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-soft: var(--primary-soft);
+  --color-primary-soft-foreground: var(--primary-soft-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary-soft: var(--secondary-soft);
+  --color-secondary-soft-foreground: var(--secondary-soft-foreground);
+
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-success-soft: var(--success-soft);
+  --color-success-soft-foreground: var(--success-soft-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-warning-soft: var(--warning-soft);
+  --color-warning-soft-foreground: var(--warning-soft-foreground);
+  --color-danger: var(--danger);
+  --color-danger-foreground: var(--danger-foreground);
+  --color-danger-soft: var(--danger-soft);
+  --color-danger-soft-foreground: var(--danger-soft-foreground);
+  --color-destructive: var(--danger);
+  --color-destructive-foreground: var(--danger-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+  --color-info-soft: var(--info-soft);
+  --color-info-soft-foreground: var(--info-soft-foreground);
+  --color-neutral-soft: var(--neutral-soft);
+  --color-neutral-soft-foreground: var(--neutral-soft-foreground);
+
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-muted-foreground: var(--sidebar-muted-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-indicator: var(--sidebar-indicator);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-chart-6: var(--chart-6);
+  --color-chart-7: var(--chart-7);
+  --color-chart-8: var(--chart-8);
+  --color-chart-grid: var(--chart-grid);
+  --color-chart-axis: var(--chart-axis);
+
+  /* Radius: 6 badges · 8 inputs/buttons · 10 cards/dialogs */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
+  --radius-xl: 14px;
+  --radius-2xl: 18px;
+
+  /* Type scale (Arabic sizes are bumped through the --fs-* variables) */
+  --text-xs: var(--fs-xs);
+  --text-xs--line-height: 1.125rem;
+  --text-meta: var(--fs-meta);
+  --text-meta--line-height: 1.25rem;
+  --text-sm: var(--fs-sm);
+  --text-sm--line-height: 1.375rem;
+  --text-base: var(--fs-base);
+  --text-base--line-height: 1.5rem;
+  --text-card-title: 0.9375rem;
+  --text-card-title--line-height: 1.375rem;
+  --text-card-title--font-weight: 600;
+  --text-section-title: 1.125rem;
+  --text-section-title--line-height: 1.625rem;
+  --text-section-title--font-weight: 600;
+  --text-page-title: 1.625rem;
+  --text-page-title--line-height: 2.125rem;
+  --text-page-title--font-weight: 600;
+  --text-stat: 1.75rem;
+  --text-stat--line-height: 2.125rem;
+  --text-stat--font-weight: 600;
+
+  --shadow-xs: var(--shadow-xs);
+  --shadow-card: var(--shadow-card);
+  --shadow-raised: var(--shadow-raised);
+  --shadow-overlay: var(--shadow-overlay);
+
+  /* Layout constants */
+  --spacing-header: 3.5rem;
+  --spacing-sidebar: 16rem;
+  --spacing-sidebar-collapsed: 4.25rem;
+  --container-form: 65rem;
+
+  --animate-progress-indeterminate: progress-indeterminate 1.2s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+  --animate-shimmer: shimmer 1.6s linear infinite;
+
+  @keyframes progress-indeterminate {
+    0% {
+      transform: translateX(-100%) scaleX(0.4);
+    }
+    60% {
+      transform: translateX(60%) scaleX(0.6);
+    }
+    100% {
+      transform: translateX(200%) scaleX(0.4);
+    }
+  }
+
+  @keyframes shimmer {
+    0% {
+      background-position: -400px 0;
+    }
+    100% {
+      background-position: 400px 0;
+    }
+  }
+}
+
+@layer base {
+  *,
+  ::after,
+  ::before {
+    border-color: var(--color-border);
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+    scrollbar-gutter: stable;
+  }
+
+  body {
+    min-height: 100dvh;
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    font-size: var(--fs-sm);
+    line-height: var(--lh-body);
+    font-feature-settings: 'kern' 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    text-wrap: balance;
+    letter-spacing: -0.005em;
+  }
+
+  :lang(ar) h1,
+  :lang(ar) h2,
+  :lang(ar) h3,
+  :lang(ar) h4 {
+    letter-spacing: 0;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  ::selection {
+    background-color: var(--selection);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+
+  button:not(:disabled),
+  [role='button']:not([aria-disabled='true']),
+  summary {
+    cursor: pointer;
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: var(--faint-foreground);
+    opacity: 1;
+  }
+
+  /* Numbers, IDs, IBANs and emails keep LTR shaping inside RTL text */
+  bdi {
+    unicode-bidi: isolate;
+  }
+
+  /* Thin, quiet scrollbars */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar) transparent;
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background-color: var(--scrollbar);
+    border: 3px solid transparent;
+    border-radius: 999px;
+    background-clip: content-box;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: var(--scrollbar-hover);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    ::before,
+    ::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+/* ── Utilities ─────────────────────────────────────────────────────────────── */
+
+/** Tabular, lining figures for tables, KPIs and IDs. */
+@utility numeric {
+  font-variant-numeric: tabular-nums lining-nums;
+}
+
+/** LTR island for codes/IBANs/phones/emails inside RTL layouts (use with <bdi> or on a span). */
+@utility ltr-isolate {
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+/** Standard page gutter: 16px mobile, 24px desktop. */
+@utility page-padding {
+  padding-inline: 1rem;
+  padding-block: 1rem;
+  @media (width >= 48rem) {
+    padding-inline: 1.5rem;
+    padding-block: 1.5rem;
+  }
+}
+
+/** Hide scrollbars while keeping scroll (tab strips, chip rows). */
+@utility scrollbar-none {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/** Skeleton shimmer surface. */
+@utility skeleton-shimmer {
+  background-color: var(--muted);
+  background-image: linear-gradient(
+    90deg,
+    transparent 0,
+    color-mix(in oklab, var(--card) 55%, transparent) 50%,
+    transparent 100%
+  );
+  background-size: 800px 100%;
+  background-repeat: no-repeat;
+  animation: var(--animate-shimmer);
+}
+
+/** Mirrors directional icons (chevrons/arrows) in RTL. */
+@utility flip-rtl {
+  &:where([dir='rtl'], [dir='rtl'] *) {
+    transform: scaleX(-1);
+  }
+}
