@@ -209,11 +209,16 @@ export async function createSignedUrl(
   path: string,
   options: { expiresIn?: number; download?: string | boolean } = {},
 ): Promise<string | null> {
+  // storage-js double-encodes non-ASCII `download` names (URLSearchParams + encodeURI), so a named
+  // download is appended here with a single encoding (the server emits a RFC 5987 filename*).
+  const named = typeof options.download === 'string' && options.download.length > 0;
   const { data, error } = await client.storage
     .from(bucket)
-    .createSignedUrl(path, options.expiresIn ?? SIGNED_URL_TTL_SECONDS, options.download ? { download: options.download } : undefined);
+    .createSignedUrl(path, options.expiresIn ?? SIGNED_URL_TTL_SECONDS, options.download && !named ? { download: true } : undefined);
   if (error || !data?.signedUrl) return null;
-  return data.signedUrl;
+  if (!named) return data.signedUrl;
+  const separator = data.signedUrl.includes('?') ? '&' : '?';
+  return `${data.signedUrl}${separator}download=${encodeURIComponent(options.download as string)}`;
 }
 
 /** Removes objects; returns false on failure (never throws). */

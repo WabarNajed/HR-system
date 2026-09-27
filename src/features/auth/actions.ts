@@ -9,7 +9,6 @@ import { getPublicBranding } from '@/lib/branding';
 import { mapError } from '@/lib/errors';
 import { LOCALE_COOKIE, isLocale, type Locale } from '@/lib/i18n/config';
 import { writeLocaleCookie } from '@/lib/i18n/cookie';
-import { createAdminClient, isAdminClientConfigured } from '@/lib/supabase/admin';
 import { siteUrl } from '@/lib/supabase/env';
 import { createClient } from '@/lib/supabase/server';
 import { forgotPasswordSchema, loginSchema, registerSchema, resetPasswordSchema } from './schemas';
@@ -20,7 +19,7 @@ import { forgotPasswordSchema, loginSchema, registerSchema, resetPasswordSchema 
  */
 
 /** Best-effort bookkeeping after a successful sign-in (never blocks or fails the sign-in). */
-async function afterSignIn(userId: string, email: string | null): Promise<Locale | null> {
+async function afterSignIn(userId: string): Promise<Locale | null> {
   const supabase = await createClient();
   let preferred: Locale | null = null;
   try {
@@ -41,17 +40,9 @@ async function afterSignIn(userId: string, email: string | null): Promise<Locale
     if (error) console.error('[auth] saving preferred_language failed:', error.code, error.message);
   }
 
-  // last_login_at is not writable by users (column grants) → service role, for this verified user only.
-  if (isAdminClientConfigured()) {
-    try {
-      const { error } = await createAdminClient().from('profiles').update({ last_login_at: new Date().toISOString() }).eq('id', userId);
-      if (error) console.error('[auth] updating last_login_at failed:', error.code, error.message);
-    } catch (error) {
-      console.error('[auth] updating last_login_at failed:', error instanceof Error ? error.message : error);
-    }
-  }
-
-  await logAuditEvent({ action: 'auth.login', entityType: 'user', entityId: userId, summary: email }, supabase);
+  // RPC record_login(): stamps profiles.last_login_at and writes the `auth.login` audit event.
+  const { error: loginError } = await supabase.rpc('record_login');
+  if (loginError) console.error('[auth] record_login failed:', loginError.code, loginError.message);
   return preferred;
 }
 
@@ -65,7 +56,7 @@ export const signIn = withAction(
       if (key === 'errors.generic' || key === 'errors.serverError') console.error('[auth] sign-in failed:', error?.name, error?.message);
       return fail(key === 'errors.generic' ? 'errors.invalidCredentials' : key);
     }
-    await afterSignIn(data.user.id, data.user.email ?? email);
+    await afterSignIn(data.user.id);
     redirect(safeNextPath(next));
   },
   { auth: 'none', scope: 'auth.signIn' },
@@ -78,7 +69,7 @@ export async function signOut(): Promise<void> {
     const { data } = await supabase.auth.getClaims();
     const uid = data?.claims?.sub;
     if (typeof uid === 'string') {
-      await logAuditEvent({ action: 'auth.logout', entityType: 'user', entityId: uid }, supabase);
+      await logAuditEvent({ action: 'auth.logout', entityType: 'profile', entityId: uid }, supabase);
     }
     const { error } = await supabase.auth.signOut({ scope: 'local' });
     if (error) console.error('[auth] sign-out failed:', error.message);
@@ -138,7 +129,7 @@ export const updatePassword = withAction(
     if (typeof uid !== 'string') throw new ActionError('errors.tokenExpired');
     const { error } = await supabase.auth.updateUser({ password });
     if (error) throw error;
-    await logAuditEvent({ action: 'auth.password_changed', entityType: 'user', entityId: uid }, supabase);
+    await logAuditEvent({ action: 'auth.password_changed', entityType: 'profile', entityId: uid }, supabase);
     return ok(undefined, 'auth.reset.success');
   },
   { auth: 'none', scope: 'auth.updatePassword' },

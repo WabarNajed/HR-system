@@ -1,5 +1,6 @@
 import 'server-only';
 
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { brandingCompanyName, brandingPortalName, getPublicBranding } from '@/lib/branding';
 import { formatDate } from '@/lib/dates';
 import { isLocale, type Locale } from '@/lib/i18n/config';
@@ -7,98 +8,87 @@ import { employeeDisplayName, localized } from '@/lib/i18n/localized';
 import { getTranslator } from '@/lib/i18n/translator';
 import { createAdminClient, isAdminClientConfigured } from '@/lib/supabase/admin';
 import { siteUrl } from '@/lib/supabase/env';
+import { createClient } from '@/lib/supabase/server';
 import { renderEmailLayout, renderTemplate, type TemplateVars } from './email/render';
-import { sendEmail } from './email/send';
+import { recordEmail, sendEmail } from './email/send';
 
 /**
- * Email delivery for in-app notifications created by RPCs (`submit_request`, `act_on_request`, …
- * return `notification_ids`). Call after a successful mutation:
+ * Email delivery for in-app notifications (docs/DATABASE.md §11). Call after a successful mutation
+ * with the `notification_ids` returned by the RPC:
  *
  *   const { data } = await supabase.rpc('submit_request', { p_request_id });
  *   after(() => deliverEmailsForNotifications(data?.notification_ids ?? []));
  *
- * For each notification (not yet emailed): recipient profile email + language, the matching
- * `email_templates` row (active) and `notification_settings.email_enabled` for the event.
- * Renders `{{placeholders}}` in the recipient's language, wraps it in the branded layout, sends
- * (Resend | SMTP | skipped — always logged in `email_logs`) and stamps `notifications.emailed_at`
- * when sent. Uses the service-role client (cross-user reads); never throws.
+ * 1. `claim_notification_emails(ids)` (as the acting user — or the service role with
+ *    `{ asService: true }` for trigger-created notifications such as registrations) returns only
+ *    notifications whose event has `email_enabled`, with recipient email/name/language and the
+ *    template key, and stamps `emailed_at` (idempotent — a notification is never emailed twice).
+ * 2. The matching active `email_templates` row is rendered in the recipient's language
+ *    (`{{placeholders}}`, HTML-escaped) inside the branded layout.
+ * 3. `sendEmail` (Resend | SMTP | skipped) and `log_email` for every attempt.
+ * Never throws; returns a summary.
  */
 
-/** Notification type → `email_templates.key` (types without an email are absent). */
-export const NOTIFICATION_EMAIL_TEMPLATES: Record<string, string | ((params: Record<string, unknown>) => string)> = {
-  request_submitted: 'request_submitted',
-  approval_required: 'approval_required',
-  request_approved: 'request_approved',
-  request_rejected: 'request_rejected',
-  request_returned: 'request_returned',
-  request_completed: 'request_completed',
-  registration_submitted: 'registration_submitted',
-  registration_approved: 'registration_approved',
-  registration_rejected: 'registration_rejected',
-  account_invited: 'account_invitation',
-  expiry_alert: (params) => {
-    const kind = String(params.kind ?? params.expiry_kind ?? params.document_kind ?? '');
-    if (kind === 'iqama') return 'iqama_expiry';
-    if (kind === 'passport') return 'passport_expiry';
-    if (kind === 'insurance') return 'insurance_expiry';
-    if (kind === 'contract') return 'contract_expiry';
-    return 'document_expiry';
-  },
-};
+type AnyClient = SupabaseClient<any, any, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 
-export function emailTemplateKeyFor(type: string, params: Record<string, unknown> = {}): string | null {
-  const entry = NOTIFICATION_EMAIL_TEMPLATES[type];
-  if (!entry) return null;
-  return typeof entry === 'function' ? entry(params) : entry;
+/** Notification type → `email_templates.key` (mirrors the SQL in `claim_notification_emails`). */
+export function emailTemplateKeyFor(type: string, params: Record<string, unknown> = {}): string {
+  if (type === 'account_invited') return 'account_invitation';
+  if (type === 'expiry_alert') {
+    const kind = typeof params.kind === 'string' && params.kind ? params.kind : 'document';
+    return `${kind}_expiry`;
+  }
+  return type;
 }
 
-type NotificationRow = {
-  id: string;
-  user_id: string;
+type ClaimedRow = {
+  notification_id: string;
+  recipient_email: string | null;
+  recipient_name: string | null;
+  language: string | null;
   type: string;
   params: Record<string, unknown> | null;
   link: string | null;
-  entity_type: string | null;
-  entity_id: string | null;
-  emailed_at: string | null;
+  template_key: string | null;
 };
 
-type ProfileRow = { id: string; email: string | null; full_name: string | null; preferred_language: string | null };
 type TemplateRow = { key: string; subject_ar: string; subject_en: string; body_ar: string; body_en: string; is_active: boolean };
 
-export type DeliverySummary = { sent: number; failed: number; skipped: number };
+export type DeliverySummary = { claimed: number; sent: number; failed: number; skipped: number };
 
 function str(value: unknown): string {
   return value === null || value === undefined ? '' : String(value);
 }
 
-/** Builds template variables from notification params (bilingual fields resolved per locale). */
+function absoluteLink(link: string | null): string {
+  if (!link) return siteUrl();
+  if (/^https?:\/\//.test(link)) return link;
+  return `${siteUrl()}${link.startsWith('/') ? '' : '/'}${link}`;
+}
+
+/** Template variables from notification params (bilingual fields resolved per locale). */
 export function buildEmailVars(
-  n: Pick<NotificationRow, 'type' | 'params' | 'link'>,
-  recipient: Pick<ProfileRow, 'full_name' | 'email'>,
+  row: Pick<ClaimedRow, 'type' | 'params' | 'link' | 'recipient_name' | 'recipient_email'>,
   locale: Locale,
   context: { companyName: string; portalName: string },
 ): TemplateVars {
-  const p = n.params ?? {};
+  const p = row.params ?? {};
   const t = getTranslator(locale);
   const vars: TemplateVars = {};
   for (const [k, v] of Object.entries(p)) {
-    if (v === null || v === undefined) continue;
     if (typeof v === 'string' || typeof v === 'number') vars[k] = v;
     else if (typeof v === 'boolean') vars[k] = t(v ? 'common.yes' : 'common.no');
   }
   const employee =
     employeeDisplayName({ name_ar: str(p.employee_name_ar), name_en: str(p.employee_name_en) }, locale) ||
-    str(p.employee_name) ||
-    str(recipient.full_name);
+    str(p.full_name) ||
+    str(row.recipient_name);
   const requestType = localized({ name_ar: str(p.request_type_name_ar), name_en: str(p.request_type_name_en) }, 'name', locale);
   const status = str(p.status);
   const statusKey = `statuses.request.${status}`;
-  const link = n.link ? (/^https?:\/\//.test(n.link) ? n.link : `${siteUrl()}${n.link.startsWith('/') ? '' : '/'}${n.link}`) : siteUrl();
-
   Object.assign(vars, {
     employee_name: employee,
-    recipient_name: str(recipient.full_name) || str(recipient.email),
+    recipient_name: str(row.recipient_name) || str(row.recipient_email),
     manager_name: str(p.manager_name) || str(p.actor_name),
     actor_name: str(p.actor_name),
     request_number: str(p.request_number),
@@ -106,7 +96,7 @@ export function buildEmailVars(
     request_status: status && t.has(statusKey) ? t(statusKey) : status,
     company_name: context.companyName,
     portal_name: context.portalName,
-    link,
+    link: absoluteLink(row.link),
     comment: str(p.comment),
   });
   for (const dateKey of ['expiry_date', 'start_date', 'end_date', 'issue_date', 'date']) {
@@ -115,103 +105,84 @@ export function buildEmailVars(
   return vars;
 }
 
-export async function deliverEmailsForNotifications(ids: readonly (string | null | undefined)[]): Promise<DeliverySummary> {
-  const summary: DeliverySummary = { sent: 0, failed: 0, skipped: 0 };
+export async function deliverEmailsForNotifications(
+  ids: readonly (string | null | undefined)[],
+  options: { asService?: boolean } = {},
+): Promise<DeliverySummary> {
+  const summary: DeliverySummary = { claimed: 0, sent: 0, failed: 0, skipped: 0 };
   const unique = Array.from(new Set(ids.filter((id): id is string => typeof id === 'string' && id.length > 0)));
   if (!unique.length) return summary;
-  if (!isAdminClientConfigured()) {
-    console.warn('[notifications] email delivery skipped: SUPABASE_SERVICE_ROLE_KEY is not set');
-    summary.skipped = unique.length;
-    return summary;
-  }
 
   try {
-    const admin = createAdminClient();
-    const { data: rows, error } = await admin
-      .from('notifications')
-      .select('id, user_id, type, params, link, entity_type, entity_id, emailed_at')
-      .in('id', unique)
-      .is('emailed_at', null);
-    if (error) throw error;
-    const notifications = (rows ?? []) as NotificationRow[];
-    if (!notifications.length) return summary;
-
-    const userIds = Array.from(new Set(notifications.map((n) => n.user_id)));
-    const types = Array.from(new Set(notifications.map((n) => n.type)));
-    const templateKeys = Array.from(
-      new Set(notifications.map((n) => emailTemplateKeyFor(n.type, n.params ?? {})).filter((k): k is string => !!k)),
-    );
-
-    const [profilesRes, settingsRes, templatesRes, orgSettingsRes, branding] = await Promise.all([
-      admin.from('profiles').select('id, email, full_name, preferred_language').in('id', userIds),
-      admin.from('notification_settings').select('event_key, email_enabled').in('event_key', types),
-      templateKeys.length
-        ? admin.from('email_templates').select('key, subject_ar, subject_en, body_ar, body_en, is_active').in('key', templateKeys)
-        : Promise.resolve({ data: [] as TemplateRow[], error: null }),
-      admin.from('organization_settings').select('default_language, email_from_name, email_reply_to').maybeSingle(),
-      getPublicBranding(),
-    ]);
-    for (const res of [profilesRes, settingsRes, templatesRes, orgSettingsRes]) {
-      if (res.error) console.error('[notifications] lookup failed:', res.error.code, res.error.message);
+    const admin: AnyClient | null = isAdminClientConfigured() ? createAdminClient() : null;
+    const userClient: AnyClient | null = options.asService ? null : await createClient().catch(() => null);
+    const claimClient = options.asService ? admin : userClient;
+    if (!claimClient) {
+      console.warn('[notifications] email delivery skipped: no client for claim_notification_emails');
+      return summary;
     }
 
-    const profiles = new Map(((profilesRes.data ?? []) as ProfileRow[]).map((p) => [p.id, p]));
-    const emailEnabled = new Map(
-      ((settingsRes.data ?? []) as { event_key: string; email_enabled: boolean }[]).map((s) => [s.event_key, s.email_enabled]),
-    );
-    const templates = new Map(((templatesRes.data ?? []) as TemplateRow[]).map((tpl) => [tpl.key, tpl]));
-    const orgSettings = (orgSettingsRes.data ?? null) as {
-      default_language?: string | null;
-      email_from_name?: string | null;
-      email_reply_to?: string | null;
-    } | null;
-    const orgLocale: Locale = isLocale(orgSettings?.default_language) ? orgSettings.default_language : 'ar';
+    const { data, error } = await claimClient.rpc('claim_notification_emails', { p_notification_ids: unique });
+    if (error) throw error;
+    const claimed = (data ?? []) as ClaimedRow[];
+    summary.claimed = claimed.length;
+    if (!claimed.length) return summary;
 
-    for (const n of notifications) {
-      const recipient = profiles.get(n.user_id);
-      const templateKey = emailTemplateKeyFor(n.type, n.params ?? {});
-      const template = templateKey ? templates.get(templateKey) : undefined;
-      if (!recipient?.email || !emailEnabled.get(n.type) || !template || !template.is_active) {
+    // Templates are configuration (not personal data); non-HR actors can't read them through RLS,
+    // so the service role reads them when available — the claim above already authorized delivery.
+    const templateClient = admin ?? claimClient;
+    const keys = Array.from(new Set(claimed.map((c) => c.template_key ?? emailTemplateKeyFor(c.type, c.params ?? {}))));
+    const [templatesRes, settingsRes, branding] = await Promise.all([
+      templateClient.from('email_templates').select('key, subject_ar, subject_en, body_ar, body_en, is_active').in('key', keys),
+      templateClient.from('organization_settings').select('email_from_name, email_reply_to').maybeSingle(),
+      getPublicBranding(),
+    ]);
+    if (templatesRes.error) console.error('[notifications] templates lookup failed:', templatesRes.error.code, templatesRes.error.message);
+    const templates = new Map(((templatesRes.data ?? []) as TemplateRow[]).map((tpl) => [tpl.key, tpl]));
+    const orgSettings = (settingsRes.data ?? null) as { email_from_name?: string | null; email_reply_to?: string | null } | null;
+
+    for (const row of claimed) {
+      const templateKey = row.template_key ?? emailTemplateKeyFor(row.type, row.params ?? {});
+      const template = templates.get(templateKey);
+      const locale: Locale = isLocale(row.language) ? row.language : 'ar';
+      const to = row.recipient_email ?? '';
+      if (!template || !template.is_active) {
         summary.skipped++;
+        await recordEmail(
+          { to, subject: templateKey, html: '', templateKey, relatedEntityType: 'notification', relatedEntityId: row.notification_id },
+          { status: 'skipped', provider: null, error: 'email template missing or inactive' },
+          userClient,
+        );
         continue;
       }
-      const locale: Locale = isLocale(recipient.preferred_language) ? recipient.preferred_language : orgLocale;
       const t = getTranslator(locale);
       const portalName = brandingPortalName(branding, locale, t('common.appName'));
       const companyName = brandingCompanyName(branding, locale) ?? portalName;
-      const vars = buildEmailVars(n, recipient, locale, { companyName, portalName });
+      const vars = buildEmailVars(row, locale, { companyName, portalName });
       const subject = renderTemplate(locale === 'ar' ? template.subject_ar : template.subject_en, vars, { html: false });
       const bodyHtml = renderTemplate(locale === 'ar' ? template.body_ar : template.body_en, vars);
       const html = renderEmailLayout({
         locale,
         subject,
         bodyHtml,
-        branding: {
-          portalName,
-          companyName,
-          logoUrl: branding.logoUrl,
-          primaryColor: branding.primaryColor,
-          secondaryColor: branding.secondaryColor,
-        },
-        action: n.link ? { label: t('notifications.email.open'), url: String(vars.link) } : null,
+        branding: { portalName, companyName, logoUrl: branding.logoUrl, primaryColor: branding.primaryColor, secondaryColor: branding.secondaryColor },
+        action: row.link ? { label: t('notifications.email.open'), url: String(vars.link) } : null,
         footerNote: t('notifications.email.footer', { portal: portalName }),
       });
-
-      const result = await sendEmail({
-        to: recipient.email,
-        subject,
-        html,
-        fromName: orgSettings?.email_from_name ?? null,
-        replyTo: orgSettings?.email_reply_to ?? null,
-        templateKey,
-        relatedEntityType: n.entity_type,
-        relatedEntityId: n.entity_id,
-      });
+      const result = await sendEmail(
+        {
+          to,
+          subject,
+          html,
+          fromName: orgSettings?.email_from_name ?? null,
+          replyTo: orgSettings?.email_reply_to ?? null,
+          templateKey,
+          relatedEntityType: 'notification',
+          relatedEntityId: row.notification_id,
+        },
+        { client: userClient },
+      );
       summary[result.status === 'sent' ? 'sent' : result.status === 'failed' ? 'failed' : 'skipped']++;
-      if (result.status === 'sent') {
-        const { error: markError } = await admin.from('notifications').update({ emailed_at: new Date().toISOString() }).eq('id', n.id);
-        if (markError) console.error('[notifications] marking emailed_at failed:', markError.code, markError.message);
-      }
     }
   } catch (error) {
     console.error('[notifications] delivery failed:', error instanceof Error ? error.message : error);

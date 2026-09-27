@@ -71,7 +71,7 @@ export function LanguageSwitch({ variant = 'icon', className }: LanguageSwitchPr
         {pending ? (
           <Loader2Icon className="animate-spin" />
         ) : (
-          <span lang={target} className="text-[0.8125rem] font-semibold leading-none">
+          <span lang={target} className={cn('leading-none font-semibold', target === 'ar' ? 'text-base' : 'text-[0.8125rem]')}>
             {localeShortNames[target]}
           </span>
         )}

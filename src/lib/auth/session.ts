@@ -44,7 +44,13 @@ export type SessionProfile = {
   createdAt: string | null;
 };
 
-export type SessionRole = { key: RoleKey; nameAr: string | null; nameEn: string | null };
+export type SessionRole = {
+  key: RoleKey;
+  nameAr: string | null;
+  nameEn: string | null;
+  /** Which rows the role's permissions reach (`own | team | organization`, see docs/DATABASE.md §3). */
+  dataScope: 'own' | 'team' | 'organization';
+};
 
 export type SessionEmployee = {
   id: string;
@@ -67,6 +73,7 @@ export type SessionContext = {
   permissions: Set<Permission>;
   employee: SessionEmployee | null;
   locale: Locale;
+  /** Holds an organization-scoped role (super_admin / hr_admin / hr_officer / custom HR role). */
   isHR: boolean;
   isSuperAdmin: boolean;
   /** Has the manager role or at least one direct report. */
@@ -112,6 +119,7 @@ type RoleRow = {
     key: string;
     name_ar: string | null;
     name_en: string | null;
+    data_scope: string | null;
     role_permissions: { module: string; action: string }[] | null;
   } | null;
 };
@@ -205,7 +213,10 @@ export const getSessionState = cache(async (): Promise<SessionState> => {
         )
         .eq('id', userId)
         .maybeSingle(),
-      supabase.from('user_roles').select('role:roles(key, name_ar, name_en, role_permissions(module, action))').eq('user_id', userId),
+      supabase
+        .from('user_roles')
+        .select('role:roles(key, name_ar, name_en, data_scope, role_permissions(module, action))')
+        .eq('user_id', userId),
       getLocale(),
     ]);
 
@@ -222,7 +233,8 @@ export const getSessionState = cache(async (): Promise<SessionState> => {
     const permissions = new Set<Permission>();
     for (const r of roleRows) {
       if (!r.role?.key) continue;
-      roleDetails.push({ key: r.role.key, nameAr: r.role.name_ar, nameEn: r.role.name_en });
+      const scope = r.role.data_scope === 'organization' || r.role.data_scope === 'team' ? r.role.data_scope : 'own';
+      roleDetails.push({ key: r.role.key, nameAr: r.role.name_ar, nameEn: r.role.name_en, dataScope: scope });
       for (const p of r.role.role_permissions ?? []) {
         const key = `${p.module}.${p.action}`;
         if (isPermission(key)) permissions.add(key);
@@ -231,7 +243,8 @@ export const getSessionState = cache(async (): Promise<SessionState> => {
     const roles = roleDetails.map((r) => r.key);
     const isSuperAdmin = roles.includes('super_admin');
     if (isSuperAdmin) for (const p of ALL_PERMISSIONS) permissions.add(p);
-    const isHR = roles.some((r) => (HR_ROLE_KEYS as readonly string[]).includes(r));
+    // Mirrors private.is_hr(): any organization-scoped role (system HR roles or custom HR roles).
+    const isHR = roleDetails.some((r) => r.dataScope === 'organization' || (HR_ROLE_KEYS as readonly string[]).includes(r.key));
 
     let employee: SessionEmployee | null = null;
     let directReportsCount = 0;
