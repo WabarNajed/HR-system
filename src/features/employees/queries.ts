@@ -460,7 +460,11 @@ export async function getRecentRequests(employeeId: string, limit = 5): Promise<
   return (data ?? []) as unknown as RecentRequestRow[];
 }
 
-export async function getCompensation(employeeId: string): Promise<CompensationRecord | null> {
+/**
+ * Compensation row (bank viewers). `strict` (edit form) throws on a read error instead of returning
+ * null: an empty form would otherwise clear the stored salary on the next save.
+ */
+export async function getCompensation(employeeId: string, { strict = false }: { strict?: boolean } = {}): Promise<CompensationRecord | null> {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from('employee_compensation')
@@ -468,6 +472,7 @@ export async function getCompensation(employeeId: string): Promise<CompensationR
     .eq('employee_id', employeeId)
     .maybeSingle();
   if (error) {
+    if (strict) throw error;
     console.error('[employees] compensation failed:', error.code, error.message);
     return null;
   }
