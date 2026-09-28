@@ -267,7 +267,6 @@ export function NewRequestWizard(props: NewRequestWizardProps) {
       }
       toast.success(tr('toast.submittedNumber', { number: res.data?.number ?? '' }));
       router.push(`/requests/${id}`);
-      router.refresh();
     } catch {
       toast.error(resolve('errors.network'));
     } finally {
@@ -304,7 +303,9 @@ export function NewRequestWizard(props: NewRequestWizardProps) {
       : undefined;
 
   const targetReason = !target ? t('pickEmployeeFirst') : null;
-  const continueDisabledReason = step === 1 && !type ? t('pickTypeFirst') : targetReason;
+  // Leave: never move on with a stale day count / balance check (the database re-checks anyway).
+  const leaveReason = isLeave && step >= 2 && leave.pending ? t('leaveCalculating') : null;
+  const continueDisabledReason = step === 1 && !type ? t('pickTypeFirst') : (targetReason ?? leaveReason);
 
   return (
     <div className="flex flex-1 flex-col gap-5">
@@ -460,8 +461,8 @@ export function NewRequestWizard(props: NewRequestWizardProps) {
             </Button>
           </DisabledReason>
         ) : (
-          <DisabledReason reason={targetReason}>
-            <Button onClick={() => void submit()} loading={busy === 'submit'} disabled={busy !== null || Boolean(targetReason)} className="min-w-32">
+          <DisabledReason reason={targetReason ?? leaveReason}>
+            <Button onClick={() => void submit()} loading={busy === 'submit'} disabled={busy !== null || Boolean(targetReason ?? leaveReason)} className="min-w-32">
               <SendIcon className="rtl:-scale-x-100" />
               {t('submit')}
             </Button>

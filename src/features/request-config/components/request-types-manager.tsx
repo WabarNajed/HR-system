@@ -123,19 +123,19 @@ export function RequestTypesManager({ rows, roles, canEdit }: Props) {
               <RequestTypeIcon icon={r.icon} color={r.color} />
               <div className="min-w-0 leading-tight">
                 <div className="flex items-center gap-1.5">
-                  <span className="truncate font-medium text-foreground">{localized(r, 'name', locale)}</span>
+                  <span className="truncate font-medium text-foreground" title={r.key}>
+                    {localized(r, 'name', locale)}
+                  </span>
                   {r.is_system ? (
                     <SimpleTooltip content={t('types.systemHint')}>
                       <LockIcon tabIndex={0} aria-label={t('types.system')} className="size-3 shrink-0 text-faint-foreground outline-none" />
                     </SimpleTooltip>
                   ) : null}
                 </div>
-                <div className="mt-0.5 flex items-center gap-1.5 text-xs text-muted-foreground">
-                  <span dir="ltr" className="font-mono text-[0.6875rem] text-faint-foreground">
-                    {r.key}
-                  </span>
+                <div className="mt-0.5 flex items-center gap-1.5 text-xs whitespace-nowrap text-muted-foreground">
+                  <span>{categoryLabel(tRoot, r.category)}</span>
                   <span aria-hidden>·</span>
-                  <span className="whitespace-nowrap">{t('types.fieldsCount', { count: r.activeFieldsCount })}</span>
+                  <span>{t('types.fieldsCount', { count: r.activeFieldsCount })}</span>
                 </div>
               </div>
             </div>
@@ -148,7 +148,7 @@ export function RequestTypesManager({ rows, roles, canEdit }: Props) {
         accessorFn: (r) => categoryLabel(tRoot, r.category),
         header: ({ column }) => <DataTableColumnHeader column={column} title={t('types.columns.category')} />,
         cell: ({ row }) => <span className="text-foreground">{categoryLabel(tRoot, row.original.category)}</span>,
-        meta: { label: t('types.columns.category') },
+        meta: { label: t('types.columns.category'), defaultHidden: true },
       },
       {
         id: 'workflow',

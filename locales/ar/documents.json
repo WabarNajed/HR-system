@@ -198,6 +198,7 @@
     "previewUnavailable": "المعاينة غير متاحة لهذا النوع من الملفات.",
     "noFile": "لا يوجد ملف مرفق",
     "selfUploaded": "رفعه الموظف",
+    "uploaderEmployee": "الموظف نفسه",
     "notReviewed": "لم تتم المراجعة بعد",
     "confidentialNotice": "سري — يطّلع عليه فريق الموارد البشرية فقط."
   },

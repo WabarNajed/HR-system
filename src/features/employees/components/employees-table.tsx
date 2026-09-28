@@ -89,6 +89,8 @@ export function EmployeesTable({
     const cols: ColumnDef<DirectoryRow>[] = [
       {
         id: 'name',
+        // An accessor makes the column sortable (TanStack); ordering itself happens on the server.
+        accessorFn: (r) => employeeDisplayName(r, locale),
         header: ({ column }) => <DataTableColumnHeader column={column} title={t('columns.employee')} />,
         meta: { label: t('columns.employee'), width: '15rem' },
         cell: ({ row }) => {
@@ -111,6 +113,7 @@ export function EmployeesTable({
       },
       {
         id: 'employee_number',
+        accessorFn: (r) => r.employee_number,
         header: ({ column }) => <DataTableColumnHeader column={column} title={t('columns.employeeNumber')} />,
         meta: { label: t('columns.employeeNumber') },
         cell: ({ row }) =>
@@ -152,6 +155,7 @@ export function EmployeesTable({
       },
       {
         id: 'employment_status',
+        accessorFn: (r) => r.employment_status,
         header: ({ column }) => <DataTableColumnHeader column={column} title={t('columns.status')} />,
         meta: { label: t('columns.status') },
         cell: ({ row }) => <StatusBadge domain="employment" status={row.original.employment_status} size="sm" />,
@@ -165,6 +169,7 @@ export function EmployeesTable({
     if (orgView) {
       cols.push({
         id: 'iqama_expiry_date',
+        accessorFn: (r) => r.iqama_expiry_date,
         header: ({ column }) => <DataTableColumnHeader column={column} title={t('columns.iqamaExpiry')} />,
         meta: { label: t('columns.iqamaExpiry') },
         cell: ({ row }) => {
@@ -206,6 +211,7 @@ export function EmployeesTable({
       },
       {
         id: 'joining_date',
+        accessorFn: (r) => r.joining_date,
         header: ({ column }) => <DataTableColumnHeader column={column} title={t('columns.joiningDate')} />,
         meta: { label: t('columns.joiningDate'), defaultHidden: true },
         cell: ({ row }) => (row.original.joining_date ? <span className="tabular-nums">{fmt.date(row.original.joining_date)}</span> : dash),

@@ -132,7 +132,7 @@ export function MasterDataManager({ entity, rows, kpis, departments, countries, 
           ) : (
             <span className="text-faint-foreground">—</span>
           ),
-        meta: { label: tc('code') },
+        meta: { label: tc('code'), width: '7rem' },
       },
       {
         id: 'name',
@@ -144,7 +144,7 @@ export function MasterDataManager({ entity, rows, kpis, departments, countries, 
           const primary = localized(r, 'name', locale);
           const other = locale === 'ar' ? r.name_en : r.name_ar;
           return (
-            <div className="max-w-80 min-w-32 leading-tight whitespace-normal">
+            <div className="max-w-80 min-w-36 leading-tight whitespace-normal">
               <div className="line-clamp-2 font-medium break-words text-foreground">{primary}</div>
               {other && other !== primary ? <div className="mt-0.5 line-clamp-1 text-xs break-all text-muted-foreground">{other}</div> : null}
             </div>
@@ -161,7 +161,7 @@ export function MasterDataManager({ entity, rows, kpis, departments, countries, 
           header: ({ column }) => <DataTableColumnHeader column={column} title={t('columns.parent')} />,
           cell: ({ row }) =>
             row.original.parent ? (
-              <span className="flex max-w-56 min-w-24 items-start gap-1.5 leading-snug whitespace-normal text-foreground">
+              <span className="flex max-w-56 min-w-28 items-start gap-1.5 leading-snug whitespace-normal text-foreground">
                 <GitForkIcon className="mt-0.5 size-3.5 shrink-0 text-faint-foreground" aria-hidden />
                 <span className="line-clamp-2 break-words">{localized(row.original.parent, 'name', locale)}</span>
               </span>
@@ -179,7 +179,7 @@ export function MasterDataManager({ entity, rows, kpis, departments, countries, 
             if (!head) return <span className="text-xs text-muted-foreground">{t('columns.noHead')}</span>;
             const headName = employeeDisplayName(head, locale);
             return (
-              <div className="flex max-w-56 min-w-28 items-center gap-2 whitespace-normal">
+              <div className="flex max-w-56 min-w-32 items-center gap-2 whitespace-normal">
                 <EmployeeAvatar name={headName} seed={head.id} size="xs" />
                 <div className="min-w-0 leading-tight">
                   <div className="line-clamp-2 text-foreground break-words">{headName}</div>
@@ -204,7 +204,7 @@ export function MasterDataManager({ entity, rows, kpis, departments, countries, 
           const country = countryOf(row.original.country);
           if (!city && !country) return <span className="text-faint-foreground">—</span>;
           return (
-            <div className="max-w-60 min-w-32 leading-tight">
+            <div className="max-w-60 min-w-24 leading-tight">
               <div className="truncate text-foreground">{city || country}</div>
               {city && country ? <div className="mt-0.5 truncate text-xs text-muted-foreground">{country}</div> : null}
             </div>
@@ -229,14 +229,14 @@ export function MasterDataManager({ entity, rows, kpis, departments, countries, 
             </div>
           );
         },
-        meta: { label: t('columns.employees'), align: 'end', width: '6.5rem' },
+        meta: { label: t('columns.employees'), align: 'end', width: '7.5rem' },
       },
       {
         id: 'status',
         accessorFn: (r) => (r.is_active ? 0 : 1),
         header: ({ column }) => <DataTableColumnHeader column={column} title={tc('status')} />,
         cell: ({ row }) => <StatusBadge domain="record" status={row.original.is_active ? 'active' : 'inactive'} size="sm" />,
-        meta: { label: tc('status'), width: '6.5rem' },
+        meta: { label: tc('status'), width: '6rem' },
       },
       {
         id: 'description',

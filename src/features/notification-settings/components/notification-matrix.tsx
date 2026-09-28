@@ -203,15 +203,15 @@ export function NotificationMatrix({ rows, templates, canEdit }: Props) {
           </SectionCard>
         ))}
 
-      {canEdit ? (
+      {canEdit && dirty ? (
         <StickyFormFooter
           dirty={dirty}
           pending={pending}
           formId="notification-settings-form"
           submitDisabled={!dirty}
-          onCancel={dirty ? () => setState(baseline) : undefined}
+          onCancel={() => setState(baseline)}
           cancelLabel={tRoot('common.discard')}
-          start={!dirty ? <span>{t('savedState')}</span> : <span className="numeric">{t('changedCount', { count: changed.length })}</span>}
+          start={<span className="numeric">{t('changedCount', { count: changed.length })}</span>}
         />
       ) : null}
     </form>

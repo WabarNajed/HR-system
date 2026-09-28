@@ -128,7 +128,7 @@ export default async function SettingsSecurityPage() {
                     <EmployeeAvatar name={name} seed={o.id} size="sm" />
                     <div className="min-w-0 flex-1 leading-tight">
                       <div className="flex items-center gap-1.5">
-                        <span className="truncate text-sm font-medium text-foreground">{name}</span>
+                        <span dir="auto" className="truncate text-sm font-medium text-foreground">{name}</span>
                         {o.isSelf ? (
                           <Badge variant="outline" size="sm">
                             {t('owners.you')}

@@ -33,7 +33,15 @@ export function RequestTypeIcon({ icon, color, size = 'md', className }: { icon:
 }
 
 /** Compact approval path: "Manager → HR" chips. */
-export function ApprovalPathChips({ steps, roles, className }: { steps: WorkflowStep[]; roles?: RoleOption[]; className?: string }) {
+export function ApprovalPathChips({
+  steps,
+  roles,
+  className,
+}: {
+  steps: Pick<WorkflowStep, 'id' | 'step_type' | 'approver_role_key'>[];
+  roles?: RoleOption[];
+  className?: string;
+}) {
   const locale = useLocale() as Locale;
   const t = useTranslations('requestConfig');
   if (!steps.length) return <span className="text-meta text-muted-foreground">{t('workflows.noSteps')}</span>;

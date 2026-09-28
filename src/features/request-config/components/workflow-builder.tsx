@@ -640,7 +640,7 @@ function StepProperties({
       {step.step_type === 'role' ? (
         <div className="flex flex-col gap-1.5">
           <Label className="text-sm font-semibold">{t('properties.role')}</Label>
-          <Select value={step.approver_role_key ?? undefined} disabled={readOnly} onValueChange={(v) => onChange({ approver_role_key: v })}>
+          <Select value={step.approver_role_key ?? ''} disabled={readOnly} onValueChange={(v) => onChange({ approver_role_key: v })}>
             <SelectTrigger className="w-full" aria-invalid={!step.approver_role_key || undefined}>
               <SelectValue placeholder={t('properties.rolePlaceholder')} />
             </SelectTrigger>

@@ -198,6 +198,7 @@
     "previewUnavailable": "Preview isn't available for this file type.",
     "noFile": "No file attached",
     "selfUploaded": "Uploaded by the employee",
+    "uploaderEmployee": "The employee",
     "notReviewed": "Not reviewed yet",
     "confidentialNotice": "Confidential — visible to HR only."
   },

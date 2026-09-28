@@ -215,6 +215,8 @@ async function headCount(
   return error ? null : (count ?? 0);
 }
 
+const ON_FILE = ['valid', 'expired'] as const;
+
 /** HR KPI row of the Document Center (org scope — RLS decides what is counted). */
 export async function getDocumentCenterStats(): Promise<DocumentCenterStats> {
   const supabase = await createClient();
@@ -227,8 +229,9 @@ export async function getDocumentCenterStats(): Promise<DocumentCenterStats> {
     headCount((s) => s.from('expiry_items').select('item_key', { count: 'exact', head: true }).gte('expiry_date', today).lte('expiry_date', in30), supabase, 'kpi.expiringSoon'),
     headCount((s) => s.from('expiry_items').select('item_key', { count: 'exact', head: true }).gte('expiry_date', today).lte('expiry_date', in7), supabase, 'kpi.expiringWeek'),
     headCount((s) => s.from('expiry_items').select('item_key', { count: 'exact', head: true }).lt('expiry_date', today), supabase, 'kpi.expired'),
-    headCount((s) => s.from('employee_documents').select('id', { count: 'exact', head: true }).neq('status', 'archived'), supabase, 'kpi.uploaded'),
-    headCount((s) => s.from('employee_documents').select('id', { count: 'exact', head: true }).neq('status', 'archived').gte('created_at', monthStart), supabase, 'kpi.uploadedMonth'),
+    // "on file" = accepted documents (pending and rejected uploads are not part of anyone's file)
+    headCount((s) => s.from('employee_documents').select('id', { count: 'exact', head: true }).in('status', ON_FILE), supabase, 'kpi.uploaded'),
+    headCount((s) => s.from('employee_documents').select('id', { count: 'exact', head: true }).in('status', ON_FILE).gte('created_at', monthStart), supabase, 'kpi.uploadedMonth'),
     headCount((s) => s.from('employee_documents').select('id', { count: 'exact', head: true }).eq('status', 'pending_review'), supabase, 'kpi.pending'),
     supabase.from('employee_document_gaps').select('missing_count').range(0, 9999),
   ]);

@@ -37,7 +37,8 @@ export async function getOrganizationData(supabase: ServerSupabaseClient): Promi
       addressAr: o?.address_ar ?? '',
       addressEn: o?.address_en ?? '',
       city: o?.city ?? '',
-      country: (o?.country ?? '').toUpperCase().slice(0, 2),
+      // Only a real ISO code pre-selects the picker; anything else (legacy free text) starts blank.
+      country: COUNTRY_CODES.includes((o?.country ?? '').trim().toUpperCase()) ? (o?.country ?? '').trim().toUpperCase() : '',
       website: o?.website ?? '',
       phone: o?.phone ?? '',
       hrEmail: o?.hr_email ?? '',

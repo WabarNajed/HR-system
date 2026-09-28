@@ -13,7 +13,6 @@ import {
   XCircleIcon,
 } from 'lucide-react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
@@ -68,7 +67,6 @@ export function RequestsTable({
   const tc = useTranslations('common');
   const locale = useLocale() as Locale;
   const fmt = useDateFormat();
-  const router = useRouter();
   const resolve = useErrorMessage();
   const [decision, setDecision] = useState<{ row: RequestListRow; action: RequestActionKind } | null>(null);
   const [toDelete, setToDelete] = useState<RequestListRow | null>(null);
@@ -281,7 +279,6 @@ export function RequestsTable({
             return false;
           }
           toast.success(t('toast.draftDeleted'));
-          router.refresh();
         }}
       />
     </>

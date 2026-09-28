@@ -17,6 +17,7 @@ import { Button } from '@/components/ui/button';
 import { useErrorMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
+import { SimpleTooltip } from '@/components/ui/tooltip';
 import { formatInteger, formatNumber, formatPercent } from '@/lib/format';
 import type { Locale } from '@/lib/i18n/config';
 import { localized } from '@/lib/i18n/localized';
@@ -98,13 +99,14 @@ export function SlaSettings({ rows, calendar, roles, canEdit }: Props) {
                 const Icon = STEP_ICONS[s.step_type];
                 const role = s.step_type === 'role' ? roles.find((x) => x.key === s.approver_role_key) : null;
                 return (
-                  <span key={s.id ?? s.step_order} className="inline-flex items-center gap-1 rounded-md border border-border bg-subtle px-1.5 py-0.5 text-xs text-foreground">
-                    <Icon className="size-3 text-muted-foreground" aria-hidden />
-                    {role ? localized(role, 'name', locale) : tr(`stepShort.${s.step_type}`)}
-                    <span className={cn('numeric', s.sla_business_days === null ? 'text-faint-foreground' : 'font-medium')}>
-                      {s.sla_business_days === null ? '—' : t('daysShort', { count: s.sla_business_days })}
+                  <SimpleTooltip key={s.id ?? s.step_order} content={role ? localized(role, 'name', locale) : tr(`stepShort.${s.step_type}`)}>
+                    <span tabIndex={0} className="inline-flex items-center gap-1 rounded-md border border-border bg-subtle px-1.5 py-0.5 text-xs text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring/50">
+                      <Icon className="size-3 text-muted-foreground" aria-label={role ? localized(role, 'name', locale) : tr(`stepShort.${s.step_type}`)} />
+                      <span className={cn('numeric', s.sla_business_days === null ? 'text-faint-foreground' : 'font-medium')}>
+                        {s.sla_business_days === null ? '—' : t('daysShort', { count: s.sla_business_days })}
+                      </span>
                     </span>
-                  </span>
+                  </SimpleTooltip>
                 );
               })}
             </div>

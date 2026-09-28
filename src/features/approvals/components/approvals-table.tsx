@@ -192,7 +192,9 @@ export function ApprovalsTable({
             const c = (row.original as ApprovalDecisionRow).decision_comment;
             return c ? (
               <SimpleTooltip content={<span className="block max-w-80 whitespace-pre-line">{c}</span>}>
-                <span className="block truncate text-meta text-muted-foreground">{c}</span>
+                <span dir="auto" className="block truncate text-start text-meta text-muted-foreground">
+                  {c}
+                </span>
               </SimpleTooltip>
             ) : (
               <span className="text-faint-foreground">—</span>

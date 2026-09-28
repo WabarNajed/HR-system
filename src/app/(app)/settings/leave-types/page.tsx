@@ -19,7 +19,7 @@ export default async function SettingsLeaveTypesPage() {
     <PageStack>
       <PageHeader compact title={t('nav.settings.items.leaveTypes')} description={t('leave.types.pageDescription')} />
       <LeaveTypesKpis rows={rows} />
-      <LeaveTypesManager rows={rows} canEdit={access.canConfigure} />
+      <LeaveTypesManager rows={rows} canEdit={access.canConfigure} canExport={access.canExportConfig} />
     </PageStack>
   );
 }

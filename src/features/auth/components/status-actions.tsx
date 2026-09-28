@@ -4,49 +4,60 @@ import { LogOutIcon, RotateCwIcon } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useTransition } from 'react';
+import { useFormStatus } from 'react-dom';
 import { toast } from 'sonner';
 import { Button, type ButtonProps } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import { signOut } from '../actions';
 
-/** Sign-out button (server action: audit `auth.logout`, sign out, → /login). */
-export function SignOutButton({ variant = 'outline', className }: { variant?: ButtonProps['variant']; className?: string }) {
+function SignOutSubmit({ variant, className }: { variant: ButtonProps['variant']; className?: string }) {
   const t = useTranslations('auth');
-  const [pending, startTransition] = useTransition();
+  const { pending } = useFormStatus();
   return (
-    <Button
-      variant={variant}
-      className={className}
-      loading={pending}
-      onClick={() =>
-        startTransition(async () => {
-          await signOut();
-        })
-      }
-    >
+    <Button type="submit" variant={variant} className={cn('w-full', className)} loading={pending}>
       {!pending ? <LogOutIcon className="rtl:rotate-180" /> : null}
       {pending ? t('signingOut') : t('signOut')}
     </Button>
   );
 }
 
-/** Re-checks the account status (server re-render redirects once HR activates the account). */
+/**
+ * Sign-out button (server action: audit `auth.logout`, sign out, → /login). A form POST, so it also
+ * works before hydration / without JavaScript.
+ */
+export function SignOutButton({ variant = 'outline', className }: { variant?: ButtonProps['variant']; className?: string }) {
+  return (
+    <form action={signOut} className={cn('flex', className)}>
+      <SignOutSubmit variant={variant} />
+    </form>
+  );
+}
+
+/**
+ * Re-checks the account status (server re-render redirects once HR activates the account). A real
+ * link to the page, so without JavaScript it simply reloads it.
+ */
 export function RefreshStatusButton({ className }: { className?: string }) {
   const t = useTranslations('auth.pending');
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   return (
-    <Button
-      className={className}
-      loading={pending}
-      onClick={() =>
-        startTransition(() => {
-          router.refresh();
-          toast.info(t('stillPending'));
-        })
-      }
-    >
-      {!pending ? <RotateCwIcon /> : null}
-      {t('refresh')}
+    <Button asChild className={className}>
+      <a
+        href="/pending-approval"
+        aria-disabled={pending || undefined}
+        onClick={(e) => {
+          e.preventDefault();
+          if (pending) return;
+          startTransition(() => {
+            router.refresh();
+            toast.info(t('stillPending'));
+          });
+        }}
+      >
+        <RotateCwIcon className={pending ? 'animate-spin' : undefined} />
+        {t('refresh')}
+      </a>
     </Button>
   );
 }

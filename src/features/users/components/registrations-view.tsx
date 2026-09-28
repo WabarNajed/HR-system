@@ -121,7 +121,7 @@ export function RegistrationsView({ tab, rows, total, roles, canApprove, canAdmi
             <div className="flex min-w-0 items-center gap-2.5">
               <EmployeeAvatar name={applicantName(r)} seed={r.id} size="md" />
               <div className="min-w-0 leading-tight">
-                <div className="truncate font-medium text-foreground">{applicantName(r)}</div>
+                <div dir="auto" className="w-fit max-w-full truncate font-medium text-foreground">{applicantName(r)}</div>
                 <bdi dir="ltr" className="mt-0.5 block truncate text-xs text-muted-foreground rtl:text-end">
                   {r.email}
                 </bdi>
@@ -202,7 +202,7 @@ export function RegistrationsView({ tab, rows, total, roles, canApprove, canAdmi
               <div className="flex min-w-0 items-center gap-2.5">
                 <EmployeeAvatar name={applicantName(r)} seed={r.id} size="md" />
                 <div className="min-w-0 leading-tight">
-                  <div className="truncate font-medium text-foreground">{applicantName(r)}</div>
+                  <div dir="auto" className="w-fit max-w-full truncate font-medium text-foreground">{applicantName(r)}</div>
                   <bdi dir="ltr" className="block truncate text-xs text-muted-foreground rtl:text-end">
                     {r.email}
                   </bdi>
@@ -275,7 +275,7 @@ function RegistrationSheet({
             <SheetHeader className="flex-row items-center gap-3">
               <EmployeeAvatar name={applicantName(r)} seed={r.id} size="lg" />
               <div className="min-w-0 flex-1">
-                <SheetTitle className="truncate">{applicantName(r)}</SheetTitle>
+                <SheetTitle dir="auto" className="w-fit max-w-full truncate">{applicantName(r)}</SheetTitle>
                 <SheetDescription>{t('sheet.submittedOn', { date: fmt.dateTime(r.createdAt) })}</SheetDescription>
                 <div className="mt-1.5">
                   <StatusBadge domain="profile" status={r.status} />

@@ -101,7 +101,7 @@ export function DocumentsTable({ variant, rows, total, departments = [], exportE
           );
         },
         enableHiding: false,
-        meta: { label: t('fields.employee'), width: '15rem' },
+        meta: { label: t('fields.employee'), width: variant === 'review' ? '13rem' : '15rem' },
       });
     }
 
@@ -133,7 +133,7 @@ export function DocumentsTable({ variant, rows, total, departments = [], exportE
         );
       },
       enableHiding: false,
-      meta: { label: t('fields.document'), width: showEmployee ? '15rem' : '14rem' },
+      meta: { label: t('fields.document'), width: variant === 'review' ? '12rem' : showEmployee ? '15rem' : '14rem' },
     });
 
     cols.push({
@@ -244,7 +244,7 @@ export function DocumentsTable({ variant, rows, total, departments = [], exportE
         },
         enableSorting: false,
         enableHiding: false,
-        meta: { align: 'end', width: '14rem' },
+        meta: { align: 'end', width: '12rem' },
       });
     }
 
@@ -379,6 +379,11 @@ export function DocumentsTable({ variant, rows, total, departments = [], exportE
             </span>
             {r.expiry_date && r.status !== 'archived' && r.status !== 'rejected' ? <ExpiryBadge date={r.expiry_date} today={today} /> : null}
           </div>
+          {r.status === 'rejected' && r.review_note && (variant === 'own' || variant === 'profile') ? (
+            <p className="line-clamp-2 text-xs text-danger">
+              {t('my.reasonLabel')}: <bdi>{r.review_note}</bdi>
+            </p>
+          ) : null}
           {variant === 'review' && reviewable(r) ? (
             <div className="flex gap-2 pt-1">
               <Button

@@ -6,7 +6,7 @@ import { LinkTabs } from '@/components/shared/link-tabs';
 import { PageHeader } from '@/components/shared/page-header';
 import { KpiGrid, PageStack } from '@/components/shared/responsive-grid';
 import { StatCard } from '@/components/shared/stat-card';
-import { Alert, AlertActions, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { SimpleTooltip } from '@/components/ui/tooltip';
 import type { SessionContext } from '@/lib/auth/session';
@@ -164,20 +164,23 @@ export async function DocumentCenter({
             icon={FileCheck2Icon}
             tone="primary"
             hint={t('kpi.uploadedHint', { count: stats.uploadedThisMonth })}
-            href="/documents"
+            href="/documents?status=valid,expired"
           />
         </KpiGrid>
 
         {stats.pendingReview > 0 && tab !== 'review' && access.approve ? (
           <Alert variant="warning">
             <InboxIcon />
-            <AlertTitle>{t('review.bannerTitle', { count: stats.pendingReview })}</AlertTitle>
-            <AlertDescription>{t('review.bannerDescription')}</AlertDescription>
-            <AlertActions>
-              <Button asChild size="sm" variant="outline">
+            {/* one row from `sm` up: text on the start side, the queue link on the end side */}
+            <div className="col-start-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+              <div className="flex min-w-0 flex-col gap-0.5">
+                <AlertTitle>{t('review.bannerTitle', { count: stats.pendingReview })}</AlertTitle>
+                <AlertDescription>{t('review.bannerDescription')}</AlertDescription>
+              </div>
+              <Button asChild size="sm" variant="outline" className="self-start sm:self-center">
                 <Link href="/documents?tab=review">{t('review.openQueue')}</Link>
               </Button>
-            </AlertActions>
+            </div>
           </Alert>
         ) : null}
 
@@ -186,13 +189,16 @@ export async function DocumentCenter({
           <LinkTabs items={tabs} value={tab} aria-label={t('title')} className="max-sm:gap-0 max-sm:[&>*]:px-2" />
 
           {tab === 'expiry' ? (
-            <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-meta text-muted-foreground">
-              <ClockIcon className="size-4 shrink-0" aria-hidden />
-              <span>{t('expiry.schedule', { days: scheduleDays })}</span>
-              <span aria-hidden className="text-faint-foreground">
-                ·
+            <p className="flex items-start gap-2 text-meta text-muted-foreground">
+              <ClockIcon className="mt-0.5 size-4 shrink-0" aria-hidden />
+              {/* phones: schedule and last run on their own lines (no dangling separator) */}
+              <span className="flex flex-col gap-0.5 sm:flex-row sm:flex-wrap sm:gap-x-2">
+                <span>{t('expiry.schedule', { days: scheduleDays })}</span>
+                <span aria-hidden className="text-faint-foreground max-sm:hidden">
+                  ·
+                </span>
+                <span className="numeric">{lastRunText}</span>
               </span>
-              <span className="numeric">{lastRunText}</span>
             </p>
           ) : null}
           {tab === 'missing' ? (

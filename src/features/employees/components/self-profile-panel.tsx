@@ -158,14 +158,19 @@ export async function SelfProfilePanel({ employeeId }: { employeeId: string | nu
         </SectionCard>
 
         <SectionCard title={t('self.emergency')} icon={<PhoneCallIcon />} dense>
-          <KeyValueGrid
-            columns={3}
-            items={[
-              { label: t('fields.emergencyName'), value: employee.emergency_contact_name },
-              { label: t('fields.emergencyRelationship'), value: employee.emergency_contact_relationship },
-              { label: t('fields.emergencyMobile'), value: employee.emergency_contact_mobile, ltr: true },
-            ]}
-          />
+          {employee.emergency_contact_name || employee.emergency_contact_relationship || employee.emergency_contact_mobile ? (
+            <KeyValueGrid
+              columns={3}
+              className="max-sm:grid-cols-2"
+              items={[
+                { label: t('fields.emergencyName'), value: employee.emergency_contact_name },
+                { label: t('fields.emergencyRelationship'), value: employee.emergency_contact_relationship },
+                { label: t('fields.emergencyMobile'), value: employee.emergency_contact_mobile, ltr: true },
+              ]}
+            />
+          ) : (
+            <p className="py-1 text-meta text-faint-foreground">{t('profile.overview.notRecorded')}</p>
+          )}
         </SectionCard>
 
         <SectionCard title={t('self.bank')} icon={<LandmarkIcon />} dense>

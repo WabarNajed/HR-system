@@ -186,7 +186,6 @@ export function RequestActionsPanel({
             return false;
           }
           toast.success(tr('toast.submittedNumber', { number: res.data?.number ?? '' }));
-          router.refresh();
         }}
       />
     </>
@@ -328,7 +327,6 @@ export function RequestAttachmentsCard({
   const t = useTranslations('requests.attachments');
   const tr = useTranslations('requests');
   const resolve = useErrorMessage();
-  const router = useRouter();
   const [files, setFiles] = useState<File[]>([]);
   const [states, setStates] = useState<Record<string, DropzoneFileState>>({});
   const [uploading, startUpload] = useTransition();
@@ -342,7 +340,6 @@ export function RequestAttachmentsCard({
       if (out.uploaded.size) {
         toast.success(t('uploaded', { count: out.uploaded.size }));
         setFiles((f) => f.filter((file) => out.failed.some((x) => x.item.file === file)));
-        router.refresh();
       }
     });
 
@@ -378,7 +375,6 @@ export function RequestAttachmentsCard({
                     return;
                   }
                   toast.success(tr('toast.attachmentRemoved'));
-                  router.refresh();
                 }}
               />
             </div>
@@ -501,8 +497,9 @@ function CommentItem({ comment, mine }: { comment: RequestComment; mine: boolean
           </time>
         </div>
         <p
+          dir="auto"
           className={cn(
-            'mt-1 rounded-lg rounded-ss-sm border px-3 py-2 text-sm whitespace-pre-line text-foreground',
+            'mt-1 rounded-lg rounded-ss-sm border px-3 py-2 text-start text-sm whitespace-pre-line text-foreground',
             comment.is_internal ? 'border-warning/25 bg-warning-soft/50' : 'border-border bg-subtle',
           )}
         >
@@ -517,7 +514,6 @@ function CommentComposer({ requestId, internal }: { requestId: string; internal:
   const t = useTranslations('requests.comments');
   const resolve = useErrorMessage();
   const tAll = useTranslations();
-  const router = useRouter();
   const [value, setValue] = useState('');
   const [pending, start] = useTransition();
   const post = () => {
@@ -531,7 +527,6 @@ function CommentComposer({ requestId, internal }: { requestId: string; internal:
       }
       toast.success(tAll(res.message as never));
       setValue('');
-      router.refresh();
     });
   };
   return (
@@ -625,7 +620,11 @@ export function RequestHistory({ entries }: { entries: RequestHistoryEntry[] }) 
                 <StatusBadge domain="request" status={h.to_status} size="sm" dot={false} />
               </div>
             ) : null}
-            {h.note ? <p className="rounded-md border border-border bg-subtle px-3 py-2 text-meta whitespace-pre-line text-foreground">{h.note}</p> : null}
+            {h.note ? (
+              <p dir="auto" className="rounded-md border border-border bg-subtle px-3 py-2 text-start text-meta whitespace-pre-line text-foreground">
+                {h.note}
+              </p>
+            ) : null}
           </div>
         ) : undefined,
     };

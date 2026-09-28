@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { useId, useMemo, useState, useTransition, type ReactNode } from 'react';
 import { toast } from 'sonner';
-import { actionsColumn, DataTable, type FilterDef } from '@/components/data-table';
+import { actionsColumn, DataTable, DataTableExportMenu, type FilterDef } from '@/components/data-table';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog';
 import { DatePicker } from '@/components/shared/date-picker';
 import { StatusBadge } from '@/components/shared/status-badge';
@@ -182,6 +182,7 @@ export function HolidaysManager({
   currentYear,
   today,
   canEdit,
+  canExport = false,
   yearParam = 'year',
 }: {
   rows: HolidayRow[];
@@ -190,6 +191,8 @@ export function HolidaysManager({
   currentYear: number;
   today: string;
   canEdit: boolean;
+  /** `settings.export`: export the selected year (Excel / CSV / PDF). */
+  canExport?: boolean;
   yearParam?: string;
 }) {
   const t = useTranslations('leave.holidays');
@@ -337,6 +340,7 @@ export function HolidaysManager({
               label={t('year')}
               options={years.map((y) => ({ value: String(y), label: String(y) }))}
             />
+            {canExport ? <DataTableExportMenu dataset="public_holidays" queryString={`year=${year}`} /> : null}
             {addButton}
           </>
         }

@@ -55,17 +55,25 @@
     "onLeaveTodayHintTeam": "Among your direct reports",
     "daysTaken": "Days taken in {year}",
     "daysTakenHint": "Approved leave across all types",
-    "pending": "Pending approval",
+    "pending": "Pending leave requests",
     "pendingHintOrg": "Awaiting manager or HR approval",
     "pendingHintTeam": "Your team’s requests in progress",
     "pendingHintMine": "Your requests awaiting approval",
-    "upcoming": "Upcoming · 14 days",
+    "upcoming": "Upcoming (next 14 days)",
     "upcomingHint": "{count, plural, =0 {All confirmed} one {# awaiting approval} other {# awaiting approval}}",
-    "annual": "My annual balance",
+    "annual": "My available annual leave",
     "annualHint": "Of {total, plural, one {# day} other {# days}} · {pending} pending",
     "annualNone": "No annual balance for {year}",
     "coverage": "Balances set up for {year}",
-    "coverageHint": "Active employees with a balance record"
+    "coverageHint": "Active employees with a balance record",
+    "short": {
+      "onLeaveToday": "On leave today",
+      "daysTaken": "Days taken",
+      "pending": "Pending",
+      "upcoming": "Upcoming",
+      "annual": "Annual balance",
+      "coverage": "Balances {year}"
+    }
   },
   "requests": {
     "searchPlaceholder": "Search by employee or request number…",
@@ -110,6 +118,7 @@
     "title": "Balance history",
     "adjustments": "Adjustments",
     "noAdjustments": "No manual adjustments.",
+    "adjustmentsRestricted": "Adjustment details are visible to the employee and HR only.",
     "requests": "Leave requests",
     "noRequests": "No leave requests have used this balance.",
     "by": "{name} · {date}"
@@ -151,7 +160,7 @@
     "searchPlaceholder": "Search leave types…",
     "deducts": "Deducts balance",
     "noDeduct": "Not deducted",
-    "entitlementDays": "{days} days",
+    "entitlementDays": "{count, plural, one {# day} other {# days}}",
     "emptyTitle": "No leave types yet",
     "emptyDescription": "Add the leave types your organization offers.",
     "deleteTitle": "Delete this leave type?",
@@ -209,7 +218,7 @@
       "inactive": "Inactive",
       "inactiveHint": "Hidden from new requests"
     },
-    "perYear": "{days} days / year"
+    "perYear": "{count, plural, one {# day / year} other {# days / year}}"
   },
   "holidays": {
     "pageDescription": "Official holidays excluded from working-day leave counts and request SLA due dates.",

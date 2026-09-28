@@ -1,4 +1,146 @@
 {
   "title": "Setup wizard",
-  "description": "Configure the essentials to get your portal ready."
+  "description": "Configure the essentials to get your portal ready. Progress is saved as you go — you can leave and resume anytime.",
+  "stepsLabel": "Setup steps",
+  "progress": "{done} of {total} steps complete",
+  "stepOf": "Step {n} of {total}",
+  "openFullPage": "Open full page",
+  "skip": "Skip for now",
+  "finish": "Finish setup",
+  "finishTitle": "Finish setup with steps pending?",
+  "finishIncomplete": "These required steps are still incomplete: {steps}. You can finish now and complete them later from Settings.",
+  "finishAnyway": "Finish anyway",
+  "backToDashboard": "Back to dashboard",
+  "completedOn": "Setup was completed on {date}. You can still review and adjust any step.",
+  "noPermission": "You don’t have permission to change this.",
+  "moreItems": "+{count} more",
+  "existing": "Added so far ({count})",
+  "activeItems": "Active ({count})",
+  "workflowsList": "Approval path per request type",
+  "status": {
+    "done": "Done",
+    "required": "Required",
+    "recommended": "Recommended"
+  },
+  "counts": {
+    "departments": "{count, plural, =0 {No departments yet} one {# department} other {# departments}}",
+    "jobTitles": "{count, plural, =0 {No job titles yet} one {# job title} other {# job titles}}",
+    "locations": "{count, plural, =0 {No locations yet} one {# location} other {# locations}}",
+    "leaveTypes": "{count, plural, =0 {No active leave types} one {# active leave type} other {# active leave types}}",
+    "requestTypes": "{count, plural, =0 {No active request types} one {# active request type} other {# active request types}}",
+    "workflows": "{count, plural, =0 {No workflows configured} one {# request type with a workflow} other {# request types with a workflow}}",
+    "hrAdmin": "{count, plural, =0 {No HR admins yet} one {# HR admin} other {# HR admins}}",
+    "employeeImport": "{count, plural, =0 {No employees yet} one {# employee} other {# employees}}"
+  },
+  "steps": {
+    "organization": {
+      "title": "Organization",
+      "description": "Company names and HR contact details used across the portal, letters and emails."
+    },
+    "branding": {
+      "title": "Branding",
+      "description": "Logo, colors and portal name. Colors apply instantly across the portal and emails."
+    },
+    "departments": {
+      "title": "Departments",
+      "description": "Your organizational units. Add the main ones now; you can build the hierarchy later."
+    },
+    "jobTitles": {
+      "title": "Job titles",
+      "description": "Positions used in employee records and certificates."
+    },
+    "locations": {
+      "title": "Locations",
+      "description": "Offices and work sites."
+    },
+    "leaveTypes": {
+      "title": "Leave types",
+      "description": "Leave types aligned with the Saudi Labor Law are ready. Review entitlements and rules."
+    },
+    "requestTypes": {
+      "title": "Request types",
+      "description": "The HR requests employees can submit. Defaults are ready — adjust names, forms and SLAs."
+    },
+    "workflows": {
+      "title": "Approval workflows",
+      "description": "Who approves each request type and in what order."
+    },
+    "hrAdmin": {
+      "title": "HR admin",
+      "description": "Invite at least one HR administrator to run day-to-day HR operations."
+    },
+    "email": {
+      "title": "Email",
+      "description": "Check email delivery so people receive invitations, approvals and alerts."
+    },
+    "employeeImport": {
+      "title": "Employee import",
+      "description": "Bring in your employees from Excel, or add them one by one."
+    }
+  },
+  "org": {
+    "nameAr": "Company name (Arabic)",
+    "nameEn": "Company name (English)",
+    "legalNameAr": "Legal name (Arabic)",
+    "legalNameEn": "Legal name (English)",
+    "hrEmail": "HR email",
+    "phone": "Phone",
+    "city": "City",
+    "more": "Address, registration and working days are on the full Organization page."
+  },
+  "branding": {
+    "logo": "Logo",
+    "logoSet": "Uploaded",
+    "logoMissing": "Not uploaded yet",
+    "primary": "Primary color",
+    "secondary": "Accent color",
+    "portalNames": "Portal name: {ar} · {en}"
+  },
+  "quickAdd": {
+    "title": {
+      "departments": "Add a department",
+      "jobTitles": "Add a job title",
+      "locations": "Add a location"
+    },
+    "added": "“{name}” added."
+  },
+  "empty": {
+    "departments": "No departments yet — add your first one above.",
+    "jobTitles": "No job titles yet — add your first one above.",
+    "locations": "No locations yet — add your first one above.",
+    "leaveTypes": "No active leave types. Open the full page to activate them.",
+    "requestTypes": "No active request types. Open the full page to activate them."
+  },
+  "hints": {
+    "leaveTypes": "Entitlements, attachments and gender rules are editable on the Leave types page.",
+    "requestTypes": "Forms, approval workflows and SLAs are editable from Request configuration."
+  },
+  "hrAdmin": {
+    "current": "Current HR admins ({count})",
+    "none": "No HR admin yet.",
+    "inviteTitle": "Invite an HR admin",
+    "fullName": "Full name",
+    "email": "Work email",
+    "invite": "Send invitation",
+    "invited": "Invitation sent to {email}.",
+    "invitedNoEmail": "Account created for {email}, but the invitation email wasn’t sent. Resend it from Users.",
+    "noPermission": "You need user administration permission to invite users.",
+    "hint": "The invitee receives an email to set their password. Their role can be changed later in Users."
+  },
+  "emailStep": {
+    "configure": "Delivery is configured on the server with RESEND_API_KEY or SMTP settings and EMAIL_FROM (see the deployment guide).",
+    "templates": "Review email templates",
+    "notifications": "Choose which events send emails"
+  },
+  "import": {
+    "count": "{count, plural, one {# employee in the portal} other {# employees in the portal}}",
+    "none": "No employees yet.",
+    "open": "Import employees",
+    "addOne": "Add one employee",
+    "hint": "The import validates every row before anything is saved and gives you a downloadable error report."
+  },
+  "toast": {
+    "organizationSaved": "Organization details saved.",
+    "completed": "Setup complete. Welcome aboard!"
+  }
 }

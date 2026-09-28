@@ -81,6 +81,16 @@ export default async function RequestDetailsPage({ params, searchParams }: Props
     caps.can_delete ||
     (caps.can_edit && !editing) ||
     (caps.can_cancel && row.status !== 'draft');
+  const workflow = (
+    <WorkflowProgress
+      steps={detail.workflow}
+      status={row.status}
+      submittedAt={row.submitted_at}
+      completedAt={row.completed_at}
+      requesterName={detail.requesterName ?? (detail.employee ? employeeDisplayName(detail.employee, locale) : null)}
+      assigneeName={row.assignee_name}
+    />
+  );
   const actions = (compact: boolean) => (
     <RequestActionsPanel requestId={row.id} number={row.request_number} summary={summary} status={row.status} caps={caps} compact={compact} editing={editing} />
   );
@@ -103,7 +113,8 @@ export default async function RequestDetailsPage({ params, searchParams }: Props
           </div>
         }
         description={
-          <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+          // Phones stack the parts (no separator dot left dangling at a line start).
+          <span className="flex flex-col items-start gap-y-0.5 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-2">
             {row.request_number ? (
               <span className="inline-flex items-center gap-1">
                 <bdi className="font-medium text-foreground numeric">{row.request_number}</bdi>
@@ -112,8 +123,18 @@ export default async function RequestDetailsPage({ params, searchParams }: Props
             ) : (
               <span className="font-medium text-foreground">{t('draftNumber')}</span>
             )}
-            {sub ? <span>· {sub}</span> : null}
-            <span>· {t('details.createdOn', { date: formatDateTime(row.created_at, locale) })}</span>
+            {sub ? (
+              <>
+                <span aria-hidden className="max-sm:hidden">
+                  ·
+                </span>
+                <span>{sub}</span>
+              </>
+            ) : null}
+            <span aria-hidden className="max-sm:hidden">
+              ·
+            </span>
+            <span>{t('details.createdOn', { date: formatDateTime(row.created_at, locale) })}</span>
           </span>
         }
       />
@@ -164,7 +185,11 @@ export default async function RequestDetailsPage({ params, searchParams }: Props
                 date: formatDateTime(detail.returnNote.at, locale),
               })}
             </p>
-            {detail.returnNote.note ? <p className="mt-1 rounded-md bg-card/70 px-3 py-2 text-sm whitespace-pre-line text-foreground">{detail.returnNote.note}</p> : null}
+            {detail.returnNote.note ? (
+              <p dir="auto" className="mt-1 rounded-md bg-card/70 px-3 py-2 text-start text-sm whitespace-pre-line text-foreground">
+                {detail.returnNote.note}
+              </p>
+            ) : null}
           </AlertDescription>
           {caps.can_edit && !editing ? (
             <AlertActions>
@@ -210,6 +235,9 @@ export default async function RequestDetailsPage({ params, searchParams }: Props
               </SectionCard>
             )}
 
+            {/* Phones: the workflow follows the request data instead of trailing the whole page. */}
+            <div className="lg:hidden">{workflow}</div>
+
             <Suspense fallback={<Skeleton className="h-40 w-full rounded-lg" />}>
               <RequestTypePanel requestTypeKey={typeDef?.key ?? row.type?.key ?? ''} requestId={row.id} />
             </Suspense>
@@ -240,14 +268,7 @@ export default async function RequestDetailsPage({ params, searchParams }: Props
         side={
           <>
             <div className="max-lg:hidden">{actions(false)}</div>
-            <WorkflowProgress
-              steps={detail.workflow}
-              status={row.status}
-              submittedAt={row.submitted_at}
-              completedAt={row.completed_at}
-              requesterName={detail.requesterName ?? (detail.employee ? employeeDisplayName(detail.employee, locale) : null)}
-              assigneeName={row.assignee_name}
-            />
+            <div className="max-lg:hidden">{workflow}</div>
           </>
         }
       />

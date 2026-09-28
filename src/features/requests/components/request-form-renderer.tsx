@@ -818,11 +818,12 @@ function ReadOnlyFields({
       case 'attachment':
         return <AttachmentList items={attachmentsFor(v).filter((i): i is AttachmentItem & { kind: 'existing' } => i.kind === 'existing')} dense />;
       case 'long_text':
-        return <span className="whitespace-pre-line">{String(v)}</span>;
+        return <bdi className="whitespace-pre-line">{String(v)}</bdi>;
       default:
         // IBANs read in groups of four and stay left-to-right inside Arabic text.
         if (field.key === 'iban' || field.key.endsWith('_iban')) return <bdi dir="ltr" className="numeric">{formatIban(String(v))}</bdi>;
-        return String(v);
+        // Free text may be in either language: isolate it so punctuation stays with its own script.
+        return <bdi>{String(v)}</bdi>;
     }
   };
 

@@ -204,6 +204,7 @@
     "searchEmployee": "ابحث بالاسم أو الرقم الوظيفي أو البريد…",
     "pickTypeFirst": "اختر نوع الطلب أولًا",
     "pickEmployeeFirst": "اختر الموظف أولًا",
+    "leaveCalculating": "جارٍ احتساب أيام الإجازة…",
     "changeType": "تغيير النوع",
     "reviewTitle": "راجع طلبك",
     "reviewDescription": "تأكد من صحة جميع البيانات قبل الإرسال.",

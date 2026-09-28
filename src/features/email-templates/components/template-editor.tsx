@@ -3,7 +3,7 @@
 import { BracesIcon, ChevronDownIcon, EyeIcon, RotateCcwIcon, SaveIcon, SendIcon, TriangleAlertIcon } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
-import { useMemo, useRef, useState, useTransition } from 'react';
+import { useCallback, useMemo, useRef, useState, useTransition } from 'react';
 import { toast } from 'sonner';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog';
 import { SegmentedTabs } from '@/components/shared/link-tabs';
@@ -16,7 +16,6 @@ import { useErrorMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Textarea } from '@/components/ui/textarea';
 import { SimpleTooltip } from '@/components/ui/tooltip';
 import { useUnsavedChangesWarning } from '@/features/request-config/components/use-unsaved';
 import { extractPlaceholders, renderEmailLayout, renderTemplate, type EmailBranding, type TemplateVars } from '@/lib/email/render';
@@ -27,6 +26,7 @@ import { cn } from '@/lib/utils';
 import { saveEmailTemplate, sendTestEmail, setEmailTemplateActive } from '../actions';
 import { BODY_MAX, COMMON_PLACEHOLDERS, SUBJECT_MAX, templateGroup } from '../constants';
 import type { EmailTemplateRow } from '../queries';
+import { EmailBodyEditor, type BodyEditorApi } from './body-editor';
 
 export type PreviewData = { vars: TemplateVars; branding: EmailBranding; actionLabel: string; footerNote: string };
 
@@ -55,11 +55,12 @@ export function TemplateEditor({ template, previews, canEdit, userEmail }: Props
   const [lang, setLang] = useState<Locale>(uiLocale);
   const [active, setActive] = useState(template.is_active);
   const [confirmDiscard, setConfirmDiscard] = useState(false);
+  const [version, setVersion] = useState(0);
   const [saving, startSaving] = useTransition();
   const [testing, startTesting] = useTransition();
   const [toggling, startToggling] = useTransition();
   const subjectRef = useRef<HTMLInputElement>(null);
-  const bodyRef = useRef<HTMLTextAreaElement>(null);
+  const bodyApi = useRef<BodyEditorApi | null>(null);
   const lastFocus = useRef<'subject' | 'body'>('body');
 
   const baseline = useMemo(() => initialContent(template), [template]);
@@ -90,15 +91,25 @@ export function TemplateEditor({ template, previews, canEdit, userEmail }: Props
   }, [content, lang, preview]);
 
   const update = (field: 'subject' | 'body', value: string) => setContent((c) => ({ ...c, [lang]: { ...c[lang], [field]: value } }));
+  const updateBody = useCallback((value: string) => setContent((c) => ({ ...c, [lang]: { ...c[lang], body: value } })), [lang]);
+  const registerBody = useCallback((api: BodyEditorApi) => {
+    bodyApi.current = api;
+  }, []);
+  const focusBody = useCallback(() => {
+    lastFocus.current = 'body';
+  }, []);
 
   const insert = (token: string) => {
-    const field = lastFocus.current;
-    const el = field === 'subject' ? subjectRef.current : bodyRef.current;
     const text = `{{${token}}}`;
-    const current = content[lang][field];
+    if (lastFocus.current === 'body') {
+      bodyApi.current?.insert(text);
+      return;
+    }
+    const el = subjectRef.current;
+    const current = content[lang].subject;
     const start = el?.selectionStart ?? current.length;
     const end = el?.selectionEnd ?? current.length;
-    update(field, current.slice(0, start) + text + current.slice(end));
+    update('subject', current.slice(0, start) + text + current.slice(end));
     requestAnimationFrame(() => {
       el?.focus();
       el?.setSelectionRange(start + text.length, start + text.length);
@@ -311,20 +322,18 @@ export function TemplateEditor({ template, previews, canEdit, userEmail }: Props
                   {content[lang].body.length}/{BODY_MAX}
                 </span>
               </div>
-              <Textarea
-                ref={bodyRef}
+              <EmailBodyEditor
+                key={`${lang}-${version}`}
                 id={`body-${lang}`}
-                dir={lang === 'ar' ? 'rtl' : 'ltr'}
-                lang={lang}
                 value={content[lang].body}
-                maxLength={BODY_MAX}
+                onChange={updateBody}
+                lang={lang}
                 readOnly={readOnly}
-                rows={16}
-                spellCheck={false}
-                aria-invalid={!content[lang].body.trim() || undefined}
-                onFocus={() => (lastFocus.current = 'body')}
-                onChange={(e) => update('body', e.target.value)}
-                className="min-h-72 font-mono text-[0.8125rem] leading-relaxed"
+                known={known}
+                placeholder={t('editor.bodyPlaceholder')}
+                invalid={!content[lang].body.trim()}
+                onReady={registerBody}
+                onFocus={focusBody}
               />
               <p className="text-xs text-muted-foreground">{t('editor.htmlHint')}</p>
             </div>
@@ -382,6 +391,7 @@ export function TemplateEditor({ template, previews, canEdit, userEmail }: Props
         variant="danger"
         onConfirm={() => {
           setContent(baseline);
+          setVersion((v) => v + 1);
           setConfirmDiscard(false);
         }}
       />

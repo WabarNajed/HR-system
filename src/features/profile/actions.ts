@@ -3,6 +3,13 @@
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
+import {
+  ACCOUNT_DETAILS_FIELDS,
+  readFields,
+  toFormState,
+  type AccountDetailsFormState,
+  type ChangePasswordFormState,
+} from '@/features/auth/form-state';
 import { changePasswordSchema } from '@/features/auth/schemas';
 import { ActionError, fail, ok, withAction } from '@/lib/action';
 import { logAuditEvent } from '@/lib/audit';
@@ -75,3 +82,17 @@ export const signOutEverywhereAction = withAction(
   },
   { scope: 'profile.signOutEverywhere' },
 );
+
+/* ─── form adapters (progressive enhancement: `<form action={serverAction}>` (React renders method="POST") + useActionState) ── */
+
+export async function saveAccountDetailsForm(prev: AccountDetailsFormState, formData: FormData): Promise<AccountDetailsFormState> {
+  const v = readFields(formData, ACCOUNT_DETAILS_FIELDS);
+  const result = await updateAccountDetailsAction(v);
+  return toFormState(prev, result, v);
+}
+
+export async function changePasswordForm(prev: ChangePasswordFormState, formData: FormData): Promise<ChangePasswordFormState> {
+  const v = readFields(formData, ['currentPassword', 'password', 'confirmPassword'] as const);
+  const result = await changePasswordAction(v);
+  return toFormState(prev, result, {});
+}

@@ -42,7 +42,7 @@ export default async function ProfilePage({ searchParams }: { searchParams: Prom
           <EmployeeAvatar name={name} seed={employee?.id ?? ctx.user.id} src={employee?.avatar ?? null} size="xl" ring className="size-[4.5rem] text-xl sm:size-20" />
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <h1 className="truncate text-page-title text-foreground">{name}</h1>
+              <h1 dir="auto" className="min-w-0 max-w-full truncate text-page-title text-foreground">{name}</h1>
               {primaryLabel ? (
                 <Badge variant={ctx.isSuperAdmin ? 'secondary' : 'default'} size="md">
                   <BadgeCheckIcon className="size-3.5" aria-hidden />

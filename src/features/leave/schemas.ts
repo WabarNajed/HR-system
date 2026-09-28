@@ -1,7 +1,14 @@
 import { z } from 'zod';
 
 const uuid = z.string().uuid();
-const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'validation.invalidDate');
+const isoDate = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, 'validation.invalidDate')
+  .refine((v) => {
+    const d = new Date(`${v}T00:00:00Z`);
+    const y = Number(v.slice(0, 4));
+    return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === v && y >= 2000 && y <= 2200;
+  }, 'validation.invalidDate');
 const year = z.coerce.number().int().min(2000).max(2200);
 const optionalText = (max: number) =>
   z

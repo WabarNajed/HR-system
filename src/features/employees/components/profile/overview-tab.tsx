@@ -152,17 +152,19 @@ export async function OverviewTab({
                       <div className="truncate text-sm font-medium text-foreground">
                         {r.request_type ? localized(r.request_type, 'name', locale) : r.title || t('profile.overview.untitledRequest')}
                       </div>
-                      <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
+                      <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted-foreground">
                         {r.request_number ? (
-                          <bdi dir="ltr" className="tabular-nums">
-                            {r.request_number}
-                          </bdi>
+                          <>
+                            <bdi dir="ltr" className="whitespace-nowrap tabular-nums">
+                              {r.request_number}
+                            </bdi>
+                            <span aria-hidden>·</span>
+                          </>
                         ) : null}
-                        <span aria-hidden>·</span>
-                        <span className="tabular-nums">{formatDate(r.submitted_at ?? r.created_at, locale)}</span>
+                        <span className="whitespace-nowrap tabular-nums">{formatDate(r.submitted_at ?? r.created_at, locale)}</span>
                       </div>
                     </div>
-                    <StatusBadge domain="request" status={r.status} size="sm" />
+                    <StatusBadge domain="request" status={r.status} size="sm" className="shrink-0" />
                     <ArrowUpRightIcon className="size-4 shrink-0 text-faint-foreground transition-colors group-hover:text-foreground rtl:-scale-x-100" aria-hidden />
                   </Link>
                 </li>
@@ -191,11 +193,28 @@ export async function OverviewTab({
       {caps.compliance ? (
         <SectionCard title={t('profile.overview.compliance')} description={t('profile.overview.complianceDescription')} icon={<ShieldCheckIcon />} flush>
           <ul className="divide-y divide-border">
-            <ComplianceRow icon={IdCardIcon} label={t('profile.overview.iqama')} date={employee.iqama_expiry_date} hint={employee.iqama_expiry_hijri} locale={locale} t={t} today={today} />
+            <ComplianceRow
+              icon={IdCardIcon}
+              label={t('profile.overview.iqama')}
+              date={employee.iqama_expiry_date}
+              hint={employee.iqama_expiry_hijri}
+              emptyText={employee.iqama_expiry_hijri ? t('profile.personal.hijri', { date: employee.iqama_expiry_hijri }) : null}
+              locale={locale}
+              t={t}
+              today={today}
+            />
             <ComplianceRow icon={PlaneIcon} label={t('profile.overview.passport')} date={employee.passport_expiry_date} locale={locale} t={t} today={today} />
             <ComplianceRow icon={CalendarClockIcon} label={t('profile.overview.contract')} date={employee.contract_end_date} locale={locale} t={t} today={today} />
             {caps.insurance ? (
-              <ComplianceRow icon={ShieldCheckIcon} label={t('profile.overview.insurance')} date={ownPolicy?.expiry_date ?? null} locale={locale} t={t} today={today} />
+              <ComplianceRow
+                icon={ShieldCheckIcon}
+                label={t('profile.overview.insurance')}
+                date={ownPolicy?.expiry_date ?? null}
+                emptyText={ownPolicy ? [ownPolicy.provider, t('profile.overview.noExpiry')].filter(Boolean).join(' · ') : null}
+                locale={locale}
+                t={t}
+                today={today}
+              />
             ) : null}
           </ul>
         </SectionCard>
@@ -265,6 +284,7 @@ function ComplianceRow({
   label,
   date,
   hint,
+  emptyText,
   locale,
   t,
   today,
@@ -273,6 +293,8 @@ function ComplianceRow({
   label: string;
   date: string | null;
   hint?: string | null;
+  /** Shown instead of "Not recorded" when there is partial data (e.g. a Hijri date only, a policy without expiry). */
+  emptyText?: string | null;
   locale: Locale;
   t: T;
   today: string;
@@ -306,7 +328,7 @@ function ComplianceRow({
               {hint ? <span className="mt-0.5 block">{t('profile.personal.hijri', { date: hint })}</span> : null}
             </>
           ) : (
-            t('profile.overview.notRecorded')
+            emptyText || t('profile.overview.notRecorded')
           )}
         </div>
       </div>

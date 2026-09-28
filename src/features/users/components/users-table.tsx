@@ -63,7 +63,7 @@ export function UsersTable({ rows, total, roles, abilities }: UsersTableProps) {
               <EmployeeAvatar name={displayName(u)} seed={u.id} size="md" />
               <div className="min-w-0 leading-tight">
                 <div className="flex min-w-0 items-center gap-1.5">
-                  <span className="max-w-[11rem] truncate font-medium text-foreground" title={displayName(u)}>{displayName(u)}</span>
+                  <span dir="auto" className="max-w-[11rem] truncate font-medium text-foreground" title={displayName(u)}>{displayName(u)}</span>
                   {u.isSelf ? (
                     <Badge variant="outline" size="sm">
                       {t('you')}
@@ -210,7 +210,7 @@ export function UsersTable({ rows, total, roles, abilities }: UsersTableProps) {
             <div className="flex min-w-0 items-center gap-2.5">
               <EmployeeAvatar name={displayName(u)} seed={u.id} size="md" />
               <div className="min-w-0 leading-tight">
-                <div className="truncate font-medium text-foreground">{displayName(u)}</div>
+                <div dir="auto" className="w-fit max-w-full truncate font-medium text-foreground">{displayName(u)}</div>
                 <bdi dir="ltr" className="block truncate text-xs text-muted-foreground rtl:text-end">
                   {u.email}
                 </bdi>

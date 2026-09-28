@@ -118,6 +118,8 @@ export type BalanceHistory = {
   /** Current figures of the balance (fresher than the row the drawer was opened from). */
   balance: BalanceFigures;
   adjustments: AdjustmentRow[];
+  /** Adjustment details are visible to the employee and HR only (a manager sees the totals). */
+  adjustmentsHidden: boolean;
   movements: BalanceMovementRow[];
 };
 

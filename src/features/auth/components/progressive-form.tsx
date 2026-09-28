@@ -1,6 +1,7 @@
 'use client';
 
-import { useActionState, useId, useState, type FormEvent, type ReactNode } from 'react';
+import { useActionState, useEffect, useId, useRef, useState, useSyncExternalStore, type FormEvent, type ReactNode } from 'react';
+import { toast } from 'sonner';
 import { useTranslations } from 'next-intl';
 import type { z } from 'zod';
 import { useErrorMessage } from '@/components/ui/form';
@@ -11,7 +12,7 @@ import type { FormActionState } from '../form-state';
 /**
  * Progressive-enhancement form kit for the auth / account forms.
  *
- * The form renders as `<form method="POST" action={formAction}>` bound to a Server Action through
+ * The form renders as `<form action={formAction}>` (React emits method="POST" and the action id) bound to a Server Action through
  * `useActionState`, so a submit before hydration (or with JavaScript off) is a real POST to the
  * Server Action — nothing lands in the URL and nothing is lost. When hydrated, `onSubmit` validates
  * the FormData with the same zod schema first and blocks the round trip on invalid input; the server
@@ -62,6 +63,41 @@ export function useProgressiveForm<V extends string, D>(
   };
 
   return { state, formAction, pending, errors, onSubmit, onInput };
+}
+
+const subscribeNothing = () => () => {};
+
+/** `false` on the server and during hydration, `true` once the client has hydrated (no effect needed). */
+export function useHydrated(): boolean {
+  return useSyncExternalStore(subscribeNothing, () => true, () => false);
+}
+
+/**
+ * Toast feedback for each new result of a progressive form (hydrated clients only — without
+ * JavaScript the form shows inline alerts). `errors: 'nonField'` skips validation errors that are
+ * already shown next to the fields.
+ */
+export function useFormResultToast(state: FormActionState<string, unknown>, options: { onSuccess?: () => void; onError?: () => void } = {}) {
+  const resolve = useErrorMessage();
+  const lastSeq = useRef(state.seq);
+  const latest = useRef({ resolve, options });
+  useEffect(() => {
+    latest.current = { resolve, options };
+  });
+  useEffect(() => {
+    if (state.seq === lastSeq.current) return;
+    lastSeq.current = state.seq;
+    const { resolve: r, options: o } = latest.current;
+    if (state.status === 'success') {
+      toast.success(r(state.message ?? 'common.saved'));
+      o.onSuccess?.();
+    } else if (state.error) {
+      const fieldMessages = Object.values(state.fieldErrors);
+      const explained = fieldMessages.includes(state.error) || (state.error === 'errors.validation' && fieldMessages.some(Boolean));
+      if (!explained) toast.error(r(state.error));
+      o.onError?.();
+    }
+  }, [state]);
 }
 
 type FieldControlProps = { id: string; 'aria-invalid'?: true; 'aria-describedby'?: string };

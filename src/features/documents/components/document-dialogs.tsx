@@ -36,6 +36,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Sheet, SheetBody, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Textarea } from '@/components/ui/textarea';
+import { SimpleTooltip } from '@/components/ui/tooltip';
 import { formatFileSize } from '@/lib/format';
 import { employeeDisplayName, localized } from '@/lib/i18n/localized';
 import { useDateFormat } from '@/lib/i18n/use-date-format';
@@ -181,7 +182,15 @@ function DocumentDetailsSheet({
 
   return (
     <Sheet open={Boolean(doc)} onOpenChange={(open) => !open && onClose()}>
-      <SheetContent side="end" className="sm:max-w-lg">
+      <SheetContent
+        side="end"
+        className="sm:max-w-lg"
+        // Radix would focus the first button (the destructive icon in the footer): focus the panel instead.
+        onOpenAutoFocus={(event) => {
+          event.preventDefault();
+          (event.currentTarget as HTMLElement | null)?.focus();
+        }}
+      >
         {current ? (
           <DetailsBody doc={current} onAction={onAction} permissions={permissions} today={today} />
         ) : (
@@ -300,7 +309,7 @@ function DetailsBody({
               value: d.expiry_date ? fmt.date(d.expiry_date) : null,
               hint: d.expiry_date && ['iqama', 'national_id'].includes(d.document_type ?? '') ? t('fields.hijri', { date: fmt.hijri(d.expiry_date) }) : undefined,
             },
-            { label: t('fields.uploadedBy'), value: d.self_uploaded ? t('details.selfUploaded') : d.uploaded_by_name },
+            { label: t('fields.uploadedBy'), value: d.self_uploaded ? t('details.uploaderEmployee') : d.uploaded_by_name },
             { label: t('fields.uploadedAt'), value: d.created_at ? fmt.dateTime(d.created_at) : null },
             { label: t('fields.notes'), value: d.notes, span: 'full' },
           ]}
@@ -332,33 +341,30 @@ function DetailsBody({
         ) : null}
       </SheetBody>
       {can.review || can.edit || can.replace || can.archive || can.restore || can.delete || can.withdraw ? (
-        <SheetFooter className="flex-row flex-wrap gap-2 border-t border-border">
-          {can.review ? (
-            can.selfReview ? (
-              <p className="w-full text-xs text-muted-foreground">{t('review.selfReview')}</p>
-            ) : (
-              <>
-                <Button size="sm" onClick={() => act('approve', d)}>
-                  <CheckCircle2Icon />
-                  {t('actions.approve')}
-                </Button>
-                <Button size="sm" variant="outline" className="text-danger" onClick={() => act('reject', d)}>
-                  <XCircleIcon />
-                  {t('actions.reject')}
-                </Button>
-              </>
-            )
+        <SheetFooter className="flex-wrap gap-2 border-t border-border">
+          {/* start side: rarely used, labelled icon buttons (keeps the footer on one line) */}
+          {can.archive || can.delete ? (
+            <div className="me-auto flex gap-1">
+              {can.archive ? (
+                <SimpleTooltip content={t('actions.archive')}>
+                  <Button size="icon-sm" variant="ghost" aria-label={t('actions.archive')} onClick={() => act('archive', d)}>
+                    <ArchiveIcon />
+                  </Button>
+                </SimpleTooltip>
+              ) : null}
+              {can.delete ? (
+                <SimpleTooltip content={t('actions.delete')}>
+                  <Button size="icon-sm" variant="ghost" className="text-danger hover:text-danger" aria-label={t('actions.delete')} onClick={() => act('delete', d)}>
+                    <Trash2Icon />
+                  </Button>
+                </SimpleTooltip>
+              ) : null}
+            </div>
           ) : null}
-          {can.edit ? (
-            <Button size="sm" variant="outline" onClick={() => act('edit', d)}>
-              <PencilIcon />
-              {t('actions.edit')}
-            </Button>
-          ) : null}
-          {can.replace ? (
-            <Button size="sm" variant="outline" onClick={() => act('replace', d)}>
-              <RefreshCwIcon />
-              {t('actions.replace')}
+          {can.withdraw ? (
+            <Button size="sm" variant="outline" className="text-danger" onClick={() => act('withdraw', d)}>
+              <UndoIcon />
+              {t('actions.withdraw')}
             </Button>
           ) : null}
           {can.restore ? (
@@ -367,23 +373,33 @@ function DetailsBody({
               {t('actions.restore')}
             </Button>
           ) : null}
-          {can.archive ? (
-            <Button size="sm" variant="ghost" onClick={() => act('archive', d)}>
-              <ArchiveIcon />
-              {t('actions.archive')}
+          {can.replace ? (
+            <Button size="sm" variant="outline" onClick={() => act('replace', d)}>
+              <RefreshCwIcon />
+              {t('actions.replace')}
             </Button>
           ) : null}
-          {can.delete ? (
-            <Button size="sm" variant="ghost" className="text-danger hover:text-danger" onClick={() => act('delete', d)}>
-              <Trash2Icon />
-              {t('actions.delete')}
+          {can.edit ? (
+            <Button size="sm" variant="outline" onClick={() => act('edit', d)}>
+              <PencilIcon />
+              {t('actions.edit')}
             </Button>
           ) : null}
-          {can.withdraw ? (
-            <Button size="sm" variant="outline" className="text-danger" onClick={() => act('withdraw', d)}>
-              <UndoIcon />
-              {t('actions.withdraw')}
-            </Button>
+          {can.review ? (
+            can.selfReview ? (
+              <p className="w-full text-xs text-muted-foreground">{t('review.selfReview')}</p>
+            ) : (
+              <>
+                <Button size="sm" variant="outline" className="text-danger" onClick={() => act('reject', d)}>
+                  <XCircleIcon />
+                  {t('actions.reject')}
+                </Button>
+                <Button size="sm" onClick={() => act('approve', d)}>
+                  <CheckCircle2Icon />
+                  {t('actions.approve')}
+                </Button>
+              </>
+            )
           ) : null}
         </SheetFooter>
       ) : null}

@@ -36,6 +36,7 @@ import {
   hasValidIbanChecksum,
   identityNumberWarning,
   isValidSaudiIbanFormat,
+  normalizeAmount,
   PERSONAL_FIELDS,
   type EmployeeFormValues,
 } from '../schemas';
@@ -889,9 +890,19 @@ function IdentityNumberField({ disabled }: { disabled?: boolean }) {
   );
 }
 
+/** Localized currency sign for the amount adornment (`SAR` / `ر.س.`), matching the formatted total. */
+function currencySymbol(currency: string, locale: string): string {
+  try {
+    return new Intl.NumberFormat(locale, { style: 'currency', currency }).formatToParts(0).find((p) => p.type === 'currency')?.value ?? currency;
+  } catch {
+    return currency;
+  }
+}
+
 function MoneyField({ name, label, currency, disabled }: { name: FieldName; label: string; currency: string; disabled?: boolean }) {
   const { control } = useFormContext<EmployeeFormValues>();
   const t = useTranslations('employees.form.placeholders');
+  const locale = useLocale();
   return (
     <FormField
       control={control}
@@ -912,7 +923,7 @@ function MoneyField({ name, label, currency, disabled }: { name: FieldName; labe
               />
             </FormControl>
             <span className="pointer-events-none absolute inset-y-0 start-0 flex items-center ps-3 text-xs font-medium text-muted-foreground">
-              {currency}
+              {currencySymbol(currency, locale)}
             </span>
           </div>
           <FormMessage />
@@ -927,7 +938,8 @@ function TotalSalary({ currency }: { currency: string }) {
   const t = useTranslations('employees');
   const locale = useLocale();
   const values = useWatch({ control, name: ['basic_salary', 'housing_allowance', 'transport_allowance', 'other_allowance'] });
-  const total = values.reduce((sum, v) => sum + (Number(v) || 0), 0);
+  // Same normalisation as the schema: Arabic-Indic digits, `٫` and thousands separators are accepted.
+  const total = values.reduce((sum, v) => sum + (Number(normalizeAmount(v ?? '')) || 0), 0);
   return (
     <div className="flex flex-col justify-center rounded-lg border border-dashed border-border-strong bg-subtle px-4 py-2.5">
       <span className="text-xs font-medium text-muted-foreground">{t('fields.totalSalary')}</span>

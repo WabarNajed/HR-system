@@ -240,6 +240,13 @@
       "reset": "Clear answers",
       "language": "Preview language",
       "empty": "No active fields to show."
+    },
+    "dnd": {
+      "instructions": "To reorder a field, press Space to pick it up, use the arrow keys to move it, then press Space again to drop it. Press Escape to cancel.",
+      "picked": "Picked up {name} at position {position}.",
+      "over": "{name} is over position {position}.",
+      "dropped": "{name} dropped at position {position}.",
+      "cancelled": "Reordering {name} cancelled."
     }
   },
   "workflows": {

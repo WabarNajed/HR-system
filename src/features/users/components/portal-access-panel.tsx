@@ -186,7 +186,7 @@ export function PortalAccessPanel({ employeeId, employeeEmail, employeeName, acc
         <div className="flex items-center gap-3">
           <EmployeeAvatar name={name} seed={employeeId} size="md" />
           <div className="min-w-0 flex-1 leading-tight">
-            <div className="truncate text-sm font-medium text-foreground">{name}</div>
+            <div dir="auto" className="w-fit max-w-full truncate text-sm font-medium text-foreground">{name}</div>
             <bdi dir="ltr" className="block truncate text-meta text-muted-foreground rtl:text-end">
               {user.email}
             </bdi>

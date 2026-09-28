@@ -10,7 +10,6 @@ import {
   XCircleIcon,
   type LucideIcon,
 } from 'lucide-react';
-import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { useId, useRef, useState } from 'react';
 import { toast } from 'sonner';
@@ -110,9 +109,9 @@ function DecisionForm({
   const tc = useTranslations('common');
   const tAll = useTranslations();
   const resolve = useErrorMessage();
-  const router = useRouter();
   const locale = useLocale() as Locale;
   const commentId = useId();
+  const assigneeId = useId();
   const [comment, setComment] = useState('');
   const [assignee, setAssignee] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -146,8 +145,8 @@ function DecisionForm({
       toast.success(tAll(res.message as never, { number: target.number ?? '' } as never));
       setBusy(false);
       onClose();
+      // The action revalidates this route: the response already carries the fresh page.
       onDone?.(res.data?.status ?? null);
-      router.refresh();
     } catch {
       toast.error(resolve('errors.network'));
     } finally {
@@ -185,13 +184,14 @@ function DecisionForm({
       <DialogBody className="space-y-4 pb-4">
         {action === 'reassign' ? (
           <div className="space-y-1.5">
-            <Label>
+            <Label htmlFor={assigneeId}>
               {t(`reassign.${reassignScope === 'approver' ? 'approverLabel' : 'handlerLabel'}`)}
               <span aria-hidden className="text-danger">
                 *
               </span>
             </Label>
             <Combobox
+              id={assigneeId}
               value={assignee}
               onChange={(v) => {
                 setAssignee(v);

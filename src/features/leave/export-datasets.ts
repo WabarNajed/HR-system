@@ -1,5 +1,6 @@
 import 'server-only';
 
+import { businessDaysBetween, daysBetween } from '@/lib/dates';
 import { defineDataset, fetchAllPages, type AnyExportDataset } from '@/lib/export/types';
 import { employeeDisplayName, localized } from '@/lib/i18n/localized';
 import type { LooseTranslator } from '@/lib/i18n/translator';
@@ -111,4 +112,120 @@ const leaveBalances = defineDataset<BalanceRow>({
   },
 });
 
-export const datasets: AnyExportDataset[] = [leaveRequests, leaveBalances];
+/* ─── Configuration (master-data pattern: /settings/leave-types, /settings/public-holidays) ─── */
+
+type LeaveTypeExportRow = {
+  code: string;
+  name_ar: string;
+  name_en: string;
+  is_paid: boolean;
+  deducts_balance: boolean;
+  default_entitlement: number;
+  max_days_per_request: number | null;
+  day_count_basis: string;
+  requires_attachment: boolean;
+  gender_restriction: string | null;
+  color: string;
+  sort_order: number;
+  is_active: boolean;
+};
+
+const yesNo = (t: LooseTranslator, v: boolean) => (v ? t('common.yes') : t('common.no'));
+
+/** Filters of the client-side configuration tables (`?q=`, `?status=active,inactive`, `?deducts=yes,no`). */
+function matchesConfigFilters(params: ListParams, active: boolean, text: string, deducts?: boolean): boolean {
+  const f = params.filters as Record<string, string[] | undefined>;
+  if (f.status?.length && !f.status.includes(active ? 'active' : 'inactive')) return false;
+  if (deducts !== undefined && f.deducts?.length && !f.deducts.includes(deducts ? 'yes' : 'no')) return false;
+  return !params.q || text.toLowerCase().includes(params.q.toLowerCase());
+}
+
+const leaveTypes = defineDataset<LeaveTypeExportRow>({
+  key: 'leave_types',
+  permission: 'settings.export',
+  titleKey: 'nav.settings.items.leaveTypes',
+  filterKeys: ['status', 'deducts'],
+  columns: (t) => [
+    { key: 'code', header: t('common.code'), width: 16 },
+    { key: 'name_ar', header: t('common.nameAr'), width: 26 },
+    { key: 'name_en', header: t('common.nameEn'), width: 26 },
+    { key: 'is_paid', header: t('leave.types.fields.paid'), width: 12, value: (r) => yesNo(t, r.is_paid) },
+    { key: 'deducts_balance', header: t('leave.types.fields.deducts'), width: 14, value: (r) => yesNo(t, r.deducts_balance) },
+    { key: 'default_entitlement', header: t('leave.types.fields.defaultEntitlement'), type: 'number', width: 14 },
+    { key: 'max_days_per_request', header: t('leave.types.fields.maxDays'), type: 'number', width: 14 },
+    { key: 'day_count_basis', header: t('leave.types.fields.basis'), width: 18, value: (r) => t(`enums.dayCountBasis.${r.day_count_basis}`) },
+    { key: 'requires_attachment', header: t('leave.types.fields.attachment'), width: 14, value: (r) => yesNo(t, r.requires_attachment) },
+    { key: 'gender_restriction', header: t('leave.types.fields.gender'), width: 18, value: (r) => t(`enums.genderRestriction.${r.gender_restriction ?? 'all'}`) },
+    { key: 'color', header: t('leave.types.fields.color'), width: 10 },
+    { key: 'sort_order', header: t('leave.types.fields.sortOrder'), type: 'integer', width: 10 },
+    { key: 'is_active', header: t('common.status'), width: 12, value: (r) => (r.is_active ? t('common.active') : t('common.inactive')) },
+  ],
+  fetchRows: async (supabase, params) => {
+    const { data, error } = await supabase
+      .from('leave_types')
+      .select('code, name_ar, name_en, is_paid, deducts_balance, default_entitlement, max_days_per_request, day_count_basis, requires_attachment, gender_restriction, color, sort_order, is_active')
+      .order('sort_order')
+      .order('name_en')
+      .limit(1000);
+    if (error) throw error;
+    return (data ?? [])
+      .filter((r) => matchesConfigFilters(params, r.is_active, `${r.name_ar} ${r.name_en} ${r.code}`, r.deducts_balance))
+      .map((r) => ({
+        ...r,
+        default_entitlement: Number(r.default_entitlement),
+        max_days_per_request: r.max_days_per_request === null ? null : Number(r.max_days_per_request),
+      }));
+  },
+});
+
+type HolidayExportRow = {
+  name_ar: string | null;
+  name_en: string | null;
+  start_date: string;
+  end_date: string;
+  days: number;
+  working_days: number;
+  is_active: boolean;
+};
+
+const publicHolidays = defineDataset<HolidayExportRow>({
+  key: 'public_holidays',
+  permission: 'settings.export',
+  titleKey: 'nav.settings.items.publicHolidays',
+  filterKeys: ['year', 'status'],
+  columns: (t) => [
+    { key: 'name_ar', header: t('common.nameAr'), width: 30 },
+    { key: 'name_en', header: t('common.nameEn'), width: 30 },
+    { key: 'start_date', header: t('common.startDate'), type: 'date' },
+    { key: 'end_date', header: t('common.endDate'), type: 'date' },
+    { key: 'days', header: t('leave.holidays.fields.days'), type: 'integer', width: 10 },
+    { key: 'working_days', header: t('leave.holidays.fields.workingDays'), type: 'integer', width: 14 },
+    { key: 'is_active', header: t('common.status'), width: 12, value: (r) => (r.is_active ? t('common.active') : t('common.inactive')) },
+  ],
+  describeFilters: (params, t) => {
+    const year = (params.filters as Record<string, string[] | undefined>).year?.[0];
+    return year ? [`${t('leave.fields.year')}: ${year}`] : [];
+  },
+  fetchRows: async (supabase, params) => {
+    const settings = await getLeaveOrgSettings();
+    const raw = Number((params.filters as Record<string, string[] | undefined>).year?.[0]);
+    const year = Number.isInteger(raw) && raw >= 2000 && raw <= 2200 ? raw : settings.year;
+    const { data, error } = await supabase
+      .from('public_holidays')
+      .select('name_ar, name_en, start_date, end_date, is_active')
+      .lte('start_date', `${year}-12-31`)
+      .gte('end_date', `${year}-01-01`)
+      .order('start_date')
+      .limit(1000);
+    if (error) throw error;
+    return (data ?? [])
+      .filter((h) => matchesConfigFilters(params, h.is_active, `${h.name_ar ?? ''} ${h.name_en ?? ''}`))
+      .map((h) => ({
+        ...h,
+        days: (daysBetween(h.start_date, h.end_date) ?? 0) + 1,
+        working_days: businessDaysBetween(h.start_date, h.end_date, settings.workingDays),
+      }));
+  },
+});
+
+export const datasets: AnyExportDataset[] = [leaveRequests, leaveBalances, leaveTypes, publicHolidays];

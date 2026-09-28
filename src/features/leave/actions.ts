@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { ActionError, ok, requirePermissionIn, withAction } from '@/lib/action';
 import { createClient } from '@/lib/supabase/server';
-import { getBalanceHistory as loadBalanceHistory, getOrgPermissions } from './queries';
+import { getBalanceHistory as loadBalanceHistory, getLeaveAccess, getOrgPermissions } from './queries';
 import {
   adjustBalanceSchema,
   balanceHistorySchema,
@@ -227,8 +227,8 @@ export const initializeLeaveBalances = withAction(
 /** Read-only: adjustments + leave requests of one balance (RLS decides visibility). */
 export const fetchBalanceHistory = withAction(
   balanceHistorySchema,
-  async ({ balanceId }) => {
-    const history = await loadBalanceHistory(balanceId);
+  async ({ balanceId }, { ctx }) => {
+    const history = await loadBalanceHistory(balanceId, await getLeaveAccess(ctx));
     if (!history) throw new ActionError('errors.notFound');
     return ok<BalanceHistory>(history);
   },

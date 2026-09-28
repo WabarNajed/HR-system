@@ -40,6 +40,30 @@ export const LEAVE_REQUEST_STATUSES = [
   'cancelled',
 ] as const;
 
+/* ─── URL input hygiene ──────────────────────────────────────────────────── */
+// Filters arrive straight from the URL; a hand-edited `?type=abc` must be ignored, not reach
+// PostgREST as an invalid uuid/date (22P02 → error page).
+
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const ISO_DATE_RE = /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/;
+
+/** Keeps only well-formed uuids (max 50) of a filter value list. */
+export function uuidFilter(values: readonly string[] | undefined): string[] {
+  return (values ?? []).filter((v) => UUID_RE.test(v)).slice(0, 50);
+}
+
+function isoDateFilter(value: string | undefined): string | null {
+  if (!value || !ISO_DATE_RE.test(value)) return null;
+  // Round-trip rejects impossible dates (`2026-02-31` would otherwise roll over to March).
+  const parsed = new Date(`${value}T00:00:00Z`);
+  return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value ? value : null;
+}
+
+/** PostgREST answers 416 (PGRST103) for an offset past the last row (stale `?page=`). */
+function isRangeError(error: { code?: string } | null, from: number): boolean {
+  return Boolean(error) && from > 0;
+}
+
 /* ─── Access ─────────────────────────────────────────────────────────────── */
 
 type RoleWithPermissions = { role: { data_scope: string | null; role_permissions: { module: string; action: string }[] | null } | null };
@@ -105,6 +129,8 @@ export type LeaveAccess = {
   canConfigure: boolean;
   /** Leave exports (`leave.export`). */
   canExport: boolean;
+  /** Leave types / public holidays exports (`settings.export`, master-data pattern). */
+  canExportConfig: boolean;
   /** Has direct reports. */
   hasTeam: boolean;
   /** May submit a leave request for themselves. */
@@ -129,6 +155,7 @@ export const getLeaveAccess = cache(async (ctx: SessionContext): Promise<LeaveAc
     orgEdit: org.has('leave.edit'),
     canConfigure: org.has('settings.edit') || org.has('leave.administer'),
     canExport: ctx.isSuperAdmin || ctx.permissions.has('leave.export'),
+    canExportConfig: ctx.isSuperAdmin || ctx.permissions.has('settings.export'),
     hasTeam,
     canRequest: Boolean(employeeId) && (ctx.isSuperAdmin || ctx.permissions.has('leave.create') || ctx.permissions.has('requests.create')),
     scopes: scopes.length ? scopes : ['mine'],
@@ -341,18 +368,26 @@ export function buildLeaveRequestsQuery(
   params: ListParams,
   access: LeaveAccess,
   locale: Locale,
-  options: { count?: boolean } = {},
+  options: { count?: boolean; head?: boolean } = {},
 ) {
   const f = params.filters as Partial<Record<(typeof REQUEST_FILTERS)[number], string[]>>;
   const scope = resolveScope(f.scope?.[0], access);
-  let query = supabase.from('leave_requests').select(REQUEST_SELECT, options.count ? { count: 'exact' } : undefined);
+  let query = supabase
+    .from('leave_requests')
+    .select(REQUEST_SELECT, options.count || options.head ? { count: 'exact', head: options.head } : undefined);
   query = applyScope(query, scope, access);
-  if (f.employee?.length) query = query.eq('employee_id', f.employee[0]!);
-  if (f.type?.length) query = query.in('leave_type_id', f.type);
-  if (f.status?.length) query = query.in('request.status', f.status);
-  if (f.department?.length) query = query.in('employee.department_id', f.department);
-  if (f.periodFrom?.[0]) query = query.gte('end_date', f.periodFrom[0]);
-  if (f.periodTo?.[0]) query = query.lte('start_date', f.periodTo[0]);
+  const employee = uuidFilter(f.employee)[0];
+  const types = uuidFilter(f.type);
+  const statuses = (f.status ?? []).filter((s) => (LEAVE_REQUEST_STATUSES as readonly string[]).includes(s) || s === 'submitted');
+  const departments = uuidFilter(f.department);
+  const periodFrom = isoDateFilter(f.periodFrom?.[0]);
+  const periodTo = isoDateFilter(f.periodTo?.[0]);
+  if (employee) query = query.eq('employee_id', employee);
+  if (types.length) query = query.in('leave_type_id', types);
+  if (statuses.length) query = query.in('request.status', statuses);
+  if (departments.length) query = query.in('employee.department_id', departments);
+  if (periodFrom) query = query.gte('end_date', periodFrom);
+  if (periodTo) query = query.lte('start_date', periodTo);
   if (params.q) {
     const pattern = toIlikePattern(params.q);
     query = /^hr-/i.test(params.q) ? query.ilike('request.request_number', pattern) : query.ilike('employee.search_text', pattern);
@@ -400,6 +435,11 @@ export function mapLeaveRequestRows(raw: unknown[], approvers: Map<string, strin
 export async function listLeaveRequests(params: ListParams, access: LeaveAccess, locale: Locale) {
   const supabase = await createClient();
   const { data, count, error } = await buildLeaveRequestsQuery(supabase, params, access, locale, { count: true }).range(params.from, params.to);
+  if (isRangeError(error, params.from)) {
+    // Stale `?page=` past the last row: report the real total so the tab can jump to the last page.
+    const { count: total, error: countError } = await buildLeaveRequestsQuery(supabase, params, access, locale, { head: true });
+    if (!countError && (total ?? 0) <= params.from) return { rows: [], total: total ?? 0 };
+  }
   if (error) throw error;
   const rows = (data ?? []) as unknown as LeaveRequestRaw[];
   const pendingIds = rows.filter((r) => r.request && (LEAVE_PENDING_STATUSES as readonly string[]).includes(r.request.status)).map((r) => r.request_id);
@@ -471,20 +511,22 @@ export function buildBalancesQuery(
   scope: LeaveScope,
   year: number,
   locale: Locale,
-  options: { count?: boolean } = {},
+  options: { count?: boolean; head?: boolean } = {},
 ) {
   const f = params.filters as Partial<Record<(typeof BALANCE_FILTERS)[number], string[]>>;
   let query = supabase
     .from('leave_balances')
     .select(
       `${BALANCE_COLUMNS}, leave_type:leave_types!inner(id, code, name_ar, name_en, color, sort_order), employee:employees!inner(${EMPLOYEE_EMBED})`,
-      options.count ? { count: 'exact' } : undefined,
+      options.count || options.head ? { count: 'exact', head: options.head } : undefined,
     )
     .eq('year', year)
     .is('employee.archived_at', null);
   query = applyScope(query, scope, access);
-  if (f.type?.length) query = query.in('leave_type_id', f.type);
-  if (f.department?.length) query = query.in('employee.department_id', f.department);
+  const types = uuidFilter(f.type);
+  const departments = uuidFilter(f.department);
+  if (types.length) query = query.in('leave_type_id', types);
+  if (departments.length) query = query.in('employee.department_id', departments);
   if (params.q) query = query.ilike('employee.search_text', toIlikePattern(params.q));
   const asc = params.dir === 'asc';
   const nameCol = locale === 'en' ? 'employee(name_en)' : 'employee(name_ar)';
@@ -509,6 +551,10 @@ export function buildBalancesQuery(
 export async function listBalances(params: ListParams, access: LeaveAccess, scope: LeaveScope, year: number, locale: Locale) {
   const supabase = await createClient();
   const { data, count, error } = await buildBalancesQuery(supabase, params, access, scope, year, locale, { count: true }).range(params.from, params.to);
+  if (isRangeError(error, params.from)) {
+    const { count: total, error: countError } = await buildBalancesQuery(supabase, params, access, scope, year, locale, { head: true });
+    if (!countError && (total ?? 0) <= params.from) return { rows: [], total: total ?? 0 };
+  }
   if (error) throw error;
   return { rows: ((data ?? []) as unknown as BalanceRaw[]).map(toBalanceRow), total: count ?? 0 };
 }
@@ -540,7 +586,7 @@ export async function getBalanceYears(currentYear: number): Promise<number[]> {
 }
 
 /** Adjustments + leave requests that moved one balance. RLS: own balance, direct reports' requests, HR. */
-export async function getBalanceHistory(balanceId: string): Promise<BalanceHistory | null> {
+export async function getBalanceHistory(balanceId: string, viewer: Pick<LeaveAccess, 'employeeId' | 'orgView'>): Promise<BalanceHistory | null> {
   const supabase = await createClient();
   const { data: bal, error } = await supabase
     .from('leave_balances')
@@ -567,6 +613,7 @@ export async function getBalanceHistory(balanceId: string): Promise<BalanceHisto
   ]);
   if (adj.error) throw adj.error;
   return {
+    adjustmentsHidden: !viewer.orgView && viewer.employeeId !== bal.employee_id,
     balance: {
       opening_balance: Number(bal.opening_balance),
       entitlement: Number(bal.entitlement),
@@ -622,8 +669,10 @@ export async function getCalendarData(
     .gte('end_date', range.from)
     .in('request.status', [...LEAVE_CALENDAR_STATUSES]);
   query = applyScope(query, scope, access);
-  if (filters.type?.length) query = query.in('leave_type_id', filters.type);
-  if (filters.department?.length) query = query.in('employee.department_id', filters.department);
+  const types = uuidFilter(filters.type);
+  const departments = uuidFilter(filters.department);
+  if (types.length) query = query.in('leave_type_id', types);
+  if (departments.length) query = query.in('employee.department_id', departments);
   const [eventsRes, holidays] = await Promise.all([
     query.order('start_date').order('id').limit(LIMIT),
     listHolidaysInRange(range.from, range.to),

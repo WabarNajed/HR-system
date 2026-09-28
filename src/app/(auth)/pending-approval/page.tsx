@@ -51,11 +51,11 @@ export default async function PendingApprovalPage() {
 
       <div className="rounded-lg border border-border bg-card p-4 shadow-card">
         <div className="flex items-center justify-between gap-3 border-b border-border pb-3">
-          <div className="min-w-0 truncate text-meta text-muted-foreground">
+          <div className="flex min-w-0 items-baseline gap-1 whitespace-nowrap text-meta text-muted-foreground">
             {t.rich('signedInAs', {
               email: ctx.user.email ?? '',
               address: (chunks) => (
-                <bdi dir="ltr" className="font-medium text-foreground">
+                <bdi dir="ltr" className="min-w-0 truncate font-medium text-foreground">
                   {chunks}
                 </bdi>
               ),

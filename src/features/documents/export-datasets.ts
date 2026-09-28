@@ -53,7 +53,7 @@ const documents = defineDataset<DocumentListRow>({
     { key: 'status', header: t('documents.fields.status'), width: 16, value: (r) => label(t, `statuses.document.${r.status}`, r.status) },
     { key: 'is_confidential', header: t('documents.fields.confidential'), type: 'boolean' },
     { key: 'file_name', header: t('documents.export.fileName'), width: 28 },
-    { key: 'uploaded_by_name', header: t('documents.fields.uploadedBy'), width: 22, value: (r) => (r.self_uploaded ? t('documents.details.selfUploaded') : r.uploaded_by_name) },
+    { key: 'uploaded_by_name', header: t('documents.fields.uploadedBy'), width: 22, value: (r) => (r.self_uploaded ? t('documents.details.uploaderEmployee') : r.uploaded_by_name) },
     { key: 'created_at', header: t('documents.fields.uploadedAt'), type: 'datetime' },
     { key: 'reviewed_by_name', header: t('documents.fields.reviewedBy'), width: 22 },
     { key: 'notes', header: t('documents.fields.notes'), width: 32 },

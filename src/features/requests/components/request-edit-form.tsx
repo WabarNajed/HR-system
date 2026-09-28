@@ -108,7 +108,6 @@ export function RequestEditForm({
     try {
       if (await save()) {
         toast.success(tr('toast.changesSaved'));
-        router.refresh();
       }
     } catch {
       toast.error(resolve('errors.network'));
@@ -122,6 +121,10 @@ export function RequestEditForm({
     setErrors(errs);
     if (Object.keys(errs).length) {
       toast.error(tc('form.fixErrors'));
+      return;
+    }
+    if (isLeave && leave.pending) {
+      toast.info(tr('wizard.leaveCalculating'));
       return;
     }
     if (isLeave && leave.blocking.length) {
@@ -152,7 +155,6 @@ export function RequestEditForm({
       setConfirmOpen(false);
       toast.success(status === 'returned' ? tr('toast.resubmitted', { number: res.data?.number ?? '' }) : tr('toast.submittedNumber', { number: res.data?.number ?? '' }));
       router.replace(`/requests/${requestId}`);
-      router.refresh();
     } catch {
       toast.error(resolve('errors.network'));
     } finally {

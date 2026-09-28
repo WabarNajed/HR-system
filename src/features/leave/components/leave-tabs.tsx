@@ -1,12 +1,13 @@
 import { InfoIcon, UserRoundXIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
+import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { EmptyState } from '@/components/shared/empty-state';
 import { SectionCard } from '@/components/shared/section-card';
 import type { SessionContext } from '@/lib/auth/session';
 import type { Locale } from '@/lib/i18n/config';
 import { localized } from '@/lib/i18n/localized';
-import { parseListParams, type SearchParamsInput } from '@/lib/list-params';
+import { mergeSearchParams, pageCount, parseListParams, type ListParams, type SearchParamsInput } from '@/lib/list-params';
 import { gridRange, parseMonthParam, weekStartDay } from '../calendar-utils';
 import {
   BALANCE_FILTERS,
@@ -53,6 +54,14 @@ function typeOptions(types: LeaveTypeRow[], locale: Locale) {
   return types.map((lt) => ({ value: lt.id, label: localized(lt, 'name', locale), color: lt.color }));
 }
 
+/** Stale `?page=` beyond the last page (e.g. after narrowing the filters): jump to the last page. */
+function redirectIfPastLastPage(sp: TabProps['sp'], params: ListParams, rows: unknown[], total: number) {
+  if (rows.length || params.page <= 1) return;
+  const last = pageCount(total, params.pageSize);
+  const qs = mergeSearchParams(sp as SearchParamsInput, { page: last > 1 ? last : null }).toString();
+  redirect(qs ? `/leave?${qs}` : '/leave');
+}
+
 function parseYear(value: string | undefined, fallback: number): number {
   const y = Number(value);
   return Number.isInteger(y) && y >= 2000 && y <= 2200 ? y : fallback;
@@ -79,6 +88,7 @@ export async function RequestsTab({ sp, access, locale }: TabProps) {
     scope === 'org' ? listDepartmentOptions(locale) : Promise.resolve([]),
     employeeId ? getEmployeeOption(employeeId, locale) : Promise.resolve(null),
   ]);
+  redirectIfPastLastPage(sp, params, rows, total);
   const scopeSwitch =
     access.scopes.length > 1 ? (
       <UrlSegmented
@@ -153,6 +163,7 @@ export async function BalancesTab({ sp, ctx, access, settings, locale }: TabProp
     listLeaveTypes(),
     scope === 'org' ? listDepartmentOptions(locale) : Promise.resolve([]),
   ]);
+  redirectIfPastLastPage(sp, params, rows, total);
   const deducting = types.filter((lt) => lt.deducts_balance);
   const initialize = access.orgEdit && scope === 'org' ? <InitializeBalancesButton year={year} /> : null;
   return (
@@ -218,7 +229,7 @@ export async function CalendarTab({ sp, access, settings, locale }: TabProps) {
 
 export async function TypesTab({ access }: TabProps) {
   const rows = await listLeaveTypes();
-  return <LeaveTypesManager rows={rows} canEdit={access.canConfigure} />;
+  return <LeaveTypesManager rows={rows} canEdit={access.canConfigure} canExport={access.canExportConfig} />;
 }
 
 export async function HolidaysTab({ sp, access, settings }: TabProps) {
@@ -227,7 +238,15 @@ export async function HolidaysTab({ sp, access, settings }: TabProps) {
   if (!years.includes(year)) years.push(year);
   years.sort((a, b) => b - a);
   return (
-    <HolidaysManager rows={rows} year={year} years={years} currentYear={settings.year} today={settings.today} canEdit={access.canConfigure} />
+    <HolidaysManager
+      rows={rows}
+      year={year}
+      years={years}
+      currentYear={settings.year}
+      today={settings.today}
+      canEdit={access.canConfigure}
+      canExport={access.canExportConfig}
+    />
   );
 }
 

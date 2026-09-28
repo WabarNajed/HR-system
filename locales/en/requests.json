@@ -204,6 +204,7 @@
     "searchEmployee": "Search by name, number or email…",
     "pickTypeFirst": "Choose a request type first",
     "pickEmployeeFirst": "Choose the employee first",
+    "leaveCalculating": "Calculating the leave days…",
     "changeType": "Change type",
     "reviewTitle": "Review your request",
     "reviewDescription": "Make sure everything is correct before you submit.",

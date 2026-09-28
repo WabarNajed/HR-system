@@ -8,6 +8,7 @@ import { EmployeeAvatar } from '@/components/shared/employee-avatar';
 import { KeyValueGrid } from '@/components/shared/key-value-grid';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetBody, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { SimpleTooltip } from '@/components/ui/tooltip';
 import { employeeDisplayName } from '@/lib/i18n/localized';
 import { useDateFormat } from '@/lib/i18n/use-date-format';
 import { cn } from '@/lib/utils';
@@ -46,7 +47,7 @@ export function UserDetailsSheet({ user: current, roles, abilities, onOpenChange
             <SheetHeader className="flex-row items-center gap-3">
               <EmployeeAvatar name={name} seed={user.id} size="lg" />
               <div className="min-w-0 flex-1">
-                <SheetTitle className="truncate">{name}</SheetTitle>
+                <SheetTitle dir="auto" className="w-fit max-w-full truncate">{name}</SheetTitle>
                 <SheetDescription asChild>
                   <bdi dir="ltr" className="block truncate rtl:text-end">
                     {user.email}
@@ -106,16 +107,18 @@ export function UserDetailsSheet({ user: current, roles, abilities, onOpenChange
                         {a.label}
                       </Link>
                     </Button>
+                  ) : a.disabled ? (
+                    // Disabled actions stay visible and explain why (focusable wrapper for keyboard users).
+                    <SimpleTooltip key={a.label} content={a.disabledReason ?? null}>
+                      <span tabIndex={0} className="rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring/50">
+                        <Button size="sm" variant="outline" className={className} disabled>
+                          {Icon ? <Icon /> : null}
+                          {a.label}
+                        </Button>
+                      </span>
+                    </SimpleTooltip>
                   ) : (
-                    <Button
-                      key={a.label}
-                      size="sm"
-                      variant="outline"
-                      className={className}
-                      disabled={a.disabled}
-                      title={a.disabled ? a.disabledReason : undefined}
-                      onClick={() => a.onSelect?.(user)}
-                    >
+                    <Button key={a.label} size="sm" variant="outline" className={className} onClick={() => a.onSelect?.(user)}>
                       {Icon ? <Icon /> : null}
                       {a.label}
                     </Button>

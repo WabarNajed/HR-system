@@ -17,7 +17,7 @@ export async function LeaveSummaryCards({ summary, year }: { summary: LeaveSumma
   const first =
     summary.onLeaveToday !== null ? (
       <StatCard
-        label={t('onLeaveToday')}
+        label={<Label full={t('onLeaveToday')} short={t('short.onLeaveToday')} />}
         value={n(summary.onLeaveToday)}
         icon={PalmtreeIcon}
         tone="info"
@@ -26,7 +26,7 @@ export async function LeaveSummaryCards({ summary, year }: { summary: LeaveSumma
       />
     ) : (
       <StatCard
-        label={t('daysTaken', { year })}
+        label={<Label full={t('daysTaken', { year })} short={t('short.daysTaken')} />}
         value={formatDays(summary.daysTakenThisYear ?? 0, locale)}
         icon={CalendarCheck2Icon}
         tone="info"
@@ -38,7 +38,7 @@ export async function LeaveSummaryCards({ summary, year }: { summary: LeaveSumma
   const annual = summary.annual;
   const fourth = summary.hasEmployee ? (
     <StatCard
-      label={t('annual')}
+      label={<Label full={t('annual')} short={t('short.annual')} />}
       value={annual ? formatDays(annual.available, locale) : '—'}
       icon={WalletCardsIcon}
       tone="primary"
@@ -60,7 +60,7 @@ export async function LeaveSummaryCards({ summary, year }: { summary: LeaveSumma
     />
   ) : summary.coverage ? (
     <StatCard
-      label={t('coverage', { year })}
+      label={<Label full={t('coverage', { year })} short={t('short.coverage', { year })} />}
       value={`${n(summary.coverage.withBalances)} / ${n(summary.coverage.activeEmployees)}`}
       icon={UsersRoundIcon}
       tone={summary.coverage.withBalances < summary.coverage.activeEmployees ? 'warning' : 'success'}
@@ -73,7 +73,7 @@ export async function LeaveSummaryCards({ summary, year }: { summary: LeaveSumma
     <KpiGrid count={fourth ? 4 : 3}>
       {first}
       <StatCard
-        label={t('pending')}
+        label={<Label full={t('pending')} short={t('short.pending')} />}
         value={n(summary.pending)}
         icon={HourglassIcon}
         tone={summary.pending > 0 ? 'warning' : 'neutral'}
@@ -81,7 +81,7 @@ export async function LeaveSummaryCards({ summary, year }: { summary: LeaveSumma
         href={`/leave?status=${pendingStatus}`}
       />
       <StatCard
-        label={t('upcoming')}
+        label={<Label full={t('upcoming')} short={t('short.upcoming')} />}
         value={n(summary.upcoming)}
         icon={CalendarClockIcon}
         tone="secondary"
@@ -90,5 +90,17 @@ export async function LeaveSummaryCards({ summary, year }: { summary: LeaveSumma
       />
       {fourth}
     </KpiGrid>
+  );
+}
+
+/** KPI label: a short form on phones (two tiles per row), the descriptive one from `sm` up. */
+function Label({ full, short }: { full: string; short: string }) {
+  return (
+    <>
+      <span className="sm:hidden" title={full}>
+        {short}
+      </span>
+      <span className="max-sm:hidden">{full}</span>
+    </>
   );
 }

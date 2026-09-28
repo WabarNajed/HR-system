@@ -3,7 +3,7 @@
 import { AlertTriangleIcon, CalendarCheck2Icon, CalendarRangeIcon, InfoIcon, PaperclipIcon, WalletIcon } from 'lucide-react';
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
-import { useEffect, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { StatusBadge } from '@/components/shared/status-badge';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -20,6 +20,8 @@ export type LeaveInsightState = {
   preview: LeavePreview | null;
   /** Reasons the request would certainly be refused (shown and used to block Submit). */
   blocking: ('insufficientBalance' | 'overlappingLeave' | 'leaveMaxDaysExceeded' | 'invalidDateRange')[];
+  /** The preview for the current inputs is still loading (the last result is kept meanwhile). */
+  pending?: boolean;
 };
 
 /**
@@ -56,31 +58,38 @@ export function LeaveInsight({
   useEffect(() => {
     onChangeRef.current = onChange;
   }, [onChange]);
+  const lastRef = useRef<LeaveInsightState>({ preview: null, blocking: [] });
+  const report = useCallback((state: LeaveInsightState) => {
+    if (!state.pending) lastRef.current = state;
+    onChangeRef.current?.(state);
+  }, []);
 
   const leaveType = leaveTypes.find((lt) => lt.id === leaveTypeId) ?? null;
 
   useEffect(() => {
     if (!requestKey || !employeeId || !leaveTypeId) {
-      onChangeRef.current?.({ preview: null, blocking: [] });
+      report({ preview: null, blocking: [] });
       return;
     }
+    // Callers must not proceed on a stale preview (e.g. Continue right after changing the dates).
+    report({ ...lastRef.current, pending: true });
     let cancelled = false;
     const timer = window.setTimeout(async () => {
       const res = await previewLeave({ employeeId, leaveTypeId, start: start || null, end: end || null, requestId: requestId ?? null }).catch(() => null);
       if (cancelled) return;
       if (!res || !res.ok || !res.data) {
         setResult({ key: requestKey, preview: null, failed: res && !res.ok ? res.error : 'errors.generic' });
-        onChangeRef.current?.({ preview: null, blocking: [] });
+        report({ preview: null, blocking: [] });
         return;
       }
       setResult({ key: requestKey, preview: res.data, failed: null });
-      onChangeRef.current?.({ preview: res.data, blocking: blockingOf(res.data) });
+      report({ preview: res.data, blocking: blockingOf(res.data) });
     }, 300);
     return () => {
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [requestKey, employeeId, leaveTypeId, start, end, requestId]);
+  }, [requestKey, employeeId, leaveTypeId, start, end, requestId, report]);
 
   // Keep showing the last result (dimmed) while the next one loads.
   const loading = Boolean(requestKey) && result?.key !== requestKey;

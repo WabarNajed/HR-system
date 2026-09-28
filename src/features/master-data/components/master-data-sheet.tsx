@@ -88,6 +88,10 @@ export function MasterDataSheet({ entity, open, onOpenChange, row, departments, 
     mode: 'onTouched',
   });
 
+  // Read during render so react-hook-form tracks it (the proxy only updates subscribed fields);
+  // the close / Escape handlers below rely on it to confirm before discarding edits.
+  const isDirty = form.formState.isDirty;
+
   // Reset whenever the sheet opens for another row (or for a new record).
   useEffect(() => {
     if (open) form.reset(toFormValues(row));
@@ -126,7 +130,7 @@ export function MasterDataSheet({ entity, open, onOpenChange, row, departments, 
   }, []);
 
   const requestClose = () => {
-    if (form.formState.isDirty && !pending) setConfirmDiscard(true);
+    if (isDirty && !pending) setConfirmDiscard(true);
     else onOpenChange(false);
   };
 
@@ -152,7 +156,7 @@ export function MasterDataSheet({ entity, open, onOpenChange, row, departments, 
     <>
       <Sheet open={open} onOpenChange={(next) => (next ? onOpenChange(true) : requestClose())}>
         <SheetContent side="end" className="sm:max-w-lg" onEscapeKeyDown={(e) => {
-          if (form.formState.isDirty) {
+          if (isDirty) {
             e.preventDefault();
             requestClose();
           }

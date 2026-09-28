@@ -4,7 +4,7 @@ import { ArrowLeftIcon, ArrowRightIcon, CalendarPlus2Icon, HistoryIcon, MinusIco
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
-import { useCallback, useEffect, useId, useState, useTransition, type ReactNode } from 'react';
+import { useCallback, useEffect, useId, useRef, useState, useTransition, type ReactNode } from 'react';
 import { toast } from 'sonner';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog';
 import { EmptyState } from '@/components/shared/empty-state';
@@ -378,15 +378,21 @@ export function BalanceHistorySheet({
   const d = useDays();
   const fmt = useDateFormat();
   const resolveError = useErrorMessage();
-  const [state, setState] = useState<{ status: 'idle' | 'loading' | 'ready' | 'error'; data?: BalanceHistory; error?: string }>({ status: 'idle' });
+  const [raw, setState] = useState<{ status: 'idle' | 'loading' | 'ready' | 'error'; forId?: string; data?: BalanceHistory; error?: string }>({
+    status: 'idle',
+  });
+  // Latest requested balance: a slow response for a previously opened row must not overwrite it.
+  const latest = useRef<string | null>(null);
 
   const load = useCallback(async (balanceId: string) => {
-    setState({ status: 'loading' });
-    const timeout = new Promise<null>((resolve) => setTimeout(() => resolve(null), 15000));
-    const result = await Promise.race([fetchBalanceHistory({ balanceId }), timeout]);
-    if (!result) setState({ status: 'error', error: 'errors.timeout' });
-    else if (result.ok) setState({ status: 'ready', data: result.data });
-    else setState({ status: 'error', error: result.error });
+    latest.current = balanceId;
+    setState({ status: 'loading', forId: balanceId });
+    const timeout = new Promise<null>((resolve) => setTimeout(() => resolve(null), 20000));
+    const result = await Promise.race([fetchBalanceHistory({ balanceId }).catch(() => ({ ok: false as const, error: 'errors.network' })), timeout]);
+    if (latest.current !== balanceId) return;
+    if (!result) setState({ status: 'error', forId: balanceId, error: 'errors.timeout' });
+    else if (result.ok) setState({ status: 'ready', forId: balanceId, data: result.data });
+    else setState({ status: 'error', forId: balanceId, error: result.error });
   }, []);
 
   const balanceId = open && target ? target.id : null;
@@ -396,6 +402,8 @@ export function BalanceHistorySheet({
     void load(balanceId);
   }, [balanceId, load]);
 
+  // Results of another balance (the sheet was reopened for a different row) count as loading.
+  const state = raw.forId && raw.forId === balanceId ? raw : { status: 'loading' as const };
   // Prefer the figures fetched with the history (fresh even if the list behind is still refreshing).
   const figures = state.status === 'ready' && state.data ? state.data.balance : target;
 
@@ -411,12 +419,14 @@ export function BalanceHistorySheet({
   } else if (state.status === 'error') {
     body = <ErrorState description={resolveError(state.error)} onRetry={() => load(target.id)} />;
   } else {
-    const { adjustments, movements } = state.data!;
+    const { adjustments, movements, adjustmentsHidden } = state.data!;
     body = (
       <div className="flex flex-col gap-6">
         <section className="flex flex-col gap-2.5">
           <h3 className="text-sm font-semibold text-foreground">{t('history.adjustments')}</h3>
-          {adjustments.length === 0 ? (
+          {adjustmentsHidden ? (
+            <p className="rounded-md border border-dashed border-border px-3 py-4 text-center text-meta text-muted-foreground">{t('history.adjustmentsRestricted')}</p>
+          ) : adjustments.length === 0 ? (
             <p className="rounded-md border border-dashed border-border px-3 py-4 text-center text-meta text-muted-foreground">{t('history.noAdjustments')}</p>
           ) : (
             <ol className="flex flex-col divide-y divide-border rounded-md border border-border">

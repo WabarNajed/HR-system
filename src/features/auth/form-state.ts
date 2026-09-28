@@ -33,11 +33,11 @@ export function readFields<V extends string>(formData: FormData, fields: readonl
 /** Turns an `ActionResult` into the next form state (`echo` = values safe to send back). */
 export function toFormState<V extends string, D>(
   prev: FormActionState<V, D>,
-  result: ActionResult<D>,
+  result: ActionResult<unknown>,
   echo: Partial<Record<V, string>>,
 ): FormActionState<V, D> {
   if (result.ok) {
-    return { status: 'success', error: null, message: result.message ?? null, fieldErrors: {}, values: echo, data: result.data ?? null, seq: prev.seq + 1 };
+    return { status: 'success', error: null, message: result.message ?? null, fieldErrors: {}, values: echo, data: (result.data ?? null) as D | null, seq: prev.seq + 1 };
   }
   return {
     status: 'error',

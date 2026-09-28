@@ -216,6 +216,23 @@ export function FormBuilder({ types, type, initialFields, leaveTypes, canEdit, o
     setShowProblems(false);
   };
 
+  const nameOf = (id: string | number | undefined) => {
+    const f = fields.find((x) => x.uid === id);
+    return f ? localized(f, 'label', locale) || f.key : '';
+  };
+  const positionOf = (id: string | number | undefined) => fields.findIndex((x) => x.uid === id) + 1;
+  const accessibility = {
+    screenReaderInstructions: { draggable: t('dnd.instructions') },
+    announcements: {
+      onDragStart: ({ active }: { active: { id: string | number } }) => t('dnd.picked', { name: nameOf(active.id), position: positionOf(active.id) }),
+      onDragOver: ({ active, over }: { active: { id: string | number }; over: { id: string | number } | null }) =>
+        over ? t('dnd.over', { name: nameOf(active.id), position: positionOf(over.id) }) : undefined,
+      onDragEnd: ({ active, over }: { active: { id: string | number }; over: { id: string | number } | null }) =>
+        over ? t('dnd.dropped', { name: nameOf(active.id), position: positionOf(over.id) }) : undefined,
+      onDragCancel: ({ active }: { active: { id: string | number } }) => t('dnd.cancelled', { name: nameOf(active.id) }),
+    },
+  };
+
   const required = fields.filter((f) => f.required && f.is_active !== false).length;
   const conditional = fields.filter((f) => f.visibility).length;
   const typeName = localized(type, 'name', locale);
@@ -378,7 +395,7 @@ export function FormBuilder({ types, type, initialFields, leaveTypes, canEdit, o
               </header>
 
               {fields.length ? (
-                <DndContext id={dndId} sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+                <DndContext id={dndId} sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd} accessibility={accessibility}>
                   <SortableContext items={fields.map((f) => f.uid)} strategy={verticalListSortingStrategy}>
                     <ol className="flex flex-col gap-1.5 p-2.5">
                       {fields.map((f, i) => (

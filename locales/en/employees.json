@@ -273,6 +273,7 @@
       "contract": "Employment contract",
       "insurance": "Medical insurance",
       "notRecorded": "Not recorded",
+      "noExpiry": "No expiry date recorded",
       "expiresIn": "{count, plural, =0 {Expires today} one {Expires in # day} other {Expires in # days}}",
       "expiredAgo": "{count, plural, one {Expired # day ago} other {Expired # days ago}}",
       "leave": "Leave balance · {year}",

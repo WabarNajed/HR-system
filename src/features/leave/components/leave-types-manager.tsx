@@ -334,7 +334,7 @@ export function LeaveTypeSheet({
  * Leave types master data (settings pattern): used by /settings/leave-types and the Leave Types tab
  * of /leave. Read-only unless `canEdit` (settings.edit or leave.administer, organization-scoped).
  */
-export function LeaveTypesManager({ rows, canEdit }: { rows: LeaveTypeRow[]; canEdit: boolean }) {
+export function LeaveTypesManager({ rows, canEdit, canExport = false }: { rows: LeaveTypeRow[]; canEdit: boolean; canExport?: boolean }) {
   const t = useTranslations('leave');
   const tc = useTranslations('common');
   const te = useTranslations('enums');
@@ -394,7 +394,7 @@ export function LeaveTypesManager({ rows, canEdit }: { rows: LeaveTypeRow[]; can
                 <WalletCardsIcon />
                 {t('types.deducts')}
               </Badge>
-              <span className="text-meta font-medium numeric">{t('types.perYear', { days: formatDays(row.original.default_entitlement, locale) })}</span>
+              <span className="text-meta font-medium numeric">{t('types.perYear', { count: row.original.default_entitlement })}</span>
             </div>
           ) : (
             <span className="text-meta text-muted-foreground">{t('types.noDeduct')}</span>
@@ -520,6 +520,7 @@ export function LeaveTypesManager({ rows, canEdit }: { rows: LeaveTypeRow[]; can
         searchPlaceholder={t('types.searchPlaceholder')}
         searchText={(r) => `${r.name_ar} ${r.name_en} ${r.code}`}
         toolbarActions={addButton}
+        exportDataset={canExport ? 'leave_types' : undefined}
         defaultSort={{ id: 'sort_order', desc: false }}
         defaultPageSize={25}
         maxHeight="none"
@@ -532,7 +533,7 @@ export function LeaveTypesManager({ rows, canEdit }: { rows: LeaveTypeRow[]; can
                 <div className="truncate font-medium">{localized(r, 'name', locale)}</div>
                 <div className="mt-0.5 truncate text-xs text-muted-foreground">
                   {te(`dayCountBasis.${r.day_count_basis}`)}
-                  {r.deducts_balance ? ` · ${t('types.entitlementDays', { days: formatDays(r.default_entitlement, locale) })}` : ''}
+                  {r.deducts_balance ? ` · ${t('types.entitlementDays', { count: r.default_entitlement })}` : ''}
                 </div>
               </div>
             </div>

@@ -45,7 +45,7 @@ export default async function SettingsPublicHolidaysPage({ searchParams }: { sea
         }
       />
       <HolidaysKpis rows={rows} year={year} today={settings.today} />
-      <HolidaysManager rows={rows} year={year} years={years} currentYear={settings.year} today={settings.today} canEdit={access.canConfigure} />
+      <HolidaysManager rows={rows} year={year} years={years} currentYear={settings.year} today={settings.today} canEdit={access.canConfigure} canExport={access.canExportConfig} />
     </PageStack>
   );
 }

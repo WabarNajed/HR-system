@@ -53,19 +53,27 @@
     "onLeaveToday": "في إجازة اليوم",
     "onLeaveTodayHintOrg": "على مستوى المنشأة",
     "onLeaveTodayHintTeam": "من مرؤوسيك المباشرين",
-    "daysTaken": "المستخدم في {year}",
+    "daysTaken": "الأيام المستخدمة في {year}",
     "daysTakenHint": "إجمالي الإجازات المعتمدة",
-    "pending": "قيد الاعتماد",
+    "pending": "طلبات إجازة قيد الاعتماد",
     "pendingHintOrg": "بانتظار اعتماد المدير أو الموارد البشرية",
     "pendingHintTeam": "طلبات فريقك قيد الإجراء",
     "pendingHintMine": "طلباتك بانتظار الاعتماد",
-    "upcoming": "قادمة خلال 14 يومًا",
+    "upcoming": "إجازات قادمة (خلال 14 يومًا)",
     "upcomingHint": "{count, plural, =0 {جميعها معتمدة} one {طلب واحد بانتظار الاعتماد} two {طلبان بانتظار الاعتماد} few {# طلبات بانتظار الاعتماد} many {# طلبًا بانتظار الاعتماد} other {# طلب بانتظار الاعتماد}}",
-    "annual": "رصيدي السنوي المتاح",
+    "annual": "رصيدي المتاح من الإجازة السنوية",
     "annualHint": "من أصل {total, plural, one {يوم واحد} two {يومين} few {# أيام} many {# يومًا} other {# يوم}} · {pending} معلّق",
     "annualNone": "لا يوجد رصيد سنوي لعام {year}",
     "coverage": "الأرصدة المُعدّة لعام {year}",
-    "coverageHint": "الموظفون النشطون الذين لديهم سجل رصيد"
+    "coverageHint": "الموظفون النشطون الذين لديهم سجل رصيد",
+    "short": {
+      "onLeaveToday": "في إجازة اليوم",
+      "daysTaken": "المستخدم",
+      "pending": "قيد الاعتماد",
+      "upcoming": "القادمة",
+      "annual": "رصيدي السنوي",
+      "coverage": "أرصدة {year}"
+    }
   },
   "requests": {
     "searchPlaceholder": "ابحث باسم الموظف أو رقم الطلب…",
@@ -110,6 +118,7 @@
     "title": "سجل الرصيد",
     "adjustments": "التسويات",
     "noAdjustments": "لا توجد تسويات يدوية.",
+    "adjustmentsRestricted": "تفاصيل التسويات متاحة للموظف والموارد البشرية فقط.",
     "requests": "طلبات الإجازة",
     "noRequests": "لم تُستخدم هذه الأرصدة في أي طلب إجازة.",
     "by": "{name} · {date}"
@@ -151,7 +160,7 @@
     "searchPlaceholder": "ابحث في أنواع الإجازات…",
     "deducts": "يُخصم من الرصيد",
     "noDeduct": "لا يُخصم",
-    "entitlementDays": "{days} يوم",
+    "entitlementDays": "{count, plural, one {يوم واحد} two {يومان} few {# أيام} many {# يومًا} other {# يوم}}",
     "emptyTitle": "لا توجد أنواع إجازات بعد",
     "emptyDescription": "أضف أنواع الإجازات التي تمنحها المنشأة.",
     "deleteTitle": "حذف نوع الإجازة؟",
@@ -209,7 +218,7 @@
       "inactive": "موقوفة",
       "inactiveHint": "مخفية من الطلبات الجديدة"
     },
-    "perYear": "{days} يوم سنويًا"
+    "perYear": "{count, plural, one {يوم واحد سنويًا} two {يومان سنويًا} few {# أيام سنويًا} many {# يومًا سنويًا} other {# يوم سنويًا}}"
   },
   "holidays": {
     "pageDescription": "العطل الرسمية المستثناة من احتساب أيام الإجازات بأيام العمل ومن مواعيد استحقاق الطلبات.",

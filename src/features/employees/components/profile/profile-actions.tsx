@@ -79,7 +79,7 @@ export function ProfileActions({
           </Button>
         )
       ) : null}
-      {canUploadDocument ? (
+      {canUploadDocument && !archived ? (
         <UploadDocumentDialog
           employeeId={employeeId}
           trigger={

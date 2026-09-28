@@ -14,7 +14,7 @@ import {
 import { updateRegistrationDetails } from './registration-actions';
 
 /**
- * FormData adapters of the auth Server Actions for `<form method="POST" action={…}>` +
+ * FormData adapters of the auth Server Actions for `<form action={serverAction}>` (React renders method="POST") +
  * `useActionState` (progressive enhancement: a submit before hydration or without JavaScript is a
  * real POST handled here). Validation, authorization and redirects stay in the wrapped actions.
  */
