@@ -361,7 +361,7 @@ export function OrganizationForm({ defaultValues, logoUrl, canEdit, logoLockedRe
                                 key={d}
                                 value={String(d)}
                                 aria-label={options.weekdays[d]?.long}
-                                className="flex-1 px-1 data-[state=on]:font-semibold max-sm:text-xs sm:px-2.5"
+                                className="flex-1 px-0.5 data-[state=on]:font-semibold max-sm:text-xs sm:px-2.5"
                               >
                                 <DayLabel day={options.weekdays[d]} />
                               </ToggleGroupItem>
@@ -395,7 +395,7 @@ export function OrganizationForm({ defaultValues, logoUrl, canEdit, logoLockedRe
                                 key={d}
                                 value={String(d)}
                                 aria-label={options.weekdays[d]?.long}
-                                className="flex-1 px-1 data-[state=on]:bg-secondary-soft data-[state=on]:font-semibold data-[state=on]:text-secondary-soft-foreground max-sm:text-xs sm:px-2.5"
+                                className="flex-1 px-0.5 data-[state=on]:bg-secondary-soft data-[state=on]:font-semibold data-[state=on]:text-secondary-soft-foreground max-sm:text-xs sm:px-2.5"
                               >
                                 <DayLabel day={options.weekdays[d]} />
                               </ToggleGroupItem>

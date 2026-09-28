@@ -1,37 +1,28 @@
 'use client';
 
-import { zodResolver } from '@hookform/resolvers/zod';
 import { AlertCircleIcon, ArrowLeftIcon, MailCheckIcon, MailIcon } from 'lucide-react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { useState, useTransition } from 'react';
-import { useForm } from 'react-hook-form';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, useErrorMessage } from '@/components/ui/form';
+import { useErrorMessage } from '@/components/ui/form';
 import { InputGroup } from '@/components/ui/input-group';
-import { requestPasswordReset } from '../actions';
-import { forgotPasswordSchema, type ForgotPasswordInput } from '../schemas';
+import { forgotPasswordWithForm } from '../form-actions';
+import { initialFormState } from '../form-state';
+import { forgotPasswordSchema } from '../schemas';
 import { AuthHeading } from './auth-heading';
+import { ProgressiveField, useProgressiveForm } from './progressive-form';
 
+/** Request a password-reset link. Progressive: works as a plain POST before hydration / without JS. */
 export function ForgotPasswordForm() {
   const t = useTranslations('auth.forgot');
   const resolveError = useErrorMessage();
-  const [pending, startTransition] = useTransition();
-  const [error, setError] = useState<string | null>(null);
-  const [sentTo, setSentTo] = useState<string | null>(null);
-  const form = useForm<ForgotPasswordInput>({ resolver: zodResolver(forgotPasswordSchema), defaultValues: { email: '' } });
-
-  const onSubmit = (values: ForgotPasswordInput) =>
-    startTransition(async () => {
-      setError(null);
-      const result = await requestPasswordReset(values);
-      if (!result.ok) {
-        setError(result.error);
-        return;
-      }
-      setSentTo(values.email);
-    });
+  const { state, formAction, pending, errors, onSubmit, onInput } = useProgressiveForm(
+    forgotPasswordSchema,
+    forgotPasswordWithForm,
+    initialFormState<'email', { email: string }>(),
+  );
+  const alertError = state.error && !(state.error === 'errors.validation' && errors.email) ? state.error : null;
 
   const back = (
     <Button asChild variant="ghost" className="w-full">
@@ -42,7 +33,8 @@ export function ForgotPasswordForm() {
     </Button>
   );
 
-  if (sentTo) {
+  if (state.status === 'success') {
+    const sentTo = state.data?.email ?? state.values.email ?? '';
     return (
       <div>
         <AuthHeading icon={MailCheckIcon} tone="success" title={t('sentTitle')} description={t('sentDescription', { email: sentTo })} />
@@ -54,43 +46,38 @@ export function ForgotPasswordForm() {
   return (
     <>
       <AuthHeading title={t('title')} description={t('subtitle')} />
-      <Form {...form}>
-        <form method="post" onSubmit={form.handleSubmit(onSubmit)} noValidate className="flex flex-col gap-4" aria-busy={pending}>
-          {error ? (
-            <Alert variant="danger" aria-live="assertive">
-              <AlertCircleIcon />
-              <AlertDescription>{resolveError(error)}</AlertDescription>
-            </Alert>
-          ) : null}
-          <FormField
-            control={form.control}
-            name="email"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>{t('email')}</FormLabel>
-                <FormControl>
-                  <InputGroup
-                    {...field}
-                    type="email"
-                    inputMode="email"
-                    autoComplete="email"
-                    dir="ltr"
-                    start={<MailIcon />}
-                    className="h-10"
-                    disabled={pending}
-                    autoFocus
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <Button type="submit" size="lg" className="mt-2 h-11 w-full" loading={pending}>
-            {pending ? t('submitting') : t('submit')}
-          </Button>
-          {back}
-        </form>
-      </Form>
+      <form method="POST" action={formAction} onSubmit={onSubmit} onInput={onInput} noValidate className="flex flex-col gap-4" aria-busy={pending}>
+        {alertError ? (
+          <Alert variant="danger" aria-live="assertive">
+            <AlertCircleIcon />
+            <AlertDescription>{resolveError(alertError)}</AlertDescription>
+          </Alert>
+        ) : null}
+        <ProgressiveField label={t('email')} error={errors.email}>
+          {(field) => (
+            <InputGroup
+              {...field}
+              name="email"
+              type="email"
+              inputMode="email"
+              autoComplete="email"
+              autoCapitalize="none"
+              spellCheck={false}
+              dir="ltr"
+              start={<MailIcon />}
+              className="h-10"
+              defaultValue={state.values.email ?? ''}
+              readOnly={pending}
+              autoFocus
+              required
+            />
+          )}
+        </ProgressiveField>
+        <Button type="submit" size="lg" className="mt-2 h-11 w-full" loading={pending}>
+          {pending ? t('submitting') : t('submit')}
+        </Button>
+        {back}
+      </form>
     </>
   );
 }
