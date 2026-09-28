@@ -332,7 +332,8 @@ function DataTableView<TData>({
     stickyIds.has(id)
       ? cn('sticky z-[1] bg-inherit', id === 'select' || !hasSelect ? 'start-0' : 'start-11')
       : id === endStickyId
-        ? 'sticky end-0 z-[1] bg-inherit'
+        ? // From md only: on phones the pinned first column already takes most of the width.
+          'md:sticky md:end-0 md:z-[1] md:bg-inherit'
         : '';
   const stickyEdge = (id: string) => (id === startEdgeId ? 'start' : id === endStickyId ? 'end' : undefined);
 

@@ -7,6 +7,8 @@ export type BackupGroup = 'organization' | 'people' | 'structure' | 'leave' | 'r
 
 export type BackupTable = {
   table: string;
+  /** Relation to read from when it differs from `table` (e.g. the column-masked `employee_records` view). */
+  source?: string;
   group: BackupGroup;
   /** Stable order column for paging. */
   order: string;
@@ -19,7 +21,7 @@ export const BACKUP_TABLES: readonly BackupTable[] = [
   { table: 'organization_settings', group: 'organization', order: 'id' },
   { table: 'system_settings', group: 'organization', order: 'key' },
 
-  { table: 'employees', group: 'people', order: 'id' },
+  { table: 'employees', source: 'employee_records', group: 'people', order: 'id' },
   { table: 'employee_compensation', group: 'people', order: 'employee_id', sensitive: true },
   { table: 'employee_bank_accounts', group: 'people', order: 'id', sensitive: true },
   { table: 'employee_dependents', group: 'people', order: 'id' },

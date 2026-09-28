@@ -1,3 +1,4 @@
+import path from 'node:path';
 import type { NextConfig } from 'next';
 import createNextIntlPlugin from 'next-intl/plugin';
 
@@ -75,9 +76,16 @@ const nextConfig: NextConfig = {
   // and blocked automated clicks. Build/runtime errors still show in the dev overlay.
   devIndicators: false,
   turbopack: {
+    // Browser bundle only: zod in jitless mode (CSP without 'unsafe-eval') and without its 48 unused
+    // locale packs (~190 KB minified on every form page) — see src/lib/zod/.
     resolveAlias: {
-      // Browser bundle only: zod without its 48 unused locale packs (~340 KB) + jitless (CSP-safe).
       zod: { browser: './src/lib/zod/browser.ts' },
+    },
+    rules: {
+      '*.js': {
+        condition: { all: ['browser', { path: /zod\/v4\/(core\/index|classic\/external|mini\/external)\.js$/ }] },
+        loaders: [path.join(typeof __dirname === 'string' ? __dirname : process.cwd(), 'src/lib/zod/strip-locales-loader.cjs')],
+      },
     },
   },
   // Security response headers on every route (pages, route handlers, static files).

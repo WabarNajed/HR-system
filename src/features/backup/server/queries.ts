@@ -14,7 +14,7 @@ export async function getBackupCounts(client: ServerSupabaseClient, includeSensi
   const tables = backupTablesFor(includeSensitive);
   const counts = await Promise.all(
     tables.map(async (t) => {
-      const { count, error } = await loose.from(t.table).select('*', { count: 'exact', head: true });
+      const { count, error } = await loose.from(t.source ?? t.table).select('*', { count: 'exact', head: true });
       return { t, count: error ? 0 : ((count as number | null) ?? 0) };
     }),
   );

@@ -100,7 +100,7 @@ type SourceImpl = {
 
 const SOURCE_IMPLS: Record<BuilderSourceKey, SourceImpl> = {
   employees: {
-    table: 'employees',
+    table: 'employee_records',
     rowId: 'id',
     base: (q) => q.is('archived_at', null),
     fields: {
@@ -115,7 +115,7 @@ const SOURCE_IMPLS: Record<BuilderSourceKey, SourceImpl> = {
         sortCol: undefined,
       },
       manager: {
-        select: [{ alias: 'manager', rel: 'manager_id', cols: ['name_ar', 'name_en'] }],
+        select: [{ alias: 'manager', rel: 'manager_record', cols: ['name_ar', 'name_en'] }],
         get: (row, locale) => {
           const m = row.manager as Named;
           return m ? employeeDisplayName(m, locale) || null : null;

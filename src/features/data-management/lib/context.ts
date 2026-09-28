@@ -95,7 +95,12 @@ async function pageAll<T>(query: (from: number, to: number) => PromiseLike<{ dat
 
 export async function loadEmployeeIndex(client: DbClient): Promise<EmployeeIndex> {
   const rows = await pageAll<EmployeeRef>((from, to) =>
-    client.from('employees').select('id, employee_number, national_id, name_ar, name_en, archived_at').order('id').range(from, to),
+    client
+      .from('employee_records')
+      .select('id, employee_number, national_id, name_ar, name_en, archived_at')
+      .order('id')
+      .range(from, to)
+      .overrideTypes<EmployeeRef[], { merge: false }>(),
   );
   const byNumber = new Map<string, EmployeeRef>();
   const byNationalId = new Map<string, EmployeeRef>();

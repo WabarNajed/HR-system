@@ -255,12 +255,14 @@
     "export": "{format} · {count, plural, =0 {no rows} one {# row} other {# rows}}",
     "exportDataset": "{dataset} · {format} · {count, plural, =0 {no rows} one {# row} other {# rows}}",
     "importCounts": "{created} created · {updated} updated · {failed} not imported",
+    "importFile": "{file} · {counts}",
     "backup": "{tables, plural, one {# table} other {# tables}} · {rows, plural, one {# row} other {# rows}}",
     "backupSensitive": "incl. salary & bank",
     "reauthFailed": "Re-authentication failed",
     "leaveInitialize": "{year}: {count, plural, =0 {no balances} one {# balance} other {# balances}}",
     "expiryCheck": "{items, plural, =0 {no expiring items} one {# expiring item} other {# expiring items}} · {notifications, plural, =0 {no notifications} one {# notification} other {# notifications}}",
-    "emailTest": "{email}: {status}"
+    "emailTest": "{email}: {status}",
+    "roleAssign": "{role} → {email}"
   },
   "activity": {
     "title": "Activity",

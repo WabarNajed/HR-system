@@ -67,7 +67,7 @@ function importSummary(t: AuditTranslator, c: Record<string, unknown>): string |
   const failed = int(c.not_imported) ?? 0;
   if (created === null || updated === null) return file;
   const counts = t('audit.summaries.importCounts', { created, updated, failed });
-  return file ? `${file} · ${counts}` : counts;
+  return file ? t('audit.summaries.importFile', { file, counts }) : counts;
 }
 
 export function auditSummary(
@@ -122,7 +122,7 @@ export function auditSummary(
 
   if (entity === 'user_role' && raw) {
     const m = ROLE_ASSIGN_RE.exec(raw);
-    if (m && t.has(`enums.role.${m[1]}`)) return `${t(`enums.role.${m[1]}`)} → ${m[2]}`;
+    if (m && t.has(`enums.role.${m[1]}`)) return t('audit.summaries.roleAssign', { role: t(`enums.role.${m[1]}`), email: m[2]! });
   }
   // Sign-in events (and similar) store the actor's e-mail — already shown as the actor.
   if (raw && row.actor_email && raw.toLowerCase() === row.actor_email.toLowerCase()) return null;

@@ -13,7 +13,7 @@ type LooseClient = { from: (table: string) => any };
 async function readTable(client: LooseClient, t: BackupTable): Promise<Row[]> {
   const out: Row[] = [];
   for (let from = 0; from < 1_000_000; from += 1000) {
-    const { data, error } = await client.from(t.table).select('*').order(t.order).range(from, from + 999);
+    const { data, error } = await client.from(t.source ?? t.table).select('*').order(t.order).range(from, from + 999);
     if (error) throw error;
     const rows = (data ?? []) as Row[];
     out.push(...rows);

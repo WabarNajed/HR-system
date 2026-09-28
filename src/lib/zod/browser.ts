@@ -1,13 +1,13 @@
 /**
- * Browser replacement for the `zod` package entry (see `./classic.ts` and next.config.ts):
- * same `z` / named exports, minus the unused locale packs. Also switches zod to `jitless` mode so
- * it never probes `new Function` (the portal's Content-Security-Policy has no `'unsafe-eval'` in
- * production; the caught probe would still be reported as a CSP violation).
+ * Browser entry for `zod` (next.config.ts → `turbopack.resolveAlias.zod.browser`): the regular
+ * v4 classic API (`z`, named exports; locale packs stripped by `./strip-locales-loader.cjs`) with
+ * zod in `jitless` mode, so it never probes `new Function` — the production Content-Security-Policy
+ * has no `'unsafe-eval'` and the swallowed probe would still be reported as a CSP violation.
+ * Server code and TypeScript use the real `zod` entry.
  */
 import { config } from 'zod/v4/core';
-import * as z from './classic';
 
 config({ jitless: true });
 
-export * from './classic';
-export { z, z as default };
+export * from 'zod/v4';
+export { default } from 'zod/v4';

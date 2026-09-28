@@ -592,15 +592,17 @@
   --dt-stuck-shadow: 0 6px 8px -6px hsl(var(--shadow-color) / 0.2);
 }
 
-[data-slot='data-table-scroller'][data-overflow-end] [data-sticky-edge='end'] {
-  --dt-edge-shadow: inset 1px 0 0 var(--border), -10px 0 12px -10px hsl(var(--shadow-color) / 0.3);
+@media (width >= 48rem) {
+  [data-slot='data-table-scroller'][data-overflow-end] [data-sticky-edge='end'] {
+    --dt-edge-shadow: inset 1px 0 0 var(--border), -10px 0 12px -10px hsl(var(--shadow-color) / 0.3);
+  }
+
+  [dir='rtl'] [data-slot='data-table-scroller'][data-overflow-end] [data-sticky-edge='end'] {
+    --dt-edge-shadow: inset -1px 0 0 var(--border), 10px 0 12px -10px hsl(var(--shadow-color) / 0.3);
+  }
 }
 
 [data-slot='data-table-scroller'][data-overflow-start] [data-sticky-edge='start'] {
-  --dt-edge-shadow: inset -1px 0 0 var(--border), 10px 0 12px -10px hsl(var(--shadow-color) / 0.3);
-}
-
-[dir='rtl'] [data-slot='data-table-scroller'][data-overflow-end] [data-sticky-edge='end'] {
   --dt-edge-shadow: inset -1px 0 0 var(--border), 10px 0 12px -10px hsl(var(--shadow-color) / 0.3);
 }
 

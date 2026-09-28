@@ -249,8 +249,8 @@ async function commitEmployees(env: CommitEnv, rows: CommitRow[], counters: Reco
   const extraById = new Map<string, Record<string, unknown>>();
   if (updates.length) {
     const ids = updates.map((r) => r.mapped.match!.id);
-    const { data } = await env.client.from('employees').select('id, extra_data').in('id', ids);
-    for (const e of data ?? []) extraById.set(e.id, (e.extra_data as Record<string, unknown>) ?? {});
+    const { data } = await env.client.from('employee_records').select('id, extra_data').in('id', ids);
+    for (const e of data ?? []) if (e.id) extraById.set(e.id, (e.extra_data as Record<string, unknown>) ?? {});
   }
   await pool(updates, 6, async (row) => {
     const id = row.mapped.match!.id;
@@ -390,7 +390,14 @@ export async function finalizeReferences(env: CommitEnv, rows: readonly Finalize
     if (!pending.length) return { linked, unresolved };
     // Every employee written by this import (paged: PostgREST returns at most 1,000 rows per request).
     const list = await readAll<{ id: string; employee_number: string | null; national_id: string | null; name_ar: string | null; name_en: string | null }>(
-      (from, to) => env.client.from('employees').select('id, employee_number, national_id, name_ar, name_en').eq('import_id', env.importId).order('id').range(from, to),
+      (from, to) =>
+        env.client
+          .from('employee_records')
+          .select('id, employee_number, national_id, name_ar, name_en')
+          .eq('import_id', env.importId)
+          .order('id')
+          .range(from, to)
+          .overrideTypes<{ id: string; employee_number: string | null; national_id: string | null; name_ar: string | null; name_en: string | null }[], { merge: false }>(),
     );
     const numberKey = (v: string) => v.replace(/\s+/g, '').toUpperCase();
     const byNumber = new Map<string, string>();

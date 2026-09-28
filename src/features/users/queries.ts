@@ -301,13 +301,13 @@ async function attachMatches(supabase: ServerSupabaseClient, raw: RawRegistratio
   const candidates = new Map<string, MatchEmployee>();
 
   const lookups: PromiseLike<{ data: unknown; error: unknown }>[] = [];
-  if (matchedIds.length) lookups.push(supabase.from('employees').select(MATCH_SELECT).in('id', matchedIds));
+  if (matchedIds.length) lookups.push(supabase.from('employee_records').select(MATCH_SELECT).in('id', matchedIds));
   if (entered.length) {
     const variants = Array.from(new Set(entered.flatMap((v) => [v, v.toUpperCase(), v.toLowerCase()])));
     const list = variants.map((v) => `"${v.replace(/"/g, '')}"`).join(',');
     lookups.push(
       supabase
-        .from('employees')
+        .from('employee_records')
         .select(MATCH_SELECT)
         .is('archived_at', null)
         .or(`employee_number.in.(${list}),national_id.in.(${list})`)
