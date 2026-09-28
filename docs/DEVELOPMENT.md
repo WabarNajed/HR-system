@@ -73,12 +73,21 @@ The fixtures are described in `scripts/dev/README.md` (`superadmin@hr.local`, `h
 | Studio | http://127.0.0.1:54323 |
 | Mail catcher (Inbucket / Mailpit) | http://127.0.0.1:54324 (SMTP on 54325) |
 
-All e-mail stays local: Supabase Auth mail (invitations, password resets, sign-up confirmations) and
-the app's own notification e-mails (SMTP settings above) land in the mail catcher. With neither
-`RESEND_API_KEY` nor `SMTP_HOST` set, the app records e-mails in `email_logs` as `skipped`.
+All e-mail stays local and lands in the mail catcher. With the `.env.local` above (service-role key +
+`SMTP_HOST` + `EMAIL_FROM`) the app sends the account e-mails itself — invitations, password resets and
+sign-up confirmations use the portal's bilingual templates, like notification e-mails — and logs them in
+`email_logs`. Remove any of the three and Supabase Auth's own (English) e-mails are sent instead
+(DEPLOYMENT §5 *Account e-mails*). With neither `RESEND_API_KEY` nor `SMTP_HOST` set, the app records its
+e-mails in `email_logs` as `skipped`; without the service-role key it logs nothing (warning in the server
+output).
 
-`supabase/config.toml` turns on e-mail confirmation for self sign-up, like a hosted project: confirm
-new registrations from the mail catcher.
+`supabase/config.toml` turns on e-mail confirmation for self sign-up, like a hosted project: confirm new
+registrations from the mail catcher. Check what the running Auth server actually does with
+`curl -s http://127.0.0.1:54321/auth/v1/settings -H "apikey: <anon key>"`: a stack not started from this
+`config.toml` (e.g. the shared dev container's) may run with `"mailer_autoconfirm": true`. Then sign-up
+signs the applicant in straight away (→ `/pending-approval`) and **no** confirmation e-mail is sent —
+expected, not a bug. Invited accounts are created already confirmed either way; their activation e-mail
+carries a `recovery` link that opens `/reset-password` in "Set your password" mode.
 
 ## Database workflow
 
@@ -158,6 +167,6 @@ group/section uses on the client. Server Components are unaffected (`getTranslat
 | Sign-in works but pages show "service unavailable" | the Supabase stack is down: `supabase status`, then `supabase start`. |
 | A new column or RPC is "not found in the schema cache" | the migration is not applied: `supabase migration up` (PostgREST reloads automatically). |
 | Type errors after a schema change | `pnpm db:types`. |
-| Registration e-mail never arrives | open the mail catcher at :54324; confirmations are on (`[auth.email] enable_confirmations`). |
+| Registration e-mail never arrives | open the mail catcher at :54324. If `/auth/v1/settings` reports `"mailer_autoconfirm": true`, confirmations are off in the running Auth server and no e-mail is sent by design (see *Local services*). |
 | PDF export fails locally | set `CHROMIUM_EXECUTABLE_PATH` to a Chrome/Chromium binary. |
 | Sign-in rate limited during E2E runs | the CLI allows 30 sign-ins per 5 minutes per IP (`[auth.rate_limit]`); wait, or raise it locally. |

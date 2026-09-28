@@ -59,7 +59,29 @@ transaction.
 | `20260928070000`–`070200_certificates_*.sql` | M7 certificates: template drafts / publishing (`published_version`) and their RPCs; `issue_certificate` requires the stored PDF; direct INSERT / UPDATE / DELETE on `certificates` revoked (RPCs only) |
 | `20260928090000`–`090200_reports_*.sql` | M9 report functions (security invoker — RLS decides the rows) |
 | `20260928100000`–`100100_data_management*.sql` | M10: `import_sources` (parsed workbook grid of the import wizard); per-type access to imports, import rows and sources |
-| `20260928210101_…` → `2026092821xxxx_<area>_fix_<desc>.sql` | Final QA-gate fixes, one file per fix; each header states *before / after*. Security-relevant: e-mail-confirmed admin invitations, column scope for employee identity data (`employee_records`, `private.employee_personal`), segregation of duties for HR writes on their own records, immutable issued certificate files, per-certificate verification codes, `log_audit_event` / `log_email` service-role only and one `auth.login` per session (`…211201`), full `profiles` rows narrowed + `profile_cards` (`…211202`) |
+| `2026092821xxxx_<area>_fix_<desc>.sql`, `2026092822xxxx_<area>_fix_<desc>.sql` | Final QA-gate fixes (round 1 = `…21…`, round 2 = `…22…`), one file per fix; each header states *before / after*. Listed below |
+
+**QA-gate fix migrations** (security-relevant ones in bold):
+
+| File | Fix |
+|---|---|
+| **`20260928210101_auth_fix_account_emails.sql`** | `registration_confirm` e-mail template (seeded by `private.seed_auth_email_templates()`, called from `private.seed_defaults()`); admin-invited accounts are e-mail-confirmed (existing unconfirmed invited accounts confirmed) — section 15 |
+| **`20260928210301_employees_fix_personal_column_scope.sql`** | Column scope for employee identity / personal data: column SELECT grants on `employees`, `private.employee_personal`, view `public.employee_records` (section 5) |
+| `20260928210302_employees_fix_record_manager_rel.sql` | `employee_records`: to-one `manager` relationship for PostgREST embeds |
+| `20260928210303_employees_fix_extra_data_merge.sql` | Direct Data API updates of `employees.extra_data` merge into the stored object |
+| `20260928210401_requests_fix_inactive_type_visibility.sql` | A deactivated request type (and its fields) stays readable on the requests that use it |
+| `20260928210402_requests_fix_center_counts.sql`, `…210403_…_viewer_once.sql` | `request_center_counts`: Request Center / Approvals counters in one RLS-scoped scan |
+| **`20260928210501_leave_fix_self_service_sod.sql`** | Segregation of duties for HR writes on the actor's own record (super admin excepted): leave balance RPCs refuse it (`selfChangeNotAllowed`), and guard trigger `self_record_write_guard` blocks API changes to one's own `leave_balances`, `employee_compensation`, `employee_bank_accounts` |
+| **`20260928210701_certificates_fix_immutable_files.sql`** | Issued (valid / revoked) certificate PDFs are immutable in Storage (section 6) |
+| **`20260928210702_certificates_fix_verification_code.sql`** | Per-certificate `verification_code`; `verify_certificate(p_number, p_code)` reveals holder details only with the code (section 7, *Public*) |
+| `20260928210801_requestconfig_fix_email_recipient_name_locale.sql` | `claim_notification_emails.recipient_name` in the e-mail's language (section 11) |
+| `20260928210901_reports_fix_request_rows_perf.sql` | `report_request_rows()` performance at production volume |
+| `20260928211101_dashboards_fix_today_and_facets.sql` | "Today" evaluated once per call (`expiry_buckets`, `employee_directory_stats`); index-friendly `audit_log_facets` |
+| **`20260928211201_platformdb_fix_audit_rpc_lockdown.sql`** | `log_audit_event` / `log_email` service-role only; `record_login` for non-blocked users, one `auth.login` per session (section 12) |
+| **`20260928211202_platformdb_fix_profile_visibility.sql`** | Full `profiles` rows: self + org viewers only; name cards through the view `profile_cards` (section 5) |
+| **`20260928221201_platformdb_fix_audit_mask_verification_code.sql`** | `verification_code` added to the audit masking list; clear-text codes already in `audit_logs` redacted once (section 12) |
+| **`20260928221202_platformdb_fix_document_file_immutable.sql`** | Files referenced by an `employee_documents` row cannot be overwritten, moved or deleted (only the uploader's own `pending_review` submission) — section 6 |
+| `20260928221203_platformdb_fix_directory_stats_portal.sql` | `employee_directory_stats().without_portal` reads `profile_cards` (correct for managers) |
 
 Commands:
 
@@ -198,11 +220,11 @@ A user whose status is `pending`, `info_requested`, `rejected` or `disabled` see
 
 | Table | Employee | Manager | HR (org-scoped perms) | Writes |
 |---|---|---|---|---|
-| employees | own row | + direct reports | `employees.view` | insert `employees.create`, update `employees.edit` (identity/personal columns also need `personal_data.edit`, via trigger), delete `employees.administer` |
+| employees | own row | + direct reports | `employees.view` | insert `employees.create`, update `employees.edit` (identity/personal columns also need `personal_data.edit`, via trigger), delete `employees.administer`. Readable **columns** are limited — see *Employee column scope* below |
 | employee_compensation, employee_bank_accounts | own | ✗ | `bank.view` | `bank.create`/`bank.edit` |
 | employee_insurance | own | ✗ | `insurance.view` | `insurance.*` |
 | employee_dependents | own | ✗ | `personal_data.view` | `personal_data.*` |
-| employee_documents | own, non-confidential or uploaded by self | ✗ | `documents.view` | HR `documents.create/edit`; owner may insert/delete own rows with `status = 'pending_review'` |
+| employee_documents | own, non-confidential or uploaded by self | ✗ | `documents.view` | HR `documents.create/edit`; owner may insert/delete own rows with `status = 'pending_review'`. The file a row references is immutable in Storage (section 6) |
 | hr_requests | own (drafts: requester only) | current/previous approver; direct reports' requests whose type has a manager step; role-step queue | `requests.view` (not drafts) | RPCs only; HR `requests.edit` may update `priority`; requester may delete own draft |
 | hr_request_values, request_history, request_approvals | follow hr_requests | follow hr_requests | follow hr_requests | RPC only |
 | request_attachments | follow hr_requests | follow hr_requests | follow hr_requests | requester (draft/returned), HR `requests.edit` |
@@ -226,6 +248,30 @@ A user whose status is `pending`, `info_requested`, `rejected` or `disabled` see
 | audit_logs | ✗ | ✗ | `audit.view` | append-only; triggers, definer RPCs and service-role `log_audit_event` only (section 12) |
 | document_sequences | ✗ | ✗ | ✗ | `next_document_number` only |
 
+**Employee column scope** (`20260928210301`). Rows of `public.employees` are decided by RLS, but
+`authenticated` holds column-level SELECT only on the directory / employment / compliance columns
+(`id, employee_number, name_ar, name_en, company_email, mobile, alt_mobile, gender, nationality,
+department_id, division, section, job_title_id, grade, manager_id, employment_type, employment_status,
+joining_date, probation_end_date, contract_start_date, contract_end_date, termination_date, location_id,
+cost_center_id, id_type, iqama_expiry_date, iqama_expiry_hijri, passport_expiry_date, avatar_path,
+import_id, archived_at, archived_by, search_text, created_at, updated_at, created_by, updated_by,
+search_norm`).
+
+- The identity / personal columns (`national_id`, `passport_number`, `date_of_birth`, `marital_status`,
+  `address`, `personal_email`, `iqama_issue_date`, `iqama_profession`, `employer_number`,
+  `is_outside_kingdom`, `emergency_contact_name/relationship/mobile`) are read only through the view
+  **`public.employee_records`** (security invoker: same rows as `employees`, full row shape). It takes
+  them from `private.employee_personal`, which returns a value only for the employee themselves or an
+  org-scoped holder of `personal_data.view` / `personal_data.edit`, and NULL otherwise.
+- `extra_data` (unmapped import columns) is returned only for org `personal_data.view` or
+  `employees.create`. Direct API updates merge into the stored object (`employees_extra_data_merge`).
+- A `select *` or an embed of a revoked column on `employees` fails with `permission denied`; code that
+  needs those columns reads `employee_records`.
+- **Adding an `employees` column:** a new non-sensitive column needs an explicit
+  `grant select (<col>) on public.employees to authenticated;` in its migration, otherwise it is
+  unreadable through the Data API. A sensitive column stays ungranted and is exposed only through
+  `private.employee_personal` / `employee_records` (recreate both views with the new column).
+
 Guard triggers add a second line of defence against direct Data API writes by `authenticated`. They
 are security invoker: `current_user = 'authenticated'` marks a direct write, and statements inside
 definer RPCs or from service-role code skip them.
@@ -245,9 +291,9 @@ created with the **user's** client, so the SELECT policies below are the access 
 
 | Bucket | Path | Read | Write | Limit / types |
 |---|---|---|---|---|
-| `employee-documents` | `{employee_id}/{document_id}/{file}`; avatars `{employee_id}/avatar/{file}` | owner (non-confidential or own upload), HR `documents.view`; avatars: anyone who can view the employee | HR `documents.create/edit`; owner into a `pending_review` row they created; avatars: HR `employees.edit` | 20 MiB; pdf, jpeg, png, webp, heic, doc/x, xls/x |
+| `employee-documents` | `{employee_id}/{document_id}/{file}`; avatars `{employee_id}/avatar/{file}` | owner (non-confidential or own upload), HR `documents.view`; avatars: anyone who can view the employee | new objects: HR `documents.create/edit`; owner into a `pending_review` row they created; avatars: HR `employees.edit`. Overwrite (upsert), move and delete of a path an `employee_documents` row references: only the row's uploader, for their own record, while `pending_review` — nobody else (see below) | 20 MiB; pdf, jpeg, png, webp, heic, doc/x, xls/x |
 | `request-attachments` | `requests/{request_id}/{uuid}-{file}` | whoever can view the request (requester, employee, current/previous approvers, HR) | requester (draft/returned), HR `requests.edit` | 20 MiB; as above + txt/csv |
-| `certificate-files` | `certificates/{employee_id}/{certificate_number}.pdf`, `branding/stamp.*`, `branding/signature.*` | certificates: owner (only while `valid`), HR `certificates.view`; branding: `certificates.view` or `settings.view` | certificates: `certificates.create`; branding: `settings.edit` | 20 MiB; pdf, png, jpeg, webp |
+| `certificate-files` | `certificates/{employee_id}/{certificate_number}.pdf`, `branding/stamp.*`, `branding/signature.*` | certificates: owner (only while `valid`), HR `certificates.view`; branding: `certificates.view` or `settings.view` | certificates: `certificates.create`, exactly `certificates/<employee uuid>/<file>`, and only while no `certificates` row references the path (issued PDFs — valid or revoked — are never overwritten, moved or deleted); branding: `settings.edit` | 20 MiB; pdf, png, jpeg, webp |
 | `branding` (**public**) | `logo/*`, `login/*` | anyone | super_admin or `settings.administer` | 5 MiB; png, jpeg, webp, svg |
 
 **Employee self-upload flow:**
@@ -256,6 +302,22 @@ created with the **user's** client, so the SELECT policies below are the access 
 3. Upload to that path.
 
 **HR flow:** the same steps with any status.
+
+**Immutable document files** (`20260928221202`). INSERT creates a new object only (a plain insert on an
+existing name is a duplicate error; an upsert takes the UPDATE path). UPDATE (upsert, move) and DELETE
+go through `private.can_modify_employee_file(name)`: an object no `employee_documents` row references
+(an avatar, a superseded file, an uncommitted replacement, an orphan) follows the write rule above; a
+referenced object may be changed only by the row's uploader, for their own employee record, while the
+row is `pending_review` (retry or withdrawal of a self-service submission). So:
+
+- **Replace a file** (`prepareReplaceFile` / `commitReplaceFile`): upload to a new path in the document
+  folder, point the row's `storage_path` at it (audited as `employee_document.update` and
+  `document.replace_file`), then remove the old, now unreferenced object.
+- **Delete a document** (HR): delete the row first, then the file. The owner's withdrawal of a
+  `pending_review` upload removes the file first, then the row.
+- Issued certificate PDFs follow the same rule (`20260928210701`): the pre-issue upload and the cleanup
+  of an orphan after a failed issue are allowed; once `issue_certificate` references the path, the
+  object is fixed.
 
 **Request attachments:** upload to `requests/{requestId}/{uuid}-{file}`, then insert the
 `request_attachments` row with `field_key`.
@@ -527,7 +589,7 @@ client-side from `locales/*/notifications.json` (`types.<type>.title/body`) with
 
 **E-mail delivery** (`lib/notifications.ts`, no service role needed):
 1. Take `notification_ids` from the RPC result.
-2. Call `claim_notification_emails(ids)`. It returns `recipient_email, recipient_name, language, type, params, link, template_key` for types whose `email_enabled` is on, and marks them `emailed_at` (idempotent).
+2. Call `claim_notification_emails(ids)`. It returns `recipient_email, recipient_name, language, type, params, link, template_key` for types whose `email_enabled` is on, and marks them `emailed_at` (idempotent). `recipient_name` is the linked employee's name in the e-mail language (`name_ar` / `name_en` with cross-fallback), else `profiles.full_name`, else the e-mail address.
 3. Render `email_templates[template_key]` in `language` and send it.
 4. Call `log_email(...)` through the **service-role** client (`recordEmail`); users cannot write `email_logs`.
 
@@ -559,9 +621,11 @@ role.
   (passed by `src/lib/audit.ts`); for triggers and RPCs, the PostgREST request headers (the Next.js
   server when the call comes from server code).
 
-**Masking:** `iban`, `basic_salary`, `housing_allowance`, `transport_allowance`, `other_allowance`,
-`total_salary`, `national_id` and `passport_number` are stored as `"***"`, but the field is still
-named. `log_audit_event` masks the same keys.
+**Masking** (`private.mask_changes`, used by every writer): `iban`, `basic_salary`,
+`housing_allowance`, `transport_allowance`, `other_allowance`, `total_salary`, `salary`, `amount_salary`,
+`national_id`, `passport_number` and the certificate `verification_code` are stored as `"***"` (each
+non-null `old` / `new`), but the field is still named. `log_audit_event` masks the same keys. Codes
+written before `20260928221201` were redacted once by that migration.
 
 **RPC events:** `request.*`, `registration.submit|approve|reject|request_info`, `user.invite`,
 `user.roles_update`, `user.enable|disable`, `auth.login`, `leave_balance.initialize|update`,
@@ -580,7 +644,9 @@ trail cannot be forged or flooded from the Data API. Events: `auth.logout`, `aut
 rejected accounts.
 
 **Append-only:** UPDATE, DELETE and TRUNCATE are revoked from `authenticated`, `service_role` and the
-owner. A trigger also rejects UPDATE, DELETE and TRUNCATE even if privileges are re-granted. Seeds and
+owner. A trigger also rejects UPDATE, DELETE and TRUNCATE even if privileges are re-granted. Only a
+migration can lift both (the one-time `verification_code` redaction in `20260928221201` does so for one
+key-scoped UPDATE and restores them in the same transaction). Seeds and
 `reset_organization` run with `hr.suppress_audit` so bulk system work does not flood the log. The reset
 itself is audited.
 
@@ -706,13 +772,33 @@ It keeps the super-admin accounts, roles, role permissions and the audit trail.
 - **Admin-provisioned users** (invite or create from Users). Server code, after `requirePermission('users', 'create')`:
   1. Creates the Auth user with the **service role**. Use
      `auth.admin.createUser({ email, email_confirm: true, app_metadata: { invited_by_admin: true }, user_metadata: { full_name } })`
-     and then `auth.admin.generateLink({ type: 'invite' | 'recovery' })`, or use `inviteUserByEmail`.
+     and then `auth.admin.generateLink({ type: 'recovery' })` for the activation link (never
+     `inviteUserByEmail`, which leaves the account unconfirmed — see *Account e-mails* below).
      `app_metadata` can only be set with the service role. When `invited_by_admin` is present at
      insert, the trigger creates the profile as `active` with `invited_at`. Otherwise it is `pending`.
   2. Links the employee and assigns roles with the **user's** client, so the actor is audited:
      `approve_registration(profile_id, employee_id, role)`, which also works for an active profile
      that is not linked yet, then `set_user_roles`.
   3. Inserts an `account_invited` notification or e-mail through the service role.
+- **Account e-mails** (`src/lib/auth/provisioning.ts`, `scripts/bootstrap-super-admin.ts`). When the
+  server has `SUPABASE_SERVICE_ROLE_KEY`, an e-mail provider (`RESEND_API_KEY` or `SMTP_HOST`) and
+  `EMAIL_FROM`, the portal generates the link with `auth.admin.generateLink` and sends its own bilingual
+  template (Arabic-first, recipient's language), logged in `email_logs`:
+  - self sign-up → `registration_confirm` (`generateLink({ type: 'signup' })`);
+  - forgot password → `password_reset` (`recovery`), or `account_invitation` for an invited account
+    that never activated;
+  - admin invitation / resend and the Super Admin bootstrap → `account_invitation`.
+
+  Links point at `/auth/confirm?token_hash=…&type=…` with `next=/reset-password` (`next=/pending-approval`
+  for sign-up). Without that configuration the flows fall back to GoTrue's own e-mails and templates.
+  **Invited accounts are created with a confirmed e-mail** (`email_confirm: true`), because with e-mail
+  confirmations off an unconfirmed invited address could be claimed through the public sign-up. Their
+  activation link is therefore a `recovery` link (the reset page shows "Set your password");
+  `20260928210101` confirmed the invited accounts that already existed. `password_reset` and
+  `account_invitation` come from `private.seed_email_templates()`; `registration_confirm` from
+  `private.seed_auth_email_templates()`. `private.seed_defaults()` calls both — **any redefinition of
+  `private.seed_defaults()` must keep `perform private.seed_auth_email_templates();`**, or
+  `reset_organization` loses the sign-up template.
 - **Super Admin bootstrap** (`pnpm bootstrap:super-admin --email <addr>`, service role):
   1. Find or create the Auth user by e-mail, with `app_metadata.invited_by_admin = true`.
   2. Upsert the `profiles` row with `status = 'active'`. The trigger created it, and a pre-existing
@@ -812,6 +898,11 @@ the file is stale.
   the caller first and raise `hr:errors.<key>`. **Supabase grants EXECUTE on new functions to `anon`**:
   add `revoke execute on function … from public, anon;` unless the function is meant to be public.
 - Keep sensitive column names in the masking list (`private.mask_changes`) up to date.
+- Redefining `private.seed_defaults()`: keep every `perform private.seed_*()` call, including
+  `private.seed_auth_email_templates()` (section 15).
+- A new `employees` column needs an explicit column grant (section 5, *Employee column scope*).
+- Security invoker functions and views must not read `public.profiles` for other users' names or
+  links: use `public.profile_cards` (full rows are visible only to the user and org viewers).
 - Run `supabase/tests/run.sh` and `pnpm db:types` before committing.
 
 ## 19. Known limitations

@@ -40,7 +40,10 @@ e.g. a small VPS or Railway/Render); set `CHROMIUM_EXECUTABLE_PATH` to a local C
      `https://<your-domain>/**`
 4. **Authentication → Providers → Email**: enable email sign-in; keep "Confirm email" ON for production
    self-registration (users confirm, then wait for HR approval).
-5. **Authentication → Emails → SMTP settings** (so invitations and password resets come from your domain):
+5. **Authentication → Emails → SMTP settings** — the *fallback* for account e-mails. With the app's own
+   e-mail configured (§3: `SUPABASE_SERVICE_ROLE_KEY`, `RESEND_API_KEY` or `SMTP_*`, `EMAIL_FROM`) the
+   portal sends invitations, password resets and sign-up confirmations itself (see §5 *Account
+   e-mails*); set this up anyway so GoTrue's e-mails also come from your domain if that is ever missing:
    with Resend use host `smtp.resend.com`, port `465`, user `resend`, password = your Resend API key,
    sender = `hr@<your-domain>`. Update the invite / recovery email templates so their links point to
    `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=invite&next=/reset-password` (invite) and
@@ -114,6 +117,23 @@ e.g. a small VPS or Railway/Render); set `CHROMIUM_EXECUTABLE_PATH` to a local C
 * **Schema changes**: add a new file to `supabase/migrations/`, run `pnpm db:test` locally, then
   `supabase db push`.
 * **Security**: all authorization is enforced by Postgres RLS and security-definer RPCs; the service-role
-  key is used only server-side for Auth administration, bootstrap, and organization reset.
+  key is used only server-side for Auth administration, e-mail logging, bootstrap, and organization reset.
+* **Account e-mails** (invitation, password reset, sign-up confirmation):
+  * **Portal e-mails** — used when `SUPABASE_SERVICE_ROLE_KEY`, an e-mail provider (`RESEND_API_KEY` or
+    `SMTP_HOST`) and `EMAIL_FROM` are **all** set. The app generates the link with
+    `auth.admin.generateLink` (`/auth/confirm?token_hash=…`) and sends the bilingual templates
+    `account_invitation`, `password_reset` and `registration_confirm` (Settings → Email templates) in the
+    recipient's language, logged in `email_logs`. Forgot password is throttled to 1 e-mail per minute and
+    5 per hour per address; sign-up to 30 registrations per 5 minutes.
+  * **GoTrue fallback** — when any of the three is missing, Supabase Auth sends its own e-mails (§2 step 5
+    SMTP and templates). Without the service-role key nothing is written to `email_logs` (`log_email` is
+    service-role only); the server log shows a warning instead.
+  * **Sign-up** additionally needs GoTrue to require confirmation ("Confirm email" ON, §2 step 4). The app
+    reads `mailer_autoconfirm` from `/auth/v1/settings` (cached 5 minutes); with confirmations off GoTrue
+    signs the applicant in immediately (status *pending approval*) and no confirmation e-mail is sent.
+  * **Invited accounts** (HR invitation, `pnpm bootstrap:super-admin`) are created with a confirmed e-mail,
+    so a not-yet-activated account can never be claimed through public sign-up. Their activation link is a
+    `recovery` link: `/reset-password` shows "Set your password". *Forgot password* on an invited account
+    that never signed in sends a fresh invitation instead of a reset.
 * **Moving to another organization**: Super Admin → Backup & Reset → *Reset organization* (requires
   re-authentication and typing `RESET ORGANIZATION`), then run the setup wizard again.

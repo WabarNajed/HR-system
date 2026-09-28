@@ -147,7 +147,7 @@ export function AuditLogTable({ rows, total, options, initialEvent, canExport, n
                   <ExternalLinkIcon className="size-3 shrink-0" aria-hidden />
                 </Link>
               ) : r.entityId ? (
-                <code className="mt-0.5 block truncate font-mono text-[0.6875rem] text-faint-foreground" dir="ltr">
+                <code className="mt-0.5 block truncate font-mono text-2xs text-faint-foreground" dir="ltr">
                   {r.entityId}
                 </code>
               ) : null}

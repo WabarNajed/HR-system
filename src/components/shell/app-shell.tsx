@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetDescription, SheetTitle } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetDescription, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { SimpleTooltip } from '@/components/ui/tooltip';
 import { BreadcrumbProvider } from './breadcrumb-context';
 import { GlobalSearch } from './global-search';
@@ -61,96 +61,92 @@ export function AppShell({ branding, user, permissions, visibleNavIds, initialCo
 
   return (
     <BreadcrumbProvider>
-      <div className="min-h-dvh bg-background" style={style} data-sidebar={collapsed ? 'collapsed' : 'expanded'}>
-        <a
-          href="#main"
-          className="sr-only z-[60] rounded-md bg-primary px-3 py-2 text-sm text-primary-foreground focus:not-sr-only focus:fixed focus:start-3 focus:top-3"
-        >
-          {tCommon('skipToContent')}
-        </a>
+      {/* The sheet root wraps the shell so the header's menu button is its trigger (focus returns to it on close). */}
+      <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+        <div className="min-h-dvh bg-background" style={style} data-sidebar={collapsed ? 'collapsed' : 'expanded'}>
+          <a
+            href="#main"
+            className="sr-only z-[60] rounded-md bg-primary px-3 py-2 text-sm text-primary-foreground focus:not-sr-only focus:fixed focus:start-3 focus:top-3"
+          >
+            {tCommon('skipToContent')}
+          </a>
 
-        {/* Desktop sidebar */}
-        <aside
-          className="fixed inset-y-0 start-0 z-40 hidden w-(--shell-sidebar) border-e border-sidebar-border transition-[width] duration-200 ease-out lg:block"
-          aria-label={t('mainNavigation')}
-        >
-          <SidebarContent
-            branding={branding}
-            user={user}
-            visibleNavIds={visibleNavIds}
-            collapsed={collapsed}
-            onToggleCollapsed={toggleCollapsed}
-          />
-        </aside>
-
-        {/* Mobile sidebar */}
-        <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-          <SheetContent side="start" showCloseButton={false} className="w-[18rem] max-w-[85vw] border-sidebar-border bg-sidebar p-0 sm:max-w-[18rem]">
-            <SheetTitle className="sr-only">{t('mainNavigation')}</SheetTitle>
-            <SheetDescription className="sr-only">{branding.portalName}</SheetDescription>
+          {/* Desktop sidebar */}
+          <aside
+            className="fixed inset-y-0 start-0 z-40 hidden w-(--shell-sidebar) border-e border-sidebar-border transition-[width] duration-200 ease-out lg:block"
+            aria-label={t('mainNavigation')}
+          >
             <SidebarContent
               branding={branding}
               user={user}
               visibleNavIds={visibleNavIds}
-              variant="sheet"
-              onNavigate={() => setMobileOpen(false)}
+              collapsed={collapsed}
+              onToggleCollapsed={toggleCollapsed}
             />
-          </SheetContent>
-        </Sheet>
+          </aside>
 
-        <div className="flex min-h-dvh flex-col transition-[padding] duration-200 ease-out lg:ps-(--shell-sidebar)">
-          {/* Header */}
-          <header data-slot="app-header" className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-2 border-b border-border bg-background/85 px-3 backdrop-blur-md supports-[backdrop-filter]:bg-background/70 md:px-6">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="-ms-1 text-muted-foreground hover:text-foreground lg:hidden"
-              onClick={() => setMobileOpen(true)}
-              aria-label={t('openNavigation')}
-              aria-expanded={mobileOpen}
-            >
-              <MenuIcon />
-            </Button>
+          {/* Mobile sidebar */}
+            <SheetContent side="start" showCloseButton={false} className="w-[18rem] max-w-[85vw] border-sidebar-border bg-sidebar p-0 sm:max-w-[18rem]">
+              <SheetTitle className="sr-only">{t('mainNavigation')}</SheetTitle>
+              <SheetDescription className="sr-only">{branding.portalName}</SheetDescription>
+              <SidebarContent
+                branding={branding}
+                user={user}
+                visibleNavIds={visibleNavIds}
+                variant="sheet"
+                onNavigate={() => setMobileOpen(false)}
+              />
+            </SheetContent>
 
-            <HeaderBreadcrumbs className="min-w-0 flex-1" />
-
-            <div className="flex shrink-0 items-center gap-1 md:gap-1.5">
-              <GlobalSearch visibleNavIds={visibleNavIds} />
-
-              <SimpleTooltip content={t('newRequest')}>
-                <Button asChild size="sm" className="ms-1 max-md:size-9 max-md:px-0 md:ms-1.5">
-                  <Link href="/requests/new" aria-label={t('newRequest')}>
-                    <FilePlus2Icon className="size-4" />
-                    <span className="hidden md:inline">{t('newRequest')}</span>
-                  </Link>
+          <div className="flex min-h-dvh flex-col transition-[padding] duration-200 ease-out lg:ps-(--shell-sidebar)">
+            {/* Header */}
+            <header data-slot="app-header" className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-2 border-b border-border bg-background/85 px-3 backdrop-blur-md supports-[backdrop-filter]:bg-background/70 md:px-6">
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" className="-ms-1 text-muted-foreground hover:text-foreground lg:hidden" aria-label={t('openNavigation')}>
+                  <MenuIcon />
                 </Button>
-              </SimpleTooltip>
+              </SheetTrigger>
 
-              {permissions.canAddEmployee ? (
-                <Button asChild size="sm" variant="outline" className="hidden xl:inline-flex">
-                  <Link href="/employees/new">
-                    <UserPlusIcon />
-                    {t('addEmployee')}
-                  </Link>
-                </Button>
-              ) : null}
+              <HeaderBreadcrumbs className="min-w-0 flex-1" />
 
-              <div className="mx-0.5 hidden h-6 w-px bg-border md:block" aria-hidden />
+              <div className="flex shrink-0 items-center gap-1 md:gap-1.5">
+                <GlobalSearch visibleNavIds={visibleNavIds} />
 
-              <NotificationBell initialUnread={initialUnread} />
-              <LanguageSwitch className="hidden sm:inline-flex" />
-              <ThemeToggle className="hidden sm:inline-flex" />
-              <div className="ms-0.5">
-                <UserMenu user={user} />
+                <SimpleTooltip content={t('newRequest')}>
+                  <Button asChild size="sm" className="ms-1 max-md:size-9 max-md:px-0 md:ms-1.5">
+                    <Link href="/requests/new" aria-label={t('newRequest')}>
+                      <FilePlus2Icon className="size-4" />
+                      <span className="hidden md:inline">{t('newRequest')}</span>
+                    </Link>
+                  </Button>
+                </SimpleTooltip>
+
+                {permissions.canAddEmployee ? (
+                  <Button asChild size="sm" variant="outline" className="hidden xl:inline-flex">
+                    <Link href="/employees/new">
+                      <UserPlusIcon />
+                      {t('addEmployee')}
+                    </Link>
+                  </Button>
+                ) : null}
+
+                <div className="mx-0.5 hidden h-6 w-px bg-border md:block" aria-hidden />
+
+                <NotificationBell initialUnread={initialUnread} />
+                <LanguageSwitch className="hidden sm:inline-flex" />
+                <ThemeToggle className="hidden sm:inline-flex" />
+                <div className="ms-0.5">
+                  <UserMenu user={user} />
+                </div>
               </div>
-            </div>
-          </header>
+            </header>
 
-          <main id="main" tabIndex={-1} className="page-padding min-w-0 flex-1 outline-none">
-            {children}
-          </main>
+            <main id="main" tabIndex={-1} className="page-padding min-w-0 flex-1 outline-none">
+              {children}
+            </main>
+          </div>
         </div>
-      </div>
+      </Sheet>
     </BreadcrumbProvider>
   );
 }

@@ -3,6 +3,7 @@ import { SETTINGS_NAV, type SettingsItemKey } from '@/components/shell/nav-confi
 import { SettingsNav, type VisibleSettingsGroup } from '@/components/shell/settings-nav';
 import { countPendingRegistrations } from '@/features/settings/overview';
 import { requireActiveUser } from '@/lib/auth/guards';
+import { ClientMessages } from '@/lib/i18n/client-messages';
 import { checkAccess, hasAny } from '@/lib/permissions';
 import { createClient } from '@/lib/supabase/server';
 
@@ -25,11 +26,16 @@ export default async function SettingsLayout({ children }: { children: ReactNode
   }
 
   return (
-    // Row (nav beside the page) only when the content area is wide enough: same breakpoints as
-    // the nav/picker switch in `SettingsNav` (≥ 90rem, or ≥ xl with the app sidebar collapsed).
-    <div className="flex flex-col gap-4 min-[90rem]:flex-row min-[90rem]:items-start min-[90rem]:gap-6 xl:in-data-[sidebar=collapsed]:flex-row xl:in-data-[sidebar=collapsed]:items-start xl:in-data-[sidebar=collapsed]:gap-6">
-      <SettingsNav groups={groups} badges={badges} />
-      <div className="min-w-0 flex-1">{children}</div>
-    </div>
+    // Client message namespaces of the settings pages (ARCHITECTURE §4; checked by `pnpm check:i18n`).
+    <ClientMessages
+      ns={['certificates', 'emailTemplates', 'leave', 'masterData', 'requestConfig', 'requests', 'roles', 'settings', 'templates', 'users']}
+    >
+      {/* Row (nav beside the page) only when the content area is wide enough: same breakpoints as
+          the nav/picker switch in `SettingsNav` (≥ 90rem, or ≥ xl with the app sidebar collapsed). */}
+      <div className="flex flex-col gap-4 min-[90rem]:flex-row min-[90rem]:items-start min-[90rem]:gap-6 xl:in-data-[sidebar=collapsed]:flex-row xl:in-data-[sidebar=collapsed]:items-start xl:in-data-[sidebar=collapsed]:gap-6">
+        <SettingsNav groups={groups} badges={badges} />
+        <div className="min-w-0 flex-1">{children}</div>
+      </div>
+    </ClientMessages>
   );
 }

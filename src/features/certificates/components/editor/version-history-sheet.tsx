@@ -148,7 +148,7 @@ export function VersionHistorySheet({
                     </div>
                     {v.change_notes ? <p className="mt-2 text-sm text-foreground">{v.change_notes}</p> : null}
                     {prev ? (
-                      <p className="mt-2 text-[0.6875rem] leading-4 text-muted-foreground">
+                      <p className="mt-2 text-2xs leading-4 text-muted-foreground">
                         {fields.length ? t('changed', { fields: fields.map(fieldName).join(locale === 'ar' ? '، ' : ', ') }) : formatting ? t('formattingOnly') : t('noChanges')}
                         {delta ? (
                           <span className={cn('ms-1.5 numeric font-medium', delta > 0 ? 'text-success' : 'text-danger')}>

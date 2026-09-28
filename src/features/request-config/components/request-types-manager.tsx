@@ -158,7 +158,7 @@ export function RequestTypesManager({ rows, roles, canEdit }: Props) {
         cell: ({ row }) => (
           <div className="flex flex-col items-start gap-1">
             <ApprovalPathChips steps={row.original.steps} roles={roles} className="flex-nowrap whitespace-nowrap" />
-            {row.original.workflowKind === 'custom' ? <span className="text-[0.6875rem] text-secondary-soft-foreground">{t('workflows.kind.custom')}</span> : null}
+            {row.original.workflowKind === 'custom' ? <span className="text-2xs text-secondary-soft-foreground">{t('workflows.kind.custom')}</span> : null}
           </div>
         ),
         meta: { label: t('types.columns.approvals') },
@@ -173,7 +173,8 @@ export function RequestTypesManager({ rows, roles, canEdit }: Props) {
           ) : (
             <span className="text-faint-foreground">{t('sla.notSet')}</span>
           ),
-        meta: { label: t('types.columns.sla'), width: '8.5rem' },
+        // Low priority next to the approval path (SLA has its own settings page): off by default below 1536px.
+        meta: { label: t('types.columns.sla'), width: '8.5rem', defaultHiddenBelow: 1536 },
       },
       {
         id: 'usage',

@@ -13,7 +13,7 @@ export async function ApprovalQueueWidget({ userId }: { userId: string }) {
       title={t('title')}
       description={total !== null && total > 0 ? t('description', { count: total }) : undefined}
       icon={ClipboardCheckIcon}
-      actions={<ViewAllLink href="/approvals" label={t('open')} />}
+      actions={<ViewAllLink href="/approvals?queue=direct" label={t('open')} />}
     >
       {!res.ok ? (
         <WidgetError />

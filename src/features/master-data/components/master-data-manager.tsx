@@ -617,7 +617,7 @@ function MobileCard({
         <div className="flex min-w-0 items-center gap-2">
           <span className="truncate font-medium text-foreground">{name}</span>
           {row.code ? (
-            <span dir="ltr" className="shrink-0 rounded bg-muted px-1.5 py-0.5 font-mono text-[0.6875rem] text-muted-foreground">
+            <span dir="ltr" className="shrink-0 rounded bg-muted px-1.5 py-0.5 font-mono text-2xs text-muted-foreground">
               {row.code}
             </span>
           ) : null}

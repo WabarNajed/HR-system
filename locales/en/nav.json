@@ -119,6 +119,7 @@
   "admin": {
     "title": "Administration",
     "dataManagement": "Data management",
+    "importData": "Import data",
     "auditLogs": "Audit log",
     "backup": "Backup & reset"
   },

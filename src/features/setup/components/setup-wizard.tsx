@@ -158,7 +158,7 @@ export function SetupWizard({ step, data, perms }: Props) {
                       <span className={cn('block truncate text-[0.8125rem] whitespace-nowrap', current ? 'font-semibold text-primary-soft-foreground' : 'font-medium text-foreground')}>
                         {t(`steps.${s}.title`)}
                       </span>
-                      <span className={cn('hidden text-[0.6875rem] lg:block', ok ? 'text-success' : REQUIRED_STEPS.has(s) ? 'text-warning' : 'text-muted-foreground')}>{status(s)}</span>
+                      <span className={cn('hidden text-2xs lg:block', ok ? 'text-success' : REQUIRED_STEPS.has(s) ? 'text-warning' : 'text-muted-foreground')}>{status(s)}</span>
                     </span>
                   </Link>
                 </li>

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { useTransition } from 'react';
 import { toast } from 'sonner';
+import { safeAction } from '@/components/shared/safe-action';
 import { Button } from '@/components/ui/button';
 import { SimpleTooltip } from '@/components/ui/tooltip';
 import { setLocale } from '@/lib/i18n/actions';
@@ -20,13 +21,14 @@ export function useLanguageSwitch() {
   const target = otherLocale(locale);
   const switchLanguage = () =>
     startTransition(async () => {
-      try {
-        const res = await setLocale(target);
-        if (!res.ok) throw new Error('setLocale failed');
-        router.refresh();
-      } catch {
-        toast.error(t('generic'));
+      const res = await safeAction(() => setLocale(target));
+      if (!res.ok) {
+        // Transport failures carry an `errors.*` key (offline, network, stale…); a refused locale is generic.
+        const key = 'error' in res ? res.error : 'errors.generic';
+        toast.error(t(key.slice('errors.'.length) as 'generic'));
+        return;
       }
+      router.refresh();
     });
   return { locale, target, pending, switchLanguage, targetName: localeNames[target] };
 }

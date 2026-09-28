@@ -359,7 +359,7 @@ export function TemplateEditor({ template, canEdit }: { template: TemplateDetail
             <label key={key} className={cn('flex items-center justify-between gap-3 px-3 py-2.5', canEdit && 'cursor-pointer')}>
               <span className="min-w-0">
                 <span className="block text-sm font-medium">{t(`fields.${label}`)}</span>
-                <span className="block text-[0.6875rem] leading-4 text-muted-foreground">{t(`fields.${label}Hint`)}</span>
+                <span className="block text-2xs leading-4 text-muted-foreground">{t(`fields.${label}Hint`)}</span>
               </span>
               <Switch checked={meta[key]} onCheckedChange={(v) => setM(key, v)} disabled={!canEdit} />
             </label>
@@ -475,7 +475,7 @@ export function TemplateEditor({ template, canEdit }: { template: TemplateDetail
               k === 'header' && 'ms-auto',
             )}
           >
-            {k === 'ar' || k === 'en' ? <span className="rounded bg-muted px-1 text-[0.625rem] font-bold tracking-wide uppercase">{k}</span> : null}
+            {k === 'ar' || k === 'en' ? <span className="rounded bg-muted px-1 text-2xs font-bold tracking-wide uppercase">{k}</span> : null}
             {tabLabel[k]}
           </button>
         ))}
@@ -512,7 +512,7 @@ export function TemplateEditor({ template, canEdit }: { template: TemplateDetail
             </div>
           );
         })}
-        <p className="mx-auto mt-3 flex max-w-[52rem] items-center gap-1.5 text-[0.6875rem] text-muted-foreground">
+        <p className="mx-auto mt-3 flex max-w-[52rem] items-center gap-1.5 text-2xs text-muted-foreground">
           <span aria-hidden className="inline-block size-2.5 rounded-sm border-s-2 border-secondary bg-secondary-soft" />
           {te('conditionHint')}
         </p>
@@ -541,13 +541,13 @@ export function TemplateEditor({ template, canEdit }: { template: TemplateDetail
         <div className="min-w-0 flex-1">
           <div className="flex min-w-0 items-center gap-2">
             <FileTextIcon className="size-4 shrink-0 text-primary" aria-hidden />
-            <h1 className="truncate text-base font-semibold">{title}</h1>
+            <h1 className="truncate text-page-title-compact">{title}</h1>
             <StatusBadge domain="template" status={status} size="sm" className="hidden sm:inline-flex" />
             <Badge variant="outline" size="sm" className="numeric hidden shrink-0 sm:inline-flex">
               {te('versionBadge', { version: currentVersion })}
             </Badge>
           </div>
-          <p className="mt-0.5 flex items-center gap-1.5 truncate text-[0.6875rem] text-muted-foreground">
+          <p className="mt-0.5 flex items-center gap-1.5 truncate text-2xs text-muted-foreground">
             {labels.type(meta.certificate_type)} · {labels.variant(meta.variant)} · {labels.language(meta.language)}
             <span aria-hidden>·</span>
             {!canEdit ? (
@@ -724,7 +724,7 @@ export function TemplateEditor({ template, canEdit }: { template: TemplateDetail
 function PaneSection({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="flex flex-col gap-3">
-      <h2 className="text-[0.6875rem] font-semibold tracking-wide text-faint-foreground uppercase">{title}</h2>
+      <h2 className="text-2xs font-semibold tracking-wide text-faint-foreground uppercase">{title}</h2>
       {children}
     </section>
   );

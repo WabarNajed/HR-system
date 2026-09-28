@@ -332,7 +332,7 @@ function OptionsEditor({ options, savedValues, disabled, onChange }: { options: 
                   />
                 </div>
                 <div className="mt-1.5 flex items-center gap-1.5 ps-6.5">
-                  <span className="text-[0.6875rem] text-muted-foreground">{t('value')}</span>
+                  <span className="text-2xs text-muted-foreground">{t('value')}</span>
                   <Input
                     value={o.value}
                     dir="ltr"
@@ -341,7 +341,7 @@ function OptionsEditor({ options, savedValues, disabled, onChange }: { options: 
                     disabled={disabled || locked}
                     title={locked ? t('valueLocked') : undefined}
                     aria-label={t('valueOf', { n: i + 1 })}
-                    className="h-6 min-w-0 flex-1 px-1.5 font-mono text-[0.6875rem]"
+                    className="h-6 min-w-0 flex-1 px-1.5 font-mono text-2xs"
                     onChange={(e) => update(i, { value: e.target.value.replace(/\s+/g, '_') })}
                   />
                   <Button type="button" variant="ghost" size="icon-xs" disabled={disabled || i === 0} onClick={() => move(i, -1)} aria-label={t('moveUp')}>
@@ -425,7 +425,7 @@ function VisibilityEditor({
     return (
       <div className="flex flex-col gap-2">
         <p className="text-meta text-muted-foreground">{t('advanced')}</p>
-        <pre dir="ltr" className="max-h-40 overflow-auto rounded-lg bg-muted p-2 text-start font-mono text-[0.6875rem] text-foreground">
+        <pre dir="ltr" className="max-h-40 overflow-auto rounded-lg bg-muted p-2 text-start font-mono text-2xs text-foreground">
           {JSON.stringify(model.unsupported, null, 2)}
         </pre>
         <Button type="button" variant="outline" size="sm" className="self-start" disabled={disabled} onClick={() => onChange(null)}>

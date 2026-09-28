@@ -194,7 +194,7 @@ function ItemChips({ items, max = 24, emptyText }: { items: NamedItem[]; max?: n
         <span key={i.id} className="inline-flex items-center gap-1.5 rounded-md border border-border bg-subtle px-2 py-1 text-[0.8125rem] text-foreground">
           {localized(i, 'name', locale)}
           {i.code ? (
-            <span dir="ltr" className="font-mono text-[0.6875rem] text-muted-foreground">
+            <span dir="ltr" className="font-mono text-2xs text-muted-foreground">
               {i.code}
             </span>
           ) : null}

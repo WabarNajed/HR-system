@@ -52,6 +52,14 @@ export const REQUEST_CATEGORIES = [
 
 export const SLA_STATES: readonly SlaState[] = ['on_track', 'due_soon', 'overdue'];
 
+/**
+ * Approvals queues (`/approvals?queue=`): `direct` = manager / named-user steps assigned to me
+ * (`current_approver_id = me`, the dashboard's manager KPI), `hr` = the HR review queue,
+ * `role` = role-step queues I belong to.
+ */
+export const APPROVAL_QUEUES = ['direct', 'hr', 'role'] as const;
+export type ApprovalQueue = (typeof APPROVAL_QUEUES)[number];
+
 /** Sortable columns (DataTable column ids = `?sort=` values). */
 export const REQUEST_SORTS = ['created_at', 'request_number', 'due_at', 'status', 'updated_at', 'submitted_at'] as const;
 export type RequestSort = (typeof REQUEST_SORTS)[number];

@@ -104,7 +104,7 @@ export async function TeamLeaveCalendarWidget({ employeeId, today }: { employeeI
                       role="columnheader"
                       className={cn('flex flex-col items-center justify-center py-1.5 text-center leading-tight', isWeekend && 'bg-muted/60')}
                     >
-                      <span className="text-[0.6875rem] text-muted-foreground">{tDays(WEEKDAY_KEYS[date.getUTCDay()]!)}</span>
+                      <span className="text-2xs text-muted-foreground">{tDays(WEEKDAY_KEYS[date.getUTCDay()]!)}</span>
                       <span
                         className={cn(
                           'numeric mt-0.5 flex size-6 items-center justify-center rounded-full text-xs font-semibold',
@@ -148,7 +148,7 @@ export async function TeamLeaveCalendarWidget({ employeeId, today }: { employeeI
                             href={`/requests/${l.request_id}`}
                             aria-label={`${m.name} · ${label}`}
                             className={cn(
-                              'flex h-6 w-full min-w-0 items-center overflow-hidden rounded-md px-1.5 text-[0.6875rem] font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring/50',
+                              'flex h-6 w-full min-w-0 items-center overflow-hidden rounded-md px-1.5 text-2xs font-medium outline-none focus-visible:ring-2 focus-visible:ring-ring/50',
                               approved
                                 ? 'border-s-[3px] border-primary bg-primary-soft text-primary-soft-foreground'
                                 : 'border border-dashed border-warning bg-warning-soft text-warning-soft-foreground [background-image:repeating-linear-gradient(135deg,transparent_0_5px,color-mix(in_oklab,var(--warning)_14%,transparent)_5px_8px)]',

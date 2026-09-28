@@ -42,7 +42,7 @@ export default async function PendingRegistrationsPage({ searchParams }: { searc
 
   return (
     <div className="flex flex-col gap-5">
-      <PageHeader title={t('title')} description={t('description')} />
+      <PageHeader compact title={t('title')} description={t('description')} />
       <KpiGrid>
         <StatCard label={t('stats.pending')} value={n(stats.pending)} icon={HourglassIcon} tone={stats.pending ? 'warning' : 'neutral'} hint={t('stats.pendingHint')} />
         <StatCard

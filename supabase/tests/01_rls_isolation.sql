@@ -117,6 +117,9 @@ begin
     pg_temp.cnt(format('select 1 from public.profile_cards where id in (%L, %L)', pg_temp.id('emp1'), pg_temp.id('emp2'))) = 2
     and pg_temp.cnt(format('select 1 from public.profile_cards where id = %L', pg_temp.id('emp3'))) = 0
     and pg_temp.cnt('select 1 from public.profiles') = 1);
+  perform pg_temp.check('manager directory KPIs: both reports counted, both have portal access',
+    (public.employee_directory_stats(pg_temp.id('e_mgr')) ->> 'total')::int = 2
+    and (public.employee_directory_stats(pg_temp.id('e_mgr')) ->> 'without_portal')::int = 0);
   perform pg_temp.check('manager cannot see reports'' compensation',
     pg_temp.cnt(format('select 1 from public.employee_compensation where employee_id = %L', e1)) = 0);
   perform pg_temp.check('manager cannot see reports'' bank accounts',

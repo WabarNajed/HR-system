@@ -27,7 +27,7 @@ function CountBadge({ count, active }: { count: number; active?: boolean }) {
   return (
     <span
       className={cn(
-        'ms-auto inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full px-1.5 text-[0.6875rem] font-semibold numeric',
+        'ms-auto inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full px-1.5 text-2xs font-semibold numeric',
         active ? 'bg-primary text-primary-foreground' : 'bg-warning-soft text-warning-soft-foreground',
       )}
     >
@@ -106,7 +106,7 @@ export function SettingsNav({ groups, badges = {} }: { groups: VisibleSettingsGr
         <div className="flex flex-col gap-4">
           {groups.map((g) => (
             <div key={g.key}>
-              <div className="px-2.5 pb-1 text-[0.6875rem] font-semibold tracking-wide text-faint-foreground uppercase">{t(`groups.${g.key}`)}</div>
+              <div className="px-2.5 pb-1 text-2xs font-semibold tracking-wide text-faint-foreground uppercase">{t(`groups.${g.key}`)}</div>
               <ul className="flex flex-col gap-0.5">
                 {g.items.map((key) => {
                   const item = SETTINGS_ITEMS_BY_KEY[key];

@@ -22,7 +22,7 @@ export default async function EmployeesNewPage() {
 
   return (
     <PageStack>
-      <PageHeader title={t('createTitle')} description={t('createDescription')} className="mx-auto w-full max-w-form" />
+      <PageHeader compact title={t('createTitle')} description={t('createDescription')} className="mx-auto w-full max-w-form" />
       <EmployeeForm
         mode="create"
         employeeId={null}

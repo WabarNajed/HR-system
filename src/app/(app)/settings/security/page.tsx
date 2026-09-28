@@ -201,7 +201,7 @@ export default async function SettingsSecurityPage() {
 
   return (
     <div className="flex flex-col gap-5">
-      <PageHeader title={t('title')} description={t('description')} />
+      <PageHeader compact title={t('title')} description={t('description')} />
       <SplitLayout main={main} side={side} sideWidth="md" />
     </div>
   );

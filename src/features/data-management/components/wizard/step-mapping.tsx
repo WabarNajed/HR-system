@@ -128,7 +128,7 @@ export function StepMapping({
                 <tr key={column.index} className="border-t border-border align-middle">
                   <td className="px-3 py-2">
                     <div className="flex min-w-0 items-center gap-2">
-                      <span className="flex h-6 min-w-6 shrink-0 items-center justify-center rounded bg-muted px-1 text-[0.6875rem] font-semibold text-muted-foreground numeric">{column.letter}</span>
+                      <span className="flex h-6 min-w-6 shrink-0 items-center justify-center rounded bg-muted px-1 text-2xs font-semibold text-muted-foreground numeric">{column.letter}</span>
                       <span id={`dm-col-${column.index}`} className={ignored ? 'truncate text-muted-foreground line-through decoration-faint-foreground' : 'truncate font-medium text-foreground'}>
                         <bdi>{column.label}</bdi>
                       </span>
@@ -163,7 +163,7 @@ export function StepMapping({
         {inspection.columns.map((column) => (
           <li key={column.index} className="flex flex-col gap-2 rounded-md border border-border bg-card p-3">
             <div className="flex items-center gap-2">
-              <span className="flex h-6 min-w-6 shrink-0 items-center justify-center rounded bg-muted px-1 text-[0.6875rem] font-semibold text-muted-foreground numeric">{column.letter}</span>
+              <span className="flex h-6 min-w-6 shrink-0 items-center justify-center rounded bg-muted px-1 text-2xs font-semibold text-muted-foreground numeric">{column.letter}</span>
               <span id={`dm-col-${column.index}`} className="min-w-0 flex-1 truncate font-medium text-foreground">
                 <bdi>{column.label}</bdi>
               </span>

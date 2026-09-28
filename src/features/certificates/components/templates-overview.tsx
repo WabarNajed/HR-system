@@ -51,7 +51,7 @@ export async function TemplatesOverview({ templates }: { templates: TemplateList
           <section key={type} className="flex flex-col gap-2.5">
             <h2 className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
               {enumLabel('certificateType', type)}
-              <span className="numeric rounded-full bg-muted px-1.5 text-[0.6875rem] leading-4 font-semibold">{group.length}</span>
+              <span className="numeric rounded-full bg-muted px-1.5 text-2xs leading-4 font-semibold">{group.length}</span>
             </h2>
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2 2xl:grid-cols-3">
               {group.map((tpl) => (

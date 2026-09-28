@@ -14,7 +14,11 @@ export type ProvidersProps = {
   /** Messages for the client: `ROOT_CLIENT_NAMESPACES` (route layouts add more with `ClientMessages`). */
   messages: AbstractIntlMessages;
   timeZone: string;
-  /** Server "now" for stable relative-time rendering during hydration. */
+  /**
+   * Request time of the document (root layout). next-intl's `useNow()` and `format.relativeTime()`
+   * use it, so relative times hydrate identically. It is not refreshed on client navigations: for a
+   * ticking or long-lived relative time use `useNow({ updateInterval })`.
+   */
   now?: Date;
   children: ReactNode;
 };

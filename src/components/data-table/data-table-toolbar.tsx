@@ -12,8 +12,8 @@ import { Label } from '@/components/ui/label';
 import { Sheet, SheetBody, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { useDateFormat } from '@/lib/i18n/use-date-format';
 import { cn } from '@/lib/utils';
-import { DataTableFacetedFilter } from './data-table-faceted-filter';
-import type { FilterDef, TableQueryPatch, TableQueryState } from './types';
+import { DataTableFacetedFilter, FilterSearchStatus, useFilterSearch } from './data-table-faceted-filter';
+import type { FilterDef, FilterOption, SelectFilterDef, TableQueryPatch, TableQueryState } from './types';
 
 type AnyFilterDef = FilterDef<never> | FilterDef<unknown>;
 
@@ -246,36 +246,12 @@ function MoreFiltersSheet({
                 />
               </div>
             ) : (
-              <fieldset key={def.key} className="space-y-2.5">
-                <legend className="mb-2 text-meta font-medium text-foreground">{def.title}</legend>
-                <div className="grid gap-2">
-                  {def.options.map((o) => {
-                    const checked = staged[def.key]?.includes(o.value) ?? false;
-                    const id = `mf-${def.key}-${o.value}`;
-                    return (
-                      <div key={o.value} className="flex items-center gap-2.5">
-                        <Checkbox
-                          id={id}
-                          checked={checked}
-                          onCheckedChange={(v) =>
-                            setStaged((s) => {
-                              const current = new Set(s[def.key] ?? []);
-                              if (def.multiple === false) current.clear();
-                              if (v) current.add(o.value);
-                              else current.delete(o.value);
-                              return { ...s, [def.key]: Array.from(current) };
-                            })
-                          }
-                        />
-                        <Label htmlFor={id} className="flex-1 font-normal">
-                          {o.label}
-                        </Label>
-                        {typeof o.count === 'number' ? <span className="text-xs text-muted-foreground numeric">{o.count}</span> : null}
-                      </div>
-                    );
-                  })}
-                </div>
-              </fieldset>
+              <SelectFilterFieldset
+                key={def.key}
+                def={def}
+                value={staged[def.key] ?? []}
+                onChange={(values) => setStaged((s) => ({ ...s, [def.key]: values }))}
+              />
             ),
           )}
           {slot}
@@ -291,5 +267,46 @@ function MoreFiltersSheet({
         </SheetFooter>
       </SheetContent>
     </Sheet>
+  );
+}
+
+/** One select filter in the "More filters" sheet: checkboxes, with a server search box when `def.search` is set. */
+function SelectFilterFieldset({ def, value, onChange }: { def: SelectFilterDef<never> | SelectFilterDef<unknown>; value: string[]; onChange: (values: string[]) => void }) {
+  const [query, setQuery] = useState('');
+  // SearchInput already debounces typing.
+  const search = useFilterSearch(def, def.search ? query : '', 0);
+  const selected = new Set(value);
+  const options: FilterOption[] = def.search
+    ? [...value.map(search.optionFor), ...(search.query ? search.results : def.options).filter((o) => !selected.has(o.value))]
+    : def.options;
+
+  const toggle = (optionValue: string, on: boolean) => {
+    const current = new Set(value);
+    if (def.multiple === false) current.clear();
+    if (on) current.add(optionValue);
+    else current.delete(optionValue);
+    onChange(Array.from(current));
+  };
+
+  return (
+    <fieldset className="space-y-2.5">
+      <legend className="mb-2 text-meta font-medium text-foreground">{def.title}</legend>
+      {def.search ? <SearchInput value={query} onSearch={setQuery} loading={search.loading} aria-label={def.title} className="h-8" /> : null}
+      <div className="grid gap-2">
+        {options.map((o) => {
+          const id = `mf-${def.key}-${o.value}`;
+          return (
+            <div key={o.value} className="flex items-center gap-2.5">
+              <Checkbox id={id} checked={selected.has(o.value)} onCheckedChange={(v) => toggle(o.value, v === true)} />
+              <Label htmlFor={id} className="flex-1 font-normal">
+                {o.label}
+              </Label>
+              {typeof o.count === 'number' ? <span className="text-xs text-muted-foreground numeric">{o.count}</span> : null}
+            </div>
+          );
+        })}
+      </div>
+      {def.search ? <FilterSearchStatus search={search} className="rounded-md bg-muted/40" /> : null}
+    </fieldset>
   );
 }

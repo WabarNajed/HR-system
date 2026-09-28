@@ -140,5 +140,160 @@ begin
 end;
 $$;
 
+-- ---------------------------------------------------------------------------------------------------
+-- Immutable files: reviewed employee documents and issued certificates (20260928210701, 20260928221202)
+-- An upsert is INSERT … ON CONFLICT DO UPDATE (storage-api upsertObject); a move is an UPDATE of name.
+-- ---------------------------------------------------------------------------------------------------
+create or replace function pg_temp.upsert_sql(p_bucket text, p_name text) returns text language sql as $$
+  select format('insert into storage.objects (bucket_id, name, metadata) values (%L, %L, ''{"size": 2}'') '
+                'on conflict (bucket_id, name collate "C") where archived_at is null '
+                'do update set metadata = excluded.metadata', p_bucket, p_name);
+$$;
+
+create or replace function pg_temp.delete_sql(p_bucket text, p_name text) returns text language sql as $$
+  select format('delete from storage.objects where bucket_id = %L and name = %L', p_bucket, p_name);
+$$;
+
+do $$
+declare
+  e1 uuid := pg_temp.id('e_emp1');
+  e2 uuid := pg_temp.id('e_emp2');
+  d1_path text := e1 || '/' || pg_temp.id('d1') || '/iqama.pdf';
+  d3_path text := e2 || '/' || pg_temp.id('d3') || '/iqama.pdf';
+  v_pend uuid := gen_random_uuid();      -- emp1's own pending_review submission
+  v_arch uuid := gen_random_uuid();      -- archived document of emp2
+  v_new  uuid := gen_random_uuid();      -- HR-created (valid) document, file uploaded afterwards
+  pend_path text;
+  arch_path text;
+  new_path text;
+  repl_path text := e1 || '/' || pg_temp.id('d1') || '/k9x2-iqama-renewed.pdf';
+  cert_issued text := 'certificates/' || e1 || '/CERT-TEST-000001.pdf';
+  cert_revoked text := 'certificates/' || e1 || '/CERT-TEST-000002.pdf';
+  cert_free text := 'certificates/' || e2 || '/CERT-TEST-000009.pdf';
+  cert_new text := 'certificates/' || e2 || '/CERT-1999-990001.pdf';
+  v_tpl uuid;
+  v_cert uuid;
+begin
+  pend_path := e1 || '/' || v_pend || '/scan.pdf';
+  arch_path := e2 || '/' || v_arch || '/old.pdf';
+  new_path := e2 || '/' || v_new || '/contract.pdf';
+  -- storage-api sets this for its own deletes; direct SQL deletes are refused without it
+  perform set_config('storage.allow_delete_query', 'true', true);
+  insert into public.employee_documents (id, employee_id, document_type, status, storage_path, file_name, uploaded_by) values
+    (v_pend, e1, 'educational_certificate', 'pending_review', pend_path, 'scan.pdf', pg_temp.id('emp1')),
+    (v_arch, e2, 'iqama', 'archived', arch_path, 'old.pdf', pg_temp.id('hro'));
+  insert into storage.objects (bucket_id, name) values ('employee-documents', pend_path), ('employee-documents', arch_path);
+
+  -- HR officer (documents.create + documents.edit, certificates.create) --------------------------
+  perform pg_temp.as_user('hro');
+  perform pg_temp.throws('HR cannot overwrite (upsert) the file of a reviewed document',
+    pg_temp.upsert_sql('employee-documents', d1_path), 'row-level security');
+  perform pg_temp.check('HR cannot delete the file of a reviewed document',
+    pg_temp.affected(pg_temp.delete_sql('employee-documents', d1_path)) = 0);
+  perform pg_temp.check('HR cannot move (rename) the file of a reviewed document',
+    pg_temp.affected(format('update storage.objects set name = %L where bucket_id = ''employee-documents'' and name = %L',
+                            e1 || '/' || pg_temp.id('d1') || '/moved.pdf', d1_path)) = 0);
+  perform pg_temp.check('HR cannot delete the file of an archived document',
+    pg_temp.affected(pg_temp.delete_sql('employee-documents', arch_path)) = 0);
+  perform pg_temp.throws('HR cannot overwrite an employee''s pending self-service upload',
+    pg_temp.upsert_sql('employee-documents', pend_path), 'row-level security');
+  perform pg_temp.check('HR cannot delete an employee''s pending self-service upload',
+    pg_temp.affected(pg_temp.delete_sql('employee-documents', pend_path)) = 0);
+  perform pg_temp.throws('a plain insert over an existing document file is a duplicate, not an overwrite',
+    format('insert into storage.objects (bucket_id, name) values (''employee-documents'', %L)', d1_path), 'duplicate key');
+
+  -- replace flow: new path → row points at it → superseded file removed
+  perform pg_temp.check('HR uploads a replacement file to a new path in the document folder',
+    pg_temp.affected(format('insert into storage.objects (bucket_id, name) values (''employee-documents'', %L)', repl_path)) = 1);
+  perform pg_temp.throws('HR cannot move an unreferenced file onto a reviewed document''s path',
+    format('update storage.objects set name = %L where bucket_id = ''employee-documents'' and name = %L', d1_path, repl_path),
+    'row-level security');
+  perform pg_temp.check('an uncommitted replacement can be discarded (overwrite + delete)',
+    pg_temp.affected(pg_temp.upsert_sql('employee-documents', repl_path)) = 1
+    and pg_temp.affected(pg_temp.delete_sql('employee-documents', repl_path)) = 1);
+  perform pg_temp.check('HR re-uploads the replacement',
+    pg_temp.affected(format('insert into storage.objects (bucket_id, name) values (''employee-documents'', %L)', repl_path)) = 1);
+  update public.employee_documents set storage_path = repl_path where id = pg_temp.id('d1');
+  perform pg_temp.check('after the row points at the replacement, the superseded file can be removed',
+    pg_temp.affected(pg_temp.delete_sql('employee-documents', d1_path)) = 1);
+  perform pg_temp.check('the committed replacement is immutable in turn',
+    pg_temp.affected(pg_temp.delete_sql('employee-documents', repl_path)) = 0);
+
+  -- delete flow: row first, then the file
+  delete from public.employee_documents where id = pg_temp.id('d3');
+  perform pg_temp.check('HR deletes a document row, then its (now unreferenced) file',
+    pg_temp.affected(pg_temp.delete_sql('employee-documents', d3_path)) = 1);
+
+  -- HR upload flow: the valid row exists first, then the first upload of its file
+  insert into public.employee_documents (id, employee_id, document_type, status, storage_path, file_name, uploaded_by)
+  values (v_new, e2, 'employment_contract', 'valid', new_path, 'contract.pdf', pg_temp.id('hro'));
+  perform pg_temp.check('HR uploads the file of a document row it just created',
+    pg_temp.affected(format('insert into storage.objects (bucket_id, name) values (''employee-documents'', %L)', new_path)) = 1);
+  perform pg_temp.throws('…but cannot overwrite it afterwards',
+    pg_temp.upsert_sql('employee-documents', new_path), 'row-level security');
+
+  -- certificates: issued (valid / revoked) PDFs are immutable
+  perform pg_temp.throws('HR cannot overwrite (upsert) an issued certificate PDF',
+    pg_temp.upsert_sql('certificate-files', cert_issued), 'row-level security');
+  perform pg_temp.check('HR cannot delete an issued certificate PDF',
+    pg_temp.affected(pg_temp.delete_sql('certificate-files', cert_issued)) = 0);
+  perform pg_temp.check('HR cannot move an issued certificate PDF',
+    pg_temp.affected(format('update storage.objects set name = %L where bucket_id = ''certificate-files'' and name = %L',
+                            'certificates/' || e1 || '/CERT-TEST-000099.pdf', cert_issued)) = 0);
+  perform pg_temp.check('HR cannot delete a revoked certificate PDF',
+    pg_temp.affected(pg_temp.delete_sql('certificate-files', cert_revoked)) = 0);
+  perform pg_temp.check('HR uploads and deletes an unreferenced certificate PDF (failed-issue cleanup)',
+    pg_temp.affected(format('insert into storage.objects (bucket_id, name) values (''certificate-files'', %L)', cert_free)) = 1
+    and pg_temp.affected(pg_temp.delete_sql('certificate-files', cert_free)) = 1);
+  perform pg_temp.throws('certificate PDFs live only at certificates/<employee>/<file>',
+    format('insert into storage.objects (bucket_id, name) values (''certificate-files'', %L)', 'certificates/' || e2 || '/x/y.pdf'),
+    'row-level security');
+
+  -- issue a certificate: its PDF becomes immutable and the audit row masks the verification code
+  perform pg_temp.as_postgres();
+  insert into public.certificate_templates (key, certificate_type, name_ar, name_en, language, is_active, current_version, published_version)
+  values ('test_tpl_storage', 'salary', 'قالب اختبار', 'Test template', 'bilingual', true, 1, 1)
+  returning id into v_tpl;
+  perform pg_temp.as_user('hro');
+  perform pg_temp.check('HR stores the rendered PDF before issuing',
+    pg_temp.affected(format('insert into storage.objects (bucket_id, name) values (''certificate-files'', %L)', cert_new)) = 1);
+  v_cert := public.issue_certificate('CERT-1999-990001', null, e2, v_tpl, 1, 'ar', null, null, 'ABCDEFGHJKLM');
+  perform pg_temp.throws('HR cannot overwrite the PDF of a certificate it just issued',
+    pg_temp.upsert_sql('certificate-files', cert_new), 'row-level security');
+  perform pg_temp.check('HR cannot delete the PDF of a certificate it just issued',
+    pg_temp.affected(pg_temp.delete_sql('certificate-files', cert_new)) = 0);
+  perform pg_temp.as_postgres();
+  perform pg_temp.check('issued certificate keeps its verification code',
+    (select c.verification_code from public.certificates c where c.id = v_cert) = 'ABCDEFGHJKLM');
+  perform pg_temp.check('certificate.create audit row masks the verification code',
+    (select a.changes -> 'verification_code' ->> 'new' from public.audit_logs a
+      where a.action = 'certificate.create' and a.entity_id = v_cert::text) = '***'
+    and not exists (select 1 from public.audit_logs a
+                     where a.entity_id = v_cert::text and a.changes::text like '%ABCDEFGHJKLM%'));
+  perform pg_temp.check('no audit row holds a clear-text verification code',
+    not exists (select 1 from public.audit_logs a
+                 where a.changes ? 'verification_code'
+                   and (coalesce(a.changes -> 'verification_code' ->> 'new', '***') <> '***'
+                        or coalesce(a.changes -> 'verification_code' ->> 'old', '***') <> '***')));
+
+  -- the owner of a pending self-service submission --------------------------------------------
+  perform pg_temp.as_user('emp1');
+  perform pg_temp.check('employee re-uploads (upsert) own pending submission',
+    pg_temp.affected(pg_temp.upsert_sql('employee-documents', pend_path)) = 1);
+  perform pg_temp.check('employee withdraws own pending file',
+    pg_temp.affected(pg_temp.delete_sql('employee-documents', pend_path)) = 1);
+  perform pg_temp.check('employee re-uploads own pending file',
+    pg_temp.affected(format('insert into storage.objects (bucket_id, name) values (''employee-documents'', %L)', pend_path)) = 1);
+  perform pg_temp.as_postgres();
+  update public.employee_documents set status = 'valid' where id = v_pend;   -- reviewed
+  perform pg_temp.as_user('emp1');
+  perform pg_temp.check('employee cannot delete own file once it is reviewed',
+    pg_temp.affected(pg_temp.delete_sql('employee-documents', pend_path)) = 0);
+  perform pg_temp.throws('employee cannot overwrite own file once it is reviewed',
+    pg_temp.upsert_sql('employee-documents', pend_path), 'row-level security');
+  perform pg_temp.as_postgres();
+end;
+$$;
+
 select pg_temp.finish('05_storage');
 rollback;

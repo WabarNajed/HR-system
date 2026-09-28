@@ -148,7 +148,7 @@ export function BuilderColumns({ fields, restrictedCount, value, onChange }: Pro
           {matches.length ? (
             SECTIONS.filter((s) => matches.some((f) => f.section === s)).map((section) => (
               <div key={section} className="mb-1 last:mb-0">
-                <div className="px-2 pt-1.5 pb-1 text-[0.6875rem] font-semibold tracking-wide text-faint-foreground uppercase">
+                <div className="px-2 pt-1.5 pb-1 text-2xs font-semibold tracking-wide text-faint-foreground uppercase">
                   {t(`reports.builder.sections.${section}`)}
                 </div>
                 {matches

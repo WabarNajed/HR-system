@@ -554,7 +554,7 @@ function FieldCard({
             {field.is_system ? <LockIcon className="size-3 shrink-0 text-faint-foreground" aria-label={t('system')} /> : null}
           </span>
           <span className="mt-0.5 flex min-w-0 flex-wrap items-center gap-x-1.5 text-xs text-muted-foreground">
-            <span dir="ltr" className="truncate font-mono text-[0.6875rem]">
+            <span dir="ltr" className="truncate font-mono text-2xs">
               {field.key}
             </span>
             <span aria-hidden>·</span>
@@ -586,7 +586,7 @@ function FieldCard({
       </button>
       {field.uses ? (
         <SimpleTooltip content={t('usedIn', { count: field.uses })}>
-          <span tabIndex={0} className="mt-1.5 hidden shrink-0 rounded bg-muted px-1.5 py-0.5 text-[0.6875rem] text-muted-foreground @min-[30rem]:inline">
+          <span tabIndex={0} className="mt-1.5 hidden shrink-0 rounded bg-muted px-1.5 py-0.5 text-2xs text-muted-foreground @min-[30rem]:inline">
             {field.uses}
           </span>
         </SimpleTooltip>

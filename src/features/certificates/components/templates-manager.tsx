@@ -144,7 +144,7 @@ export function TemplatesManager({ templates, canEdit, types }: Props) {
       <span className="numeric font-medium">{tpl.current_version}</span>
       {tpl.has_unpublished_changes ? (
         <SimpleTooltip content={t('unpublishedTooltip', { current: tpl.current_version, published: tpl.published_version ?? 0 })}>
-          <span className="w-fit cursor-help text-[0.6875rem] font-medium text-warning">{t('publishedVersion', { version: tpl.published_version ?? 0 })}</span>
+          <span className="w-fit cursor-help text-2xs font-medium text-warning">{t('publishedVersion', { version: tpl.published_version ?? 0 })}</span>
         </SimpleTooltip>
       ) : null}
     </div>
@@ -240,7 +240,7 @@ export function TemplatesManager({ templates, canEdit, types }: Props) {
                 {groups.map((g) => (
                   <tbody key={g.type} className="border-b border-border last:border-b-0">
                     <tr className="bg-muted/40">
-                      <th colSpan={7} className="px-4 py-1.5 text-start text-[0.6875rem] font-semibold tracking-wide text-muted-foreground uppercase">
+                      <th colSpan={7} className="px-4 py-1.5 text-start text-2xs font-semibold tracking-wide text-muted-foreground uppercase">
                         {labels.type(g.type)} <span className="numeric ms-1 text-faint-foreground">{g.items.length}</span>
                       </th>
                     </tr>
@@ -277,7 +277,7 @@ export function TemplatesManager({ templates, canEdit, types }: Props) {
             <div className="md:hidden">
               {groups.map((g) => (
                 <section key={g.type}>
-                  <h3 className="border-b border-border bg-muted/40 px-4 py-1.5 text-[0.6875rem] font-semibold tracking-wide text-muted-foreground uppercase">
+                  <h3 className="border-b border-border bg-muted/40 px-4 py-1.5 text-2xs font-semibold tracking-wide text-muted-foreground uppercase">
                     {labels.type(g.type)} <span className="numeric ms-1 text-faint-foreground">{g.items.length}</span>
                   </h3>
                   <ul className="divide-y divide-border">

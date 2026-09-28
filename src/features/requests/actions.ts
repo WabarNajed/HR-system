@@ -2,12 +2,14 @@
 
 import { revalidatePath } from 'next/cache';
 import { after } from 'next/server';
+import { ROUTE_ACCESS } from '@/components/shell/nav-config';
 import { ActionError, ok, requirePermissionIn, withAction } from '@/lib/action';
 import { mapError } from '@/lib/errors';
 import { deliverEmailsForNotifications } from '@/lib/notifications';
+import { checkAccess } from '@/lib/permissions';
 import { BUCKETS, removeFiles, validateFile } from '@/lib/storage';
 import { createClient, type ServerSupabaseClient } from '@/lib/supabase/server';
-import { loadFormLookups } from './queries';
+import { getRequestAccess, loadFormLookups, searchEmployeeFilterOptions } from './queries';
 import {
   actOnRequestSchema,
   addCommentSchema,
@@ -259,6 +261,22 @@ export const searchEmployees = withAction(
     return ok((data ?? []) as unknown as EmployeeOption[]);
   },
   { scope: 'requests.searchEmployees' },
+);
+
+/**
+ * Employee filter search on /requests and /approvals (when the pick list is incomplete). Offered only
+ * to viewers who see other people's requests; the rows themselves are RLS-scoped (team / organization).
+ */
+export const searchEmployeeFilterOptionsAction = withAction(
+  searchSchema,
+  async ({ q }, { ctx }) => {
+    const supabase = await createClient();
+    const access = await getRequestAccess(supabase, ctx.user.id);
+    const seesOthers = access.orgView || ctx.isManager || access.roleStepIds.length > 0 || checkAccess(ctx, ROUTE_ACCESS['/approvals']);
+    if (!seesOthers) throw new ActionError('errors.forbidden');
+    return ok(await searchEmployeeFilterOptions(supabase, q, ctx.locale));
+  },
+  { scope: 'requests.searchEmployeeFilterOptions' },
 );
 
 export type AssigneeOption = {

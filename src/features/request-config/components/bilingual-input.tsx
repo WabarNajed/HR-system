@@ -50,7 +50,7 @@ export function BilingualInput({
         } as const;
         return (
           <div key={r.lang} className="flex items-start gap-2">
-            <span aria-hidden className="mt-2 w-7 shrink-0 rounded bg-muted py-0.5 text-center text-[0.625rem] font-semibold text-muted-foreground">
+            <span aria-hidden className="mt-2 w-7 shrink-0 rounded bg-muted py-0.5 text-center text-2xs font-semibold text-muted-foreground">
               {localeShortNames[r.lang]}
             </span>
             {multiline ? <Textarea {...common} rows={2} className="min-h-14 text-sm" /> : <Input {...common} className="h-8 text-sm" />}

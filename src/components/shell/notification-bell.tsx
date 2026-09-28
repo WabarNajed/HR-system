@@ -193,7 +193,7 @@ export function NotificationBell({ initialUnread }: { initialUnread: number | nu
             {unread > 0 ? (
               <span
                 aria-hidden
-                className="numeric absolute -top-0.5 -end-0.5 flex h-[1.125rem] min-w-[1.125rem] items-center justify-center rounded-full bg-danger px-1 text-[0.625rem] leading-none font-semibold text-danger-foreground ring-2 ring-background"
+                className="numeric absolute -top-0.5 -end-0.5 flex h-[1.125rem] min-w-[1.125rem] items-center justify-center rounded-full bg-danger px-1 text-2xs leading-none font-semibold text-danger-foreground ring-2 ring-background"
               >
                 {badge}
               </span>

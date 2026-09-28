@@ -51,6 +51,12 @@ export type SelectFilterDef<TData = unknown> = {
   icon?: LucideIcon;
   /** Client mode: value(s) of the row for this filter (defaults to `row[key]`). */
   accessor?: (row: TData) => string | string[] | null | undefined;
+  /**
+   * Server search for option sets too large to list (e.g. employees). The typed text is sent
+   * (debounced) and the matches are listed together with the selected options; `options` should
+   * then hold at least the selected values (their labels for chips).
+   */
+  search?: (q: string) => Promise<FilterOption[]>;
 };
 
 export type DateRangeFilterDef<TData = unknown> = {

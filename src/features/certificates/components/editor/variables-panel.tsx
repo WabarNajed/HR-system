@@ -39,7 +39,7 @@ export function VariablesPanel({ onInsert, targetLabel, disabled }: { onInsert: 
           <p className="mt-0.5 text-meta text-muted-foreground">{t('description')}</p>
         </div>
         <SearchInput value={query} onSearch={setQuery} debounce={120} placeholder={t("search")} className="h-8" />
-        <p className="truncate text-[0.6875rem] font-medium text-faint-foreground">{t('insertInto', { target: targetLabel })}</p>
+        <p className="truncate text-2xs font-medium text-faint-foreground">{t('insertInto', { target: targetLabel })}</p>
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto px-2 py-2">
         {groups.length ? (
@@ -47,12 +47,12 @@ export function VariablesPanel({ onInsert, targetLabel, disabled }: { onInsert: 
             const Icon = GROUP_ICON[group];
             return (
               <section key={group} className="mb-2">
-                <h3 className="flex items-center gap-1.5 px-2 pt-2 pb-1 text-[0.6875rem] font-semibold tracking-wide text-faint-foreground uppercase">
+                <h3 className="flex items-center gap-1.5 px-2 pt-2 pb-1 text-2xs font-semibold tracking-wide text-faint-foreground uppercase">
                   <Icon className="size-3.5" aria-hidden />
                   {t(`groups.${group}`)}
                 </h3>
                 {group === 'salary' ? (
-                  <p className="mx-2 mb-1.5 flex items-start gap-1.5 rounded-md bg-info-soft px-2 py-1.5 text-[0.6875rem] leading-4 text-info-soft-foreground">
+                  <p className="mx-2 mb-1.5 flex items-start gap-1.5 rounded-md bg-info-soft px-2 py-1.5 text-2xs leading-4 text-info-soft-foreground">
                     <InfoIcon className="mt-px size-3 shrink-0" aria-hidden />
                     {t('salaryNote')}
                   </p>
@@ -73,11 +73,11 @@ export function VariablesPanel({ onInsert, targetLabel, disabled }: { onInsert: 
                         <span className="min-w-0 flex-1">
                           <span className="block truncate text-sm font-medium text-foreground">{tt(`${v.key}.label`)}</span>
                           <span className="mt-0.5 flex min-w-0 items-center gap-1.5">
-                            <code dir="ltr" className="shrink-0 rounded bg-secondary-soft px-1 font-mono text-[0.6875rem] text-secondary-soft-foreground">
+                            <code dir="ltr" className="shrink-0 rounded bg-secondary-soft px-1 font-mono text-2xs text-secondary-soft-foreground">
                               {`{{${v.key}}}`}
                             </code>
                           </span>
-                          <span className="mt-0.5 block truncate text-[0.6875rem] text-muted-foreground">{tt(`${v.key}.description`)}</span>
+                          <span className="mt-0.5 block truncate text-2xs text-muted-foreground">{tt(`${v.key}.description`)}</span>
                         </span>
                         <PlusIcon className="mt-0.5 size-4 shrink-0 text-faint-foreground opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100" aria-hidden />
                       </button>

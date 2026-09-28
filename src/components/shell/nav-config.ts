@@ -309,7 +309,7 @@ export const ROUTE_LABELS: Record<string, string> = {
   '/settings': 'nav.items.settings',
   '/admin': 'nav.admin.title',
   '/admin/data-management': 'nav.admin.dataManagement',
-  '/admin/data-management/import': 'dataManagement.wizard.title',
+  '/admin/data-management/import': 'nav.admin.importData',
   '/admin/audit-logs': 'nav.admin.auditLogs',
   '/admin/backup': 'nav.admin.backup',
   ...Object.fromEntries(SETTINGS_NAV.flatMap((g) => g.items.filter((i) => i.href.startsWith('/settings/')).map((i) => [i.href, `nav.settings.items.${i.key}`]))),

@@ -198,9 +198,9 @@ export function PermissionMatrix({ value, saved, onChange, readOnly }: Permissio
                 const perms = colPerms(a);
                 const state = triState(countIn(perms), perms.length);
                 return (
-                  <th key={a} scope="col" className="w-[3.75rem] bg-subtle px-0.5 py-2 text-center">
-                    <label className={cn('inline-flex flex-col items-center gap-1.5', !readOnly && 'cursor-pointer')}>
-                      <span className="max-w-full truncate text-[0.6875rem] font-semibold text-muted-foreground">{tAction(a)}</span>
+                  <th key={a} scope="col" className="w-[4.25rem] bg-subtle px-0.5 py-2 text-center">
+                    <label className={cn('inline-flex max-w-full flex-col items-center gap-1.5', !readOnly && 'cursor-pointer')}>
+                      <span className="max-w-full truncate text-2xs font-semibold text-muted-foreground">{tAction(a)}</span>
                       <Checkbox
                         checked={state}
                         disabled={readOnly}

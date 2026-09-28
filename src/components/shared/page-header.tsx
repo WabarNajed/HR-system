@@ -26,7 +26,7 @@ export type PageHeaderProps = {
   leading?: ReactNode;
   /** Optional tab strip rendered flush at the bottom (use LinkTabs). */
   tabs?: ReactNode;
-  /** Tighter spacing and 22px title (detail pages, settings). */
+  /** Tighter spacing and the 22px compact title (detail, form, editor and settings pages). */
   compact?: boolean;
   className?: string;
   children?: ReactNode;
@@ -76,15 +76,16 @@ export function PageHeader({
         (breadcrumbs as ReactNode) ?? null
       )}
 
-      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between md:gap-6">
-        <div className="flex min-w-0 items-start gap-3.5">
+      {/* Actions wrap under the title when both no longer fit (long titles, many actions, narrow panes). */}
+      <div className="flex flex-col gap-3 md:flex-row md:flex-wrap md:items-start md:justify-between md:gap-x-6">
+        <div className="flex min-w-[min(100%,16rem)] flex-1 items-start gap-3.5">
           {leading ? <div className="shrink-0">{leading}</div> : null}
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
               <h1
                 className={cn(
                   'min-w-0 truncate text-foreground',
-                  compact ? 'text-[1.375rem] leading-8 font-semibold' : 'text-page-title',
+                  compact ? 'text-page-title-compact' : 'text-page-title',
                 )}
               >
                 {title}

@@ -25,6 +25,7 @@ export default async function SettingsUsersPage({ searchParams }: { searchParams
   return (
     <div className="flex flex-col gap-5">
       <PageHeader
+        compact
         title={t('title')}
         description={t('pageDescription')}
         actions={

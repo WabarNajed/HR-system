@@ -3,6 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { useCallback } from 'react';
 import { toast } from 'sonner';
+import { safeAction } from '@/components/shared/safe-action';
 import { useErrorMessage } from '@/components/ui/form';
 import type { ActionResult } from '@/lib/action';
 import { useDateFormat } from '@/lib/i18n/use-date-format';
@@ -62,12 +63,8 @@ export function useRunAction() {
   const resolve = useErrorMessage();
   return useCallback(
     async <T>(promise: Promise<ActionResult<T>>, options: { success?: string; silent?: boolean } = {}): Promise<{ ok: true; data: T | undefined } | { ok: false; error: string }> => {
-      let result: ActionResult<T>;
-      try {
-        result = await promise;
-      } catch {
-        result = { ok: false, error: 'errors.network' };
-      }
+      // A rejected action (offline, 5xx, deployment skew) becomes a failed result; redirects propagate.
+      const result: ActionResult<T> = await safeAction(() => promise);
       if (!result.ok) {
         if (!options.silent) toast.error(resolve(result.error));
         return { ok: false, error: result.error };

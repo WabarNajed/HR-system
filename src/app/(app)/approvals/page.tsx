@@ -8,6 +8,7 @@ import { KpiGrid, PageStack } from '@/components/shared/responsive-grid';
 import { StatCard } from '@/components/shared/stat-card';
 import { ROUTE_ACCESS } from '@/components/shell/nav-config';
 import { ApprovalsTable, type ApprovalsTab } from '@/features/approvals/components/approvals-table';
+import { APPROVAL_QUEUES, type ApprovalQueue } from '@/features/requests/constants';
 import {
   countMyDecisions,
   getRequestAccess,
@@ -41,8 +42,9 @@ export default async function ApprovalsPage({ searchParams }: { searchParams: Pr
     defaultSort: tab === 'pending' ? 'due_at' : 'decided_at',
     defaultDir: tab === 'pending' ? 'asc' : 'desc',
     allowedSorts: tab === 'pending' ? ['due_at', 'submitted_at', 'request_number'] : ['decided_at'],
-    filterKeys: ['type', 'employee', 'department', 'sla'],
+    filterKeys: ['type', 'employee', 'department', 'sla', 'queue'],
   });
+  const queues = (params.filters.queue ?? []).filter((v): v is ApprovalQueue => (APPROVAL_QUEUES as readonly string[]).includes(v));
 
   const supabase = await createClient();
   const [access, types] = await Promise.all([getRequestAccess(supabase, ctx.user.id), loadRequestTypes(supabase, { withFields: false })]);
@@ -52,7 +54,7 @@ export default async function ApprovalsPage({ searchParams }: { searchParams: Pr
 
   const [list, { queue }, approvedCount, rejectedCount, decidedMonth, departments, employees] = await Promise.all([
     tab === 'pending'
-      ? listRequests(supabase, params, { tab: 'pending', access, typeIdsByKey, pendingForMe: true, subtypes, locale: ctx.locale })
+      ? listRequests(supabase, params, { tab: 'pending', access, typeIdsByKey, pendingForMe: true, queues, subtypes, locale: ctx.locale })
       : listMyDecisions(supabase, params, {
           decisions: tab === 'approved' ? ['approved'] : ['rejected', 'returned'],
           access,
@@ -113,6 +115,9 @@ export default async function ApprovalsPage({ searchParams }: { searchParams: Pr
             types: types.map((x) => ({ key: x.key, name_ar: x.name_ar, name_en: x.name_en })),
             departments,
             employees: employees.options,
+            employeesSearchable: !employees.complete,
+            // Queue sources the viewer can act on (the filter is offered when there is a choice).
+            queues: APPROVAL_QUEUES.filter((q) => q === 'direct' || (q === 'hr' ? access.orgApprove : access.roleStepIds.length > 0)),
           }}
         />
       </div>

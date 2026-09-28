@@ -95,9 +95,9 @@ export function RolesConsole({ roles, selectedKey, members, canAdminister, isSup
   const granted = locked ? ALL_PERMISSIONS.length : draft.size;
 
   return (
-    <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-4 lg:grid-cols-[14.5rem_minmax(0,1fr)] lg:gap-4">
+    <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-4 xl:grid-cols-[14.5rem_minmax(0,1fr)]">
       {/* Roles list */}
-      <div className="lg:hidden">
+      <div className="xl:hidden">
         <Select value={role.key} onValueChange={selectRole}>
           <SelectTrigger className="h-10 w-full bg-card" aria-label={t('list.title')}>
             <SelectValue />
@@ -112,7 +112,7 @@ export function RolesConsole({ roles, selectedKey, members, canAdminister, isSup
         </Select>
       </div>
       <SectionCard
-        className="hidden lg:flex lg:sticky lg:top-[4.75rem]"
+        className="hidden xl:sticky xl:top-[calc(var(--spacing-header)+1.5rem)] xl:flex"
         title={t('list.title')}
         flush
         dense

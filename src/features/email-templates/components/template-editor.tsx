@@ -312,7 +312,7 @@ export function TemplateEditor({ template, previews, canEdit, userEmail }: Props
                         disabled={readOnly}
                         onMouseDown={(e) => e.preventDefault()}
                         onClick={() => insert(p)}
-                        className="rounded-md border border-border bg-subtle px-2 py-0.5 font-mono text-[0.6875rem] text-foreground transition-colors outline-none hover:border-primary/50 hover:bg-primary-soft focus-visible:ring-2 focus-visible:ring-ring/60 disabled:opacity-60"
+                        className="rounded-md border border-border bg-subtle px-2 py-0.5 font-mono text-2xs text-foreground transition-colors outline-none hover:border-primary/50 hover:bg-primary-soft focus-visible:ring-2 focus-visible:ring-ring/60 disabled:opacity-60"
                         dir="ltr"
                       >
                         {`{{${p}}}`}

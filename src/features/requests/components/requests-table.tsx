@@ -32,13 +32,16 @@ import { FILTER_STATUSES, SLA_STATES, TAB_STATUSES, type RequestTab } from '../c
 import type { RequestActionKind } from '../schemas';
 import type { RequestAccess, RequestListRow } from '../types';
 import { DecisionDialog } from './decision-dialog';
+import { employeeFilterDef, type EmployeeFilterChoice } from './employee-filter';
 import { subtypeLabel } from '../labels';
 import { RequestSlaBadge, StepLabel, TypeCell, TypeIcon } from './request-bits';
 
 export type RequestFilterOptions = {
   types: { key: string; name_ar: string; name_en: string }[];
   departments: { id: string; name_ar: string | null; name_en: string | null }[] | null;
-  employees: { id: string; name_ar: string | null; name_en: string | null; hint?: string | null }[] | null;
+  employees: EmployeeFilterChoice[] | null;
+  /** More employees than listed: the employee filter searches the server (`employees` = the selected ones). */
+  employeesSearchable?: boolean;
   handlers: { id: string; label_ar: string; label_en: string }[] | null;
 };
 
@@ -209,13 +212,8 @@ export function RequestsTable({
   }
 
   const moreFilters: FilterDef<RequestListRow>[] = [];
-  if (options.employees?.length) {
-    moreFilters.push({
-      key: 'employee',
-      title: t('filters.employee'),
-      options: options.employees.map((e) => ({ value: e.id, label: [employeeDisplayName(e, locale), e.hint].filter(Boolean).join(' · ') })),
-    });
-  }
+  const employeeFilter = employeeFilterDef<RequestListRow>(t('filters.employee'), options.employees, options.employeesSearchable ?? false, locale);
+  if (employeeFilter) moreFilters.push(employeeFilter);
   if (options.departments?.length) {
     moreFilters.push({ key: 'department', title: t('filters.department'), options: options.departments.map((d) => ({ value: d.id, label: localized(d, 'name', locale) })) });
   }

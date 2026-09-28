@@ -52,7 +52,7 @@ export async function RecentActivityWidget() {
                     <bdi>{actor}</bdi>
                   </div>
                 </div>
-                <span className="shrink-0 text-[0.6875rem] text-faint-foreground">{formatRelative(row.created_at, locale)}</span>
+                <span className="shrink-0 text-2xs text-faint-foreground">{formatRelative(row.created_at, locale)}</span>
               </WidgetRow>
             );
           })}

@@ -321,6 +321,10 @@
   --text-page-title: 1.625rem;
   --text-page-title--line-height: 2.125rem;
   --text-page-title--font-weight: 600;
+  /* Compact page title (22px): detail, form, editor and settings pages (PageHeader `compact`). */
+  --text-page-title-compact: 1.375rem;
+  --text-page-title-compact--line-height: 2rem;
+  --text-page-title-compact--font-weight: 600;
   --text-stat: 1.75rem;
   --text-stat--line-height: 2.125rem;
   --text-stat--font-weight: 600;

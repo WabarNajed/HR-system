@@ -35,14 +35,15 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   const [locale, timeZone, branding] = await Promise.all([getLocale(), getTimeZone(), getPublicBranding()]);
   // Only the shared namespaces go to the browser here; route layouts add theirs (<ClientMessages>).
   const messages = pickNamespaces(resolveLocale(locale), ROOT_CLIENT_NAMESPACES);
-  // Runtime branding (Settings › Branding): validated hex colors only → safe to inline.
+  // `now` (request time) makes next-intl's `useNow()` / `format.relativeTime()` render the same text
+  // on the server and during hydration. Runtime branding: validated hex colors only → safe to inline.
   const brandCss = brandCssText({ primary: branding.primaryColor, secondary: branding.secondaryColor });
 
   return (
     <html lang={locale} dir={dir(locale)} className={fontVariables} suppressHydrationWarning>
       <head>{brandCss ? <style id="brand-vars" dangerouslySetInnerHTML={{ __html: brandCss }} /> : null}</head>
       <body>
-        <Providers locale={locale} messages={messages} timeZone={timeZone}>
+        <Providers locale={locale} messages={messages} timeZone={timeZone} now={new Date()}>
           {children}
         </Providers>
       </body>

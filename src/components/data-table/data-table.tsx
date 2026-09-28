@@ -433,7 +433,7 @@ function DataTableView<TData>({
               return (
                 <li key={row.id}>
                   {href ? (
-                    <Link href={href} className="block px-4 py-3 transition-colors hover:bg-subtle focus-visible:bg-subtle focus-visible:outline-none">
+                    <Link href={href} prefetch={false} className="block px-4 py-3 transition-colors hover:bg-subtle focus-visible:bg-subtle focus-visible:outline-none">
                       {renderMobileCard(row.original)}
                     </Link>
                   ) : (

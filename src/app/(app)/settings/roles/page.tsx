@@ -24,6 +24,7 @@ export default async function SettingsRolesPage({ searchParams }: { searchParams
   return (
     <div className="flex flex-col gap-5">
       <PageHeader
+        compact
         title={t('title')}
         description={t('pageDescription')}
         actions={<NewRoleButton roles={roles} isSuperAdmin={ctx.isSuperAdmin} disabledReason={canAdminister ? null : t('create.noPermission')} />}

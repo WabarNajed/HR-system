@@ -150,6 +150,7 @@ export default async function RequestsPage({ searchParams }: { searchParams: Pro
             types: types.map((x) => ({ key: x.key, name_ar: x.name_ar, name_en: x.name_en })),
             departments,
             employees: employees?.options ?? null,
+            employeesSearchable: employees ? !employees.complete : false,
             handlers,
           }}
         />

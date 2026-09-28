@@ -10,6 +10,7 @@ import {
   FINAL_STATUSES,
   OPEN_STATUSES,
   TAB_STATUSES,
+  type ApprovalQueue,
   type RequestFilterKey,
   type RequestTab,
 } from './constants';
@@ -381,20 +382,23 @@ async function searchEmployeeIds(supabase: ServerSupabaseClient, q: string): Pro
 /**
  * "Awaiting my decision" — mirrors private.can_act_on_current_step: manager/user steps assigned to
  * me, the HR queue for org approvers, role-step queues; never my own requests (super admin excepted).
+ * `queues` narrows it to some of those sources (`/approvals?queue=`); null when none of them applies.
  */
-export function pendingForMeOr(access: RequestAccess): string {
+export function pendingForMeOr(access: RequestAccess, queues?: readonly ApprovalQueue[]): string | null {
   const uid = access.userId;
+  const want = (q: ApprovalQueue) => !queues?.length || queues.includes(q);
   const notMine = access.isSuperAdmin
     ? ''
     : `,or(requester_id.is.null,requester_id.neq.${uid})${access.employeeId ? `,employee_id.neq.${access.employeeId}` : ''}`;
-  const parts = [`and(status.in.(pending_manager_approval,pending_hr_review),current_step_type.in.(manager,user),current_approver_id.eq.${uid})`];
-  if (access.orgApprove) parts.push(`and(status.eq.pending_hr_review,current_step_type.eq.hr${notMine})`);
-  if (access.roleStepIds.length) {
+  const parts: string[] = [];
+  if (want('direct')) parts.push(`and(status.in.(pending_manager_approval,pending_hr_review),current_step_type.in.(manager,user),current_approver_id.eq.${uid})`);
+  if (want('hr') && access.orgApprove) parts.push(`and(status.eq.pending_hr_review,current_step_type.eq.hr${notMine})`);
+  if (want('role') && access.roleStepIds.length) {
     parts.push(
       `and(status.in.(pending_manager_approval,pending_hr_review),current_step_type.eq.role,current_step_id.in.(${access.roleStepIds.join(',')})${notMine})`,
     );
   }
-  return parts.join(',');
+  return parts.length ? parts.join(',') : null;
 }
 
 export type RequestListOptions = {
@@ -403,6 +407,8 @@ export type RequestListOptions = {
   typeIdsByKey: Map<string, string>;
   /** Restrict to requests awaiting the viewer's decision (approvals queue). */
   pendingForMe?: boolean;
+  /** With `pendingForMe`: only these queue sources (`/approvals?queue=`). Empty = all of them. */
+  queues?: readonly ApprovalQueue[];
   /** Restrict to one employee (profile tab). */
   employeeId?: string;
   now?: Date;
@@ -423,7 +429,11 @@ async function applyFilters(
 
   const tabStatuses = TAB_STATUSES[options.tab];
   q = tabStatuses ? q.in('status', tabStatuses as string[]) : q.neq('status', 'draft');
-  if (options.pendingForMe) q = q.or(pendingForMeOr(options.access));
+  if (options.pendingForMe) {
+    const mine = pendingForMeOr(options.access, options.queues);
+    if (!mine) return null;
+    q = q.or(mine);
+  }
   if (options.employeeId) q = q.eq('employee_id', options.employeeId);
 
   if (params.q) {
@@ -609,6 +619,28 @@ export async function loadEmployeeFilterOptions(
   }
   const ids = uuids([...selectedIds]);
   return { options: toEmployeeOptions(ids.length ? await employeesByIds(supabase, ids) : [], locale), complete: false };
+}
+
+/** Maximum matches returned by the employee filter's server search. */
+export const EMPLOYEE_FILTER_SEARCH_LIMIT = 20;
+
+/**
+ * Employee filter search (used when the pick list is incomplete, i.e. more than EMPLOYEE_PICKLIST_MAX
+ * visible employees): RLS-scoped, Arabic-folding match on name / number like the table search.
+ */
+export async function searchEmployeeFilterOptions(supabase: ServerSupabaseClient, q: string, locale: Locale): Promise<NamedOption[]> {
+  const norm = normalizeSearch(q);
+  if (!norm) return [];
+  const { data, error } = await supabase
+    .from('employees')
+    .select('id, name_ar, name_en, employee_number')
+    .is('archived_at', null)
+    .ilike('search_norm', toIlikePattern(norm))
+    .order('employee_number', { nullsFirst: false })
+    .order('id')
+    .limit(EMPLOYEE_FILTER_SEARCH_LIMIT);
+  if (error) throw error;
+  return toEmployeeOptions((data ?? []) as EmployeeOptionRow[], locale);
 }
 
 async function employeesByIds(supabase: ServerSupabaseClient, ids: string[]): Promise<EmployeeOptionRow[]> {
@@ -814,17 +846,7 @@ export async function getRequestDetail(supabase: ServerSupabaseClient, id: strin
   for (const v of (valuesRes.data ?? []) as { field_key: string; value: unknown }[]) values[v.field_key] = v.value;
   if (raw.subtype) values.subtype = raw.subtype;
 
-  const attachments = ((attRes.data ?? []) as unknown as {
-    id: string;
-    field_key: string | null;
-    storage_path: string;
-    file_name: string;
-    file_size: number | null;
-    mime_type: string | null;
-    uploaded_by: string | null;
-    created_at: string;
-    uploader: { full_name: string | null } | null;
-  }[]).map((a) => ({
+  const attachments = (attRes.data ?? []).map((a) => ({
     kind: 'existing' as const,
     id: a.id,
     name: a.file_name,

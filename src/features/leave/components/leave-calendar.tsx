@@ -337,7 +337,7 @@ function WeekRow({
                 {Number(day.slice(8, 10))}
               </span>
               {holiday ? (
-                <span className="hidden min-w-0 truncate text-[0.6875rem] font-medium text-secondary-soft-foreground md:inline" title={localized(holiday, 'name', locale)}>
+                <span className="hidden min-w-0 truncate text-2xs font-medium text-secondary-soft-foreground md:inline" title={localized(holiday, 'name', locale)}>
                   {localized(holiday, 'name', locale)}
                 </span>
               ) : null}
@@ -347,7 +347,7 @@ function WeekRow({
                 <PopoverTrigger asChild>
                   <button
                     type="button"
-                    className="mt-auto self-start rounded-sm px-1 text-[0.6875rem] font-medium text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none"
+                    className="mt-auto self-start rounded-sm px-1 text-2xs font-medium text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none"
                   >
                     {t('more', { count: hiddenByDay[i]!.length })}
                   </button>
@@ -471,7 +471,7 @@ function DateChip({ iso, tone = 'primary' }: { iso: string; tone?: 'primary' | '
       )}
     >
       <span className="text-base font-semibold numeric">{day}</span>
-      <span className="mt-0.5 text-[0.625rem] font-medium uppercase">{rest.join(' ')}</span>
+      <span className="mt-0.5 text-2xs font-medium uppercase">{rest.join(' ')}</span>
     </span>
   );
 }

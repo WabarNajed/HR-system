@@ -89,7 +89,7 @@ export function ProfileHeader({
                 <h1
                   id="employee-name"
                   title={name}
-                  className="line-clamp-2 min-w-0 text-[1.375rem] leading-8 font-semibold break-words text-foreground sm:text-page-title"
+                  className="line-clamp-2 min-w-0 text-page-title-compact break-words text-foreground"
                 >
                   {name}
                 </h1>

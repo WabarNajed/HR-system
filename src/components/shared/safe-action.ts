@@ -30,7 +30,7 @@ export type ActionTransportErrorKey =
   | 'errors.generic';
 
 /** True for Next.js control-flow errors that must keep propagating (redirect, notFound, …). */
-function isNavigationError(error: unknown): boolean {
+export function isNavigationError(error: unknown): boolean {
   const digest = (error as { digest?: unknown } | null)?.digest;
   return typeof digest === 'string' && (digest.startsWith('NEXT_REDIRECT') || digest.startsWith('NEXT_HTTP_ERROR_FALLBACK') || digest === 'NEXT_NOT_FOUND');
 }

@@ -297,7 +297,7 @@ export function WorkflowBuilder({ types, type, initialSteps, roles, users, count
                 </p>
               </div>
             </div>
-            <p className="flex flex-wrap gap-x-3 gap-y-1 text-[0.6875rem] text-muted-foreground">
+            <p className="flex flex-wrap gap-x-3 gap-y-1 text-2xs text-muted-foreground">
               <span>{t('counts.standard', { count: counts.standard })}</span>
               <span>{t('counts.custom', { count: counts.custom })}</span>
             </p>
@@ -497,7 +497,7 @@ function StepNode({
           <span className={cn('flex size-9 items-center justify-center rounded-lg text-white', STEP_TONE[step.step_type])}>
             <Icon className="size-4.5" aria-hidden />
           </span>
-          <span className="numeric absolute -end-1.5 -top-1.5 flex size-4.5 items-center justify-center rounded-full border border-card bg-foreground text-[0.625rem] font-semibold text-background">
+          <span className="numeric absolute -end-1.5 -top-1.5 flex size-4.5 items-center justify-center rounded-full border border-card bg-foreground text-2xs font-semibold text-background">
             {index + 1}
           </span>
         </span>

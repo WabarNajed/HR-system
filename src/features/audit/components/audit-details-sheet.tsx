@@ -132,7 +132,7 @@ export function AuditDetailsSheet({ event, onOpenChange }: { event: AuditEventVi
                 <Badge variant={TONE_BADGE[event.tone]} size="md">
                   {event.actionLabel}
                 </Badge>
-                <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-[0.6875rem] text-muted-foreground" dir="ltr">
+                <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-2xs text-muted-foreground" dir="ltr">
                   {event.action}
                 </code>
               </div>

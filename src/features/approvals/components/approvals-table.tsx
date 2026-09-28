@@ -3,6 +3,7 @@
 import type { ColumnDef } from '@tanstack/react-table';
 import { CheckCheckIcon, CheckIcon, Undo2Icon, XIcon } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
+import { useSearchParams } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import { DataTable, DataTableColumnHeader, type FilterDef } from '@/components/data-table';
 import { EmployeeCell } from '@/components/shared/employee-cell';
@@ -10,9 +11,10 @@ import { StatusBadge } from '@/components/shared/status-badge';
 import { Button } from '@/components/ui/button';
 import { SimpleTooltip } from '@/components/ui/tooltip';
 import { DecisionDialog } from '@/features/requests/components/decision-dialog';
+import { employeeFilterDef, type EmployeeFilterChoice } from '@/features/requests/components/employee-filter';
 import { RequestSlaBadge, StepLabel, TypeCell, TypeIcon } from '@/features/requests/components/request-bits';
 import { rowCapabilities } from '@/features/requests/capabilities';
-import { SLA_STATES } from '@/features/requests/constants';
+import { APPROVAL_QUEUES, SLA_STATES, type ApprovalQueue } from '@/features/requests/constants';
 import type { RequestActionKind } from '@/features/requests/schemas';
 import type { ApprovalDecisionRow, RequestAccess, RequestListRow } from '@/features/requests/types';
 import { formatRelative } from '@/lib/dates';
@@ -25,7 +27,11 @@ export type ApprovalsTab = 'pending' | 'approved' | 'rejected';
 export type ApprovalFilterOptions = {
   types: { key: string; name_ar: string; name_en: string }[];
   departments: { id: string; name_ar: string | null; name_en: string | null }[];
-  employees: { id: string; name_ar: string | null; name_en: string | null; hint?: string | null }[];
+  employees: EmployeeFilterChoice[];
+  /** More employees than listed: the employee filter searches the server (`employees` = the selected ones). */
+  employeesSearchable: boolean;
+  /** Queue sources the viewer can act on (`?queue=`). */
+  queues: readonly ApprovalQueue[];
 };
 
 /** Approvals queue (pending decisions with quick actions) and my decision history. */
@@ -48,6 +54,7 @@ export function ApprovalsTable({
   const locale = useLocale() as Locale;
   const fmt = useDateFormat();
   const [decision, setDecision] = useState<{ row: RequestListRow; action: RequestActionKind } | null>(null);
+  const queueParam = useSearchParams().get('queue');
 
   const columns = useMemo<ColumnDef<RequestListRow | ApprovalDecisionRow>[]>(() => {
     const base: ColumnDef<RequestListRow | ApprovalDecisionRow>[] = [
@@ -226,14 +233,16 @@ export function ApprovalsTable({
   const filters: FilterDef<RequestListRow | ApprovalDecisionRow>[] = [
     { key: 'type', title: tr('filters.type'), options: options.types.map((x) => ({ value: x.key, label: localized(x, 'name', locale) })) },
   ];
-  if (options.employees.length) {
-    filters.push({
-      key: 'employee',
-      title: tr('filters.employee'),
-      options: options.employees.map((e) => ({ value: e.id, label: [employeeDisplayName(e, locale), e.hint].filter(Boolean).join(' · ') })),
-    });
-  }
+  const employeeFilter = employeeFilterDef<RequestListRow | ApprovalDecisionRow>(tr('filters.employee'), options.employees, options.employeesSearchable, locale);
+  if (employeeFilter) filters.push(employeeFilter);
   if (tab === 'pending') filters.push({ key: 'sla', title: tr('filters.sla'), multiple: false, options: SLA_STATES.map((s) => ({ value: s, label: ts(`sla.${s}`) })) });
+  // Offered when the viewer has more than one queue; always when a `?queue=` link applied it, so the
+  // active filter shows as a chip that can be cleared.
+  const activeQueues = queueParam?.split(',') ?? [];
+  if (tab === 'pending' && (options.queues.length > 1 || activeQueues.length)) {
+    const queueOptions = APPROVAL_QUEUES.filter((q) => options.queues.includes(q) || activeQueues.includes(q));
+    filters.push({ key: 'queue', title: t('filters.queue'), options: queueOptions.map((q) => ({ value: q, label: t(`filters.queues.${q}`) })) });
+  }
   const moreFilters: FilterDef<RequestListRow | ApprovalDecisionRow>[] = options.departments.length
     ? [{ key: 'department', title: tr('filters.department'), options: options.departments.map((d) => ({ value: d.id, label: localized(d, 'name', locale) })) }]
     : [];

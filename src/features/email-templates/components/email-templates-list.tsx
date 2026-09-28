@@ -66,7 +66,7 @@ export function EmailTemplatesList({ rows, canEdit }: { rows: Row[]; canEdit: bo
               <div className="mt-0.5 flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
                 <span className="shrink-0">{t(`groups.${templateGroup(row.original.key)}`)}</span>
                 <span aria-hidden>·</span>
-                <span dir="ltr" className="truncate font-mono text-[0.6875rem] text-faint-foreground">
+                <span dir="ltr" className="truncate font-mono text-2xs text-faint-foreground">
                   {row.original.key}
                 </span>
               </div>

@@ -80,7 +80,7 @@ function initialFor(source: BuilderSourceDef, fields: SubjectFields, locale: Loc
 function StepTitle({ n, icon: Icon, children }: { n: number; icon: typeof DatabaseIcon; children: ReactNode }) {
   return (
     <span className="inline-flex items-center gap-2">
-      <span className="flex size-5 items-center justify-center rounded-full bg-primary text-[0.6875rem] font-semibold text-primary-foreground numeric">
+      <span className="flex size-5 items-center justify-center rounded-full bg-primary text-2xs font-semibold text-primary-foreground numeric">
         {n}
       </span>
       <Icon className="size-4 text-muted-foreground" aria-hidden />

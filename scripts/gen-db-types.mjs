@@ -149,6 +149,186 @@ const composites = query(`
   ) ct`);
 
 // ---------------------------------------------------------------------------------------------------
+// Relationships through views (as `supabase gen types` / postgres-meta derive them, after PostgREST):
+// a view column that selects a base-table column as is carries that column's foreign keys, both as
+// the referencing side (`profile_cards.employee_id → employees`) and as the referenced side
+// (`hr_requests.assigned_to → profile_cards.id`, because profile_cards exposes profiles.id). This lets
+// embeds such as `profile_cards!assigned_to(…)` type-check. Views on views are followed.
+// ---------------------------------------------------------------------------------------------------
+const viewRules = query(`
+  select coalesce(json_agg(json_build_object('oid', c.oid::bigint, 'name', c.relname, 'action', r.ev_action::text)
+                           order by c.relname), '[]'::json)
+  from pg_class c
+  join pg_namespace n on n.oid = c.relnamespace
+  join pg_rewrite r on r.ev_class = c.oid and r.rulename = '_RETURN'
+  where n.nspname = '${SCHEMA}' and c.relkind in ('v', 'm')`);
+
+const foreignKeys = query(`
+  select coalesce(json_agg(json_build_object(
+      'name', con.conname,
+      'rel', con.conrelid::bigint,
+      'relSchema', n.nspname,
+      'relName', c.relname,
+      'cols', con.conkey,
+      'colNames', (select json_agg(att.attname order by k.ord)
+                   from unnest(con.conkey) with ordinality as k(attnum, ord)
+                   join pg_attribute att on att.attrelid = con.conrelid and att.attnum = k.attnum),
+      'ref', con.confrelid::bigint,
+      'refSchema', rn.nspname,
+      'refName', rc.relname,
+      'refCols', con.confkey,
+      'refColNames', (select json_agg(att.attname order by k.ord)
+                      from unnest(con.confkey) with ordinality as k(attnum, ord)
+                      join pg_attribute att on att.attrelid = con.confrelid and att.attnum = k.attnum),
+      'isOneToOne', exists (
+          select 1 from pg_index i
+          where i.indrelid = con.conrelid and i.indisunique and i.indpred is null
+            and (i.indkey::int2[])::int[] @> con.conkey::int[] and (i.indkey::int2[])::int[] <@ con.conkey::int[]
+            and i.indnkeyatts = cardinality(con.conkey))
+    ) order by con.conname, c.relname), '[]'::json)
+  from pg_constraint con
+  join pg_class c on c.oid = con.conrelid
+  join pg_namespace n on n.oid = c.relnamespace
+  join pg_class rc on rc.oid = con.confrelid
+  join pg_namespace rn on rn.oid = rc.relnamespace
+  where con.contype = 'f'`);
+
+/**
+ * Minimal reader for PostgreSQL's node-tree text format (`pg_rewrite.ev_action`, see
+ * src/backend/nodes/read.c): `{NODE :field value …}` nodes, `(…)` lists and atoms; `(){}` and
+ * whitespace inside atoms are backslash-escaped. A field whose value spans several atoms (Const
+ * datums) becomes an array.
+ */
+function parseNodeTree(text) {
+  let i = 0;
+  const isBreak = (ch) => ch === ' ' || ch === '\n' || ch === '\t' || ch === '(' || ch === ')' || ch === '{' || ch === '}';
+  const next = () => {
+    while (i < text.length && (text[i] === ' ' || text[i] === '\n' || text[i] === '\t')) i++;
+    if (i >= text.length) return null;
+    const ch = text[i];
+    if (ch === '(' || ch === ')' || ch === '{' || ch === '}') {
+      i++;
+      return { punct: ch };
+    }
+    let atom = '';
+    while (i < text.length && !isBreak(text[i])) {
+      if (text[i] === '\\' && i + 1 < text.length) i++;
+      atom += text[i++];
+    }
+    return { atom };
+  };
+  const isField = (tok) => tok?.atom !== undefined && tok.atom.startsWith(':');
+  const read = (tok) => {
+    if (tok.punct === '{') {
+      const node = { _type: next()?.atom };
+      let t = next();
+      while (t && t.punct !== '}') {
+        if (!isField(t)) {
+          t = next();
+          continue;
+        }
+        const field = t.atom.slice(1);
+        const values = [];
+        t = next();
+        while (t && t.punct !== '}' && !isField(t)) {
+          values.push(read(t));
+          t = next();
+        }
+        node[field] = values.length === 1 ? values[0] : values;
+      }
+      return node;
+    }
+    if (tok.punct === '(') {
+      const items = [];
+      let t = next();
+      while (t && t.punct !== ')') {
+        items.push(read(t));
+        t = next();
+      }
+      return items;
+    }
+    return tok.atom;
+  };
+  const first = next();
+  return first ? read(first) : null;
+}
+
+/** view oid → { name, cols: resno → { name, tbl, col } } (origin table/column of each output column). */
+const viewColumns = new Map();
+for (const v of viewRules) {
+  let tree;
+  try {
+    tree = parseNodeTree(v.action);
+  } catch {
+    continue;
+  }
+  const q = Array.isArray(tree) ? tree[0] : tree;
+  const targets = Array.isArray(q?.targetList) ? q.targetList : [];
+  const cols = new Map();
+  for (const te of targets) {
+    if (te?._type !== 'TARGETENTRY' || te.resjunk === 'true' || typeof te.resname !== 'string') continue;
+    cols.set(Number(te.resno), { name: te.resname, tbl: Number(te.resorigtbl), col: Number(te.resorigcol) });
+  }
+  viewColumns.set(Number(v.oid), { name: v.name, cols });
+}
+
+/** `<table oid>:<attnum>` of the base-table column behind (tbl, col), following views on views. */
+function baseColumnKey(tbl, col, depth = 0) {
+  if (!tbl || !col || depth > 16) return null;
+  const view = viewColumns.get(tbl);
+  if (!view) return `${tbl}:${col}`;
+  const c = view.cols.get(col);
+  return c ? baseColumnKey(c.tbl, c.col, depth + 1) : null;
+}
+
+const viewExposes = [...viewColumns.values()].map((v) => {
+  const exposes = new Map();
+  for (const c of v.cols.values()) {
+    const key = baseColumnKey(c.tbl, c.col);
+    if (!key) continue;
+    if (!exposes.has(key)) exposes.set(key, []);
+    exposes.get(key).push(c.name);
+  }
+  return { name: v.name, exposes };
+});
+
+const combinations = (lists) => lists.reduce((acc, list) => acc.flatMap((prefix) => list.map((x) => [...prefix, x])), [[]]);
+const publicTableNames = new Set(relations.filter((r) => r.kind === 'r' || r.kind === 'p' || r.kind === 'f').map((r) => r.name));
+
+/** The relation itself (a `public` table) plus every view exposing all of `colNums`. */
+function relationshipEnds(oid, schema, name, colNums, colNames) {
+  const ends = [];
+  if (schema === SCHEMA && publicTableNames.has(name)) ends.push({ relation: name, columns: colNames, view: false });
+  for (const v of viewExposes) {
+    const lists = colNums.map((c) => v.exposes.get(`${oid}:${c}`) ?? []);
+    if (lists.every((l) => l.length)) for (const columns of combinations(lists)) ends.push({ relation: v.name, columns, view: true });
+  }
+  return ends;
+}
+
+/** relation name → relationships derived through views (table → table ones come from the catalog query). */
+const viewRelationships = new Map();
+for (const fk of foreignKeys) {
+  const from = relationshipEnds(fk.rel, fk.relSchema, fk.relName, fk.cols, fk.colNames);
+  if (!from.length) continue;
+  const to = relationshipEnds(fk.ref, fk.refSchema, fk.refName, fk.refCols, fk.refColNames);
+  for (const a of from) {
+    for (const b of to) {
+      if (!a.view && !b.view) continue;
+      if (!viewRelationships.has(a.relation)) viewRelationships.set(a.relation, []);
+      viewRelationships.get(a.relation).push({
+        foreignKeyName: fk.name,
+        columns: a.columns,
+        isOneToOne: fk.isOneToOne,
+        referencedSchema: SCHEMA,
+        referencedRelation: b.relation,
+        referencedColumns: b.columns,
+      });
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------------------------------
 // Type mapping (mirrors postgres-meta's typegen)
 // ---------------------------------------------------------------------------------------------------
 const enumNames = new Set(enums.map((e) => e.name));
@@ -230,7 +410,13 @@ function renderTable(rel, indent) {
       const optional = mode === 'update' || c.nullable || c.hasDefault || c.identity === 'd' || isView;
       return [`${ident(c.name)}${optional ? '?' : ''}`, t];
     });
-  const rels = rel.relationships.filter((r) => r.referencedSchema === SCHEMA);
+  const relKey = (r) => JSON.stringify([r.foreignKeyName, r.referencedRelation, r.columns, r.referencedColumns]);
+  const cmp = (a, b) => (a < b ? -1 : a > b ? 1 : 0);
+  const rels = [
+    ...new Map(
+      [...rel.relationships.filter((r) => r.referencedSchema === SCHEMA), ...(viewRelationships.get(rel.name) ?? [])].map((r) => [relKey(r), r]),
+    ).values(),
+  ].sort((a, b) => cmp(a.foreignKeyName, b.foreignKeyName) || cmp(a.referencedRelation, b.referencedRelation) || cmp(relKey(a), relKey(b)));
   const relLines = rels.length
     ? `[\n${rels
         .map(

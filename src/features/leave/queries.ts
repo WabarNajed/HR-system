@@ -6,7 +6,7 @@ import { addDays, businessDaysBetween, daysBetween, DEFAULT_WORKING_DAYS } from 
 import { todayIso } from '@/lib/i18n/date-format';
 import type { Locale } from '@/lib/i18n/config';
 import { toIlikePattern, type ListParams } from '@/lib/list-params';
-import { ALL_PERMISSIONS, isPermission, type Permission } from '@/lib/permissions';
+import type { Permission } from '@/lib/permissions';
 import { fileRouteUrl } from '@/lib/storage';
 import { createClient, type ServerSupabaseClient } from '@/lib/supabase/server';
 import type {
@@ -66,34 +66,14 @@ function isRangeError(error: { code?: string } | null, from: number): boolean {
 
 /* ─── Access ─────────────────────────────────────────────────────────────── */
 
-type RoleWithPermissions = { role: { data_scope: string | null; role_permissions: { module: string; action: string }[] | null } | null };
-
 /**
  * Permissions held through organization-scoped roles only — mirrors `private.has_org_permission`
- * (a manager's `leave.view` means "my team", not "everyone"). Super admins hold everything.
+ * (a manager's `leave.view` means "my team", not "everyone"). Super admins hold everything. Derived
+ * once per request by the session context from the same role rows.
  */
-export const getOrgPermissions = cache(async (ctx: SessionContext): Promise<ReadonlySet<Permission>> => {
-  if (ctx.isSuperAdmin) return new Set(ALL_PERMISSIONS);
-  if (!ctx.roleDetails.some((r) => r.dataScope === 'organization')) return new Set();
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from('user_roles')
-    .select('role:roles!inner(data_scope, role_permissions(module, action))')
-    .eq('user_id', ctx.user.id)
-    .eq('role.data_scope', 'organization');
-  if (error) {
-    console.error('[leave] org permissions lookup failed:', error.code, error.message);
-    return new Set();
-  }
-  const out = new Set<Permission>();
-  for (const row of (data ?? []) as unknown as RoleWithPermissions[]) {
-    for (const p of row.role?.role_permissions ?? []) {
-      const key = `${p.module}.${p.action}`;
-      if (isPermission(key)) out.add(key);
-    }
-  }
-  return out;
-});
+export async function getOrgPermissions(ctx: SessionContext): Promise<ReadonlySet<Permission>> {
+  return ctx.orgPermissions;
+}
 
 export type LeaveOrgSettings = {
   workingDays: number[];

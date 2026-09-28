@@ -592,7 +592,7 @@ function TypePicker({
           <SearchIcon className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
           <Input value={query} onChange={(e) => onQuery(e.target.value)} placeholder={t('wizard.searchTypes')} className="h-9 ps-9" aria-label={t('wizard.searchTypes')} />
         </div>
-        <div className="scrollbar-none -mx-4 flex gap-1.5 overflow-x-auto px-4 md:mx-0 md:px-0">
+        <div className="scrollbar-none -mx-4 flex gap-1.5 overflow-x-auto px-4 md:mx-0 md:min-w-0 md:flex-1 md:flex-wrap md:overflow-visible md:px-0">
           {['all', ...categories].map((c) => (
             <button
               key={c}
@@ -665,7 +665,7 @@ function TypeCard({
       <div className="flex items-start gap-3">
         <TypeIcon icon={type.icon} color={type.color} size="lg" />
         <div className="min-w-0 flex-1">
-          <p className="text-[0.6875rem] font-semibold tracking-wide text-muted-foreground uppercase">{category}</p>
+          <p className="text-2xs font-semibold tracking-wide text-muted-foreground uppercase">{category}</p>
           <p className="text-card-title leading-6 text-foreground">{localized(type, 'name', locale)}</p>
           <p className="mt-0.5 line-clamp-2 text-meta text-muted-foreground">{localized(type, 'description', locale)}</p>
         </div>

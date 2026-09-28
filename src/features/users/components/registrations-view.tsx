@@ -134,7 +134,7 @@ export function RegistrationsView({ tab, rows, total, roles, canApprove, canAdmi
             </div>
           );
         },
-        meta: { label: t('columns.applicant'), width: '15rem' },
+        meta: { label: t('columns.applicant'), width: '15rem', maxWidth: '18rem' },
         enableHiding: false,
       },
       {

@@ -17,7 +17,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
-import { actionErrorKey } from './safe-action';
+import { actionErrorKey, isNavigationError } from './safe-action';
 
 export type ConfirmDialogProps = {
   /** Uncontrolled usage: the element that opens the dialog. */
@@ -83,6 +83,8 @@ export function ConfirmDialog({
           onOpenChange?.(false);
         }
       } catch (error) {
+        // Redirects (e.g. an expired session sent to /login) keep propagating to the router.
+        if (isNavigationError(error)) throw error;
         // Keep the dialog open. A thrown Server Action (offline, 5xx, stale deployment) would otherwise
         // fail silently — callers only toast the `ActionResult` failures they receive.
         toast.error(tErrors(actionErrorKey(error).slice('errors.'.length) as 'generic'));

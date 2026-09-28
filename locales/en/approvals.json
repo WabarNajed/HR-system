@@ -29,6 +29,14 @@
     "decidedAt": "Decided",
     "currentStatus": "Current status"
   },
+  "filters": {
+    "queue": "Queue",
+    "queues": {
+      "direct": "Assigned to me directly",
+      "hr": "HR review",
+      "role": "Role queues"
+    }
+  },
   "quick": {
     "approve": "Approve",
     "return": "Return for information",

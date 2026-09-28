@@ -64,7 +64,7 @@ export function NotificationItem({ notification: n, onOpen, now, density = 'comf
           {comment && !compact ? (
             <span className="mt-1.5 block border-s-2 border-border-strong ps-2.5 text-meta leading-5 text-foreground/80 italic line-clamp-3">{comment}</span>
           ) : null}
-          <span className="mt-1 block text-[0.6875rem] text-faint-foreground" title={formatDateTime(n.created_at, locale)}>
+          <span className="mt-1 block text-2xs text-faint-foreground" title={formatDateTime(n.created_at, locale)}>
             {formatRelative(n.created_at, locale, now)}
           </span>
         </span>

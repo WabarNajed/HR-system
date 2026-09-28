@@ -187,7 +187,6 @@ export async function deliverEmailsForNotifications(
         await recordEmail(
           { to, subject: templateKey, html: '', templateKey, relatedEntityType: 'notification', relatedEntityId: row.notification_id },
           { status: 'skipped', provider: null, error: 'email template missing or inactive' },
-          userClient,
         );
         continue;
       }
@@ -205,19 +204,16 @@ export async function deliverEmailsForNotifications(
         action: row.link ? { label: t('notifications.email.open'), url: String(vars.link) } : null,
         footerNote: t('notifications.email.footer', { portal: portalName }),
       });
-      const result = await sendEmail(
-        {
-          to,
-          subject,
-          html,
-          fromName: (row.email_from_name === undefined ? senderSettings?.email_from_name : row.email_from_name) ?? null,
-          replyTo: (row.email_reply_to === undefined ? senderSettings?.email_reply_to : row.email_reply_to) ?? null,
-          templateKey,
-          relatedEntityType: 'notification',
-          relatedEntityId: row.notification_id,
-        },
-        { client: userClient },
-      );
+      const result = await sendEmail({
+        to,
+        subject,
+        html,
+        fromName: (row.email_from_name === undefined ? senderSettings?.email_from_name : row.email_from_name) ?? null,
+        replyTo: (row.email_reply_to === undefined ? senderSettings?.email_reply_to : row.email_reply_to) ?? null,
+        templateKey,
+        relatedEntityType: 'notification',
+        relatedEntityId: row.notification_id,
+      });
       summary[result.status === 'sent' ? 'sent' : result.status === 'failed' ? 'failed' : 'skipped']++;
     }
   } catch (error) {

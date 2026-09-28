@@ -162,7 +162,7 @@ export function EditorToolbar({ editor, dir, disabled }: { editor: Editor | null
     <div
       role="toolbar"
       aria-label={t('textStyle')}
-      className="scrollbar-none flex min-h-11 items-center gap-0.5 overflow-x-auto border-b border-border bg-card px-2 py-1.5"
+      className="flex min-h-11 flex-wrap items-center gap-0.5 border-b border-border bg-card px-2 py-1.5"
     >
       <ToolButton label={t('undo')} disabled={off || !s.canUndo} onClick={() => chain().undo().run()}>
         <Undo2Icon className="rtl:-scale-x-100" />

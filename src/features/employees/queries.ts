@@ -6,7 +6,7 @@ import { addDays, normalizeDigits, todayIso } from '@/lib/dates';
 import { localized } from '@/lib/i18n/localized';
 import type { Locale } from '@/lib/i18n/config';
 import { toIlikePattern, type ListParams } from '@/lib/list-params';
-import { ALL_PERMISSIONS, isPermission, type Permission } from '@/lib/permissions';
+import type { Permission } from '@/lib/permissions';
 import { createClient, type ServerSupabaseClient } from '@/lib/supabase/server';
 import { maskTail } from '@/lib/format';
 import { normalizeSearch, sanitizeFilter, type DirectoryFilterKey, type DirectorySort } from './directory-params';
@@ -29,31 +29,12 @@ import type {
 /**
  * RLS grants org-wide rows only through roles with `data_scope = 'organization'`
  * (`private.has_org_permission`). The session merges permissions of all roles, so e.g. an HR officer
- * who is also an `employee` holds `requests.create` only for themselves. This mirrors the DB rule.
+ * who is also an `employee` holds `requests.create` only for themselves. The session context already
+ * derives the org-scoped set (`ctx.orgPermissions`, super admin: all) from the same role rows.
  */
-export const getOrgPermissions = cache(async (): Promise<Set<Permission>> => {
+export const getOrgPermissions = cache(async (): Promise<ReadonlySet<Permission>> => {
   const ctx = await getSessionContext();
-  if (!ctx) return new Set();
-  if (ctx.isSuperAdmin) return new Set(ALL_PERMISSIONS);
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from('user_roles')
-    .select('role:roles(data_scope, role_permissions(module, action))')
-    .eq('user_id', ctx.user.id);
-  if (error) {
-    console.error('[employees] org permissions lookup failed:', error.code, error.message);
-    return new Set();
-  }
-  const out = new Set<Permission>();
-  type Row = { role: { data_scope: string | null; role_permissions: { module: string; action: string }[] | null } | null };
-  for (const row of (data ?? []) as unknown as Row[]) {
-    if (row.role?.data_scope !== 'organization') continue;
-    for (const p of row.role.role_permissions ?? []) {
-      const key = `${p.module}.${p.action}`;
-      if (isPermission(key)) out.add(key);
-    }
-  }
-  return out;
+  return ctx?.orgPermissions ?? new Set<Permission>();
 });
 
 export type EmployeeViewer = {

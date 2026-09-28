@@ -1,14 +1,12 @@
 import 'server-only';
 
-import type { SupabaseClient } from '@supabase/supabase-js';
 import { createAdminClient, isAdminClientConfigured } from '@/lib/supabase/admin';
-import { createClient } from '@/lib/supabase/server';
 import { htmlToText } from './render';
 
 /**
  * Email delivery (ARCHITECTURE §2): Resend REST API when `RESEND_API_KEY` is set, else SMTP via
  * nodemailer when `SMTP_HOST` is set, else status `skipped`. Every attempt is written to
- * `email_logs` (RPC `log_email`, service-role client when available). Never throws.
+ * `email_logs` (RPC `log_email`, service role only; skipped with a warning without it). Never throws.
  */
 
 export type EmailProvider = 'resend' | 'smtp';
@@ -124,32 +122,27 @@ async function sendViaSmtp(input: SendEmailInput, from: string, text: string): P
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type AnyClient = SupabaseClient<any, any, any>;
-
 /**
- * Writes `email_logs` through RPC `log_email` (active user or service role — docs/DATABASE.md §11).
- * Uses the service-role client when configured, else the caller's client / the request session.
+ * Writes `email_logs` through RPC `log_email`, which is executable by the service role only
+ * (docs/DATABASE.md §11). Without `SUPABASE_SERVICE_ROLE_KEY` nothing is logged: a server-side
+ * warning is printed and the send itself is unaffected.
  */
-export async function recordEmail(input: SendEmailInput, result: SendEmailResult, client?: AnyClient | null): Promise<void> {
+export async function recordEmail(input: SendEmailInput, result: SendEmailResult): Promise<void> {
+  if (!isAdminClientConfigured()) {
+    console.warn(`[email] email_logs not written (${result.status}): SUPABASE_SERVICE_ROLE_KEY is not configured`);
+    return;
+  }
   try {
-    const logger: AnyClient | null = isAdminClientConfigured()
-      ? createAdminClient()
-      : (client ?? (await createClient().catch(() => null)));
-    if (!logger) {
-      console.warn('[email] email_logs not written: no Supabase client available');
-      return;
-    }
-    const { error } = await logger.rpc('log_email', {
+    const { error } = await createAdminClient().rpc('log_email', {
       p_recipient: input.to || '-',
       p_status: result.status,
-      p_subject: input.subject ?? null,
-      p_template_key: input.templateKey ?? null,
-      p_related_entity_type: input.relatedEntityType ?? null,
-      p_related_entity_id: input.relatedEntityId ?? null,
-      p_provider: result.provider,
-      p_provider_message_id: result.providerMessageId ?? null,
-      p_error: result.error ? result.error.slice(0, 1000) : null,
+      p_subject: input.subject ?? undefined,
+      p_template_key: input.templateKey ?? undefined,
+      p_related_entity_type: input.relatedEntityType ?? undefined,
+      p_related_entity_id: input.relatedEntityId ?? undefined,
+      p_provider: result.provider ?? undefined,
+      p_provider_message_id: result.providerMessageId ?? undefined,
+      p_error: result.error ? result.error.slice(0, 1000) : undefined,
     });
     if (error) console.error('[email] log_email failed:', error.code, error.message);
   } catch (error) {
@@ -157,11 +150,8 @@ export async function recordEmail(input: SendEmailInput, result: SendEmailResult
   }
 }
 
-/**
- * Sends one email and logs it (`email_logs` via RPC `log_email`). Never throws.
- * `options.client`: Supabase client used for logging when no service-role key is configured.
- */
-export async function sendEmail(input: SendEmailInput, options: { client?: AnyClient | null } = {}): Promise<SendEmailResult> {
+/** Sends one email and logs it (`email_logs` via RPC `log_email`, service role). Never throws. */
+export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult> {
   let result: SendEmailResult;
   const to = input.to?.trim() ?? '';
   const provider = emailProvider();
@@ -180,6 +170,6 @@ export async function sendEmail(input: SendEmailInput, options: { client?: AnyCl
   }
 
   if (result.status === 'failed') console.error('[email] send failed:', result.provider, result.error);
-  await recordEmail({ ...input, to: to || input.to }, result, options.client);
+  await recordEmail({ ...input, to: to || input.to }, result);
   return result;
 }

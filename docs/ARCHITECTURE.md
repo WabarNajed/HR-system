@@ -182,6 +182,8 @@ to evolve); all FKs indexed. Full column-level detail, RLS, RPC and workflow ref
   last_login_at, invited_at.
   Created by trigger on `auth.users` insert (status `pending` for self sign-up; `active` when created by an
   admin invite via `raw_app_meta_data.invited_by_admin`). `raw_user_meta_data` is untrusted input.
+  Full rows are readable only by the user and org viewers; everyone else reads other users' names through
+  the read-only view **`profile_cards`** (id, full_name, employee_id, status) — see §7.
 * `roles` (key unique: `super_admin|hr_admin|hr_officer|manager|employee` + custom), name_ar/en,
   description_ar/en, is_system, rank int, **data_scope** (`own|team|organization`: which rows the role's
   permissions reach — HR roles `organization`, manager `team`, employee `own`; see §7).
@@ -210,6 +212,13 @@ to evolve); all FKs indexed. Full column-level detail, RLS, RPC and workflow ref
   avatar_path (`{id}/avatar/…`), extra_data jsonb (unmapped import columns preserved verbatim), import_id,
   archived_at, archived_by, search_text (generated lower-case number/names/company e-mail, trigram
   indexed) + audit columns.
+  **Column scope:** `authenticated` may SELECT only the directory / employment / compliance columns of
+  the table (column grants). The identity / personal columns (national_id, passport_number,
+  date_of_birth, marital_status, address, personal_email, iqama_issue_date, iqama_profession,
+  employer_number, is_outside_kingdom, emergency contact) and extra_data are read through the view
+  **`employee_records`** (same rows under RLS, full row shape, those columns NULL unless the caller is
+  the employee or holds org `personal_data.view/edit`; extra_data: org `personal_data.view` or
+  `employees.create`). A new non-sensitive column needs an explicit `grant select (col)`.
 * `employee_compensation` (employee_id PK): basic_salary, housing_allowance, transport_allowance,
   other_allowance, total_salary (generated), currency, effective_date. **HR + owner only.**
 * `employee_bank_accounts`: employee_id, bank_name, iban, account_holder, is_primary. **HR + owner only.**
@@ -223,7 +232,8 @@ to evolve); all FKs indexed. Full column-level detail, RLS, RPC and workflow ref
   medical_insurance|iban_certificate|educational_certificate|professional_certificate|medical_report|visa|
   signed_hr_form|other`), document_number, issue_date, expiry_date, status
   (`valid|expired|pending_review|rejected|archived`), storage_path, file_name, file_size, mime_type,
-  notes, is_confidential (default true for medical_report), uploaded_by.
+  notes, is_confidential (default true for medical_report), uploaded_by, review_note, reviewed_by,
+  reviewed_at. The file a row references is immutable in Storage (see §7 Storage).
 
 ### Leave
 * `leave_types`: code unique (`annual, sick, emergency, unpaid, marriage, maternity, paternity,
@@ -279,7 +289,9 @@ to evolve); all FKs indexed. Full column-level detail, RLS, RPC and workflow ref
   changed_at.
 * `certificates`: certificate_number (`CERT-YYYY-000001`), employee_id, request_id, template_id,
   template_version, certificate_type, language, addressed_to, purpose, issue_date, status
-  (`valid|revoked`), storage_path, issued_by, revoked_at, revoke_reason.
+  (`valid|revoked`), storage_path, issued_by, revoked_at, revoke_reason, verification_code (12 random
+  characters printed on the PDF / in the QR link; required by `/verify` to reveal holder details;
+  masked in the audit trail).
 
 ### Communication
 * `notifications`: user_id, type, params jsonb, link, entity_type, entity_id, read_at, emailed_at.
@@ -290,14 +302,15 @@ to evolve); all FKs indexed. Full column-level detail, RLS, RPC and workflow ref
   registration_submitted, registration_approved, registration_rejected, registration_info_requested,
   certificate_issued, leave_balance_adjusted, expiry_alert, account_invited`.
 * `notification_settings`: event_key unique, in_app_enabled, email_enabled, recipients jsonb.
-* `email_templates` (+ placeholders jsonb): key unique (`account_invitation, registration_submitted, registration_approved,
+* `email_templates` (+ placeholders jsonb): key unique (`account_invitation, registration_confirm, registration_submitted, registration_approved,
   registration_rejected, password_reset, request_submitted, approval_required, request_approved,
   request_rejected, request_returned, request_completed, iqama_expiry, passport_expiry,
   insurance_expiry, contract_expiry, document_expiry`), name_ar/en, subject_ar/en, body_ar/en (HTML),
   is_active. Placeholders `{{employee_name}} {{manager_name}} {{request_number}} {{request_type}}
   {{request_status}} {{company_name}} {{link}}` (+ type specific).
 * `email_logs`: recipient, subject, template_key, related_entity_type, related_entity_id, status
-  (`sent|failed|skipped`), provider, provider_message_id, error, sent_at.
+  (`sent|failed|skipped`), provider, provider_message_id, error, sent_at. Written only by the service
+  role (`log_email`).
 
 ### Data management & audit
 * `imports`: import_type, file_name, status (`uploaded|validated|importing|completed|failed|cancelled`),
@@ -307,8 +320,10 @@ to evolve); all FKs indexed. Full column-level detail, RLS, RPC and workflow ref
   skipped`), errors jsonb, warnings jsonb, entity_id.
 * `audit_logs` (bigint identity PK): actor_id, actor_email, action (dot-namespaced, e.g.
   `employee.update`), entity_type, entity_id, employee_id (related employee → Activity tab), summary,
-  changes jsonb (sensitive fields masked), ip, user_agent, created_at. **Append-only**: no UPDATE/DELETE
-  grants or policies for anyone (plus a guard trigger).
+  changes jsonb (sensitive fields masked: salary components, IBAN, national ID, passport number,
+  certificate verification code), ip, user_agent, created_at. **Append-only**: no UPDATE/DELETE
+  grants or policies for anyone (plus a guard trigger). Written by row triggers, definer RPCs and the
+  service-role `log_audit_event` only.
 
 ---
 
@@ -333,7 +348,7 @@ always uses `has_org_permission`, so e.g. the manager role's `employees.view` me
 
 | Table | Employee | Manager | HR officer / HR admin | Super admin |
 |---|---|---|---|---|
-| employees | own row | + direct reports (read) | per `employees.*` perms (identity columns need `personal_data.edit`) | all |
+| employees | own row | + direct reports (read) | per `employees.*` perms (identity columns need `personal_data.edit`) | all — table columns limited to directory / employment data; identity / personal columns via `employee_records` (self or org `personal_data.view/edit`), see §6 |
 | employee_compensation, employee_bank_accounts | own (read) | ✗ | `bank.*` perms | all |
 | employee_insurance | own (read) | ✗ | `insurance.*` perms | all |
 | employee_dependents | own (read) | ✗ | `personal_data.*` perms | all |
@@ -367,14 +382,14 @@ balance, sequences):
 * `public.log_audit_event(p_action text, p_entity_type text default null, p_entity_id text default null, p_summary text default null, p_changes jsonb default null, p_actor_id uuid default null, p_ip text default null, p_user_agent text default null) → void`
   — **service role only** (a user JWT can never write the audit trail); called by `lib/audit.ts` after the action's own permission check, with the verified session user as actor
 * `public.global_search(p_query text, p_locale text default 'ar', p_limit int default 20) → table(kind, id, title, subtitle, href)` (security invoker → RLS applies)
-* `public.verify_certificate(p_number text) → table(certificate_number, employee_name, certificate_type, issue_date, status)` — granted to `anon`; returns nothing else
+* `public.verify_certificate(p_number text, p_code text default null) → table(certificate_number, employee_name, certificate_type, issue_date, status)` — granted to `anon`; the number alone returns only number + status; `employee_name`, `certificate_type` and `issue_date` are filled only when `p_code` matches the certificate's `verification_code`; returns nothing else
 * `public.get_public_branding() → jsonb` — granted to `anon` (portal names, logo URL, colors, login texts)
 * `public.dashboard_stats() → jsonb` (role-aware counts)
 * `public.reset_organization(p_confirmation text) → void` (super_admin only, phrase `RESET ORGANIZATION`)
 * Additional RPCs (see `docs/DATABASE.md` §7): `set_user_status(p_user_id, p_status, p_note default null)`,
   `set_user_employee(p_user_id, p_employee_id)`, `record_login()`, `get_employee_manager(p_employee_id) → jsonb`,
   `get_request_workflow(p_request_id) → table`, `set_leave_balance(…)`, `initialize_leave_balances(p_year, p_employee_id default null)`,
-  `claim_notification_emails(p_notification_ids uuid[]) → table`, `log_email(…)` (service role only), `generate_expiry_alerts()` (cron),
+  `claim_notification_emails(p_notification_ids uuid[]) → table`, `log_email(…)` (**service role only**), `generate_expiry_alerts()` (cron),
   `publish_certificate_template(p_template_id, p_change_notes default null)`, `restore_certificate_template_version(p_template_id, p_version)`.
 * RPC errors are raised as `hr:errors.<key>` (list in `docs/DATABASE.md` §13).
 
@@ -387,9 +402,9 @@ always after an explicit role check.
 ### Storage (all buckets private; access via short-lived signed URLs)
 | Bucket | Path | Read | Write |
 |---|---|---|---|
-| `employee-documents` | `{employee_id}/{document_id}/{file}` · avatars `{employee_id}/avatar/{file}` | owner (non-confidential / own uploads), HR (`documents.view`); avatars: whoever can view the employee | HR, owner (own folder, into a `pending_review` document row created first) |
+| `employee-documents` | `{employee_id}/{document_id}/{file}` · avatars `{employee_id}/avatar/{file}` | owner (non-confidential / own uploads), HR (`documents.view`); avatars: whoever can view the employee | new objects: HR (`documents.create/edit`), owner (own folder, into a `pending_review` document row created first); avatars: `employees.edit`. A file referenced by a document row is never overwritten, moved or deleted — except the uploader's own `pending_review` submission (replace = new path + row update; delete = row first) |
 | `request-attachments` | `requests/{request_id}/{uuid}-{file}` | requester, current/previous approvers, HR | requester (draft/returned), HR |
-| `certificate-files` | `certificates/{employee_id}/{certificate_number}.pdf`, `branding/stamp.*`, `branding/signature.*` | owner (certificates), HR | HR / service |
+| `certificate-files` | `certificates/{employee_id}/{certificate_number}.pdf`, `branding/stamp.*`, `branding/signature.*` | owner (valid certificates), HR (`certificates.view`); branding: `certificates.view` / `settings.view` | certificates: `certificates.create` only while no certificate row references the path (issued PDFs are immutable); branding: `settings.edit` |
 | `branding` (**public**) | `logo/*`, `login/*` | anyone | super_admin / `settings.administer` |
 
 ---

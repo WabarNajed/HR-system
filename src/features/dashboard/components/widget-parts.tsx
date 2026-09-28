@@ -123,7 +123,7 @@ export function WidgetStrip({
             >
               {item.value}
             </div>
-            <div className="truncate text-[0.6875rem] text-muted-foreground group-hover/strip:text-foreground">{item.label}</div>
+            <div className="truncate text-2xs text-muted-foreground group-hover/strip:text-foreground">{item.label}</div>
           </>
         );
         return item.href ? (

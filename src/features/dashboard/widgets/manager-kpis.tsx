@@ -24,7 +24,7 @@ export async function ManagerKpis({ employeeId, alongsideHr = false }: { employe
         value={n(s.pending_approvals)}
         icon={ClipboardCheckIcon}
         tone={s.pending_approvals > 0 ? 'warning' : 'success'}
-        href="/approvals"
+        href="/approvals?queue=direct"
         hint={s.pending_approvals > 0 ? t('pendingApprovalsHint') : t('pendingApprovalsClear')}
       />
       <StatCard

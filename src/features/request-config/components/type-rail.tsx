@@ -76,7 +76,7 @@ export function TypeRail({ types, selectedKey, onSelect, className }: Props) {
                 <span className="flex min-w-0 flex-1 flex-col leading-tight">
                   <span className={cn('truncate text-[0.8125rem]', selected ? 'font-semibold' : 'font-medium text-foreground')}>{localized(ty, 'name', locale)}</span>
                   {ty.badge || !ty.is_active ? (
-                    <span className="mt-0.5 flex items-center gap-1 truncate text-[0.6875rem] text-muted-foreground">
+                    <span className="mt-0.5 flex items-center gap-1 truncate text-2xs text-muted-foreground">
                       {!ty.is_active ? <span>{tc('inactive')}</span> : null}
                       {ty.badge}
                     </span>

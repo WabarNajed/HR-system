@@ -524,7 +524,7 @@ function SectionIndex({ sections, errors }: { sections: SectionDef[]; errors: Re
                   <Icon className={cn('size-3.5 shrink-0', isActive ? 'text-primary' : 'text-faint-foreground')} aria-hidden />
                   <span className="min-w-0 flex-1 leading-snug">{s.title}</span>
                   {count > 0 ? (
-                    <span className="min-w-4.5 rounded-full bg-danger px-1 text-center text-[0.6875rem] leading-4.5 font-semibold text-danger-foreground tabular-nums">
+                    <span className="min-w-4.5 rounded-full bg-danger px-1 text-center text-2xs leading-4.5 font-semibold text-danger-foreground tabular-nums">
                       {count}
                     </span>
                   ) : null}
@@ -565,7 +565,7 @@ function MobileSectionNav({ sections, errors }: { sections: SectionDef[]; errors
             <Icon className="size-3.5 shrink-0 opacity-70" aria-hidden />
             {s.title}
             {count > 0 ? (
-              <span className="min-w-4.5 rounded-full bg-danger px-1 text-center text-[0.6875rem] leading-4.5 font-semibold text-danger-foreground tabular-nums">
+              <span className="min-w-4.5 rounded-full bg-danger px-1 text-center text-2xs leading-4.5 font-semibold text-danger-foreground tabular-nums">
                 {count}
               </span>
             ) : null}
