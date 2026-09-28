@@ -70,6 +70,26 @@ test.describe('authentication', () => {
     expect(location.searchParams.get('next')).toBe('/leave');
   });
 
+  test.describe('before hydration / without JavaScript', () => {
+    test.use({ javaScriptEnabled: false });
+
+    test('the sign-in form posts to the server action and never puts credentials in a URL', async ({ page }) => {
+      const requests: string[] = [];
+      page.on('request', (r) => {
+        if (r.isNavigationRequest()) requests.push(`${r.method()} ${r.url()}`);
+      });
+      await setLocaleCookie(page.context(), 'en');
+      await page.goto('/login?next=%2Fleave');
+      await submitLogin(page, 'employee', 'not-the-password');
+      await expect(page.getByText('Incorrect email or password.')).toBeVisible();
+      await expect(page.locator('input[name=email]')).toHaveValue('employee@hr.local');
+      await submitLogin(page, 'employee');
+      await expect(page).toHaveURL(/\/leave$/, { timeout: 150_000 });
+      expect(requests.filter((r) => r.startsWith('GET ') && /password|Passw0rd/i.test(r))).toEqual([]);
+      expect(requests.some((r) => r.startsWith('POST ') && r.includes('/login'))).toBe(true);
+    });
+  });
+
   test('a pending registration is sent to /pending-approval', async ({ page }) => {
     await login(page, 'pending', { locale: 'en' });
     await expect(page).toHaveURL(/\/pending-approval$/);

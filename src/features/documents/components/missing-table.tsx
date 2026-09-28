@@ -71,10 +71,16 @@ export function MissingDocumentsTable({ rows, total, departments, canUpload, can
         cell: ({ row }) => {
           const r = row.original;
           const idType = r.id_type === 'iqama' || r.id_type === 'national_id' ? tid(r.id_type) : null;
+          // The rule uses the derived Saudi / non-Saudi status (the stored nationality is free text).
+          const nationality = r.is_saudi === true ? t('missing.saudi') : r.is_saudi === false ? t('missing.nonSaudi') : null;
           return (
             <div className="flex flex-col">
               <span>{idType ?? <span className="text-faint-foreground">—</span>}</span>
-              {r.nationality ? <span className="text-xs text-muted-foreground">{r.nationality}</span> : null}
+              {nationality ? (
+                <span className="text-xs text-muted-foreground" title={r.nationality ?? undefined}>
+                  {nationality}
+                </span>
+              ) : null}
             </div>
           );
         },

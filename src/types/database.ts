@@ -3180,6 +3180,20 @@ export type Database = {
         Args: never
         Returns: Json
       }
+      duplicate_request_type: {
+        Args: { p_key: string; p_name_ar: string; p_name_en: string; p_source_id: string }
+        Returns: string
+      }
+      email_log_links: {
+        Args: { p_notification_ids: string[] }
+        Returns: {
+            entity_id: string
+            entity_type: string
+            link: string
+            notification_id: string
+            type: string
+          }[]
+      }
       employee_directory_stats: {
         Args: { p_manager_id?: string }
         Returns: Json
@@ -3578,9 +3592,28 @@ export type Database = {
             top_category: string
           }[]
       }
+      request_field_usage: {
+        Args: { p_request_type_id: string }
+        Returns: {
+            field_key: string
+            uses: number
+          }[]
+      }
       request_registration_info: {
         Args: { p_note: string; p_profile_id: string }
         Returns: undefined
+      }
+      request_type_usage: {
+        Args: never
+        Returns: {
+            last_submitted_at: string
+            open: number
+            overdue_open: number
+            request_type_id: string
+            resolved: number
+            resolved_on_time: number
+            total: number
+          }[]
       }
       reset_organization: {
         Args: { p_confirmation: string }
@@ -3612,6 +3645,18 @@ export type Database = {
       }
       save_employee: {
         Args: { p_bank?: Json; p_compensation?: Json; p_employee: Json; p_employee_id: string }
+        Returns: string
+      }
+      save_request_fields: {
+        Args: { p_fields: Json; p_request_type_id: string }
+        Returns: Json
+      }
+      save_request_type: {
+        Args: { p_id: string; p_values: Json }
+        Returns: string
+      }
+      save_request_workflow: {
+        Args: { p_request_type_id: string; p_steps: Json }
         Returns: string
       }
       set_certificate_template_active: {

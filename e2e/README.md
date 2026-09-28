@@ -38,7 +38,7 @@ compiles it, so a cold run is slower than a warm one.
 | `helpers/auth.ts` | `login(page, role, { next, locale })`, `logout(page)`, `submitLogin`, `setLocaleCookie`, `expectDocumentLocale` (`<html lang dir>`). |
 | `helpers/page-health.ts` | `watchPageHealth(page)`: console errors, uncaught page errors and 5xx responses. |
 | `helpers/db.ts` | Local service-role PostgREST lookups (fixture ids, the live role matrix via `permissionSubject`) and restoring fixture state a spec changed. Never creates product data. |
-| `auth.spec.ts` | Sign in / sign out, `next=` handling (off-site targets ignored), wrong password, unauthenticated redirects, pending → `/pending-approval`, disabled → `/account-disabled`, signed-in `/login` → dashboard, credentials stripped from URLs by the proxy. |
+| `auth.spec.ts` | Sign in / sign out, `next=` handling (off-site targets ignored), wrong password, unauthenticated redirects, pending → `/pending-approval`, disabled → `/account-disabled`, signed-in `/login` → dashboard, sign-in without JavaScript (progressive enhancement: POST to the Server Action), credentials stripped from URLs by the proxy. |
 | `language.spec.ts` | Arabic → English → Arabic across reload, navigation, sign-out and a fresh sign-in (cookie + saved profile preference); `<html lang dir>` on every step. Uses `employee2@` and restores its preference. |
 | `navigation.spec.ts` | Per role: the sidebar shows exactly the items `ROUTE_ACCESS` + the live role matrix allow, and page guards show the Forbidden state on every other route. As super admin: every route in ARCHITECTURE §9, in Arabic and English, loads without HTTP ≥ 400, a redirect to `/login`, console errors, page errors or 5xx responses. |
 

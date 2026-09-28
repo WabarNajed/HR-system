@@ -49,7 +49,7 @@ const documents = defineDataset<DocumentListRow>({
     { key: 'document_number', header: t('documents.fields.documentNumber'), width: 18 },
     { key: 'issue_date', header: t('documents.fields.issueDate'), type: 'date' },
     { key: 'expiry_date', header: t('documents.fields.expiryDate'), type: 'date' },
-    { key: 'days_left', header: t('documents.export.daysLeft'), type: 'integer', value: (r) => (r.status === 'archived' ? null : daysLeft(r.expiry_date, todayIso())) },
+    { key: 'days_left', header: t('documents.export.daysLeft'), type: 'integer', value: (r) => (r.status === 'archived' || r.status === 'rejected' ? null : daysLeft(r.expiry_date, todayIso())) },
     { key: 'status', header: t('documents.fields.status'), width: 16, value: (r) => label(t, `statuses.document.${r.status}`, r.status) },
     { key: 'is_confidential', header: t('documents.fields.confidential'), type: 'boolean' },
     { key: 'file_name', header: t('documents.export.fileName'), width: 28 },

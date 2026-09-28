@@ -292,8 +292,7 @@ function DetailsBody({
         <KeyValueGrid
           columns={2}
           items={[
-            { label: t('fields.documentNumber'), value: d.document_number, ltr: true },
-            { label: t('fields.status'), value: <StatusBadge domain="document" status={d.status} size="sm" /> },
+            { label: t('fields.documentNumber'), value: d.document_number, ltr: true, span: 'full' },
             { label: t('fields.issueDate'), value: d.issue_date ? fmt.date(d.issue_date) : null },
             {
               label: t('fields.expiryDate'),

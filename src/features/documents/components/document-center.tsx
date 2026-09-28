@@ -182,7 +182,8 @@ export async function DocumentCenter({
         ) : null}
 
         <section className="flex min-w-0 flex-col gap-4">
-          <LinkTabs items={tabs} value={tab} aria-label={t('title')} />
+          {/* Tighter tab padding on phones so all four tabs (with counts) fit at 390px. */}
+          <LinkTabs items={tabs} value={tab} aria-label={t('title')} className="max-sm:gap-0 max-sm:[&>*]:px-2" />
 
           {tab === 'expiry' ? (
             <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-meta text-muted-foreground">

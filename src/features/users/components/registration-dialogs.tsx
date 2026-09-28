@@ -67,7 +67,8 @@ export function ApproveRegistrationDialog({
       }
     });
 
-  const selectable = roles.filter((r) => r.key !== 'super_admin' || isSuperAdmin);
+  // Without users.administer only the Employee role can be granted on approval (enforced server-side too).
+  const selectable = roles.filter((r) => (canAdminister ? r.key !== 'super_admin' || isSuperAdmin : r.key === 'employee'));
 
   return (
     <Dialog open={Boolean(registration)} onOpenChange={(o) => !pending && onOpenChange(o)}>

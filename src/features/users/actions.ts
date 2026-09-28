@@ -133,6 +133,8 @@ export const approveRegistrationAction = withAction(
   async ({ profileId, employeeId, roleKey, alsoManager }, { ctx }) => {
     requirePermissionIn(ctx, 'users.approve', 'users.edit');
     if (roleKey === 'super_admin' && !ctx.isSuperAdmin) throw new ActionError('users.errors.superAdminOnly');
+    // Granting anything beyond the Employee role is role administration (same rule as set_user_roles).
+    if (roleKey !== 'employee' && !can(ctx, 'users.administer')) throw new ActionError('errors.forbidden');
     const supabase = await createClient();
     const { error } = await supabase.rpc('approve_registration', {
       p_profile_id: profileId,

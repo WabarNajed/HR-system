@@ -21,7 +21,12 @@ const nextConfig: NextConfig = {
   // and blocked automated clicks. Build/runtime errors still show in the dev overlay.
   devIndicators: false,
   // Never echo Server Action arguments (e.g. sign-in passwords) into the dev server log.
-  logging: { serverFunctions: false },
+  // …and never log a request URL that carries credentials (a pre-hydration GET submit of a password
+  // form; the proxy redirects those to a clean URL — see lib/supabase/proxy.ts).
+  logging: {
+    serverFunctions: false,
+    incomingRequests: { ignore: [/[?&](password|confirmPassword|newPassword|currentPassword|passwordConfirm)=/i] },
+  },
   experimental: {
     // `forbidden()` from next/navigation → (app)/forbidden.tsx renders the shared Forbidden state
     // inside the shell (used by requirePermission / requireRole guards).

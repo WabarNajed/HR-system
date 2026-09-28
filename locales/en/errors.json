@@ -62,5 +62,8 @@
   "managerCycle": "An employee can't report to themselves or to one of their own reports.",
   "changeNotesRequired": "Add a short note describing your changes before saving.",
   "templateNotPublished": "This template isn’t published or active. Publish its latest version first.",
-  "templateLanguageMismatch": "The selected template doesn’t support the requested certificate language."
+  "templateLanguageMismatch": "The selected template doesn’t support the requested certificate language.",
+  "fieldKeyInUse": "This field already holds request data, so its key can’t change.",
+  "approvalStepRequired": "A workflow needs at least one approval step.",
+  "invalidVisibilityRule": "A visibility rule refers to a field that isn’t on this form."
 }

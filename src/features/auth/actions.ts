@@ -13,6 +13,7 @@ import { LOCALE_COOKIE, isLocale, type Locale } from '@/lib/i18n/config';
 import { writeLocaleCookie } from '@/lib/i18n/cookie';
 import { siteUrl } from '@/lib/supabase/env';
 import { createClient } from '@/lib/supabase/server';
+import { isRecentLinkSession } from './link-session';
 import { forgotPasswordSchema, loginSchema, registerSchema, resetPasswordSchema } from './schemas';
 
 /**
@@ -134,6 +135,9 @@ export const updatePassword = withAction(
     const { data: claims } = await supabase.auth.getClaims();
     const uid = claims?.claims?.sub;
     if (typeof uid !== 'string') throw new ActionError('errors.tokenExpired');
+    // Without the current password this is only allowed right after following an invitation /
+    // recovery link; signed-in users change their password from My profile (re-authenticated).
+    if (!isRecentLinkSession(claims?.claims as Record<string, unknown> | undefined)) return fail('auth.reset.linkRequired');
     // `password_set_at` lets /reset-password tell a first-time invitation from a later reset.
     const { error } = await supabase.auth.updateUser({ password, data: { password_set_at: new Date().toISOString() } });
     if (error) throw error;

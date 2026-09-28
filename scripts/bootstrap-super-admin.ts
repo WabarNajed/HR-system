@@ -132,7 +132,7 @@ async function main(): Promise<void> {
       .insert({ id: userId, email, status: 'active', invited_at: created ? new Date().toISOString() : null });
     if (error) fail(`Could not create the profile: ${error.message}`);
   } else if (profile.status !== 'active') {
-    const { error } = await admin.from('profiles').update({ status: 'active', reviewed_at: new Date().toISOString() }).eq('id', userId);
+    const { error } = await admin.from('profiles').update({ status: 'active', reviewed_at: new Date().toISOString(), review_note: null }).eq('id', userId);
     if (error) fail(`Could not activate the profile: ${error.message}`);
   }
   console.log('  ✓ Profile active');

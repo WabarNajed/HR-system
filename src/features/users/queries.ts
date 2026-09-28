@@ -72,22 +72,17 @@ const USER_SELECT = `id, email, full_name, mobile, status, last_login_at, create
 
 
 /**
- * Users list query shared by the page and the `users` export: role filter (via user_roles),
+ * Users list query shared by the page and the `users` export: role filter (inner-joined user_roles),
  * status filter (incl. the derived `invited`), search and sort. `null` = no row can match.
  * Wrapped in `{ query }` so the (thenable) builder isn't executed by `await`.
  */
 export async function buildUsersQuery(supabase: ServerSupabaseClient, params: ListParams, withCount: boolean) {
-  let idFilter: string[] | null = null;
-  const roleFilter = params.filters.role;
-  if (roleFilter?.length) {
-    const { data, error } = await supabase.from('user_roles').select('user_id, role:roles!inner(key)').in('role.key', roleFilter);
-    if (error) throw error;
-    idFilter = Array.from(new Set((data ?? []).map((r) => r.user_id)));
-    if (!idFilter.length) return null;
-  }
-
-  let query = supabase.from('profiles').select(USER_SELECT, withCount ? { count: 'exact' } : undefined);
-  if (idFilter) query = query.in('id', idFilter);
+  const roleFilter = params.filters.role?.filter((k) => /^[a-z][a-z0-9_]{0,62}$/.test(k));
+  if (params.filters.role?.length && !roleFilter?.length) return null;
+  // Role filter as an inner-joined embed (`rf`) — one query, no id list in the URL (scales to any org size).
+  const select = roleFilter?.length ? `${USER_SELECT}, rf:user_roles!inner(rr:roles!inner(key))` : USER_SELECT;
+  let query = supabase.from('profiles').select(select, withCount ? { count: 'exact' } : undefined);
+  if (roleFilter?.length) query = query.in('rf.rr.key', roleFilter);
   const statuses = params.filters.status?.filter((s) => ['active', 'disabled', 'pending', 'info_requested', 'rejected', 'invited'].includes(s));
   if (statuses?.length) {
     const plain = statuses.filter((s) => s !== 'invited');

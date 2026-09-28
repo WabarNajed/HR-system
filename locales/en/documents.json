@@ -95,7 +95,7 @@
     "approveNote": "Optional note for the record…",
     "searchDocuments": "Search employee or document…",
     "searchMyDocuments": "Search type, number or file…",
-    "searchExpiry": "Search employee, dependent or reference…",
+    "searchExpiry": "Search name or reference…",
     "searchMissing": "Search employee…"
   },
   "filters": {
@@ -146,7 +146,9 @@
   "missing": {
     "ruleTitle": "How missing documents are determined",
     "rule": "Every active employee needs an employment contract and the ID document matching their ID type (Iqama or National ID). Non-Saudi employees also need a passport. Uploads waiting for review count as submitted.",
-    "count": "{count, plural, one {# missing} other {# missing}}"
+    "count": "{count, plural, one {# missing} other {# missing}}",
+    "saudi": "Saudi",
+    "nonSaudi": "Non-Saudi"
   },
   "review": {
     "approveTitle": "Approve this document?",

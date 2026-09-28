@@ -1,9 +1,10 @@
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { AuthHeading } from '@/features/auth/components/auth-heading';
-import { LoginForm, type LoginNotice } from '@/features/auth/components/login-form';
+import type { LoginNotice } from '@/features/auth/components/login-form';
 import { getPublicBranding } from '@/lib/branding';
 import { pageMetadata } from '@/lib/metadata';
+import { LoginForm } from './login-form';
 
 export const generateMetadata = (): Promise<Metadata> => pageMetadata('auth.title', 'auth.description');
 
