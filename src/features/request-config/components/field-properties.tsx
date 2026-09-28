@@ -95,6 +95,7 @@ export function FieldProperties({ field, fields, leaveTypes, savedOptionValues, 
           onChange={(ar, en) => onChange({ label_ar: ar, label_en: en })}
           disabled={readOnly}
           required
+          maxLength={200}
         />
       </Section>
 
@@ -106,6 +107,7 @@ export function FieldProperties({ field, fields, leaveTypes, savedOptionValues, 
           onChange={(ar, en) => onChange({ help_ar: ar, help_en: en })}
           disabled={readOnly}
           multiline
+          maxLength={500}
         />
       </Section>
 
@@ -117,6 +119,7 @@ export function FieldProperties({ field, fields, leaveTypes, savedOptionValues, 
             valueEn={field.placeholder_en ?? ''}
             onChange={(ar, en) => onChange({ placeholder_ar: ar, placeholder_en: en })}
             disabled={readOnly}
+            maxLength={200}
           />
         </Section>
       ) : null}
@@ -131,6 +134,7 @@ export function FieldProperties({ field, fields, leaveTypes, savedOptionValues, 
               id={`fk-${field.uid}`}
               value={field.key}
               dir="ltr"
+              maxLength={63}
               spellCheck={false}
               autoComplete="off"
               disabled={readOnly || keyLocked}
@@ -298,6 +302,7 @@ function OptionsEditor({ options, savedValues, disabled, onChange }: { options: 
                     value={o.label_ar}
                     dir="rtl"
                     lang="ar"
+                    maxLength={200}
                     disabled={disabled}
                     aria-label={t('labelAr', { n: i + 1 })}
                     placeholder={tc('arabic')}
@@ -308,6 +313,7 @@ function OptionsEditor({ options, savedValues, disabled, onChange }: { options: 
                     value={o.label_en}
                     dir="ltr"
                     lang="en"
+                    maxLength={200}
                     disabled={disabled}
                     aria-label={t('labelEn', { n: i + 1 })}
                     placeholder={tc('english')}
@@ -330,6 +336,7 @@ function OptionsEditor({ options, savedValues, disabled, onChange }: { options: 
                   <Input
                     value={o.value}
                     dir="ltr"
+                    maxLength={63}
                     spellCheck={false}
                     disabled={disabled || locked}
                     title={locked ? t('valueLocked') : undefined}

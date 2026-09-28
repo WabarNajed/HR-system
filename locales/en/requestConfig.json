@@ -368,7 +368,7 @@
       "coverage": "Types with an SLA",
       "coverageHint": "Active request types",
       "average": "Average target",
-      "averageHint": "Business days",
+      "averageHint": "Target business days per type",
       "onTime": "Decided on time",
       "onTimeHint": "Across {count} decided requests",
       "onTimeEmpty": "No decided requests yet",

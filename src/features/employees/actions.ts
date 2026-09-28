@@ -238,7 +238,8 @@ export const revealEmployeeIban = withAction(
     if (!data?.iban) throw new ActionError('errors.notFound');
     if (!isSelf) {
       await logAuditEvent(
-        { action: 'employee.iban_reveal', entityType: 'employee', entityId: id, summary: 'IBAN revealed' },
+        // No free-text summary: the translated action label (`audit.actions.iban_reveal`) says it all.
+        { action: 'employee.iban_reveal', entityType: 'employee', entityId: id },
         supabase,
       );
     }

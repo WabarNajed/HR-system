@@ -50,6 +50,7 @@ import { FormPreview } from './form-preview';
 import { fieldTypeLabel } from './labels';
 import { TypeRail, TypeSwitcher, type RailType } from './type-rail';
 import { RequestTypeIcon } from './type-visual';
+import { useContainerNarrow } from './use-narrow';
 import { useUnsavedChangesWarning } from './use-unsaved';
 
 export type BuilderTypeInfo = {
@@ -117,11 +118,11 @@ export function FormBuilder({ types, type, initialFields, leaveTypes, canEdit, o
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }), useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }));
 
-  // Narrow containers show the properties panel in a sheet instead of a side pane.
-  const isNarrow = () => (containerRef.current?.clientWidth ?? 1200) < 640;
+  // Narrow containers show the properties panel in a sheet instead of a side pane (never both).
+  const narrow = useContainerNarrow(containerRef);
   const select = (uid: string) => {
     setSelectedUid(uid);
-    if (isNarrow()) setSheetOpen(true);
+    if (narrow) setSheetOpen(true);
   };
 
   const navigateTo = (key: string) => {
@@ -173,7 +174,10 @@ export function FormBuilder({ types, type, initialFields, leaveTypes, canEdit, o
     const index = fields.findIndex((f) => f.uid === field.uid);
     const rest = fields.filter((f) => f.uid !== field.uid);
     setFields(rest.map((f) => ({ ...f, visibility: dropRefs(f.visibility, field.key) })));
-    if (selectedUid === field.uid) setSelectedUid(rest[Math.min(index, rest.length - 1)]?.uid ?? null);
+    if (selectedUid === field.uid) {
+      setSelectedUid(rest[Math.min(index, rest.length - 1)]?.uid ?? null);
+      setSheetOpen(false);
+    }
     setToDelete(null);
   };
 
@@ -426,13 +430,13 @@ export function FormBuilder({ types, type, initialFields, leaveTypes, canEdit, o
             </section>
 
             <aside aria-label={t('properties.title')} className="sticky top-4 hidden max-h-[calc(100dvh-6rem)] min-w-0 overflow-y-auto rounded-lg border border-border bg-card p-4 shadow-card @min-[40rem]:block">
-              {properties}
+              {narrow ? null : properties}
             </aside>
           </>
         )}
       </div>
 
-      <Sheet open={sheetOpen && mode === 'edit'} onOpenChange={setSheetOpen}>
+      <Sheet open={sheetOpen && narrow && mode === 'edit'} onOpenChange={setSheetOpen}>
         <SheetContent side="end" className="w-full sm:max-w-md">
           <SheetHeader>
             <SheetTitle>{selected ? localized(selected, 'label', locale) || selected.key : t('properties.title')}</SheetTitle>

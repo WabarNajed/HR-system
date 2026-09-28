@@ -173,7 +173,7 @@ export function RequestTypesManager({ rows, roles, canEdit }: Props) {
           ) : (
             <span className="text-faint-foreground">{t('sla.notSet')}</span>
           ),
-        meta: { label: t('types.columns.sla') },
+        meta: { label: t('types.columns.sla'), width: '8.5rem' },
       },
       {
         id: 'usage',
@@ -188,7 +188,7 @@ export function RequestTypesManager({ rows, roles, canEdit }: Props) {
             </div>
           );
         },
-        meta: { label: t('types.columns.usage'), align: 'end' },
+        meta: { label: t('types.columns.usage'), align: 'end', width: '6.5rem' },
       },
       {
         id: 'status',
@@ -209,7 +209,7 @@ export function RequestTypesManager({ rows, roles, canEdit }: Props) {
           ) : (
             <StatusBadge domain="record" status={row.original.is_active ? 'active' : 'inactive'} size="sm" />
           ),
-        meta: { label: tc('status') },
+        meta: { label: tc('status'), width: '6rem' },
       },
       actionsColumn<RequestTypeRow>(rowActions),
     ],

@@ -31,6 +31,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useErrorMessage } from '@/components/ui/form';
 import { Progress } from '@/components/ui/progress';
+import { formatPercent } from '@/lib/format';
+import type { Locale } from '@/lib/i18n/config';
 import { useDateFormat } from '@/lib/i18n/use-date-format';
 import { cn } from '@/lib/utils';
 import { completeSetup } from '../actions';
@@ -59,7 +61,7 @@ export function SetupWizard({ step, data, perms }: Props) {
   const t = useTranslations('setup');
   const tc = useTranslations('common');
   const df = useDateFormat();
-  const locale = useLocale();
+  const locale = useLocale() as Locale;
   const router = useRouter();
   const resolve = useErrorMessage();
   const [finishing, startFinishing] = useTransition();
@@ -118,7 +120,7 @@ export function SetupWizard({ step, data, perms }: Props) {
           <div className="px-1.5 pt-1">
             <div className="flex items-baseline justify-between gap-2">
               <span className="text-sm font-semibold text-foreground">{t('progress', { done, total: SETUP_STEPS.length })}</span>
-              <span className="numeric text-xs text-muted-foreground">{Math.round((done / SETUP_STEPS.length) * 100)}%</span>
+              <span className="numeric text-xs text-muted-foreground">{formatPercent(done / SETUP_STEPS.length, locale, { fractionDigits: 0 })}</span>
             </div>
             <Progress value={(done / SETUP_STEPS.length) * 100} tone="success" className="mt-2 h-1.5" aria-label={t('progress', { done, total: SETUP_STEPS.length })} />
           </div>

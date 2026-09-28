@@ -25,7 +25,7 @@ export function canDriveRule(field: Pick<BuilderField, 'field_type'>): boolean {
 
 /** A key unique within the form: `<base>`, `<base>_2`, … */
 export function uniqueKey(base: string, taken: ReadonlySet<string>): string {
-  const clean = base.replace(/[^a-z0-9_]/g, '_').replace(/^[^a-z]+/, '') || 'field';
+  const clean = base.replace(/[^a-z0-9_]/g, '_').replace(/^[^a-z]+/, '').slice(0, 63) || 'field';
   if (!taken.has(clean)) return clean;
   for (let i = 2; i < 1000; i++) {
     const candidate = `${clean.slice(0, 58)}_${i}`;

@@ -1,6 +1,6 @@
 'use client';
 
-import { ExternalLinkIcon } from 'lucide-react';
+import { ExternalLinkIcon, InfoIcon } from 'lucide-react';
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
 import { useState } from 'react';
@@ -8,7 +8,6 @@ import { EmployeeAvatar } from '@/components/shared/employee-avatar';
 import { KeyValueGrid } from '@/components/shared/key-value-grid';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetBody, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { SimpleTooltip } from '@/components/ui/tooltip';
 import { employeeDisplayName } from '@/lib/i18n/localized';
 import { useDateFormat } from '@/lib/i18n/use-date-format';
 import { cn } from '@/lib/utils';
@@ -97,6 +96,13 @@ export function UserDetailsSheet({ user: current, roles, abilities, onOpenChange
             </SheetBody>
             {actions.length ? (
               <SheetFooter className="flex-wrap justify-start gap-2">
+                {/* Why some actions are unavailable — visible text, not only a hover tooltip. */}
+                {Array.from(new Set(actions.filter((a) => a.disabled && a.disabledReason).map((a) => a.disabledReason!))).map((reason) => (
+                  <p key={reason} className="flex w-full items-start gap-1.5 text-xs text-muted-foreground">
+                    <InfoIcon className="mt-px size-3.5 shrink-0" aria-hidden />
+                    {reason}
+                  </p>
+                ))}
                 {actions.map((a) => {
                   const Icon = a.icon;
                   const className = cn(a.variant === 'destructive' && 'text-danger hover:bg-danger-soft hover:text-danger');
@@ -107,18 +113,16 @@ export function UserDetailsSheet({ user: current, roles, abilities, onOpenChange
                         {a.label}
                       </Link>
                     </Button>
-                  ) : a.disabled ? (
-                    // Disabled actions stay visible and explain why (focusable wrapper for keyboard users).
-                    <SimpleTooltip key={a.label} content={a.disabledReason ?? null}>
-                      <span tabIndex={0} className="rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring/50">
-                        <Button size="sm" variant="outline" className={className} disabled>
-                          {Icon ? <Icon /> : null}
-                          {a.label}
-                        </Button>
-                      </span>
-                    </SimpleTooltip>
                   ) : (
-                    <Button key={a.label} size="sm" variant="outline" className={className} onClick={() => a.onSelect?.(user)}>
+                    <Button
+                      key={a.label}
+                      size="sm"
+                      variant="outline"
+                      className={className}
+                      disabled={a.disabled}
+                      title={a.disabled ? a.disabledReason : undefined}
+                      onClick={() => a.onSelect?.(user)}
+                    >
                       {Icon ? <Icon /> : null}
                       {a.label}
                     </Button>

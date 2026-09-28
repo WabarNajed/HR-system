@@ -57,14 +57,18 @@ export function EmailTemplatesList({ rows, canEdit }: { rows: Row[]; canEdit: bo
         accessorFn: (r) => localized(r, 'name', locale),
         header: ({ column }) => <DataTableColumnHeader column={column} title={t('list.columns.template')} />,
         cell: ({ row }) => (
-          <div className="flex max-w-72 min-w-44 items-center gap-2.5 whitespace-normal">
+          <div className="flex max-w-72 min-w-48 items-center gap-2.5 whitespace-normal">
             <span className="flex size-8 shrink-0 items-center justify-center rounded-md bg-primary-soft text-primary">
               <MailIcon className="size-4" aria-hidden />
             </span>
             <div className="min-w-0 leading-tight">
               <div className="truncate font-medium text-foreground">{localized(row.original, 'name', locale)}</div>
-              <div dir="ltr" className="mt-0.5 text-start font-mono text-[0.6875rem] text-faint-foreground">
-                {row.original.key}
+              <div className="mt-0.5 flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
+                <span className="shrink-0">{t(`groups.${templateGroup(row.original.key)}`)}</span>
+                <span aria-hidden>·</span>
+                <span dir="ltr" className="truncate font-mono text-[0.6875rem] text-faint-foreground">
+                  {row.original.key}
+                </span>
               </div>
             </div>
           </div>
@@ -76,14 +80,18 @@ export function EmailTemplatesList({ rows, canEdit }: { rows: Row[]; canEdit: bo
         accessorFn: (r) => templateGroup(r.key),
         header: ({ column }) => <DataTableColumnHeader column={column} title={t('list.columns.group')} />,
         cell: ({ row }) => <span className="whitespace-nowrap text-foreground">{t(`groups.${templateGroup(row.original.key)}`)}</span>,
-        meta: { label: t('list.columns.group') },
+        meta: { label: t('list.columns.group'), defaultHidden: true },
       },
       {
         id: 'subject',
         accessorFn: (r) => localized(r, 'subject', locale),
         enableSorting: false,
         header: () => t('list.columns.subject'),
-        cell: ({ row }) => <span className="line-clamp-1 max-w-80 min-w-40 text-muted-foreground">{localized(row.original, 'subject', locale)}</span>,
+        cell: ({ row }) => (
+          <span className="line-clamp-2 max-w-[26rem] min-w-40 text-[0.8125rem] leading-snug whitespace-normal text-muted-foreground" title={localized(row.original, 'subject', locale)}>
+            {localized(row.original, 'subject', locale)}
+          </span>
+        ),
         meta: { label: t('list.columns.subject') },
       },
       {
@@ -91,7 +99,7 @@ export function EmailTemplatesList({ rows, canEdit }: { rows: Row[]; canEdit: bo
         accessorFn: (r) => r.updated_at,
         header: ({ column }) => <DataTableColumnHeader column={column} title={tc('lastUpdated')} />,
         cell: ({ row }) => <span className="numeric whitespace-nowrap text-muted-foreground">{df.date(row.original.updated_at)}</span>,
-        meta: { label: tc('lastUpdated') },
+        meta: { label: tc('lastUpdated'), width: '8.5rem' },
       },
       {
         id: 'status',
@@ -112,7 +120,7 @@ export function EmailTemplatesList({ rows, canEdit }: { rows: Row[]; canEdit: bo
           ) : (
             <StatusBadge domain="record" status={row.original.is_active ? 'active' : 'inactive'} size="sm" />
           ),
-        meta: { label: tc('status') },
+        meta: { label: tc('status'), width: '5.5rem' },
       },
       actionsColumn<Row>(actions),
     ],

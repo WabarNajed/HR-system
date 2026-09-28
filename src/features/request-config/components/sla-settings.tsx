@@ -119,7 +119,7 @@ export function SlaSettings({ rows, calendar, roles, canEdit }: Props) {
         accessorFn: (r) => r.usage.open,
         header: ({ column }) => <DataTableColumnHeader column={column} title={t('columns.open')} />,
         cell: ({ row }) => <span className="numeric text-foreground">{n(row.original.usage.open)}</span>,
-        meta: { label: t('columns.open'), align: 'end', width: '5.5rem' },
+        meta: { label: t('columns.open'), align: 'end', width: '6.5rem' },
       },
       {
         id: 'overdue',
@@ -133,7 +133,7 @@ export function SlaSettings({ rows, calendar, roles, canEdit }: Props) {
           ) : (
             <span className="numeric text-muted-foreground">0</span>
           ),
-        meta: { label: t('columns.overdue'), align: 'end', width: '5.5rem' },
+        meta: { label: t('columns.overdue'), align: 'end', width: '6.5rem' },
       },
       {
         id: 'onTime',
@@ -153,7 +153,7 @@ export function SlaSettings({ rows, calendar, roles, canEdit }: Props) {
             </div>
           );
         },
-        meta: { label: t('columns.onTime') },
+        meta: { label: t('columns.onTime'), width: '8.5rem' },
       },
     ],
     // eslint-disable-next-line react-hooks/exhaustive-deps

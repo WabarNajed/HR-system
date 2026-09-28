@@ -4,6 +4,7 @@ import { useTranslations } from 'next-intl';
 import { useId } from 'react';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { localeShortNames } from '@/lib/i18n/config';
 
 /** Arabic + English inputs, each tagged with its language. */
 export function BilingualInput({
@@ -14,6 +15,7 @@ export function BilingualInput({
   disabled,
   multiline,
   required,
+  maxLength,
 }: {
   label: string;
   valueAr: string;
@@ -22,6 +24,8 @@ export function BilingualInput({
   disabled: boolean;
   multiline?: boolean;
   required?: boolean;
+  /** Hard limit per language (mirrors the server-side validation). */
+  maxLength?: number;
 }) {
   const tc = useTranslations('common');
   const id = useId();
@@ -39,13 +43,16 @@ export function BilingualInput({
           dir: r.lang === 'ar' ? 'rtl' : 'ltr',
           lang: r.lang,
           disabled,
+          maxLength,
           'aria-label': `${label} · ${r.tag}`,
           'aria-invalid': invalid || undefined,
           onChange: (e: { target: { value: string } }) => (r.lang === 'ar' ? onChange(e.target.value, valueEn) : onChange(valueAr, e.target.value)),
         } as const;
         return (
           <div key={r.lang} className="flex items-start gap-2">
-            <span className="mt-2 w-7 shrink-0 rounded bg-muted py-0.5 text-center text-[0.625rem] font-semibold text-muted-foreground uppercase">{r.lang}</span>
+            <span aria-hidden className="mt-2 w-7 shrink-0 rounded bg-muted py-0.5 text-center text-[0.625rem] font-semibold text-muted-foreground">
+              {localeShortNames[r.lang]}
+            </span>
             {multiline ? <Textarea {...common} rows={2} className="min-h-14 text-sm" /> : <Input {...common} className="h-8 text-sm" />}
           </div>
         );

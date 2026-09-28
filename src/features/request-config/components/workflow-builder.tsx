@@ -42,6 +42,7 @@ import { DEFAULT_STEP_NAMES, stepSlaTotal } from '../workflow-logic';
 import { BilingualInput } from './bilingual-input';
 import { TypeRail, TypeSwitcher, type RailType } from './type-rail';
 import { RequestTypeIcon, STEP_ICONS } from './type-visual';
+import { useContainerNarrow } from './use-narrow';
 import { useUnsavedChangesWarning } from './use-unsaved';
 
 type DraftStep = WorkflowStep & { uid: string };
@@ -123,10 +124,11 @@ export function WorkflowBuilder({ types, type, initialSteps, roles, users, count
   const invalid = steps.some((s) => stepProblems(s).length > 0);
   const totalStepSla = stepSlaTotal(steps);
 
-  const isNarrow = () => (containerRef.current?.clientWidth ?? 1200) < 640;
+  // Narrow containers show the step properties in a sheet instead of a side pane (never both).
+  const narrow = useContainerNarrow(containerRef);
   const select = (uid: string) => {
     setSelectedUid(uid);
-    if (isNarrow()) setSheetOpen(true);
+    if (narrow) setSheetOpen(true);
   };
 
   const navigateTo = (key: string) => {
@@ -168,7 +170,10 @@ export function WorkflowBuilder({ types, type, initialSteps, roles, users, count
     });
   const remove = (uid: string) => {
     setSteps((list) => list.filter((s) => s.uid !== uid));
-    if (selectedUid === uid) setSelectedUid(null);
+    if (selectedUid === uid) {
+      setSelectedUid(null);
+      setSheetOpen(false);
+    }
   };
 
   const save = () => {
@@ -340,11 +345,11 @@ export function WorkflowBuilder({ types, type, initialSteps, roles, users, count
         </section>
 
         <aside aria-label={t('properties.title')} className="sticky top-4 hidden max-h-[calc(100dvh-6rem)] min-w-0 overflow-y-auto rounded-lg border border-border bg-card p-4 shadow-card @min-[40rem]:block">
-          {properties}
+          {narrow ? null : properties}
         </aside>
       </div>
 
-      <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
+      <Sheet open={sheetOpen && narrow} onOpenChange={setSheetOpen}>
         <SheetContent side="end" className="w-full sm:max-w-md">
           <SheetHeader>
             <SheetTitle>{selected ? localized(selected, 'name', locale) : t('properties.title')}</SheetTitle>
@@ -678,7 +683,7 @@ function StepProperties({
 
       <div className="flex flex-col gap-2">
         <p className="text-sm font-semibold text-foreground">{t('properties.name')}</p>
-        <BilingualInput label={t('properties.name')} valueAr={step.name_ar} valueEn={step.name_en} onChange={(ar, en) => onChange({ name_ar: ar, name_en: en })} disabled={readOnly} required />
+        <BilingualInput label={t('properties.name')} valueAr={step.name_ar} valueEn={step.name_en} onChange={(ar, en) => onChange({ name_ar: ar, name_en: en })} disabled={readOnly} required maxLength={120} />
       </div>
 
       <div className="flex flex-col gap-1.5">

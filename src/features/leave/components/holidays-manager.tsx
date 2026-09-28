@@ -68,7 +68,11 @@ export function HolidaySheet({ open, onOpenChange, row, year }: { open: boolean;
       setErrors({});
     }
   }
-  const set = <K extends keyof FormState>(k: K, v: FormState[K]) => setForm((f) => ({ ...f, [k]: v }));
+  const set = <K extends keyof FormState>(k: K, v: FormState[K]) => {
+    setForm((f) => ({ ...f, [k]: v }));
+    // Editing a field clears its error (the rest stay until the next submit).
+    setErrors((e) => (e[k as string] ? { ...e, [k]: '' } : e));
+  };
   const span = form.start_date && form.end_date && form.end_date >= form.start_date ? (daysBetween(form.start_date, form.end_date) ?? 0) + 1 : null;
 
   const submit = () => {

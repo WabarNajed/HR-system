@@ -115,7 +115,7 @@ export function EmployeesTable({
         id: 'employee_number',
         accessorFn: (r) => r.employee_number,
         header: ({ column }) => <DataTableColumnHeader column={column} title={t('columns.employeeNumber')} />,
-        meta: { label: t('columns.employeeNumber') },
+        meta: { label: t('columns.employeeNumber'), width: '8.5rem' },
         cell: ({ row }) =>
           row.original.employee_number ? (
             <bdi dir="ltr" className="font-medium text-foreground tabular-nums">
@@ -157,7 +157,7 @@ export function EmployeesTable({
         id: 'employment_status',
         accessorFn: (r) => r.employment_status,
         header: ({ column }) => <DataTableColumnHeader column={column} title={t('columns.status')} />,
-        meta: { label: t('columns.status') },
+        meta: { label: t('columns.status'), width: '8rem' },
         cell: ({ row }) => <StatusBadge domain="employment" status={row.original.employment_status} size="sm" />,
       },
     ];
@@ -171,7 +171,7 @@ export function EmployeesTable({
         id: 'iqama_expiry_date',
         accessorFn: (r) => r.iqama_expiry_date,
         header: ({ column }) => <DataTableColumnHeader column={column} title={t('columns.iqamaExpiry')} />,
-        meta: { label: t('columns.iqamaExpiry') },
+        meta: { label: t('columns.iqamaExpiry'), width: '9rem' },
         cell: ({ row }) => {
           const d = row.original.iqama_expiry_date;
           if (!d) return dash;
@@ -213,7 +213,7 @@ export function EmployeesTable({
         id: 'joining_date',
         accessorFn: (r) => r.joining_date,
         header: ({ column }) => <DataTableColumnHeader column={column} title={t('columns.joiningDate')} />,
-        meta: { label: t('columns.joiningDate'), defaultHidden: true },
+        meta: { label: t('columns.joiningDate'), width: '8.5rem', defaultHidden: true },
         cell: ({ row }) => (row.original.joining_date ? <span className="tabular-nums">{fmt.date(row.original.joining_date)}</span> : dash),
       },
       {

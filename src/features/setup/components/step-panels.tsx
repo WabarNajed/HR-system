@@ -207,6 +207,7 @@ function ItemChips({ items, max = 24, emptyText }: { items: NamedItem[]; max?: n
 
 function MasterDataStep({ entity, items, canEdit }: { entity: MasterEntity; items: NamedItem[]; canEdit: boolean }) {
   const t = useTranslations('setup');
+  const locale = useLocale() as Locale;
   const tc = useTranslations('common');
   const router = useRouter();
   const resolve = useErrorMessage();
@@ -227,7 +228,7 @@ function MasterDataStep({ entity, items, canEdit }: { entity: MasterEntity; item
         toast.error(resolve(result.error));
         return;
       }
-      toast.success(t('quickAdd.added', { name: values.nameAr || values.nameEn }));
+      toast.success(t('quickAdd.added', { name: (locale === 'ar' ? values.nameAr || values.nameEn : values.nameEn || values.nameAr).trim() }));
       setValues({ nameAr: '', nameEn: '', code: '' });
       setErrors({});
       router.refresh();

@@ -95,7 +95,7 @@ export function RolesConsole({ roles, selectedKey, members, canAdminister, isSup
   const granted = locked ? ALL_PERMISSIONS.length : draft.size;
 
   return (
-    <div className="grid items-start gap-4 lg:grid-cols-[14.5rem_minmax(0,1fr)] lg:gap-4">
+    <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-4 lg:grid-cols-[14.5rem_minmax(0,1fr)] lg:gap-4">
       {/* Roles list */}
       <div className="lg:hidden">
         <Select value={role.key} onValueChange={selectRole}>

@@ -69,7 +69,7 @@ export default async function SettingsSecurityPage() {
         ) : signIns.length === 0 ? (
           <p className="px-5 py-4 text-meta text-muted-foreground">{t('activity.empty')}</p>
         ) : (
-          <ul className="divide-y divide-border">
+          <ul className="@container divide-y divide-border">
             {signIns.map((e) => {
               const login = e.action === 'auth.login';
               const agent = describeAgent(e.userAgent);
@@ -78,25 +78,26 @@ export default async function SettingsSecurityPage() {
                   <span
                     className={
                       login
-                        ? 'flex size-7 shrink-0 items-center justify-center rounded-full bg-success-soft text-success'
-                        : 'flex size-7 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground'
+                        ? 'flex size-6 shrink-0 items-center justify-center rounded-full bg-success-soft text-success'
+                        : 'flex size-6 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground'
                     }
                   >
-                    {login ? <LogInIcon className="size-4 rtl:-scale-x-100" aria-hidden /> : <LogOutIcon className="size-4 rtl:-scale-x-100" aria-hidden />}
+                    {login ? <LogInIcon className="size-3.5 rtl:-scale-x-100" aria-hidden /> : <LogOutIcon className="size-3.5 rtl:-scale-x-100" aria-hidden />}
                   </span>
-                  <div className="min-w-0 flex-1 leading-tight">
-                    <div className="flex min-w-0 flex-wrap items-baseline gap-x-2">
-                      <bdi dir="ltr" className="truncate text-sm font-medium text-foreground">
+                  {/* One dense line when the card is wide (who · what · device), stacked when narrow. */}
+                  <div className="flex min-w-0 flex-1 flex-col leading-tight @2xl:flex-row @2xl:items-baseline @2xl:gap-2">
+                    <div className="flex min-w-0 items-baseline gap-2">
+                      <bdi dir="ltr" className="min-w-0 truncate text-sm font-medium text-foreground">
                         {e.actorEmail ?? '—'}
                       </bdi>
-                      <span className="text-xs text-muted-foreground">{login ? t('activity.login') : t('activity.logout')}</span>
+                      <span className="shrink-0 text-xs text-muted-foreground">{login ? t('activity.login') : t('activity.logout')}</span>
                     </div>
-                    <div className="mt-0.5 truncate text-xs text-faint-foreground">
+                    <div className="mt-0.5 min-w-0 truncate text-xs text-faint-foreground @2xl:mt-0">
                       {[agent, e.ip].filter(Boolean).join(' · ') || t('activity.noDevice')}
                     </div>
                   </div>
-                  <div className="shrink-0 text-end leading-tight">
-                    <RelativeTime value={e.createdAt} className="block text-meta text-foreground" />
+                  <div className="flex shrink-0 flex-col items-end leading-tight @2xl:flex-row @2xl:items-baseline @2xl:gap-2">
+                    <RelativeTime value={e.createdAt} className="text-meta text-foreground" />
                     <span className="hidden text-xs text-muted-foreground numeric sm:block">{formatDateTime(e.createdAt, ctx.locale)}</span>
                   </div>
                 </li>

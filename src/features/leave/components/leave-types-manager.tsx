@@ -140,7 +140,11 @@ export function LeaveTypeSheet({
     }
   }
 
-  const set = <K extends keyof FormState>(k: K, v: FormState[K]) => setForm((f) => ({ ...f, [k]: v }));
+  const set = <K extends keyof FormState>(k: K, v: FormState[K]) => {
+    setForm((f) => ({ ...f, [k]: v }));
+    // Editing a field clears its error (the rest stay until the next submit).
+    setErrors((e) => (e[k as string] ? { ...e, [k]: '' } : e));
+  };
   const id = (name: string) => `${uid}-${name}`;
 
   const submit = () => {

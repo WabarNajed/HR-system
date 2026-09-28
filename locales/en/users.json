@@ -164,7 +164,7 @@
   "registrations": {
     "title": "Pending registrations",
     "description": "Review employee self-registrations, link each one to the right employee record and activate access.",
-    "searchPlaceholder": "Search by name, email, mobile or ID…",
+    "searchPlaceholder": "Search name, email or ID…",
     "tabs": {
       "pending": "Pending",
       "info_requested": "Information requested",

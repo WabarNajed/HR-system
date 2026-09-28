@@ -16,7 +16,7 @@ import {
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { useCallback, useMemo, useRef, useState, type ReactNode } from 'react';
-import { toast } from 'sonner';
+import { toast as sonner, type ExternalToast } from 'sonner';
 import { Combobox, type ComboboxOption } from '@/components/shared/combobox';
 import { EmptyState } from '@/components/shared/empty-state';
 import { FileDropzone, fileKey, type DropzoneFileState } from '@/components/shared/file-dropzone';
@@ -40,6 +40,16 @@ import { LeaveInsight, type LeaveInsightState } from './leave-insight';
 import { ApprovalPath } from './approval-path';
 import { TypeIcon } from './request-bits';
 import { AttachmentList, RequestFormRenderer } from './request-form-renderer';
+
+/**
+ * The wizard's sticky action bar sits where toasts normally stack (bottom, inline end), so a toast
+ * would cover Save / Submit (and hovering it pauses its timer). Wizard toasts appear at the top.
+ */
+const AT_TOP: ExternalToast = { position: 'top-center' };
+const toast = {
+  success: (message: string, options?: ExternalToast) => sonner.success(message, { ...AT_TOP, ...options }),
+  error: (message: string, options?: ExternalToast) => sonner.error(message, { ...AT_TOP, ...options }),
+};
 
 type Existing = AttachmentItem & { kind: 'existing' };
 type Pending = AttachmentItem & { kind: 'pending' };
@@ -340,8 +350,21 @@ export function NewRequestWizard(props: NewRequestWizardProps) {
       ) : null}
 
       {step === 2 && type ? (
-        <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,1fr)_21rem] lg:gap-5">
-          <div className="flex min-w-0 flex-col gap-4">
+        // Phones: the leave summary (days, balance, warnings) comes before the form, not after it.
+        <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,1fr)_21rem] lg:grid-rows-[auto_1fr] lg:gap-5">
+          {isLeave ? (
+            <LeaveInsight
+              className="min-w-0 lg:col-start-2 lg:row-start-1"
+              employeeId={employeeId}
+              leaveTypeId={typeof values.leave_type === 'string' ? values.leave_type : null}
+              start={typeof values.start_date === 'string' ? values.start_date : null}
+              end={typeof values.end_date === 'string' ? values.end_date : null}
+              requestId={draftId}
+              leaveTypes={lookups.leaveTypes}
+              onChange={setLeave}
+            />
+          ) : null}
+          <div className="flex min-w-0 flex-col gap-4 lg:col-start-1 lg:row-span-2 lg:row-start-1">
             <SectionCard
               title={localized(type, 'name', locale)}
               description={localized(type, 'description', locale) || undefined}
@@ -381,18 +404,7 @@ export function NewRequestWizard(props: NewRequestWizardProps) {
               />
             ) : null}
           </div>
-          <aside className="flex min-w-0 flex-col gap-4 lg:sticky lg:top-[calc(var(--spacing-header)+1rem)]">
-            {isLeave ? (
-              <LeaveInsight
-                employeeId={employeeId}
-                leaveTypeId={typeof values.leave_type === 'string' ? values.leave_type : null}
-                start={typeof values.start_date === 'string' ? values.start_date : null}
-                end={typeof values.end_date === 'string' ? values.end_date : null}
-                requestId={draftId}
-                leaveTypes={lookups.leaveTypes}
-                onChange={setLeave}
-              />
-            ) : null}
+          <aside className={cn('flex min-w-0 flex-col gap-4 lg:col-start-2', isLeave ? 'lg:row-start-2' : 'lg:row-span-2 lg:row-start-1')}>
             <SummaryCard type={type} target={target} onBehalf={onBehalf} manager={manager} />
           </aside>
         </div>

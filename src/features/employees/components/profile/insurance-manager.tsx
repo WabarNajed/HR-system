@@ -202,7 +202,9 @@ export function InsuranceManager({
           return (
             <MobileCardShell onOpen={canEdit ? () => setEditing(p) : undefined}>
               <div className="flex items-center justify-between gap-2">
-                <span className="truncate font-medium text-foreground">{dep ? employeeDisplayName(dep, locale) : employeeName}</span>
+                <span className="truncate font-medium text-foreground">
+                  {dep ? employeeDisplayName(dep, locale) : p.dependent_id ? t('dependentsGroup') : employeeName}
+                </span>
                 <StatusBadge domain="insurance" status={p.status} size="sm" />
               </div>
               <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">

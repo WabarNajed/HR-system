@@ -71,7 +71,7 @@ function TargetLine({ target }: { target: BalanceTarget }) {
 
 function StatStrip({ items }: { items: { label: string; value: string; strong?: boolean }[] }) {
   return (
-    <dl className="grid grid-cols-3 gap-px overflow-hidden rounded-md border border-border bg-border">
+    <dl className="grid shrink-0 grid-cols-3 gap-px overflow-hidden rounded-md border border-border bg-border">
       {items.map((it) => (
         <div key={it.label} className="bg-subtle px-3 py-2">
           <dt className="truncate text-xs text-muted-foreground">{it.label}</dt>
@@ -172,7 +172,7 @@ export function AdjustBalanceDialog({
               { label: t('fields.available'), value: d(target.available) },
             ]}
           />
-          <div className="grid gap-4 sm:grid-cols-[auto_minmax(0,1fr)] sm:items-end">
+          <div className="grid gap-4 sm:grid-cols-[auto_minmax(0,1fr)] sm:items-start">
             <div className="grid gap-1.5">
               <Label>{t('adjust.direction')}</Label>
               <SegmentedTabs
@@ -202,6 +202,7 @@ export function AdjustBalanceDialog({
                 dir="ltr"
                 value={amount}
                 onChange={(e) => {
+                  if (errors.amount) setErrors((prev) => ({ ...prev, amount: undefined }));
                   // A typed minus sign means "deduct": flip the direction and keep the magnitude.
                   const raw = e.target.value;
                   if (raw.trim().startsWith('-')) {
@@ -229,7 +230,10 @@ export function AdjustBalanceDialog({
             <Textarea
               id={reasonId}
               value={reason}
-              onChange={(e) => setReason(e.target.value)}
+              onChange={(e) => {
+                if (errors.reason) setErrors((prev) => ({ ...prev, reason: undefined }));
+                setReason(e.target.value);
+              }}
               maxLength={500}
               rows={3}
               placeholder={t('adjust.reasonPlaceholder')}
@@ -421,7 +425,7 @@ export function BalanceHistorySheet({
   } else {
     const { adjustments, movements, adjustmentsHidden } = state.data!;
     body = (
-      <div className="flex flex-col gap-6">
+      <div className="flex shrink-0 flex-col gap-6">
         <section className="flex flex-col gap-2.5">
           <h3 className="text-sm font-semibold text-foreground">{t('history.adjustments')}</h3>
           {adjustmentsHidden ? (
@@ -440,7 +444,9 @@ export function BalanceHistorySheet({
                       <OldNew from={d(a.old_remaining)} to={d(a.new_remaining)} className="text-meta" />
                     ) : null}
                   </div>
-                  <p className="text-sm break-words text-foreground">{a.reason}</p>
+                  <p dir="auto" className="text-start text-sm break-words text-foreground">
+                    {a.reason}
+                  </p>
                   <p className="text-xs text-muted-foreground">
                     {t('history.by', { name: a.changed_by_name ?? '—', date: fmt.dateTime(a.changed_at) })}
                   </p>
