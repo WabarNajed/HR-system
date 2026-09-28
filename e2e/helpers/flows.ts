@@ -143,7 +143,12 @@ export async function expectRequestStatus(page: Page, locale: Locale, status: st
  * Runs a workflow action from the request details "Actions" card and confirms the dialog.
  * `action` ∈ approve | reject | return | start | complete | cancel.
  */
-export async function actOnRequest(page: Page, locale: Locale, action: 'approve' | 'reject' | 'return' | 'start' | 'complete' | 'cancel', comment?: string): Promise<void> {
+export async function actOnRequest(
+  page: Page,
+  locale: Locale,
+  action: 'approve' | 'reject' | 'return' | 'start' | 'complete' | 'cancel',
+  comment?: string,
+): Promise<void> {
   const aside = page.locator('main aside, main [role="complementary"]').first();
   await aside.getByRole('button', { name: exact(tr(locale, `requests.actions.${action}`)) }).click();
   const dialog = page.getByRole('dialog');
@@ -158,7 +163,11 @@ export async function startNewRequest(page: Page, locale: Locale, typeKey: strin
   await visit(page, '/requests/new');
   await expectDocumentLocale(page, locale);
   const name = await requestTypeName(typeKey, locale);
-  await page.getByRole('main').getByRole('button', { name: new RegExp(escapeRe(name)) }).first().click();
+  await page
+    .getByRole('main')
+    .getByRole('button', { name: new RegExp(escapeRe(name)) })
+    .first()
+    .click();
   await expect(page.getByRole('heading', { level: 2, name })).toBeVisible();
 }
 

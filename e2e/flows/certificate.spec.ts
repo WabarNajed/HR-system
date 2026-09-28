@@ -2,7 +2,6 @@ import fs from 'node:fs';
 import { expect, test } from '@playwright/test';
 import { BASE_URL, login, setLocaleCookie } from '../helpers/auth';
 import {
-  actOnRequest,
   actor,
   evidence,
   expectHealthy,
@@ -40,7 +39,10 @@ for (const locale of ['ar', 'en'] as const) {
       await startNewRequest(emp.page, locale, 'certificate');
       await emp.page.locator('[data-field="subtype"] [role="radio"]').first().click();
       await emp.page.locator('[data-field="language"] [role="combobox"]').first().click();
-      await emp.page.getByRole('option').nth(locale === 'ar' ? 0 : 1).click();
+      await emp.page
+        .getByRole('option')
+        .nth(locale === 'ar' ? 0 : 1)
+        .click();
       await emp.page.locator('[data-field="addressed_to"] input').fill(addressedTo);
       await emp.page.locator('[data-field="include_salary"] [role="switch"]').click();
       await wizardContinue(emp.page, locale);
@@ -50,9 +52,13 @@ for (const locale of ['ar', 'en'] as const) {
 
       // HR: preview, then generate from the default published template.
       await visit(hr.page, `/requests/${id}`);
-      await expect(hr.page.getByRole('heading', { name: tr(locale, 'certificates.panel.issueTitle') }).or(
-        hr.page.getByRole('button', { name: exact(tr(locale, 'certificates.panel.generate')) }),
-      ).first()).toBeVisible();
+      await expect(hr.page.getByText(number).first()).toBeVisible();
+      await expect(
+        hr.page
+          .getByRole('heading', { name: tr(locale, 'certificates.panel.issueTitle') })
+          .or(hr.page.getByRole('button', { name: exact(tr(locale, 'certificates.panel.generate')) }))
+          .first(),
+      ).toBeVisible();
       await hr.page.getByRole('button', { name: exact(tr(locale, 'certificates.panel.preview')) }).click();
       const preview = hr.page.getByRole('dialog');
       await expect(preview).toBeVisible();
@@ -62,7 +68,10 @@ for (const locale of ['ar', 'en'] as const) {
       await hr.page.keyboard.press('Escape');
       await expect(preview).toBeHidden();
       await hr.page.getByRole('button', { name: exact(tr(locale, 'certificates.panel.generate')) }).click();
-      const download = hr.page.getByRole('main').getByRole('link', { name: tr(locale, 'certificates.actions.download') }).first();
+      const download = hr.page
+        .getByRole('main')
+        .getByRole('link', { name: tr(locale, 'certificates.actions.download') })
+        .first();
       await expect(download).toBeVisible({ timeout: 60_000 });
       const href = (await download.getAttribute('href'))!;
       const [cert] = await rest<{ certificate_number: string; status: string; storage_path: string }[]>(
@@ -77,7 +86,10 @@ for (const locale of ['ar', 'en'] as const) {
       expect(file.suggestedFilename()).toMatch(/\.pdf$/i);
 
       // Download rights: HR and the owner get the PDF; another employee and anonymous users do not.
-      for (const [who, ctx] of [['hr', hr.context], ['owner', emp.context]] as const) {
+      for (const [who, ctx] of [
+        ['hr', hr.context],
+        ['owner', emp.context],
+      ] as const) {
         const res = await ctx.request.get(href);
         expect(res.status(), `${who} download`).toBe(200);
         expect(res.headers()['content-type'], `${who} content-type`).toContain('application/pdf');
@@ -136,7 +148,6 @@ for (const locale of ['ar', 'en'] as const) {
       await testInfo.attach('verify.png', { body: await pub.screenshot({ fullPage: true }), contentType: 'image/png' });
       await anon.close();
       for (const a of [emp, hr]) expectHealthy(a, `certificate flow (${locale})`);
-      void number;
     } finally {
       await evidence(testInfo, emp, 'employee');
       await evidence(testInfo, hr, 'hr');

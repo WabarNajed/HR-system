@@ -41,6 +41,18 @@ compiles it, so a cold run is slower than a warm one.
 | `auth.spec.ts` | Sign in / sign out, `next=` handling (off-site targets ignored), wrong password, unauthenticated redirects, pending → `/pending-approval`, disabled → `/account-disabled`, signed-in `/login` → dashboard, sign-in without JavaScript (progressive enhancement: POST to the Server Action), credentials stripped from URLs by the proxy. |
 | `language.spec.ts` | Arabic → English → Arabic across reload, navigation, sign-out and a fresh sign-in (cookie + saved profile preference); `<html lang dir>` on every step. Uses `employee2@` and restores its preference. |
 | `navigation.spec.ts` | Per role: the sidebar shows exactly the items `ROUTE_ACCESS` + the live role matrix allow, and page guards show the Forbidden state on every other route. As super admin: every route in ARCHITECTURE §9, in Arabic and English, loads without HTTP ≥ 400, a redirect to `/login`, console errors, page errors or 5xx responses. |
+| `helpers/i18n.ts` | `tr(locale, 'namespace.key', vars)` reads `locales/{ar,en}/*.json`, so flows drive the UI in either language without hard-coded text. |
+| `helpers/flows.ts` | Flow building blocks: `actor(browser, role, locale)` (stored session + language + health watcher), `visit`, `pickDate` (DatePicker by `[data-field]` + `td[data-day]`), request wizard helpers (`submitPayrollRequest`, `submitOvertimeRequest`), `actOnRequest`, `managerApprovesFromQueue`, read-only service-role lookups (`rest`, `requestRow`, `freeLeaveDay`). |
+| `flows/request-submit.spec.ts` | §17 Employee: new Payroll issue through the 3-step wizard → submit → details page → Request Center list (ar + en). |
+| `flows/request-approval.spec.ts` | §17 Manager approves from `/approvals` → HR approves and completes; HR returns → employee edits and resubmits → resumes at the HR step; approval → bell notification opens the request (ar + en). |
+| `flows/leave.spec.ts` | §17 Leave: 1 day annual leave → manager → HR → Balances cards Pending → Used → calendar (manager, HR, own; reason never shown). Serial: both languages book leave for `employee@`. |
+| `flows/certificate.spec.ts` | §17 Certificate: salary certificate request → HR preview + generate → PDF download (HR/owner 200, another employee and anonymous denied) → complete → public `/verify` shows only the allowed fields. |
+| `flows/import.spec.ts` | §17 Import: template download → 3 rows (Arabic names, invalid email, duplicate Iqama) → review flags them → import → directory + global search. |
+| `flows/report.spec.ts` | §17 Report: Employee master (department filter) and HR requests (status filter) → Excel/CSV/PDF exports (200, content type, CSV BOM, filter carried). |
+
+Flow specs create clearly labelled data (`QA F2 …` markers, `QAF2-…` employee numbers) in the shared
+database and never delete anything. Run them against the production build for stable timing:
+`E2E_BASE_URL=http://localhost:3100 pnpm e2e e2e/flows`.
 
 Stable selectors: sidebar links carry `data-nav-id="<nav item id>"`; the header has
 `data-testid="language-switch"` and `data-testid="user-menu"`, and the sign-out item is

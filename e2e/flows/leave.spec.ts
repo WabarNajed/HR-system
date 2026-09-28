@@ -25,6 +25,10 @@ import { escapeRe, tr } from '../helpers/i18n';
  * calendar (manager) and the organization calendar (HR). Arabic and English.
  */
 
+// Both languages book leave for the same employee: run them one after the other so the balance deltas
+// are not mixed up.
+test.describe.configure({ mode: 'serial' });
+
 type Balance = { used: number; pending: number; remaining: number };
 
 async function annualName(locale: Locale): Promise<string> {
@@ -35,7 +39,10 @@ async function annualName(locale: Locale): Promise<string> {
 /** Reads Used / Pending / Remaining from the "Annual leave" card on /leave?tab=balances&scope=mine. */
 async function readAnnualBalance(page: Page, locale: Locale): Promise<Balance> {
   await visit(page, '/leave?tab=balances&scope=mine');
-  const card = page.getByRole('main').locator('article').filter({ has: page.getByRole('heading', { name: await annualName(locale) }) });
+  const card = page
+    .getByRole('main')
+    .locator('article')
+    .filter({ has: page.getByRole('heading', { name: await annualName(locale) }) });
   await expect(card).toBeVisible();
   const value = async (key: string) => {
     const term = card.locator('dt').filter({ hasText: new RegExp(`^\\s*${escapeRe(tr(locale, `leave.fields.${key}`))}\\s*$`) });
@@ -69,7 +76,9 @@ for (const locale of ['ar', 'en'] as const) {
       const id = await wizardSubmit(emp.page, locale);
       const { request_number: number, status } = await requestRow(id);
       expect(status).toBe('pending_manager_approval');
-      const [leave] = await rest<{ days: number; start_date: string; end_date: string }[]>(`leave_requests?select=days,start_date,end_date&request_id=eq.${id}`);
+      const [leave] = await rest<{ days: number; start_date: string; end_date: string }[]>(
+        `leave_requests?select=days,start_date,end_date&request_id=eq.${id}`,
+      );
       expect(leave).toMatchObject({ days: 1, start_date: day, end_date: day });
 
       // Submission reserves the days as Pending.

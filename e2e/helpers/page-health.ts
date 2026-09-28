@@ -1,7 +1,15 @@
 import type { Page } from '@playwright/test';
 
-/** Console noise that is not an application error (dev-server HMR socket, browser extensions…). */
-const IGNORED_CONSOLE = [/webpack-hmr|_next\/hmr|turbopack-hmr/i, /Download the React DevTools/i];
+/**
+ * Console noise that is not an application error (dev-server HMR socket, browser extensions…).
+ * "Blocked script execution in 'about:srcdoc'" is Playwright's own trace snapshotter trying to run in
+ * the sandboxed (no allow-scripts) certificate preview iframe — not the app.
+ */
+const IGNORED_CONSOLE = [
+  /webpack-hmr|_next\/hmr|turbopack-hmr/i,
+  /Download the React DevTools/i,
+  /^Blocked script execution in 'about:srcdoc' because the document's frame is sandboxed/,
+];
 
 export type PageHealth = {
   consoleErrors: string[];

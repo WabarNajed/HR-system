@@ -62,88 +62,124 @@ for (const locale of ['ar', 'en'] as const) {
   });
 }
 
-test('[ar] HR returns for information → employee edits and resubmits → resumes at the HR step', async ({ browser }, testInfo) => {
-  const locale = 'ar' as const;
-  const emp = await actor(browser, 'employee', locale);
-  const mgr = await actor(browser, 'manager', locale);
-  const hr = await actor(browser, 'hrofficer', locale);
-  const text = marker('return', locale);
-  const needed = `${text} — يرجى توضيح سبب العمل الإضافي`;
-  try {
-    const id = await submitOvertimeRequest(emp.page, locale, text, TODAY);
-    const { request_number: number } = await requestRow(id);
-    await managerApprovesFromQueue(mgr, number);
+for (const locale of ['ar', 'en'] as const) {
+  test(`[${locale}] HR returns for information → employee edits and resubmits → resumes at the HR step`, async ({ browser }, testInfo) => {
+    const emp = await actor(browser, 'employee', locale);
+    const mgr = await actor(browser, 'manager', locale);
+    const hr = await actor(browser, 'hrofficer', locale);
+    const text = marker('return', locale);
+    const needed = `${text} — ${locale === 'ar' ? 'يرجى توضيح سبب العمل الإضافي' : 'please explain the overtime'}`;
+    try {
+      const id = await submitOvertimeRequest(emp.page, locale, text, TODAY);
+      const { request_number: number } = await requestRow(id);
+      await managerApprovesFromQueue(mgr, number);
 
-    // HR (step 2) returns it with the required comment.
-    await visit(hr.page, `/requests/${id}`);
-    await actOnRequest(hr.page, locale, 'return', needed);
-    await expectRequestStatus(hr.page, locale, 'returned');
-    const returned = await requestRow(id);
-    expect(returned.status).toBe('returned');
+      // HR (step 2) returns it with the required comment.
+      await visit(hr.page, `/requests/${id}`);
+      await actOnRequest(hr.page, locale, 'return', needed);
+      await expectRequestStatus(hr.page, locale, 'returned');
+      const returned = await requestRow(id);
+      expect(returned.status).toBe('returned');
 
-    // Employee: sees the reason, edits a field, resubmits.
-    await visit(emp.page, `/requests/${id}`);
-    await expectRequestStatus(emp.page, locale, 'returned');
-    await expect(emp.page.getByText(needed).first()).toBeVisible();
-    await emp.page.getByRole('main').getByRole('link', { name: tr(locale, 'requests.actions.editResubmit') })
-      .or(emp.page.getByRole('main').getByRole('button', { name: tr(locale, 'requests.actions.editResubmit') }))
-      .first()
-      .click();
-    await expect(emp.page.locator('[data-field="reason"] textarea')).toBeVisible();
-    const edited = `${text} (edited)`;
-    await emp.page.locator('[data-field="reason"] textarea').fill(edited);
-    await emp.page.getByRole('button', { name: exact(tr(locale, 'requests.edit.resubmit')) }).click();
-    const confirm = emp.page.getByRole('alertdialog').or(emp.page.getByRole('dialog'));
-    if (await confirm.first().isVisible().catch(() => false)) {
-      await confirm.first().getByRole('button', { name: exact(tr(locale, 'requests.edit.resubmit')) }).click();
+      // Employee: sees the reason, edits a field, resubmits.
+      await visit(emp.page, `/requests/${id}`);
+      await expectRequestStatus(emp.page, locale, 'returned');
+      await expect(emp.page.getByText(needed).first()).toBeVisible();
+      await emp.page
+        .getByRole('main')
+        .getByRole('link', {
+          name: tr(locale, 'requests.actions.editResubmit'),
+        })
+        .or(
+          emp.page.getByRole('main').getByRole('button', {
+            name: tr(locale, 'requests.actions.editResubmit'),
+          }),
+        )
+        .first()
+        .click();
+      await expect(emp.page.locator('[data-field="reason"] textarea')).toBeVisible();
+      const edited = `${text} (edited)`;
+      await emp.page.locator('[data-field="reason"] textarea').fill(edited);
+      await emp.page
+        .getByRole('button', {
+          name: exact(tr(locale, 'requests.edit.resubmit')),
+        })
+        .click();
+      const confirm = emp.page.getByRole('alertdialog').or(emp.page.getByRole('dialog'));
+      if (
+        await confirm
+          .first()
+          .isVisible()
+          .catch(() => false)
+      ) {
+        await confirm
+          .first()
+          .getByRole('button', {
+            name: exact(tr(locale, 'requests.edit.resubmit')),
+          })
+          .click();
+      }
+
+      // Resumes at HR review (the step that returned it), not back at the manager.
+      await expect.poll(async () => (await requestRow(id)).status, { timeout: 30_000 }).toBe('pending_hr_review');
+      const resumed = await requestRow(id);
+      expect(resumed.current_step_type).toBe('hr');
+      await visit(emp.page, `/requests/${id}`);
+      await expectRequestStatus(emp.page, locale, 'pending_hr_review');
+      await expect(emp.page.getByText(edited)).toBeVisible();
+
+      // HR can act on it again.
+      await visit(hr.page, `/requests/${id}`);
+      await expect(
+        hr.page.getByRole('button', {
+          name: exact(tr(locale, 'requests.actions.approve')),
+        }),
+      ).toBeVisible();
+      for (const a of [emp, mgr, hr]) expectHealthy(a, 'return flow');
+    } finally {
+      await evidence(testInfo, emp, 'employee');
+      await evidence(testInfo, hr, 'hr');
+      await Promise.all([emp.context.close(), mgr.context.close(), hr.context.close()]);
     }
+  });
 
-    // Resumes at HR review (the step that returned it), not back at the manager.
-    await expect.poll(async () => (await requestRow(id)).status, { timeout: 30_000 }).toBe('pending_hr_review');
-    const resumed = await requestRow(id);
-    expect(resumed.current_step_type).toBe('hr');
-    await visit(emp.page, `/requests/${id}`);
-    await expectRequestStatus(emp.page, locale, 'pending_hr_review');
-    await expect(emp.page.getByText(edited)).toBeVisible();
+  test(`[${locale}] an approval notifies the requester; the bell item opens the request`, async ({ browser }, testInfo) => {
+    const emp = await actor(browser, 'employee', locale);
+    const hr = await actor(browser, 'hrofficer', locale);
+    const text = marker('notify', locale);
+    try {
+      const id = await submitPayrollRequest(emp.page, locale, text);
+      const { request_number: number } = await requestRow(id);
+      await visit(hr.page, `/requests/${id}`);
+      await actOnRequest(hr.page, locale, 'approve');
+      await expectRequestStatus(hr.page, locale, 'approved');
 
-    // HR can act on it again.
-    await visit(hr.page, `/requests/${id}`);
-    await expect(hr.page.getByRole('button', { name: exact(tr(locale, 'requests.actions.approve')) })).toBeVisible();
-    for (const a of [emp, mgr, hr]) expectHealthy(a, 'return flow');
-  } finally {
-    await evidence(testInfo, emp, 'employee');
-    await evidence(testInfo, hr, 'hr');
-    await Promise.all([emp.context.close(), mgr.context.close(), hr.context.close()]);
-  }
-});
-
-test('[ar] an approval notifies the requester; the bell item opens the request', async ({ browser }, testInfo) => {
-  const locale = 'ar' as const;
-  const emp = await actor(browser, 'employee', locale);
-  const hr = await actor(browser, 'hrofficer', locale);
-  const text = marker('notify', locale);
-  try {
-    const id = await submitPayrollRequest(emp.page, locale, text);
-    const { request_number: number } = await requestRow(id);
-    await visit(hr.page, `/requests/${id}`);
-    await actOnRequest(hr.page, locale, 'approve');
-    await expectRequestStatus(hr.page, locale, 'approved');
-
-    // Employee: bell → newest notification about this request → opens it.
-    await visit(emp.page, '/dashboard');
-    const bell = emp.page.locator('header').getByRole('button', { name: new RegExp(`^${tr(locale, 'nav.header.notifications')} ·`) });
-    await bell.click();
-    const popover = emp.page.locator('[data-slot="popover-content"]').last();
-    await expect(popover.getByRole('heading', { name: tr(locale, 'notifications.bell.title') })).toBeVisible();
-    const title = tr(locale, 'notifications.types.request_approved.title', { number });
-    const item = popover.getByRole('button').filter({ hasText: title }).first();
-    await expect(item).toBeVisible({ timeout: 30_000 });
-    await item.click();
-    await emp.page.waitForURL(new RegExp(`/requests/${id}$`), { timeout: 30_000 });
-    await expectRequestStatus(emp.page, locale, 'approved');
-    expectHealthy(emp, 'notification flow');
-  } finally {
-    await evidence(testInfo, emp, 'employee');
-    await Promise.all([emp.context.close(), hr.context.close()]);
-  }
-});
+      // Employee: bell → newest notification about this request → opens it.
+      await visit(emp.page, '/dashboard');
+      const bell = emp.page.locator('header').getByRole('button', {
+        name: new RegExp(`^${tr(locale, 'nav.header.notifications')} ·`),
+      });
+      await bell.click();
+      const popover = emp.page.locator('[data-slot="popover-content"]').last();
+      await expect(
+        popover.getByRole('heading', {
+          name: tr(locale, 'notifications.bell.title'),
+        }),
+      ).toBeVisible();
+      const title = tr(locale, 'notifications.types.request_approved.title', {
+        number,
+      });
+      const item = popover.getByRole('button').filter({ hasText: title }).first();
+      await expect(item).toBeVisible({ timeout: 30_000 });
+      await item.click();
+      await emp.page.waitForURL(new RegExp(`/requests/${id}$`), {
+        timeout: 30_000,
+      });
+      await expectRequestStatus(emp.page, locale, 'approved');
+      expectHealthy(emp, 'notification flow');
+    } finally {
+      await evidence(testInfo, emp, 'employee');
+      await Promise.all([emp.context.close(), hr.context.close()]);
+    }
+  });
+}

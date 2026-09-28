@@ -9,7 +9,10 @@ import { escapeRe, tr } from '../helpers/i18n';
  */
 
 async function rowCount(page: Page): Promise<number> {
-  const details = page.getByRole('region').filter({ has: page.getByRole('heading', { level: 2 }) }).last();
+  const details = page
+    .getByRole('region')
+    .filter({ has: page.getByRole('heading', { level: 2 }) })
+    .last();
   return details.locator('tbody tr').count();
 }
 
@@ -20,7 +23,10 @@ async function exportAll(page: Page, locale: Locale, expectInUrl: string) {
     { label: /pdf/i, type: 'application/pdf', ext: 'pdf' },
   ];
   for (const f of formats) {
-    await page.getByRole('main').getByRole('button', { name: tr(locale, 'reports.view.export'), exact: true }).click();
+    await page
+      .getByRole('main')
+      .getByRole('button', { name: tr(locale, 'reports.view.export'), exact: true })
+      .click();
     const menu = page.getByRole('menu');
     await expect(menu).toBeVisible();
     const [response] = await Promise.all([
@@ -50,8 +56,15 @@ for (const locale of ['ar', 'en'] as const) {
       expect(before).toBeGreaterThan(1);
 
       // Department facet → pick the department of the Operations fixtures.
-      await hr.page.locator('button[aria-haspopup="dialog"]').filter({ hasText: tr(locale, 'reports.filters.department') }).first().click();
-      const option = hr.page.getByRole('option').filter({ hasText: locale === 'ar' ? /العمليات/ : /QA Operations/ }).first();
+      await hr.page
+        .locator('button[aria-haspopup="dialog"]')
+        .filter({ hasText: tr(locale, 'reports.filters.department') })
+        .first()
+        .click();
+      const option = hr.page
+        .getByRole('option')
+        .filter({ hasText: locale === 'ar' ? /العمليات/ : /QA Operations/ })
+        .first();
       await option.click();
       await hr.page.waitForURL(/department=/);
       await hr.page.keyboard.press('Escape');
@@ -72,10 +85,20 @@ test('[ar] HR requests report: loads, filter by status → export', async ({ bro
   const hr = await actor(browser, 'hradmin', locale);
   try {
     await visit(hr.page, '/reports/hr-requests');
-    await expect(hr.page.getByRole('heading', { level: 1 }), 'report page renders (no error boundary)').toHaveText(tr(locale, 'reports.items.hrRequests.title'));
+    await expect(hr.page.getByRole('heading', { level: 1 }), 'report page renders (no error boundary)').toHaveText(
+      tr(locale, 'reports.items.hrRequests.title'),
+    );
     const before = await rowCount(hr.page);
-    await hr.page.locator('button[aria-haspopup="dialog"]').filter({ hasText: new RegExp(`^\\s*${escapeRe(tr(locale, 'reports.filters.status'))}`) }).first().click();
-    await hr.page.getByRole('option').filter({ hasText: tr(locale, 'statuses.request.completed') }).first().click();
+    await hr.page
+      .locator('button[aria-haspopup="dialog"]')
+      .filter({ hasText: new RegExp(`^\\s*${escapeRe(tr(locale, 'reports.filters.status'))}`) })
+      .first()
+      .click();
+    await hr.page
+      .getByRole('option')
+      .filter({ hasText: tr(locale, 'statuses.request.completed') })
+      .first()
+      .click();
     await hr.page.waitForURL(/status/);
     await hr.page.keyboard.press('Escape');
     await expect.poll(() => rowCount(hr.page), { timeout: 30_000 }).not.toBe(before);
