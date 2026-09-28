@@ -28,6 +28,14 @@ export function tr(locale: Locale, key: string, vars: Record<string, string | nu
   return node.replace(/\{(\w+)\}/g, (m, name: string) => (name in vars ? String(vars[name]) : m));
 }
 
+/**
+ * The literal text of a message before its first `{…}` argument — for labels whose tail is an ICU
+ * plural/select (e.g. "Import {count, plural, …}" → "Import").
+ */
+export function trPrefix(locale: Locale, key: string): string {
+  return tr(locale, key).split('{')[0]!.trim();
+}
+
 /** Exact-match (anchored) regular expression for a translated label. */
 export function exact(text: string): RegExp {
   return new RegExp(`^\\s*${text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*$`);

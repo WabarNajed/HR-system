@@ -3,6 +3,7 @@ import type { Locale } from '../helpers/auth';
 import {
   actOnRequest,
   actor,
+  ensureLeaveBalance,
   evidence,
   expectHealthy,
   expectRequestStatus,
@@ -60,6 +61,8 @@ for (const locale of ['ar', 'en'] as const) {
     const reason = marker('leave', locale);
     // Different windows per language so parallel runs don't pick the same day.
     const day = await freeLeaveDay('QA-0004', locale === 'ar' ? '2026-11-08' : '2026-12-16');
+    // Precondition: repeated runs consume the fixture's annual balance — keep enough days available.
+    await ensureLeaveBalance('QA-0004', 'annual', Number(day.slice(0, 4)), 3);
     try {
       const before = await readAnnualBalance(emp.page, locale);
 

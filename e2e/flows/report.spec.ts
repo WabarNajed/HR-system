@@ -8,6 +8,19 @@ import { escapeRe, tr } from '../helpers/i18n';
  * PDF (HTTP 200, right content type, CSV with a UTF-8 BOM, the export carries the filter).
  */
 
+/** Total result count from the table footer ("1–25 of 119" / "1–25 من 119"). */
+async function totalCount(page: Page, locale: Locale): Promise<number> {
+  const pattern = new RegExp(
+    escapeRe(tr(locale, 'common.showingRange'))
+      .replace('\\{from\\}', '[\\d,]+')
+      .replace('\\{to\\}', '[\\d,]+')
+      .replace('\\{total\\}', '([\\d,]+)'),
+  );
+  const text = await page.getByRole('main').innerText();
+  const match = text.match(pattern);
+  return match ? Number(match[1]!.replace(/,/g, '')) : -1;
+}
+
 async function rowCount(page: Page): Promise<number> {
   const details = page
     .getByRole('region')
@@ -88,7 +101,8 @@ test('[ar] HR requests report: loads, filter by status → export', async ({ bro
     await expect(hr.page.getByRole('heading', { level: 1 }), 'report page renders (no error boundary)').toHaveText(
       tr(locale, 'reports.items.hrRequests.title'),
     );
-    const before = await rowCount(hr.page);
+    const before = await totalCount(hr.page, locale);
+    expect(before).toBeGreaterThan(0);
     await hr.page
       .locator('button[aria-haspopup="dialog"]')
       .filter({ hasText: new RegExp(`^\\s*${escapeRe(tr(locale, 'reports.filters.status'))}`) })
@@ -101,7 +115,9 @@ test('[ar] HR requests report: loads, filter by status → export', async ({ bro
       .click();
     await hr.page.waitForURL(/status/);
     await hr.page.keyboard.press('Escape');
-    await expect.poll(() => rowCount(hr.page), { timeout: 30_000 }).not.toBe(before);
+    // Filtering by one status must narrow the full result set (compare totals, not the rows on one page).
+    await expect.poll(() => totalCount(hr.page, locale), { timeout: 30_000 }).not.toBe(before);
+    expect(await totalCount(hr.page, locale)).toBeLessThan(before);
     const statusParam = [...new URL(hr.page.url()).searchParams.entries()].find(([k]) => k.startsWith('status'))!;
     await exportAll(hr.page, locale, `${statusParam[0]}=${statusParam[1]}`);
     expectHealthy(hr, 'hr requests report');

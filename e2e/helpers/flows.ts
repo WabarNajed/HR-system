@@ -2,10 +2,10 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { expect, type Browser, type BrowserContext, type Page, type TestInfo } from '@playwright/test';
 import { BASE_URL, expectDocumentLocale, setLocaleCookie, type Locale } from './auth';
-import { assertLocalSupabase, SERVICE_ROLE_KEY, SUPABASE_URL } from './env';
+import { assertLocalSupabase, env, SERVICE_ROLE_KEY, SUPABASE_URL } from './env';
 import { escapeRe, exact, tr } from './i18n';
 import { watchPageHealth, type PageHealth } from './page-health';
-import { storageStatePath, type SessionRole } from './users';
+import { FIXTURE_PASSWORD, storageStatePath, USERS, type SessionRole } from './users';
 
 /**
  * Shared building blocks for the PRODUCT-SPEC §17 acceptance flows (e2e/flows/*.spec.ts).
@@ -51,6 +51,46 @@ export function expectHealthy(a: Actor, where: string): void {
   expect.soft(a.health.pageErrors, `uncaught page errors on ${where}`).toEqual([]);
   expect.soft(a.health.serverErrors, `5xx responses on ${where}`).toEqual([]);
   expect.soft(a.health.consoleErrors, `console errors on ${where}`).toEqual([]);
+}
+
+/* ─── Test preconditions (local QA data only) ───────────────────────────────────────────────── */
+
+/**
+ * Makes sure an employee has at least `minRemaining` days of a leave type for `year`, topping the balance
+ * up through the real `adjust_leave_balance` RPC as the HR admin fixture (audited like any HR adjustment).
+ * Keeps the leave flow repeatable: every run consumes a day of the fixture employee's balance.
+ */
+export async function ensureLeaveBalance(employeeNumber: string, typeCode: string, year: number, minRemaining: number): Promise<void> {
+  assertLocalSupabase();
+  const [employee] = await rest<{ id: string }[]>(`employees?select=id&employee_number=eq.${employeeNumber}`);
+  const [type] = await rest<{ id: string }[]>(`leave_types?select=id&code=eq.${typeCode}`);
+  if (!employee || !type) throw new Error(`ensureLeaveBalance: unknown employee ${employeeNumber} or leave type ${typeCode}`);
+  const rows = await rest<{ remaining: number }[]>(
+    `leave_balances?select=remaining&employee_id=eq.${employee.id}&leave_type_id=eq.${type.id}&year=eq.${year}`,
+  );
+  const remaining = Number(rows[0]?.remaining ?? 0);
+  if (remaining >= minRemaining) return;
+  const anonKey = env('NEXT_PUBLIC_SUPABASE_ANON_KEY');
+  if (!anonKey) throw new Error('ensureLeaveBalance: NEXT_PUBLIC_SUPABASE_ANON_KEY is not set');
+  const auth = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
+    method: 'POST',
+    headers: { apikey: anonKey, 'content-type': 'application/json' },
+    body: JSON.stringify({ email: USERS.hradmin, password: FIXTURE_PASSWORD }),
+  });
+  if (!auth.ok) throw new Error(`ensureLeaveBalance: HR sign-in failed (${auth.status})`);
+  const { access_token: token } = (await auth.json()) as { access_token: string };
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/adjust_leave_balance`, {
+    method: 'POST',
+    headers: { apikey: anonKey, Authorization: `Bearer ${token}`, 'content-type': 'application/json' },
+    body: JSON.stringify({
+      p_employee_id: employee.id,
+      p_leave_type_id: type.id,
+      p_year: year,
+      p_amount: minRemaining - remaining + 5,
+      p_reason: 'QA e2e precondition: top up the fixture balance',
+    }),
+  });
+  if (!res.ok) throw new Error(`ensureLeaveBalance: adjust_leave_balance → ${res.status} ${await res.text()}`);
 }
 
 /* ─── Local data lookups (service role, read-only) ──────────────────────────────────────────── */

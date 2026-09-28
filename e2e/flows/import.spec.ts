@@ -4,7 +4,7 @@ import ExcelJS from 'exceljs';
 import { expect, test } from '@playwright/test';
 import { expectDocumentLocale } from '../helpers/auth';
 import { actor, evidence, expectHealthy, rest, visit, workDir } from '../helpers/flows';
-import { escapeRe, exact, tr } from '../helpers/i18n';
+import { escapeRe, exact, tr, trPrefix } from '../helpers/i18n';
 
 /**
  * PRODUCT-SPEC §17 — Import: download the Employees template → fill 3 rows (Arabic names; one invalid
@@ -169,13 +169,7 @@ for (const locale of ['ar', 'en'] as const) {
 
       // 5. Import the valid rows.
       const start = hr.page.getByRole('button', {
-        name: new RegExp(
-          escapeRe(
-            tr(locale, 'dataManagement.wizard.review.startImport', {
-              count: 'X',
-            }),
-          ).replace('X', '\\d+'),
-        ),
+        name: new RegExp(`^\\s*${escapeRe(trPrefix(locale, 'dataManagement.wizard.review.startImport'))}\\s`),
       });
       await expect(start).toBeEnabled();
       await start.click();
