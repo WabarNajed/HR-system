@@ -42,9 +42,11 @@ function contentSecurityPolicy(): string {
     'form-action': ["'self'"],
     'frame-ancestors': ["'none'"],
   };
-  const policy = Object.entries(directives).map(([name, values]) => `${name} ${values.join(' ')}`);
-  if (!isDev) policy.push('upgrade-insecure-requests');
-  return policy.join('; ');
+  // No `upgrade-insecure-requests`: it would break a production build served over plain http
+  // (local `next start`, e2e); HSTS covers real HTTPS deployments.
+  return Object.entries(directives)
+    .map(([name, values]) => `${name} ${values.join(' ')}`)
+    .join('; ');
 }
 
 const securityHeaders = [

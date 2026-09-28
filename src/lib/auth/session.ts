@@ -73,6 +73,12 @@ export type SessionContext = {
   roleDetails: SessionRole[];
   primaryRole: RoleKey | null;
   permissions: Set<Permission>;
+  /**
+   * Permissions granted by organization-scoped roles only (`data_scope = 'organization'`, super
+   * admin: all) — what RLS grants across every employee (`private.has_org_permission`). A user who
+   * is HR officer + employee holds `requests.create` in `permissions`, but only for themselves.
+   */
+  orgPermissions: Set<Permission>;
   employee: SessionEmployee | null;
   locale: Locale;
   /** Holds an organization-scoped role (super_admin / hr_admin / hr_officer / custom HR role). */
@@ -257,18 +263,26 @@ export const getSessionState = cache(async (): Promise<SessionState> => {
     const roleRows = active ? (((rolesRes.data ?? []) as unknown as RoleRow[]) ?? []) : [];
     const roleDetails: SessionRole[] = [];
     const permissions = new Set<Permission>();
+    const orgPermissions = new Set<Permission>();
     for (const r of roleRows) {
       if (!r.role?.key) continue;
       const scope = r.role.data_scope === 'organization' || r.role.data_scope === 'team' ? r.role.data_scope : 'own';
       roleDetails.push({ key: r.role.key, nameAr: r.role.name_ar, nameEn: r.role.name_en, dataScope: scope });
       for (const p of r.role.role_permissions ?? []) {
         const key = `${p.module}.${p.action}`;
-        if (isPermission(key)) permissions.add(key);
+        if (!isPermission(key)) continue;
+        permissions.add(key);
+        if (scope === 'organization') orgPermissions.add(key);
       }
     }
     const roles = roleDetails.map((r) => r.key);
     const isSuperAdmin = roles.includes('super_admin');
-    if (isSuperAdmin) for (const p of ALL_PERMISSIONS) permissions.add(p);
+    if (isSuperAdmin) {
+      for (const p of ALL_PERMISSIONS) {
+        permissions.add(p);
+        orgPermissions.add(p);
+      }
+    }
     // Mirrors private.is_hr(): any organization-scoped role (system HR roles or custom HR roles).
     const isHR = roleDetails.some((r) => r.dataScope === 'organization' || (HR_ROLE_KEYS as readonly string[]).includes(r.key));
 
@@ -287,6 +301,7 @@ export const getSessionState = cache(async (): Promise<SessionState> => {
       roleDetails,
       primaryRole: pickPrimaryRole(roles),
       permissions,
+      orgPermissions,
       employee,
       locale,
       isHR,

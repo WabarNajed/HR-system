@@ -16,7 +16,8 @@
  *      src/lib/i18n/client-namespaces.ts). Every Client Component reachable from a route (import
  *      graph from page/layout/loading/error/… files, from the first `'use client'` module on) may
  *      only use namespaces its route provides: `useTranslations('ns…')`, and literal keys passed to
- *      a root translator (`t('ns.key')`, `t(`ns.${x}`)`). `node scripts/check-i18n.mjs --client-usage
+ *      a root translator (`t('ns.key')`, `t(`ns.${x}`)`), and `ns.a.b` keys in Server Action modules
+ *      the client imports (returned toast/error keys). `node scripts/check-i18n.mjs --client-usage
  *      [--verbose]` prints the namespaces each route group / section uses on the client.
  *
  * Exits 1 when any problem is found.
@@ -396,6 +397,25 @@ function clientNamespaces(file) {
   return used;
 }
 
+/**
+ * Namespaces of message keys a Server Action module returns to the client: string literals shaped
+ * like `ns.segment.segment` (three or more segments, so permission keys like `users.view` don't count).
+ */
+function actionMessageNamespaces(file) {
+  if (clientUsageCache.has(`action:${file}`)) return clientUsageCache.get(`action:${file}`);
+  const used = new Set();
+  const visit = (node) => {
+    if ((ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) && /^[a-zA-Z]+(\.[a-zA-Z0-9_]+){2,}$/.test(node.text)) {
+      const ns = namespaceOf(node.text);
+      if (ns) used.add(ns);
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(parse(file));
+  clientUsageCache.set(`action:${file}`, used);
+  return used;
+}
+
 /** `export const NAME = ['a', ...OTHER] as const` arrays of src/lib/i18n/client-namespaces.ts. */
 function namespaceLists() {
   const lists = {};
@@ -507,9 +527,11 @@ function checkClientMessages() {
       const key = `${file}|${isClient}`;
       if (seen.has(key)) continue;
       seen.add(key);
-      if (isClient && directive(source, 'use server')) continue; // Server Actions run on the server
+      // Server Actions run on the server, but the message keys they return (`ok(…, 'ns.toast.saved')`)
+      // are translated by the calling Client Component.
+      const isAction = isClient && directive(source, 'use server');
       if (isClient) {
-        for (const ns of clientNamespaces(file)) {
+        for (const ns of isAction ? actionMessageNamespaces(file) : clientNamespaces(file)) {
           if (!usage.has(ns)) usage.set(ns, new Set());
           usage.get(ns).add(rel(file));
           if (allowed.has(ns)) continue;
@@ -519,6 +541,7 @@ function checkClientMessages() {
           problems.client.push(`${rel(file)} uses "${ns}" on the client, not provided for ${rel(entry)} — add it to a <ClientMessages ns> of that route`);
         }
       }
+      if (isAction) continue;
       for (const next of importsOf(file)) stack.push([next, isClient]);
     }
   }

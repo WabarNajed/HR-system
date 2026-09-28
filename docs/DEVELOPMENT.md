@@ -114,7 +114,12 @@ pnpm build                     # production build
 ```
 
 `pnpm check:i18n` scans `src/**/*.tsx` for literal text; opt a line out with `// i18n-ignore` only for
-brand-neutral symbols.
+brand-neutral symbols. It also checks **client message coverage**: the browser only receives the
+namespaces in `ROOT_CLIENT_NAMESPACES` (root layout) plus those a route layout adds with
+`<ClientMessages ns={[…]}>` (`src/lib/i18n/client-namespaces.ts`, `client-messages.tsx`) — the full
+catalog is ~340 KB in Arabic. A Client Component that calls `useTranslations('x')` on a route that does
+not provide `x` fails the check; `node scripts/check-i18n.mjs --client-usage` lists what each route
+group/section uses on the client. Server Components are unaffected (`getTranslations` sees everything).
 
 ## Scripts
 
@@ -134,7 +139,10 @@ brand-neutral symbols.
 ## Working conventions
 
 - Arabic first: every user-facing string lives in `locales/{ar,en}/<namespace>.json` with identical
-  keys; dates via `useDateFormat()` / `formatDate()`; logical CSS only.
+  keys; dates via `useDateFormat()` / `formatDate()`; logical CSS only. A namespace used by a Client
+  Component must be sent to its route (`ClientMessages`, see Checks).
+- Security headers (CSP, `X-Frame-Options`, HSTS in production, …) are set in `next.config.ts`
+  (`headers()`). A new browser-side origin (a CDN, an analytics endpoint) needs a CSP entry there.
 - Reads in Server Components with the user's RLS client; mutations in Server Actions
   (`withAction`, zod, `ActionResult` with i18n keys); DB and Auth errors through `lib/errors.ts`.
 - Authorization lives in the database (RLS, security-definer RPCs) and in server guards

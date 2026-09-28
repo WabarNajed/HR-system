@@ -121,4 +121,53 @@ test.describe('authentication', () => {
     await page.goto('/login');
     await expect(page).toHaveURL(/\/dashboard$/);
   });
+
+  test('an idle session is signed out (Settings › Security session timeout)', async ({ page }) => {
+    await login(page, 'employee2');
+    await expect(page).toHaveURL(/\/dashboard$/);
+    // Last activity (shared by all tabs) further back than the longest allowed limit (7 days).
+    await page.evaluate(() => window.localStorage.setItem('hr:last-activity', String(Date.now() - 8 * 24 * 3600_000)));
+    await expect(page).toHaveURL((u) => u.pathname === '/login' && u.searchParams.get('error') === 'session_expired', { timeout: 30_000 });
+    await page.goto('/dashboard');
+    await expect(page).toHaveURL((u) => u.pathname === '/login');
+  });
+});
+
+test.describe('platform', () => {
+  test('public pages ship only the shared and auth message namespaces', async ({ request }) => {
+    for (const locale of ['ar', 'en'] as const) {
+      const response = await request.get('/login', { headers: { cookie: `NEXT_LOCALE=${locale}` } });
+      expect(response.status()).toBe(200);
+      const html = await response.text();
+      // The whole catalog was ~340 KB (ar) in every page; /login needs common/errors/validation/nav/auth.
+      expect(html.length, `/login (${locale}) HTML size`).toBeLessThan(200_000);
+      expect(html).toMatch(/\\?"auth\\?":\{/);
+      for (const ns of ['requestConfig', 'dataManagement', 'reports', 'employees']) expect(html, ns).not.toMatch(new RegExp(`\\\\?"${ns}\\\\?":\\{`));
+    }
+    const verify = await request.get('/verify/NO-SUCH-CERT');
+    expect((await verify.text()).length, '/verify HTML size').toBeLessThan(200_000);
+  });
+
+  test('responses carry the security headers', async ({ request }) => {
+    for (const path of ['/login', '/verify/NO-SUCH-CERT']) {
+      const headers = (await request.get(path)).headers();
+      expect(headers['content-security-policy'], path).toContain("frame-ancestors 'none'");
+      expect(headers['content-security-policy'], path).toContain("object-src 'self' blob:");
+      expect(headers['x-frame-options'], path).toBe('DENY');
+      expect(headers['x-content-type-options'], path).toBe('nosniff');
+      expect(headers['referrer-policy'], path).toBe('strict-origin-when-cross-origin');
+      expect(headers['permissions-policy'], path).toContain('camera=()');
+    }
+  });
+
+  test('the sign-in form renders without React errors', async ({ page }) => {
+    const errors: string[] = [];
+    page.on('console', (m) => {
+      if (m.type() === 'error') errors.push(m.text());
+    });
+    await page.goto('/login');
+    await page.waitForLoadState('networkidle').catch(() => {});
+    await expect(page.locator('form input[name=email]')).toBeVisible();
+    expect(errors.filter((e) => /encType or method|Content Security Policy|MISSING_MESSAGE/i.test(e))).toEqual([]);
+  });
 });
