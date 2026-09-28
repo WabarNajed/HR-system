@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
-import { useEffect, useMemo, useState, useTransition } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { actionsColumn, DataTable, DataTableColumnHeader, type FilterDef, type RowAction } from '@/components/data-table';
@@ -45,6 +45,7 @@ import type { RequestTypeRow, RoleOption } from '../types';
 import { categoryLabel } from './labels';
 import { RequestTypeSheet } from './request-type-sheet';
 import { ApprovalPathChips, RequestTypeIcon } from './type-visual';
+import { useActionTransition } from '@/components/shared/use-action-transition';
 
 type Props = { rows: RequestTypeRow[]; roles: RoleOption[]; canEdit: boolean };
 
@@ -60,7 +61,7 @@ export function RequestTypesManager({ rows, roles, canEdit }: Props) {
   const [duplicateOf, setDuplicateOf] = useState<RequestTypeRow | null>(null);
   const [toDelete, setToDelete] = useState<RequestTypeRow | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
-  const [, startTransition] = useTransition();
+  const [, startTransition] = useActionTransition();
 
   const n = (v: number) => formatInteger(v, locale);
   const active = rows.filter((r) => r.is_active);
@@ -406,7 +407,7 @@ function DuplicateDialog({ source, onOpenChange }: { source: RequestTypeRow | nu
   const locale = useLocale() as Locale;
   const router = useRouter();
   const resolve = useErrorMessage();
-  const [pending, startTransition] = useTransition();
+  const [pending, startTransition] = useActionTransition();
   const form = useForm<DuplicateRequestTypeValues>({
     resolver: zodResolver(duplicateRequestTypeSchema),
     defaultValues: { sourceId: '', key: '', nameAr: '', nameEn: '' },

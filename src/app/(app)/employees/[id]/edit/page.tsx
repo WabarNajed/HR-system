@@ -56,7 +56,7 @@ export default async function EmployeesIdEditPage({ params }: { params: Promise<
   return (
     <PageStack>
       <BreadcrumbLabel label={name} path={`/employees/${id}`} />
-      <PageHeader title={t('editTitle')} description={name || t('editDescription')} className="mx-auto w-full max-w-form" />
+      <PageHeader compact title={t('editTitle')} description={name || t('editDescription')} className="mx-auto w-full max-w-form" />
       <EmployeeForm
         mode="edit"
         employeeId={id}

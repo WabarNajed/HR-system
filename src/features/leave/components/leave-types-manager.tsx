@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
-import { useId, useMemo, useState, useTransition, type ReactNode } from 'react';
+import { useId, useMemo, useState, type ReactNode } from 'react';
 import { toast } from 'sonner';
 import { actionsColumn, DataTable, type FilterDef } from '@/components/data-table';
 import { ColorPicker } from '@/components/shared/color-picker';
@@ -41,6 +41,7 @@ import { deleteLeaveType, saveLeaveType, setLeaveTypeActive } from '../actions';
 import type { LeaveTypeRow } from '../types';
 import { LeaveTypeDot } from './leave-type-dot';
 import { SortHeader } from './sort-header';
+import { useActionTransition } from '@/components/shared/use-action-transition';
 
 type FormState = {
   code: string;
@@ -129,7 +130,7 @@ export function LeaveTypeSheet({
   const resolveError = useErrorMessage();
   const router = useRouter();
   const uid = useId();
-  const [pending, startTransition] = useTransition();
+  const [pending, startTransition] = useActionTransition();
   const [form, setForm] = useState<FormState>(() => toForm(row, nextSort));
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -363,7 +364,7 @@ export function LeaveTypesManager({
   const router = useRouter();
   const [sheet, setSheet] = useState<{ open: boolean; row: LeaveTypeRow | null }>({ open: false, row: null });
   const [confirmDelete, setConfirmDelete] = useState<LeaveTypeRow | null>(null);
-  const [, startTransition] = useTransition();
+  const [, startTransition] = useActionTransition();
   const nextSort = rows.reduce((m, r) => Math.max(m, r.sort_order), 0) + 10;
 
   const toggleActive = (row: LeaveTypeRow) =>

@@ -2,7 +2,7 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useLocale, useTranslations } from 'next-intl';
-import { useCallback, useEffect, useMemo, useState, useTransition } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { Combobox, type ComboboxOption } from '@/components/shared/combobox';
@@ -19,6 +19,7 @@ import { useDateFormat } from '@/lib/i18n/use-date-format';
 import { saveMasterData, searchEmployeeOptions } from '../actions';
 import { MASTER_ENTITY_CONFIG, type MasterDataRow, type MasterEntity } from '../config';
 import { EMPTY_MASTER_DATA_FORM, masterDataFormSchema, type MasterDataFormValues } from '../schemas';
+import { useActionTransition } from '@/components/shared/use-action-transition';
 
 export type DepartmentOption = { id: string; name_ar: string | null; name_en: string | null; parent_id: string | null; is_active: boolean; code: string | null };
 
@@ -79,7 +80,7 @@ export function MasterDataSheet({ entity, open, onOpenChange, row, departments, 
   const locale = resolveLocale(useLocale());
   const resolve = useErrorMessage();
   const df = useDateFormat();
-  const [pending, startTransition] = useTransition();
+  const [pending, startTransition] = useActionTransition();
   const [confirmDiscard, setConfirmDiscard] = useState(false);
 
   const form = useForm<MasterDataFormValues>({

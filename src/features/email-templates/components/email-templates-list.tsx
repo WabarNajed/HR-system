@@ -4,7 +4,7 @@ import type { ColumnDef } from '@tanstack/react-table';
 import { MailIcon, PencilIcon, PowerIcon, PowerOffIcon } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
-import { useMemo, useState, useTransition } from 'react';
+import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { actionsColumn, DataTable, DataTableColumnHeader, type RowAction } from '@/components/data-table';
 import { StatusBadge } from '@/components/shared/status-badge';
@@ -17,6 +17,7 @@ import { useDateFormat } from '@/lib/i18n/use-date-format';
 import { setEmailTemplateActive } from '../actions';
 import { TEMPLATE_GROUPS, templateGroup } from '../constants';
 import type { EmailTemplateRow } from '../queries';
+import { useActionTransition } from '@/components/shared/use-action-transition';
 
 type Row = Pick<EmailTemplateRow, 'id' | 'key' | 'name_ar' | 'name_en' | 'subject_ar' | 'subject_en' | 'is_active' | 'updated_at'>;
 
@@ -29,7 +30,7 @@ export function EmailTemplatesList({ rows, canEdit }: { rows: Row[]; canEdit: bo
   const router = useRouter();
   const resolve = useErrorMessage();
   const [busy, setBusy] = useState<string | null>(null);
-  const [, startTransition] = useTransition();
+  const [, startTransition] = useActionTransition();
 
   const toggle = (row: Row, active: boolean) => {
     setBusy(row.key);

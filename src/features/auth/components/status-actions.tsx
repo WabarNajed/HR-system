@@ -3,12 +3,12 @@
 import { LogOutIcon, RotateCwIcon } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useTransition } from 'react';
 import { useFormStatus } from 'react-dom';
 import { toast } from 'sonner';
 import { Button, type ButtonProps } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { signOut } from '../actions';
+import { useActionTransition } from '@/components/shared/use-action-transition';
 
 function SignOutSubmit({ variant, className }: { variant: ButtonProps['variant']; className?: string }) {
   const t = useTranslations('auth');
@@ -40,7 +40,7 @@ export function SignOutButton({ variant = 'outline', className }: { variant?: Bu
 export function RefreshStatusButton({ className }: { className?: string }) {
   const t = useTranslations('auth.pending');
   const router = useRouter();
-  const [pending, startTransition] = useTransition();
+  const [pending, startTransition] = useActionTransition();
   return (
     <Button asChild className={className}>
       <a

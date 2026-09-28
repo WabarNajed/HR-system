@@ -3,7 +3,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Building2Icon, CalendarClockIcon, EyeIcon, GlobeIcon, MailIcon, PhoneIcon, ScaleIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useTransition, type ReactNode } from 'react';
+import { type ReactNode } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { toast } from 'sonner';
 import { Combobox } from '@/components/shared/combobox';
@@ -22,6 +22,7 @@ import { WEEKDAYS, organizationFormSchema, type OrganizationFormValues } from '.
 import type { Option } from '../queries';
 import { TimeField } from './time-field';
 import { useUnsavedChangesWarning } from './use-unsaved-changes';
+import { useActionTransition } from '@/components/shared/use-action-transition';
 
 export type OrganizationFormProps = {
   defaultValues: OrganizationFormValues;
@@ -60,7 +61,7 @@ export function OrganizationForm({ defaultValues, logoUrl, canEdit, logoLockedRe
   const t = useTranslations('settings.organization');
   const tc = useTranslations('common');
   const resolve = useErrorMessage();
-  const [pending, startTransition] = useTransition();
+  const [pending, startTransition] = useActionTransition();
 
   const form = useForm<OrganizationFormValues>({
     resolver: zodResolver(organizationFormSchema),

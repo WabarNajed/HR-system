@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { GitBranchIcon, InfoIcon } from 'lucide-react';
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
-import { useEffect, useMemo, useRef, useState, useTransition } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { toast } from 'sonner';
 import { ColorPicker } from '@/components/shared/color-picker';
@@ -24,6 +24,7 @@ import { saveRequestType } from '../actions';
 import { requestTypeFormSchema, type RequestTypeFormValues } from '../schemas';
 import type { RequestTypeRow } from '../types';
 import { categoryLabel } from './labels';
+import { useActionTransition } from '@/components/shared/use-action-transition';
 
 type Props = {
   open: boolean;
@@ -89,7 +90,7 @@ export function RequestTypeSheet({ open, onOpenChange, row, categories, nextSort
   const tRoot = useTranslations();
   const locale = useLocale() as Locale;
   const resolve = useErrorMessage();
-  const [pending, startTransition] = useTransition();
+  const [pending, startTransition] = useActionTransition();
   const [confirmDiscard, setConfirmDiscard] = useState(false);
   const keyEdited = useRef(false);
 

@@ -28,7 +28,7 @@ import {
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
-import { useState, useTransition, type ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { toast } from 'sonner';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog';
 import { EmployeeAvatar } from '@/components/shared/employee-avatar';
@@ -54,6 +54,7 @@ import type { AttachmentItem, RequestCapabilities } from '../types';
 import { uploadPendingAttachments } from '../upload';
 import { DecisionDialog, type DecisionTarget } from './decision-dialog';
 import { AttachmentList } from './request-form-renderer';
+import { useActionTransition } from '@/components/shared/use-action-transition';
 
 /* ─── Actions panel ───────────────────────────────────────────────────────── */
 
@@ -329,7 +330,7 @@ export function RequestAttachmentsCard({
   const resolve = useErrorMessage();
   const [files, setFiles] = useState<File[]>([]);
   const [states, setStates] = useState<Record<string, DropzoneFileState>>({});
-  const [uploading, startUpload] = useTransition();
+  const [uploading, startUpload] = useActionTransition();
   const [removing, setRemoving] = useState<string | null>(null);
 
   const upload = () =>
@@ -515,7 +516,7 @@ function CommentComposer({ requestId, internal }: { requestId: string; internal:
   const resolve = useErrorMessage();
   const tAll = useTranslations();
   const [value, setValue] = useState('');
-  const [pending, start] = useTransition();
+  const [pending, start] = useActionTransition();
   const post = () => {
     // Ctrl/⌘+Enter bypasses the disabled button: never post twice while a comment is in flight.
     if (!value.trim() || pending) return;

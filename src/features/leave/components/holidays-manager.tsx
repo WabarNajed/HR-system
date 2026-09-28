@@ -5,7 +5,7 @@ import { CalendarDaysIcon, CircleDotIcon, CircleOffIcon, CirclePowerIcon, InfoIc
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
-import { useId, useMemo, useState, useTransition, type ReactNode } from 'react';
+import { useId, useMemo, useState, type ReactNode } from 'react';
 import { toast } from 'sonner';
 import { actionsColumn, DataTable, DataTableExportMenu, type FilterDef } from '@/components/data-table';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog';
@@ -31,6 +31,7 @@ import { deletePublicHoliday, savePublicHoliday, setPublicHolidayActive } from '
 import type { HolidayRow } from '../types';
 import { UrlSelect } from './url-controls';
 import { SortHeader } from './sort-header';
+import { useActionTransition } from '@/components/shared/use-action-transition';
 
 type FormState = { name_ar: string; name_en: string; start_date: string | null; end_date: string | null; is_active: boolean };
 
@@ -58,7 +59,7 @@ export function HolidaySheet({ open, onOpenChange, row, year }: { open: boolean;
   const resolveError = useErrorMessage();
   const router = useRouter();
   const uid = useId();
-  const [pending, startTransition] = useTransition();
+  const [pending, startTransition] = useActionTransition();
   const empty: FormState = { name_ar: '', name_en: '', start_date: null, end_date: null, is_active: true };
   const [form, setForm] = useState<FormState>(empty);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -217,7 +218,7 @@ export function HolidaysManager({
   const router = useRouter();
   const [sheet, setSheet] = useState<{ open: boolean; row: HolidayRow | null }>({ open: false, row: null });
   const [confirmDelete, setConfirmDelete] = useState<HolidayRow | null>(null);
-  const [, startTransition] = useTransition();
+  const [, startTransition] = useActionTransition();
 
   const columns = useMemo<ColumnDef<HolidayRow>[]>(() => {
     const toggle = (row: HolidayRow) =>
@@ -310,7 +311,7 @@ export function HolidaysManager({
           ]
         : []),
     ];
-  }, [t, tc, locale, fmt, today, canEdit, router, resolveError]);
+  }, [t, tc, locale, fmt, today, canEdit, router, resolveError, startTransition]);
 
   const filters: FilterDef<HolidayRow>[] = [
     {

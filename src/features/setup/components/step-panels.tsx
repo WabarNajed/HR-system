@@ -5,7 +5,7 @@ import { ArrowUpRightIcon, CheckIcon, ImageIcon, MailPlusIcon, PlusIcon, UploadI
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
-import { useState, useTransition, type ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { EmployeeAvatar } from '@/components/shared/employee-avatar';
@@ -26,6 +26,7 @@ import { saveSetupOrganization } from '../actions';
 import type { NamedItem, SetupData } from '../queries';
 import { setupOrganizationSchema, type SetupOrganizationValues } from '../schemas';
 import { STEP_LINKS, type SetupStep } from '../steps';
+import { useActionTransition } from '@/components/shared/use-action-transition';
 
 const isStepType = (v: string): v is StepType => (STEP_TYPES as readonly string[]).includes(v);
 
@@ -73,7 +74,7 @@ function OrganizationStep({ data, canEdit }: { data: SetupData; canEdit: boolean
   const tc = useTranslations('common');
   const router = useRouter();
   const resolve = useErrorMessage();
-  const [pending, startTransition] = useTransition();
+  const [pending, startTransition] = useActionTransition();
   const o = data.organization;
   const form = useForm<SetupOrganizationValues>({
     resolver: zodResolver(setupOrganizationSchema),
@@ -211,7 +212,7 @@ function MasterDataStep({ entity, items, canEdit }: { entity: MasterEntity; item
   const tc = useTranslations('common');
   const router = useRouter();
   const resolve = useErrorMessage();
-  const [pending, startTransition] = useTransition();
+  const [pending, startTransition] = useActionTransition();
   const [values, setValues] = useState({ nameAr: '', nameEn: '', code: '' });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const key = entity === 'job_titles' ? 'jobTitles' : entity;
@@ -316,7 +317,7 @@ function HrAdminStep({ data, canInvite }: { data: SetupData; canInvite: boolean 
   const locale = useLocale() as Locale;
   const router = useRouter();
   const resolve = useErrorMessage();
-  const [pending, startTransition] = useTransition();
+  const [pending, startTransition] = useActionTransition();
   const [values, setValues] = useState({ fullName: '', email: '' });
   const [errors, setErrors] = useState<Record<string, string>>({});
 

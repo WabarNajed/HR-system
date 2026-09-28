@@ -129,6 +129,10 @@ namespaces in `ROOT_CLIENT_NAMESPACES` (root layout) plus those a route layout a
 catalog is ~340 KB in Arabic. A Client Component that calls `useTranslations('x')` on a route that does
 not provide `x` fails the check; `node scripts/check-i18n.mjs --client-usage` lists what each route
 group/section uses on the client. Server Components are unaffected (`getTranslations` sees everything).
+The `(app)` layout adds only the shell's namespaces (`APP_CLIENT_NAMESPACES`); every section adds its own
+in `src/app/(app)/<section>/layout.tsx` (settings: inside its existing layout), so a page ships just the
+catalogs of its section. When a client component starts using another namespace, add it to the
+`ns` of each section layout the check names.
 
 ## Scripts
 

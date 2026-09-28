@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
-import { useMemo, useRef, useState, useTransition } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { actionsColumn, DataTable, DataTableColumnHeader, selectColumn, type FilterDef, type RowAction } from '@/components/data-table';
 import type { ComboboxOption } from '@/components/shared/combobox';
@@ -39,6 +39,7 @@ import { useDateFormat } from '@/lib/i18n/use-date-format';
 import { deleteMasterData, setMasterDataActive } from '../actions';
 import { MASTER_ENTITY_CONFIG, type MasterDataKpis, type MasterDataRow, type MasterEntity } from '../config';
 import { MasterDataSheet, type DepartmentOption } from './master-data-sheet';
+import { useActionTransition } from '@/components/shared/use-action-transition';
 
 export type MasterDataManagerProps = {
   entity: MasterEntity;
@@ -64,8 +65,8 @@ export function MasterDataManager({ entity, rows, kpis, departments, countries, 
   const locale = resolveLocale(useLocale());
   const df = useDateFormat();
   const resolve = useErrorMessage();
-  const [, startTransition] = useTransition();
-  const [bulkPending, startBulk] = useTransition();
+  const [, startTransition] = useActionTransition();
+  const [bulkPending, startBulk] = useActionTransition();
 
   const [sheet, setSheet] = useState<SheetState>({ open: false, row: null });
   const [toDelete, setToDelete] = useState<MasterDataRow | null>(null);

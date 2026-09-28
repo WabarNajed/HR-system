@@ -74,6 +74,7 @@ export function WidgetRow({ href, children, className }: { href?: string | null;
       {href ? (
         <Link
           href={href}
+          prefetch={false}
           className={cn(
             inner,
             'outline-none transition-colors hover:bg-accent/70 focus-visible:bg-accent focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:ring-inset',

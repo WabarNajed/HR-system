@@ -3,7 +3,7 @@
 import { BellOffIcon, CheckCheckIcon, CheckIcon, FilterIcon, MailIcon, MailOpenIcon } from 'lucide-react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useCallback, useEffect, useMemo, useState, useTransition } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { DataTablePagination } from '@/components/data-table';
 import { EmptyState } from '@/components/shared/empty-state';
@@ -19,6 +19,7 @@ import { markAllNotificationsRead, markNotificationsRead, markNotificationsUnrea
 import { emitNotificationsChanged, NOTIFICATION_CATEGORIES, type NotificationCategory } from '../categories';
 import { NotificationItem } from './notification-item';
 import { useOpenNotification } from './use-open-notification';
+import { useActionTransition } from '@/components/shared/use-action-transition';
 
 type Props = {
   items: NotificationRecord[];
@@ -46,8 +47,8 @@ export function NotificationsCenter({ items, total, page, pageSize, tab, categor
   const now = useMemo(() => new Date(nowIso), [nowIso]);
   const [overrides, setOverrides] = useState<Record<string, string | null>>({});
   const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
-  const [markingAll, startMarkAll] = useTransition();
-  const [navigating, startNav] = useTransition();
+  const [markingAll, startMarkAll] = useActionTransition();
+  const [navigating, startNav] = useActionTransition();
 
   // Server data changed (refresh / navigation) → drop optimistic overrides.
   useEffect(() => {
@@ -77,7 +78,7 @@ export function NotificationsCenter({ items, total, page, pageSize, tab, categor
       const qs = next.toString();
       startNav(() => router.push(qs ? `${pathname}?${qs}` : pathname, { scroll: false }));
     },
-    [pathname, router, searchParams],
+    [pathname, router, searchParams, startNav],
   );
 
   const setRead = useCallback(

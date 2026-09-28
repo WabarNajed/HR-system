@@ -132,7 +132,10 @@ function useLookups(fields: RequestField[], context?: RequestFormRendererContext
     let cancelled = false;
     let pending = lookupCache.get(employeeId);
     if (!pending) {
-      pending = loadRequestLookups({ employeeId: employeeId || null }).then((r) => (r.ok && r.data ? r.data : null));
+      pending = loadRequestLookups({ employeeId: employeeId || null }).then(
+        (r) => (r.ok && r.data ? r.data : null),
+        () => null,
+      );
       lookupCache.set(employeeId, pending);
     }
     void pending.then((data) => {

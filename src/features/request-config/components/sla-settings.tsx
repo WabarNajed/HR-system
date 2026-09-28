@@ -5,7 +5,7 @@ import { AlarmClockIcon, CalendarCheck2Icon, CalendarOffIcon, CheckIcon, GaugeIc
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
-import { useMemo, useState, useTransition } from 'react';
+import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { DataTable, DataTableColumnHeader } from '@/components/data-table';
 import { PageHeader } from '@/components/shared/page-header';
@@ -26,6 +26,7 @@ import { saveTypeSla } from '../actions';
 import type { OrgCalendar, RequestTypeRow, RoleOption } from '../types';
 import { categoryLabel } from './labels';
 import { RequestTypeIcon, STEP_ICONS } from './type-visual';
+import { useActionTransition } from '@/components/shared/use-action-transition';
 
 const WEEKDAYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'] as const;
 
@@ -303,7 +304,7 @@ function SlaEditor({ row, canEdit }: { row: RequestTypeRow; canEdit: boolean }) 
   const resolve = useErrorMessage();
   const initial = row.sla_business_days === null ? '' : String(row.sla_business_days);
   const [value, setValue] = useState(initial);
-  const [pending, startTransition] = useTransition();
+  const [pending, startTransition] = useActionTransition();
   const dirty = value !== initial;
   const parsed = value.trim() === '' ? null : Number(value);
   const invalid = parsed !== null && (!Number.isInteger(parsed) || parsed < 0 || parsed > 365);

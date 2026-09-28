@@ -23,7 +23,7 @@ import {
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
-import { useEffect, useRef, useState, useTransition } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog';
 import { PageHeader } from '@/components/shared/page-header';
@@ -39,6 +39,7 @@ import { completeSetup } from '../actions';
 import type { SetupData } from '../queries';
 import { REQUIRED_STEPS, SETUP_STEPS, STEP_LINKS, type SetupStep } from '../steps';
 import { StepPanel, type StepPermissions } from './step-panels';
+import { useActionTransition } from '@/components/shared/use-action-transition';
 
 const STEP_ICONS: Record<SetupStep, LucideIcon> = {
   organization: Building2Icon,
@@ -64,7 +65,7 @@ export function SetupWizard({ step, data, perms }: Props) {
   const locale = useLocale() as Locale;
   const router = useRouter();
   const resolve = useErrorMessage();
-  const [finishing, startFinishing] = useTransition();
+  const [finishing, startFinishing] = useActionTransition();
   const [confirmFinish, setConfirmFinish] = useState(false);
   const railRef = useRef<HTMLOListElement>(null);
 

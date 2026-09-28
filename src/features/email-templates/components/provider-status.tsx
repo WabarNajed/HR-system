@@ -2,7 +2,6 @@
 
 import { CircleCheckIcon, CircleDashedIcon, SendIcon, ServerIcon } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
-import { useTransition } from 'react';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -12,6 +11,7 @@ import type { Locale } from '@/lib/i18n/config';
 import { cn } from '@/lib/utils';
 import { sendProviderTestEmail } from '../actions';
 import type { EmailProviderStatus } from '../provider';
+import { useActionTransition } from '@/components/shared/use-action-transition';
 
 type Props = {
   status: EmailProviderStatus;
@@ -27,7 +27,7 @@ export function ProviderStatus({ status, email, canTest, className, compact = fa
   const t = useTranslations('emailTemplates.provider');
   const locale = useLocale() as Locale;
   const resolve = useErrorMessage();
-  const [pending, startTransition] = useTransition();
+  const [pending, startTransition] = useActionTransition();
   const configured = Boolean(status.provider && status.from);
 
   const test = () =>

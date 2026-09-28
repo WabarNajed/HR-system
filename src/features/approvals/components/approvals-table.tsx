@@ -2,7 +2,7 @@
 
 import type { ColumnDef } from '@tanstack/react-table';
 import { CheckCheckIcon, CheckIcon, Undo2Icon, XIcon } from 'lucide-react';
-import { useLocale, useTranslations } from 'next-intl';
+import { useLocale, useNow, useTranslations } from 'next-intl';
 import { useSearchParams } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import { DataTable, DataTableColumnHeader, type FilterDef } from '@/components/data-table';
@@ -52,6 +52,7 @@ export function ApprovalsTable({
   const tr = useTranslations('requests');
   const ts = useTranslations('statuses');
   const locale = useLocale() as Locale;
+  const now = useNow({ updateInterval: 60_000 });
   const fmt = useDateFormat();
   const [decision, setDecision] = useState<{ row: RequestListRow; action: RequestActionKind } | null>(null);
   const queueParam = useSearchParams().get('queue');
@@ -110,7 +111,7 @@ export function ApprovalsTable({
             row.original.submitted_at ? (
               <SimpleTooltip content={fmt.dateTime(row.original.submitted_at)}>
                 <span className="text-muted-foreground numeric" suppressHydrationWarning>
-                  {formatRelative(row.original.submitted_at, locale)}
+                  {formatRelative(row.original.submitted_at, locale, now)}
                 </span>
               </SimpleTooltip>
             ) : (
@@ -228,7 +229,7 @@ export function ApprovalsTable({
       );
     }
     return base;
-  }, [tab, t, tr, fmt, locale, access]);
+  }, [tab, t, tr, fmt, locale, access, now]);
 
   const filters: FilterDef<RequestListRow | ApprovalDecisionRow>[] = [
     { key: 'type', title: tr('filters.type'), options: options.types.map((x) => ({ value: x.key, label: localized(x, 'name', locale) })) },
@@ -285,6 +286,7 @@ export function ApprovalsTable({
 
 function MobileCard({ row, tab }: { row: RequestListRow | ApprovalDecisionRow; tab: ApprovalsTab }) {
   const locale = useLocale() as Locale;
+  const now = useNow({ updateInterval: 60_000 });
   const tr = useTranslations('requests');
   const fmt = useDateFormat();
   const decided = tab !== 'pending' ? (row as ApprovalDecisionRow) : null;
@@ -300,7 +302,7 @@ function MobileCard({ row, tab }: { row: RequestListRow | ApprovalDecisionRow; t
           <bdi className="numeric">{row.request_number ?? '—'}</bdi> · {row.type ? localized(row.type, 'name', locale) : tr('unknownType')}
         </p>
         <p className="text-xs text-faint-foreground numeric" suppressHydrationWarning>
-          {decided?.decided_at ? fmt.dateTime(decided.decided_at) : row.submitted_at ? formatRelative(row.submitted_at, locale) : null}
+          {decided?.decided_at ? fmt.dateTime(decided.decided_at) : row.submitted_at ? formatRelative(row.submitted_at, locale, now) : null}
         </p>
       </div>
     </div>

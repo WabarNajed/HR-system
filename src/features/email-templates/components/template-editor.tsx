@@ -3,7 +3,7 @@
 import { BracesIcon, ChevronDownIcon, EyeIcon, RotateCcwIcon, SaveIcon, SendIcon, TriangleAlertIcon } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
-import { useCallback, useMemo, useRef, useState, useTransition } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog';
 import { SegmentedTabs } from '@/components/shared/link-tabs';
@@ -27,6 +27,7 @@ import { saveEmailTemplate, sendTestEmail, setEmailTemplateActive } from '../act
 import { BODY_MAX, COMMON_PLACEHOLDERS, SUBJECT_MAX, templateGroup } from '../constants';
 import type { EmailTemplateRow } from '../queries';
 import { EmailBodyEditor, type BodyEditorApi } from './body-editor';
+import { useActionTransition } from '@/components/shared/use-action-transition';
 
 export type PreviewData = { vars: TemplateVars; branding: EmailBranding; actionLabel: string; footerNote: string };
 
@@ -56,9 +57,9 @@ export function TemplateEditor({ template, previews, canEdit, userEmail }: Props
   const [active, setActive] = useState(template.is_active);
   const [confirmDiscard, setConfirmDiscard] = useState(false);
   const [version, setVersion] = useState(0);
-  const [saving, startSaving] = useTransition();
-  const [testing, startTesting] = useTransition();
-  const [toggling, startToggling] = useTransition();
+  const [saving, startSaving] = useActionTransition();
+  const [testing, startTesting] = useActionTransition();
+  const [toggling, startToggling] = useActionTransition();
   const subjectRef = useRef<HTMLInputElement>(null);
   const bodyApi = useRef<BodyEditorApi | null>(null);
   const lastFocus = useRef<'subject' | 'body'>('body');

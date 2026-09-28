@@ -14,7 +14,7 @@ export default function DevUiGalleryPage() {
   if (process.env.NODE_ENV === 'production') notFound();
   // The gallery renders shared components whose client islands use these catalogs.
   return (
-    <ClientMessages ns={['statuses', 'enums', 'employees', 'requests']}>
+    <ClientMessages ns={['statuses', 'enums', 'employees', 'requests', 'profile', 'leave', 'documents', 'dataManagement']}>
       <Gallery />
     </ClientMessages>
   );

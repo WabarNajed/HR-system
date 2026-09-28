@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
-import { useCallback, useMemo, useRef, useState, useTransition } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { Combobox, type ComboboxOption } from '@/components/shared/combobox';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog';
@@ -44,6 +44,7 @@ import { TypeRail, TypeSwitcher, type RailType } from './type-rail';
 import { RequestTypeIcon, STEP_ICONS } from './type-visual';
 import { useContainerNarrow } from './use-narrow';
 import { useUnsavedChangesWarning } from './use-unsaved';
+import { useActionTransition } from '@/components/shared/use-action-transition';
 
 type DraftStep = WorkflowStep & { uid: string };
 
@@ -114,7 +115,7 @@ export function WorkflowBuilder({ types, type, initialSteps, roles, users, count
   const [confirmDiscard, setConfirmDiscard] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [showProblems, setShowProblems] = useState(false);
-  const [saving, startSaving] = useTransition();
+  const [saving, startSaving] = useActionTransition();
   const containerRef = useRef<HTMLDivElement>(null);
 
   const dirty = fingerprint(steps) !== fingerprint(initial);

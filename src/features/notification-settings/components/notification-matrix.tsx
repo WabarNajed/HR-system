@@ -4,7 +4,7 @@ import { BellIcon, BellOffIcon, FileWarningIcon, InfoIcon, MailIcon, UsersIcon }
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
-import { useMemo, useState, useTransition, type FormEvent } from 'react';
+import { useMemo, useState, type FormEvent } from 'react';
 import { toast } from 'sonner';
 import { SectionCard } from '@/components/shared/section-card';
 import { StickyFormFooter } from '@/components/shared/sticky-form-footer';
@@ -19,6 +19,7 @@ import { cn } from '@/lib/utils';
 import { saveNotificationSettings } from '../actions';
 import { EVENT_GROUPS, templateKeysFor } from '../constants';
 import type { NotificationSettingRow, TemplateLite } from '../queries';
+import { useActionTransition } from '@/components/shared/use-action-transition';
 
 type State = Record<string, { inApp: boolean; email: boolean }>;
 
@@ -37,7 +38,7 @@ export function NotificationMatrix({ rows, templates, canEdit }: Props) {
   const resolve = useErrorMessage();
   const baseline = useMemo(() => toState(rows), [rows]);
   const [state, setState] = useState<State>(baseline);
-  const [pending, startTransition] = useTransition();
+  const [pending, startTransition] = useActionTransition();
   const templateMap = useMemo(() => new Map(templates.map((x) => [x.key, x])), [templates]);
   const byKey = useMemo(() => new Map(rows.map((r) => [r.event_key, r])), [rows]);
 

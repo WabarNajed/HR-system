@@ -14,7 +14,7 @@ import {
   StampIcon,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useState, useTransition, type ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { toast } from 'sonner';
 import { ColorPicker } from '@/components/shared/color-picker';
@@ -36,6 +36,7 @@ import { brandingFormSchema, type BrandingFormValues } from '../schemas';
 import { checkContrast, colorsTooSimilar, previewCss, THEME_PRESETS, type ContrastCheck } from '../theme';
 import { BrandImageField } from './brand-image-field';
 import { LetterPreview, LoginPreview, ShellPreview, type PreviewData, type PreviewStrings } from './brand-preview';
+import { useActionTransition } from '@/components/shared/use-action-transition';
 
 export type CompanyInfo = {
   nameAr: string | null;
@@ -99,7 +100,7 @@ export function BrandingEditor({ defaultValues, images: initialImages, company, 
   const t = useTranslations('settings.branding');
   const tc = useTranslations('common');
   const resolve = useErrorMessage();
-  const [pending, startTransition] = useTransition();
+  const [pending, startTransition] = useActionTransition();
   const [images, setImages] = useState(initialImages);
   const [tab, setTab] = useState<PreviewTab>('shell');
   const [previewLocale, setPreviewLocale] = useState<Locale>(locale);

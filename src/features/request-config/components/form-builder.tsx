@@ -25,7 +25,7 @@ import {
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations, type AbstractIntlMessages } from 'next-intl';
-import { useId, useMemo, useRef, useState, useTransition, type ReactNode } from 'react';
+import { useId, useMemo, useRef, useState, type ReactNode } from 'react';
 import { toast } from 'sonner';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog';
 import { EmptyState } from '@/components/shared/empty-state';
@@ -52,6 +52,7 @@ import { TypeRail, TypeSwitcher, type RailType } from './type-rail';
 import { RequestTypeIcon } from './type-visual';
 import { useContainerNarrow } from './use-narrow';
 import { useUnsavedChangesWarning } from './use-unsaved';
+import { useActionTransition } from '@/components/shared/use-action-transition';
 
 export type BuilderTypeInfo = {
   id: string;
@@ -104,7 +105,7 @@ export function FormBuilder({ types, type, initialFields, leaveTypes, canEdit, o
   const [toDelete, setToDelete] = useState<BuilderField | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
-  const [saving, startSaving] = useTransition();
+  const [saving, startSaving] = useActionTransition();
   const containerRef = useRef<HTMLDivElement>(null);
   const dndId = useId();
 
