@@ -2,7 +2,7 @@
   "title": "معالج الإعداد",
   "description": "اضبط الأساسيات لتجهيز البوابة. يُحفظ تقدّمك تلقائيًا ويمكنك المتابعة في أي وقت.",
   "stepsLabel": "خطوات الإعداد",
-  "progress": "اكتمل {done} من {total} خطوة",
+  "progress": "اكتمل {done} من {total, plural, one {خطوة واحدة} two {خطوتين} few {{total} خطوات} many {{total} خطوة} other {{total} خطوة}}",
   "stepOf": "الخطوة {n} من {total}",
   "openFullPage": "فتح الصفحة الكاملة",
   "skip": "تخطٍّ مؤقت",

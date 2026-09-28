@@ -41,7 +41,7 @@ import {
 import { useDateFormat } from '@/lib/i18n/use-date-format';
 import { employeeAlternateName, employeeDisplayName, localized } from '@/lib/i18n/localized';
 import { fileRouteUrl } from '@/lib/storage';
-import { nationalityKey } from '../nationality';
+import { nationalityKey } from '../display-values';
 import { EMPLOYMENT_STATUSES, EMPLOYMENT_TYPES, GENDERS, IQAMA_FILTER_BUCKETS, type DirectoryRow, type Option } from '../types';
 import { ArchiveEmployeeDialog, type ArchiveTarget } from './archive-employee-dialog';
 import { ExpiryBadge } from './expiry-badge';

@@ -53,7 +53,7 @@
     },
     "kpi": {
       "active": "الأنواع النشطة",
-      "activeHint": "من أصل {total} نوعًا مُعدًّا",
+      "activeHint": "من أصل {total, plural, one {نوع واحد مُعدّ} two {نوعين مُعدّين} few {{total} أنواع مُعدّة} many {{total} نوعًا مُعدًّا} other {{total} نوع مُعدّ}}",
       "managerApproval": "تتطلب اعتماد المدير",
       "customWorkflows": "{count, plural, =0 {جميع المسارات قياسية} one {مسار مخصّص واحد} two {مساران مخصّصان} few {# مسارات مخصّصة} many {# مسارًا مخصّصًا} other {# مسار مخصّص}}",
       "avgSla": "متوسط مستوى الخدمة",

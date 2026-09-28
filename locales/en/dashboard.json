@@ -53,8 +53,8 @@
   "kpi": {
     "annualLeave": "Annual leave balance",
     "annualLeaveNotSet": "Balance not set up yet",
-    "annualLeavePending": "{days} days awaiting approval",
-    "annualLeaveUsed": "{days} days used in {year}",
+    "annualLeavePending": "{days, plural, one {{days} day} other {{days} days}} awaiting approval",
+    "annualLeaveUsed": "{days, plural, one {{days} day} other {{days} days}} used in {year}",
     "openRequests": "Open requests",
     "openRequestsReturned": "{count, plural, one {# returned for changes} other {# returned for changes}}",
     "openRequestsDrafts": "{count, plural, one {# draft not submitted} other {# drafts not submitted}}",

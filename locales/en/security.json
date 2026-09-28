@@ -34,7 +34,7 @@
   },
   "password": {
     "title": "Password policy",
-    "minLength": "At least {count} characters",
+    "minLength": "At least {count, plural, one {{count} character} other {{count} characters}}",
     "upper": "An uppercase letter (A–Z)",
     "lower": "A lowercase letter (a–z)",
     "digit": "A number (0–9)",

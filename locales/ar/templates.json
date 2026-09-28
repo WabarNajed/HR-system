@@ -329,7 +329,7 @@
     "restoreDisabledCurrent": "هذا هو الإصدار الحالي.",
     "noChanges": "لا تغييرات في المحتوى",
     "changed": "تغيّر: {fields}",
-    "chars": "{sign}{count} حرفًا",
+    "chars": "{count, plural, one {{sign}{count} حرف} two {{sign}{count} حرف} few {{sign}{count} أحرف} many {{sign}{count} حرفًا} other {{sign}{count} حرف}}",
     "by": "بواسطة {name}",
     "unknownUser": "النظام",
     "created": "إنشاء القالب",

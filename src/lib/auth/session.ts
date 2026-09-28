@@ -1,5 +1,6 @@
 import 'server-only';
 
+import { headers } from 'next/headers';
 import { unstable_rethrow } from 'next/navigation';
 import { getLocale } from 'next-intl/server';
 import { cache } from 'react';
@@ -15,6 +16,7 @@ import {
 import { isSupabaseConfigured } from '@/lib/supabase/env';
 import { createClient, type ServerSupabaseClient } from '@/lib/supabase/server';
 import { fileRouteUrl } from '@/lib/storage';
+import { readVerifiedClaims, VERIFIED_CLAIMS_HEADER, type ForwardedClaims } from './verified-claims';
 
 /**
  * Session context for the current request — loaded once and memoized with React `cache()`,
@@ -189,21 +191,45 @@ async function loadEmployee(
   return { employee, reports: reportsRes.count ?? 0 };
 }
 
+/**
+ * Claims the proxy verified for this very request and token (`lib/auth/verified-claims.ts`), so the
+ * loader skips a second `getClaims()` (an Auth round trip with HS256 keys). `null` → verify here.
+ */
+async function proxyVerifiedClaims(supabase: ServerSupabaseClient): Promise<ForwardedClaims | null> {
+  try {
+    const value = (await headers()).get(VERIFIED_CLAIMS_HEADER);
+    if (!value) return null;
+    const { data } = await supabase.auth.getSession();
+    return await readVerifiedClaims(value, data.session?.access_token);
+  } catch (error) {
+    unstable_rethrow(error);
+    return null;
+  }
+}
+
 /** Full session state for the request (memoized). Never throws. */
 export const getSessionState = cache(async (): Promise<SessionState> => {
   if (!isSupabaseConfigured()) return { status: 'unavailable', reason: 'not_configured' };
 
   try {
     const supabase = await createClient();
-    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims();
-    if (claimsError && isAuthBackendError(claimsError)) {
-      console.error('[session] auth backend unavailable:', claimsError.message);
-      return { status: 'unavailable', reason: 'backend' };
+    let userId: string | null = null;
+    let email: string | null = null;
+    const forwarded = await proxyVerifiedClaims(supabase);
+    if (forwarded) {
+      userId = forwarded.sub;
+      email = forwarded.email;
+    } else {
+      const { data: claimsData, error: claimsError } = await supabase.auth.getClaims();
+      if (claimsError && isAuthBackendError(claimsError)) {
+        console.error('[session] auth backend unavailable:', claimsError.message);
+        return { status: 'unavailable', reason: 'backend' };
+      }
+      const claims = claimsData?.claims;
+      userId = typeof claims?.sub === 'string' ? claims.sub : null;
+      email = typeof claims?.email === 'string' ? claims.email : null;
     }
-    const claims = claimsData?.claims;
-    const userId = typeof claims?.sub === 'string' ? claims.sub : null;
     if (!userId) return { status: 'anonymous' };
-    const email = typeof claims?.email === 'string' ? claims.email : null;
 
     const [profileRes, rolesRes, locale] = await Promise.all([
       supabase

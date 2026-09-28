@@ -26,7 +26,8 @@ import { PortalAccessCard } from '@/features/users/components/portal-access-card
 import { getDirectReports, getInsurance, getLeaveSnapshot, getRecentRequests, type LeaveSnapshotRow } from '../../queries';
 import type { EmployeeRecord, ManagerCard } from '../../types';
 import { ExpiryBadge } from '../expiry-badge';
-import { daysLeft, iqamaExpiryHijri, serviceLength } from './profile-parts';
+import { iqamaExpiryHijri } from '../../display-values';
+import { daysLeft, serviceLength } from './profile-parts';
 
 export type OverviewCaps = {
   compliance: boolean;

@@ -171,7 +171,7 @@
     "tabs": {
       "pending": "Pending",
       "info_requested": "Information requested",
-      "rejected": "Rejected (last {days} days)"
+      "rejected": "Rejected (last {days, plural, one {day} other {{days} days}})"
     },
     "stats": {
       "pending": "Awaiting review",

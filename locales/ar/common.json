@@ -344,7 +344,7 @@
     "generatedAt": "تاريخ الإنشاء {date}",
     "generatedBy": "بواسطة {name}",
     "search": "بحث: {query}",
-    "rowLimit": "يتم عرض أول {count} سجل"
+    "rowLimit": "يتم عرض {count, plural, one {أول سجل} two {أول سجلين} few {أول {count} سجلات} many {أول {count} سجلًا} other {أول {count} سجل}}"
   },
   "calendar": {
     "navigation": "التنقل بين الأشهر",

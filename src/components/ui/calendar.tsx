@@ -35,8 +35,9 @@ function Calendar({
   const t = useTranslations('common.calendar');
   const defaultClassNames = getDefaultClassNames();
   /* Accessible names — react-day-picker only ships English ones for the date-fns locales. */
-  const translatedLabels = useMemo<Partial<Labels>>(
-    () => ({
+  const translatedLabels = useMemo<Partial<Labels>>(() => {
+    const fullDate = new Intl.DateTimeFormat(locale === 'ar' ? 'ar-SA-u-ca-gregory-nu-latn' : 'en-US', { dateStyle: 'full' });
+    return {
       labelNav: () => t('navigation'),
       labelPrevious: () => t('previousMonth'),
       labelNext: () => t('nextMonth'),
@@ -44,19 +45,18 @@ function Calendar({
       labelYearDropdown: () => t('chooseYear'),
       labelWeekNumber: (week) => t('weekNumber', { week }),
       labelWeekNumberHeader: () => t('weekNumberHeader'),
-      labelDayButton: (date, modifiers, _options, dateLib) => {
-        let label = dateLib ? dateLib.format(date, 'PPPP') : date.toDateString();
+      labelDayButton: (date, modifiers) => {
+        let label = fullDate.format(date);
         if (modifiers.today) label = t('todayDay', { date: label });
         if (modifiers.selected) label = t('selectedDay', { date: label });
         return label;
       },
-      labelGridcell: (date, modifiers, _options, dateLib) => {
-        const label = dateLib ? dateLib.format(date, 'PPPP') : date.toDateString();
+      labelGridcell: (date, modifiers) => {
+        const label = fullDate.format(date);
         return modifiers?.today ? t('todayDay', { date: label }) : label;
       },
-    }),
-    [t],
-  );
+    };
+  }, [locale, t]);
 
   return (
     <DayPicker

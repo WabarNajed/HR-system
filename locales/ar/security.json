@@ -34,7 +34,7 @@
   },
   "password": {
     "title": "سياسة كلمات المرور",
-    "minLength": "{count} أحرف على الأقل",
+    "minLength": "{count, plural, one {حرف واحد} two {حرفان} few {{count} أحرف} many {{count} حرفًا} other {{count} حرف}} على الأقل",
     "upper": "حرف إنجليزي كبير (A–Z)",
     "lower": "حرف إنجليزي صغير (a–z)",
     "digit": "رقم (0–9)",

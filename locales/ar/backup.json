@@ -7,7 +7,7 @@
     "backups": "النسخ الاحتياطية",
     "backupsHint": "الحزم المنزّلة (من سجل التدقيق)",
     "records": "السجلات المشمولة",
-    "recordsHint": "في {count} جدولًا",
+    "recordsHint": "{count, plural, one {في جدول واحد} two {في جدولين} few {في {count} جداول} many {في {count} جدولًا} other {في {count} جدول}}",
     "sensitive": "بيانات الرواتب والبنوك",
     "sensitiveIncluded": "مشمولة",
     "sensitiveExcluded": "غير مشمولة",
@@ -21,7 +21,7 @@
     "preparing": "جارٍ تجهيز النسخة الاحتياطية…",
     "received": "تم استلام {size}",
     "contents": "محتويات النسخة",
-    "rows": "{count} سجل",
+    "rows": "{count, plural, one {سجل واحد} two {سجلان} few {{count} سجلات} many {{count} سجلًا} other {{count} سجل}}",
     "sensitiveNote": "تُضمَّن الرواتب والحسابات البنكية فقط في النسخ التي ينشئها مدير النظام.",
     "format": "ZIP · manifest.json · ملف JSON وXLSX لكل جدول"
   },
@@ -78,7 +78,7 @@
     "description": "من سجل التدقيق.",
     "empty": "لم تُنزَّل أي نسخة احتياطية بعد.",
     "noAccess": "يُقرأ سجل النسخ الاحتياطية من سجل التدقيق، ويتطلب صلاحية التدقيق.",
-    "summary": "{tables} جدولًا · {rows} سجل",
+    "summary": "{tables, plural, one {جدول واحد} two {جدولان} few {{tables} جداول} many {{tables} جدولًا} other {{tables} جدول}} · {rows, plural, one {سجل واحد} two {سجلان} few {{rows} سجلات} many {{rows} سجلًا} other {{rows} سجل}}",
     "sensitive": "تشمل الرواتب والبنوك",
     "by": "بواسطة {name}",
     "viewAudit": "فتح سجل التدقيق"

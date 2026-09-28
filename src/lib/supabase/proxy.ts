@@ -1,5 +1,6 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
+import { signVerifiedClaims, VERIFIED_CLAIMS_HEADER } from '@/lib/auth/verified-claims';
 import type { Database } from '@/types/database';
 import { fetchWithTimeout, getSupabaseEnv } from './env';
 
@@ -12,6 +13,9 @@ import { fetchWithTimeout, getSupabaseEnv } from './env';
  * - No database queries: only `auth.getClaims()` (local JWT verification; network `getUser()` for
  *   symmetric keys) with a 5 s timeout. Profile status checks happen in the (app) layout.
  * - If Supabase is unreachable the request passes through; the layouts render an error state.
+ * - The verified claims are forwarded to Server Components in a signed, token-bound request header
+ *   (`lib/auth/verified-claims.ts`) so the session loader does not verify the same token again. Any
+ *   client-supplied value of that header is always dropped.
  */
 
 export const PATHNAME_HEADER = 'x-hr-pathname';
@@ -73,9 +77,12 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
     }
   }
 
-  const forwardHeaders = () => {
+  const forwardHeaders = (verifiedClaims: string | null = null) => {
     const headers = new Headers(request.headers);
     headers.set(PATHNAME_HEADER, `${pathname}${search}`);
+    // Only the proxy may set this header — never pass a client-supplied value through.
+    headers.delete(VERIFIED_CLAIMS_HEADER);
+    if (verifiedClaims) headers.set(VERIFIED_CLAIMS_HEADER, verifiedClaims);
     return headers;
   };
 
@@ -102,10 +109,17 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
   });
 
   let userId: string | null = null;
+  let verifiedClaims: string | null = null;
   let backendDown = false;
   try {
     const { data, error } = await supabase.auth.getClaims();
     userId = typeof data?.claims?.sub === 'string' ? data.claims.sub : null;
+    if (userId && data?.claims) {
+      // Same (possibly just refreshed) token getClaims() verified — read from the cookie storage, no network.
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
+      if (accessToken) verifiedClaims = await signVerifiedClaims({ ...data.claims, sub: userId }, accessToken).catch(() => null);
+    }
     if (error && !userId) {
       const status = (error as { status?: number }).status;
       backendDown =
@@ -143,5 +157,5 @@ export async function updateSession(request: NextRequest): Promise<NextResponse>
     return finalize(NextResponse.redirect(url));
   }
 
-  return finalize(NextResponse.next({ request: { headers: forwardHeaders() } }));
+  return finalize(NextResponse.next({ request: { headers: forwardHeaders(verifiedClaims) } }));
 }

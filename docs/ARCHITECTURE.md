@@ -345,7 +345,8 @@ always uses `has_org_permission`, so e.g. the manager role's `employees.view` me
 | notifications | own only | own | own | own |
 | audit_logs | ✗ | ✗ | `audit.view` | all (read only) |
 | config tables (types, templates, settings, master data) | read active rows | read | read; write per `settings.*` | all |
-| profiles | own + manager + direct reports + HR staff | same | all | all — self may update only full_name, mobile, preferred_language, theme (and registration fields while pending) |
+| profiles (full row: e-mail, mobile, last login, registration / review notes) | own only | own only | all (`is_hr` or org `users.view`) | all — self may update only full_name, mobile, preferred_language, theme (and registration fields while pending) |
+| profile_cards (read-only view: id, full_name, employee_id, status) | own + manager + direct reports + HR staff | same | all | all — use it for names of approvers, assignees, requesters, uploaders, reviewers |
 | user_roles / role_permissions | own roles / read | same | `users.view` / write `users.administer` | all |
 
 Mutations with multi-row effects run through **`security definer` RPCs** that check authorization
@@ -363,7 +364,8 @@ balance, sequences):
 * `public.approve_registration(p_profile_id uuid, p_employee_id uuid default null, p_role_key text default 'employee') → void`, `public.reject_registration(p_profile_id uuid, p_reason text)`, `public.request_registration_info(p_profile_id uuid, p_note text)`
 * `public.set_user_roles(p_user_id uuid, p_role_keys text[])` (only super_admin may grant/revoke `super_admin`; the last super admin can never be removed or disabled)
 * `public.next_document_number(p_prefix text) → text`
-* `public.log_audit_event(p_action text, p_entity_type text default null, p_entity_id text default null, p_summary text default null, p_changes jsonb default null) → void`
+* `public.log_audit_event(p_action text, p_entity_type text default null, p_entity_id text default null, p_summary text default null, p_changes jsonb default null, p_actor_id uuid default null, p_ip text default null, p_user_agent text default null) → void`
+  — **service role only** (a user JWT can never write the audit trail); called by `lib/audit.ts` after the action's own permission check, with the verified session user as actor
 * `public.global_search(p_query text, p_locale text default 'ar', p_limit int default 20) → table(kind, id, title, subtitle, href)` (security invoker → RLS applies)
 * `public.verify_certificate(p_number text) → table(certificate_number, employee_name, certificate_type, issue_date, status)` — granted to `anon`; returns nothing else
 * `public.get_public_branding() → jsonb` — granted to `anon` (portal names, logo URL, colors, login texts)
@@ -372,13 +374,14 @@ balance, sequences):
 * Additional RPCs (see `docs/DATABASE.md` §7): `set_user_status(p_user_id, p_status, p_note default null)`,
   `set_user_employee(p_user_id, p_employee_id)`, `record_login()`, `get_employee_manager(p_employee_id) → jsonb`,
   `get_request_workflow(p_request_id) → table`, `set_leave_balance(…)`, `initialize_leave_balances(p_year, p_employee_id default null)`,
-  `claim_notification_emails(p_notification_ids uuid[]) → table`, `log_email(…)`, `generate_expiry_alerts()` (cron),
+  `claim_notification_emails(p_notification_ids uuid[]) → table`, `log_email(…)` (service role only), `generate_expiry_alerts()` (cron),
   `publish_certificate_template(p_template_id, p_change_notes default null)`, `restore_certificate_template_version(p_template_id, p_version)`.
 * RPC errors are raised as `hr:errors.<key>` (list in `docs/DATABASE.md` §13).
 
 Server-side TypeScript still checks permissions before calling anything (defense in depth) using
 `requirePermission(module, action)`; the service-role client (`lib/supabase/admin.ts`) is used **only**
-for Auth admin operations (invite, create/link/disable users, bootstrap) and org-reset storage cleanup,
+for Auth admin operations (invite, create/link/disable users, bootstrap), org-reset storage cleanup and
+append-only bookkeeping (`log_audit_event` via `lib/audit.ts`, `log_email` via `lib/email/send.ts`),
 always after an explicit role check.
 
 ### Storage (all buckets private; access via short-lived signed URLs)

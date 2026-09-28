@@ -170,8 +170,8 @@
   "notifications": {
     "title": "الإشعارات",
     "description": "حدّد الأحداث التي تُرسل إشعارات داخل البوابة وعبر البريد الإلكتروني.",
-    "summaryInApp": "داخل البوابة: {count} من {total} حدث",
-    "summaryEmail": "بالبريد الإلكتروني: {count} من {total} حدث",
+    "summaryInApp": "داخل البوابة: {count} من {total, plural, one {حدث واحد} two {حدثين} few {{total} أحداث} many {{total} حدثًا} other {{total} حدث}}",
+    "summaryEmail": "بالبريد الإلكتروني: {count} من {total, plural, one {حدث واحد} two {حدثين} few {{total} أحداث} many {{total} حدثًا} other {{total} حدث}}",
     "rule": "عند إيقاف إشعار البوابة مع تفعيل البريد تُرسل الرسالة ويُحفظ الإشعار كمقروء؛ وإيقاف القناتين يعطّل الحدث.",
     "groups": {
       "requests": "الطلبات والموافقات",
@@ -185,7 +185,7 @@
     "suppressed": "معطّل",
     "noTemplate": "لا يوجد قالب بريد لهذا الحدث، لذا لا يمكن تفعيل البريد.",
     "noTemplateShort": "لا يوجد قالب بريد",
-    "templatesCount": "{count} قوالب انتهاء",
+    "templatesCount": "{count, plural, one {قالب انتهاء واحد} two {قالبا انتهاء} few {{count} قوالب انتهاء} many {{count} قالبًا للانتهاء} other {{count} قالب انتهاء}}",
     "templateInactive": "القالب غير نشط، وتُتخطى الرسائل",
     "savedState": "جميع التغييرات محفوظة",
     "changedCount": "{count, plural, one {تغيّر حدث واحد} two {تغيّر حدثان} few {تغيّرت # أحداث} many {تغيّر # حدثًا} other {تغيّر # حدث}}",

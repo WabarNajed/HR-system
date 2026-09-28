@@ -185,7 +185,7 @@
     "suppressed": "Suppressed",
     "noTemplate": "There’s no email template for this event, so email can’t be turned on.",
     "noTemplateShort": "No email template",
-    "templatesCount": "{count} expiry templates",
+    "templatesCount": "{count, plural, one {{count} expiry template} other {{count} expiry templates}}",
     "templateInactive": "Template inactive — emails are skipped",
     "savedState": "All changes saved",
     "changedCount": "{count, plural, one {# event changed} other {# events changed}}",

@@ -329,7 +329,7 @@
     "restoreDisabledCurrent": "This is the current version.",
     "noChanges": "No content changes",
     "changed": "Changed: {fields}",
-    "chars": "{sign}{count} characters",
+    "chars": "{count, plural, one {{sign}{count} character} other {{sign}{count} characters}}",
     "by": "by {name}",
     "unknownUser": "System",
     "created": "Template created",

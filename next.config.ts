@@ -35,7 +35,8 @@ function contentSecurityPolicy(): string {
     'media-src': ["'self'", 'blob:', 'data:'],
     'frame-src': ["'self'", 'blob:'],
     'worker-src': ["'self'", 'blob:'],
-    'object-src': ["'none'"],
+    // PDF previews render a blob: document that inherits this policy (Chrome's viewer is an <embed>).
+    'object-src': ["'self'", 'blob:'],
     'base-uri': ["'self'"],
     'form-action': ["'self'"],
     'frame-ancestors': ["'none'"],
@@ -73,6 +74,12 @@ const nextConfig: NextConfig = {
   // No floating Next.js dev-tools badge: it overlapped the collapsed sidebar's expand button in LTR
   // and blocked automated clicks. Build/runtime errors still show in the dev overlay.
   devIndicators: false,
+  turbopack: {
+    resolveAlias: {
+      // Browser bundle only: zod without its 48 unused locale packs (~340 KB) + jitless (CSP-safe).
+      zod: { browser: './src/lib/zod/browser.ts' },
+    },
+  },
   // Security response headers on every route (pages, route handlers, static files).
   async headers() {
     return [{ source: '/:path*', headers: securityHeaders }];

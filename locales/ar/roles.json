@@ -36,7 +36,7 @@
   },
   "matrix": {
     "title": "الصلاحيات",
-    "summary": "{granted} من {total} صلاحية ممنوحة",
+    "summary": "{granted} من {total, plural, one {صلاحية واحدة ممنوحة} two {صلاحيتين ممنوحتين} few {{total} صلاحيات ممنوحة} many {{total} صلاحية ممنوحة} other {{total} صلاحية ممنوحة}}",
     "grantAll": "منح الكل",
     "clearAll": "إلغاء الكل",
     "superAdminLocked": "يملك مدير النظام جميع الصلاحيات دائمًا، ولا يمكن تعديل هذا الدور.",

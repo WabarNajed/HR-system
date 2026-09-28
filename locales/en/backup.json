@@ -7,7 +7,7 @@
     "backups": "Backups",
     "backupsHint": "Downloaded packages (audit trail)",
     "records": "Records to back up",
-    "recordsHint": "Across {count} tables",
+    "recordsHint": "Across {count, plural, one {{count} table} other {{count} tables}}",
     "sensitive": "Salary & bank data",
     "sensitiveIncluded": "Included",
     "sensitiveExcluded": "Excluded",
@@ -21,7 +21,7 @@
     "preparing": "Preparing the backup…",
     "received": "{size} received",
     "contents": "What's included",
-    "rows": "{count} rows",
+    "rows": "{count, plural, one {{count} row} other {{count} rows}}",
     "sensitiveNote": "Salary and bank accounts are included only in backups made by the Super Admin.",
     "format": "ZIP · manifest.json · JSON + XLSX per table"
   },
@@ -78,7 +78,7 @@
     "description": "From the audit trail.",
     "empty": "No backups have been downloaded yet.",
     "noAccess": "The backup history is read from the audit trail, which requires the audit permission.",
-    "summary": "{tables} tables · {rows} rows",
+    "summary": "{tables, plural, one {{tables} table} other {{tables} tables}} · {rows, plural, one {{rows} row} other {{rows} rows}}",
     "sensitive": "Incl. salary & bank",
     "by": "By {name}",
     "viewAudit": "Open audit log"

@@ -47,7 +47,16 @@ e.g. a small VPS or Railway/Render); set `CHROMIUM_EXECUTABLE_PATH` to a local C
    `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=recovery&next=/reset-password` (recovery).
 6. Storage buckets (`employee-documents`, `request-attachments`, `certificate-files` private; `branding`
    public) are created by the migrations — nothing to click.
-7. Copy **Project URL**, **anon public key** and **service_role key** (Settings → API).
+7. **Settings → JWT Keys: use asymmetric signing keys (ECC P-256 / RS256).** New projects have them by
+   default; a project still on the *legacy JWT secret* (HS256) should migrate (create a standby ECC key,
+   rotate to it, keep the legacy secret as a verification-only key until old sessions expire). With
+   asymmetric keys `auth.getClaims()` verifies sessions locally against the cached JWKS; with the legacy
+   HS256 secret every verification is a network round trip to Supabase Auth (`/auth/v1/user`,
+   ~100–600 ms under load). The proxy verifies once per request and hands the result to the session
+   loader in a signed, token-bound header (`src/lib/auth/verified-claims.ts`, keyed by the service-role
+   key), so a render costs at most one verification either way — but each prefetch and navigation still
+   pays it on HS256. Never put the legacy JWT secret into the app's environment.
+8. Copy **Project URL**, **anon public key** and **service_role key** (Settings → API).
 
 ---
 

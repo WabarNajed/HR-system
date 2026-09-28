@@ -33,7 +33,7 @@
   },
   "stats": {
     "total": "حسابات البوابة",
-    "totalHint": "{active} حساب نشط",
+    "totalHint": "{active, plural, one {حساب واحد نشط} two {حسابان نشطان} few {{active} حسابات نشطة} many {{active} حسابًا نشطًا} other {{active} حساب نشط}}",
     "invited": "دعوات بانتظار التفعيل",
     "invitedHint": "لم يسجّلوا الدخول بعد",
     "pendingRegistrations": "طلبات التسجيل",
@@ -171,7 +171,7 @@
     "tabs": {
       "pending": "بانتظار المراجعة",
       "info_requested": "مطلوب معلومات",
-      "rejected": "المرفوضة (آخر {days} يومًا)"
+      "rejected": "المرفوضة ({days, plural, one {آخر يوم} two {آخر يومين} few {آخر {days} أيام} many {آخر {days} يومًا} other {آخر {days} يوم}})"
     },
     "stats": {
       "pending": "بانتظار المراجعة",

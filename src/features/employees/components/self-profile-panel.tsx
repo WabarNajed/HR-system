@@ -23,8 +23,8 @@ import { getBankAccount, getDependents, getEmployeeRecord, getManagerCard, getVi
 import type { RELATIONSHIPS } from '../types';
 import { ExpiryBadge } from './expiry-badge';
 import { IbanReveal } from './profile/iban-reveal';
-import { nationalityKey } from '../nationality';
-import { iqamaExpiryHijri, serviceLength } from './profile/profile-parts';
+import { iqamaExpiryHijri, nationalityKey } from '../display-values';
+import { serviceLength } from './profile/profile-parts';
 
 /**
  * The signed-in employee's own information (cross-module contract — owned by the employees module,

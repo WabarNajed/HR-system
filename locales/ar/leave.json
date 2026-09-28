@@ -213,7 +213,7 @@
     },
     "kpis": {
       "total": "أنواع الإجازات",
-      "totalHint": "{count} نوع نشط",
+      "totalHint": "{count, plural, one {نوع واحد نشط} two {نوعان نشطان} few {{count} أنواع نشطة} many {{count} نوعًا نشطًا} other {{count} نوع نشط}}",
       "deducting": "مرتبطة بالرصيد",
       "deductingHint": "تُخصم من الرصيد",
       "attachment": "تتطلب مرفقًا",

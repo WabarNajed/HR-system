@@ -53,8 +53,8 @@
   "kpi": {
     "annualLeave": "رصيد الإجازة السنوية",
     "annualLeaveNotSet": "لم يُعدّ الرصيد بعد",
-    "annualLeavePending": "{days} يوم بانتظار الموافقة",
-    "annualLeaveUsed": "{days} يوم مستخدم في {year}",
+    "annualLeavePending": "{days, plural, one {يوم واحد} two {يومان} few {{days} أيام} many {{days} يومًا} other {{days} يوم}} بانتظار الموافقة",
+    "annualLeaveUsed": "استُخدم {days, plural, one {يوم واحد} two {يومان} few {{days} أيام} many {{days} يومًا} other {{days} يوم}} في {year}",
     "openRequests": "الطلبات المفتوحة",
     "openRequestsReturned": "{count, plural, one {طلب واحد معاد للتعديل} two {طلبان معادان للتعديل} few {# طلبات معادة للتعديل} many {# طلبًا معادًا للتعديل} other {# طلب معاد للتعديل}}",
     "openRequestsDrafts": "{count, plural, one {مسودة واحدة لم تُرسل} two {مسودتان لم تُرسلا} few {# مسودات لم تُرسل} many {# مسودة لم تُرسل} other {# مسودة لم تُرسل}}",
@@ -196,7 +196,7 @@
     "orgHealth": {
       "title": "جاهزية المنشأة",
       "openSetup": "معالج الإعداد",
-      "progress": "اجتاز {passed} من {total} فحصًا",
+      "progress": "اجتاز {passed} من {total, plural, one {فحص واحد} two {فحصين} few {{total} فحوصات} many {{total} فحصًا} other {{total} فحص}}",
       "setupCompleted": "اكتمل الإعداد",
       "setupPending": "الإعداد قيد الاستكمال",
       "statusOk": "مكتمل",
@@ -280,7 +280,7 @@
     },
     "imports": {
       "title": "عمليات الاستيراد",
-      "rows": "استيراد {imported} من {total} صف",
+      "rows": "استيراد {imported} من {total, plural, one {صف واحد} two {صفّين} few {{total} صفوف} many {{total} صفًا} other {{total} صف}}",
       "emptyTitle": "لا توجد عمليات استيراد بعد",
       "emptyDescription": "ستظهر هنا عمليات استيراد الموظفين والبيانات الأساسية."
     },

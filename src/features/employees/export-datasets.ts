@@ -5,7 +5,7 @@ import { employeeDisplayName, localized } from '@/lib/i18n/localized';
 import type { ListParams } from '@/lib/list-params';
 import type { ServerSupabaseClient } from '@/lib/supabase/server';
 import { DIRECTORY_FILTER_KEYS, DIRECTORY_SORTS, sanitizeFilter, type DirectoryFilterKey } from './directory-params';
-import { nationalityKey } from './nationality';
+import { iqamaExpiryHijri, nationalityKey } from './display-values';
 import { EMPLOYEE_RECORDS, applyDirectoryFilters, applyDirectorySort, fetchDirectoryIds, getViewer, type EmployeeViewer } from './queries';
 import type { NamedRef } from './types';
 
@@ -272,7 +272,12 @@ const employeesDataset = defineDataset<EmployeeExportRow>({
       personal && { key: 'national_id', header: t('employees.fields.nationalId'), width: 16 },
       personal && { key: 'iqama_issue_date', header: t('employees.fields.iqamaIssueDate'), type: 'date' },
       orgCan(ctx, 'employees.view') && { key: 'iqama_expiry_date', header: t('employees.fields.iqamaExpiryDate'), type: 'date' },
-      personal && { key: 'iqama_expiry_hijri', header: t('employees.fields.iqamaExpiryHijri'), width: 14 },
+      personal && {
+        key: 'iqama_expiry_hijri',
+        header: t('employees.fields.iqamaExpiryHijri'),
+        width: 18,
+        value: (r) => iqamaExpiryHijri(r, t.locale) ?? '',
+      },
       personal && { key: 'iqama_profession', header: t('employees.fields.iqamaProfession'), width: 20 },
       personal && { key: 'passport_number', header: t('employees.fields.passportNumber'), width: 14 },
       personal && { key: 'passport_expiry_date', header: t('employees.fields.passportExpiryDate'), type: 'date' },

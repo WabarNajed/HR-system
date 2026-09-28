@@ -10,8 +10,8 @@ import { getBankAccount, getCompensation } from '../../queries';
 import type { EmployeeRecord } from '../../types';
 import { ExpiryBadge } from '../expiry-badge';
 import { IbanReveal } from './iban-reveal';
-import { nationalityKey } from '../../nationality';
-import { ageFrom, iqamaExpiryHijri } from './profile-parts';
+import { iqamaExpiryHijri, nationalityKey } from '../../display-values';
+import { ageFrom } from './profile-parts';
 
 export async function PersonalTab({
   employee,

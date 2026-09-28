@@ -642,7 +642,7 @@
     "runPreview": "تشغيل المعاينة",
     "refreshPreview": "تحديث المعاينة",
     "previewTitle": "المعاينة",
-    "previewHint": "عرض أول {shown} من أصل {total} صفًا مطابقًا.",
+    "previewHint": "عرض أول {shown} من أصل {total, plural, one {صف واحد مطابق} two {صفّين مطابقين} few {{total} صفوف مطابقة} many {{total} صفًا مطابقًا} other {{total} صف مطابق}}.",
     "previewEmptyTitle": "شغّل المعاينة",
     "previewEmptyDescription": "اختر الأعمدة وعوامل التصفية ثم شغّل المعاينة لعرض النتيجة هنا.",
     "noRowsTitle": "لا توجد سجلات مطابقة",

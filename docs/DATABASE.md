@@ -47,6 +47,19 @@ transaction.
 | `20260927000900_storage.sql` | The four buckets and the `storage.objects` policies |
 | `20260927001000`–`001300_seed_*.sql` | Default configuration as idempotent seed functions |
 | `20260927001400_seed_apply_and_grants.sql` | Runs the seeds, adds `reset_organization`, and does the final EXECUTE-privilege sweep |
+| `20260928005000_leave_config_admin.sql`, `…005100_leave_balances_direct_write_audit.sql` | M5 leave: org `leave.administer` may also write leave types and public holidays; direct API writes to `leave_balances` (insert, opening/entitlement changes) are audited |
+| `20260928008000_request_config_rpcs.sql` | M8 request configuration RPCs (section 7, *Module RPCs*) |
+| `20260928010000`–`010200_m1_*.sql` | M1 users & access: roles with members cannot be deleted; `registration_info_requested` e-mail; admin-invited users (`app_metadata.invited_by_admin`) become active; registration gate (GoTrue sign-ups are auto-rejected while self-registration is off); `approve_registration` needs `users.administer` to grant a role other than `employee` |
+| `20260928011000`–`011200_dashboard_*.sql` | M11 read helpers (security invoker): dashboard breakdown / expiry items / compliance counts, `notification_counts`, `audit_log_facets` |
+| `20260928012000_integration_rpc_fixes.sql` | `get_public_branding()` + `hr_email`; `claim_notification_emails()` also returns the template and sender settings; `global_search()` localized certificate subtitles + `type_key` column |
+| `20260928020000`–`020100_settings_*.sql` | M2 settings: `description_ar/en` on the four master-data tables, in-use delete guard (`inUse`), department hierarchy guard, `master_data_usage`, `settings_overview` |
+| `20260928030000`–`030100_employees_*.sql` | M3 employees: `employees.search_norm` (Arabic-folded), manager-cycle guard, directory helpers, atomic `save_employee`, identity-column guard on INSERT |
+| `20260928040000_requests_viewer_access.sql` | M4 read-only request helpers (`get_my_request_access`, `get_request_capabilities`, `list_request_assignees`, `list_request_handlers`) |
+| `20260928060000`–`060200_documents_*.sql` | M6 documents: review columns + `review_employee_document`; views `employee_document_list`, `expiry_items`, `employee_document_gaps`; `expiry_alert_runs` / `expiry_alert_log` + `run_expiry_alerts`; review needs `documents.approve`; medical reports always confidential; `cleanup_orphan_employee_documents` |
+| `20260928070000`–`070200_certificates_*.sql` | M7 certificates: template drafts / publishing (`published_version`) and their RPCs; `issue_certificate` requires the stored PDF; direct INSERT / UPDATE / DELETE on `certificates` revoked (RPCs only) |
+| `20260928090000`–`090200_reports_*.sql` | M9 report functions (security invoker — RLS decides the rows) |
+| `20260928100000`–`100100_data_management*.sql` | M10: `import_sources` (parsed workbook grid of the import wizard); per-type access to imports, import rows and sources |
+| `20260928210101_…` → `2026092821xxxx_<area>_fix_<desc>.sql` | Final QA-gate fixes, one file per fix; each header states *before / after*. Security-relevant: e-mail-confirmed admin invitations, column scope for employee identity data (`employee_records`, `private.employee_personal`), segregation of duties for HR writes on their own records, immutable issued certificate files, per-certificate verification codes, `log_audit_event` / `log_email` service-role only and one `auth.login` per session (`…211201`), full `profiles` rows narrowed + `profile_cards` (`…211202`) |
 
 Commands:
 
@@ -76,7 +89,12 @@ employee names need at least one language: CHECK `coalesce(name_ar, name_en) is 
 | Requests | `request_types`, `request_fields`, `request_workflows`, `request_workflow_steps`, `hr_requests`, `hr_request_values`, `request_attachments`, `request_comments`, `request_history`, `request_approvals`, `document_sequences` |
 | Certificates | `certificate_templates`, `certificate_template_versions`, `certificates` |
 | Communication | `notifications`, `notification_settings`, `email_templates`, `email_logs` |
-| Data & audit | `imports`, `import_rows`, `audit_logs` |
+| Documents compliance | `expiry_alert_runs`, `expiry_alert_log` (HR read-only; written by `run_expiry_alerts`) |
+| Data & audit | `imports`, `import_rows`, `import_sources`, `audit_logs` |
+
+Read models (views): `employee_document_list`, `expiry_items`, `employee_document_gaps` and
+`employee_records` are **security invoker** (the caller's RLS applies). `profile_cards` is a
+security-barrier definer view with its own row filter and SELECT-only grants (section 5).
 
 Additions to the §6 column lists. All are additive, and the ARCHITECTURE file mentions each one:
 
@@ -89,6 +107,11 @@ Additions to the §6 column lists. All are additive, and the ARCHITECTURE file m
 - `request_types.is_system`: the seeded types with built-in effects cannot be deleted, only deactivated.
 - `email_templates.placeholders`: the variables the editor offers.
 - `audit_logs.employee_id`: the employee an event concerns. It powers the employee Activity tab.
+- `departments`, `job_titles`, `locations`, `cost_centers`: `description_ar`, `description_en`.
+- `employees.search_norm`: generated, Arabic-folded (hamza / ya / ta-marbuta, no diacritics) search haystack with a trigram index.
+- `employee_documents.review_note`, `reviewed_by`, `reviewed_at`: set only by `review_employee_document` (guard trigger).
+- `certificate_templates.published_version`: the version used to issue; `current_version > published_version` means unpublished changes.
+- `certificates.verification_code`: 12 random characters printed on the certificate; `verify_certificate` reveals holder details only with it.
 - Path checks keep the database and storage in step:
   - `employee_documents.storage_path` must start with `{employee_id}/{id}/`.
   - `request_attachments.storage_path` must start with `requests/{request_id}/`.
@@ -157,7 +180,8 @@ false/NULL when the caller's profile is not `active`.
 | `can_view_employee(employee_id)` | self ∨ manager_of ∨ `has_org_permission('employees','view')` |
 | `can_view_request(request_id)` | request visibility for one request (RPCs and storage). The `hr_requests` policy implements the same rule set-based, and a test asserts they agree |
 | `can_attach_to_request(request_id)` | requester while `draft`/`returned`, or HR with `requests.edit` |
-| `my_direct_report_ids()`, `my_approval_request_ids()`, `manager_step_request_type_ids()`, `my_role_step_ids()`, `visible_profile_ids()` | sets used by policies as `col in (select …)` (evaluated once per statement) |
+| `my_direct_report_ids()`, `my_approval_request_ids()`, `manager_step_request_type_ids()`, `my_role_step_ids()` | sets used by policies as `col in (select …)` (evaluated once per statement) |
+| `visible_profile_ids()` | profiles whose **name card** the caller may see (active HR / Super Admin staff, own manager, direct reports) — used by `profile_cards` only, never for full `profiles` rows |
 | `org_timezone()`, `org_today()`, `is_business_day(date)`, `add_business_days(date, n)`, `sla_due_at(ts, n)` | organization calendar |
 
 `authenticated` has EXECUTE only on these read-only helpers. The workflow engine, notification and
@@ -185,9 +209,10 @@ A user whose status is `pending`, `info_requested`, `rejected` or `disabled` see
 | request_comments | follow hr_requests, `is_internal = false` only | same, non-internal | all incl. internal (`requests.view`) | `add_request_comment` |
 | leave_balances, leave_requests | own | direct reports | `leave.view` | balances: HR `leave.edit` on `opening_balance`/`entitlement` only (column grants); `used`/`pending`/`adjustment` only through RPCs |
 | leave_adjustments | own | ✗ | `leave.view` | `adjust_leave_balance` |
-| certificates | own, `valid` only | ✗ | `certificates.view` | insert `certificates.create`; update `certificates.edit`/`create` |
+| certificates | own, `valid` only | ✗ | `certificates.view` | RPCs only: `issue_certificate` (`certificates.create`), `revoke_certificate` (`certificates.edit`/`create`); no direct INSERT / UPDATE / DELETE |
 | notifications | own | own | own | update `read_at`, delete own |
-| profiles | self + manager + direct reports + HR staff | same | all (`is_hr` or `users.view`) | self: `full_name, mobile, preferred_language, theme` (+ `registration_*` while pending/info_requested); everything else only through RPCs |
+| profiles (full row) | self only | self only | all (`is_hr` or org `users.view`) | self: `full_name, mobile, preferred_language, theme` (+ `registration_*` while pending/info_requested); everything else only through RPCs |
+| profile_cards (view: `id, full_name, employee_id, status`) | self + manager + direct reports + active HR / Super Admin staff | same | all | none (SELECT only) |
 | user_roles | own | own | `users.view` | `set_user_roles` / `approve_registration` only |
 | roles, role_permissions | read | read | read | `users.administer` (the super_admin role and system-role keys/scopes are protected) |
 | organizations, organization_settings, system_settings | read | read | read | `settings.edit` |
@@ -195,9 +220,10 @@ A user whose status is `pending`, `info_requested`, `rejected` or `disabled` see
 | public_holidays, request_workflow_steps | read | read | read | `settings.edit` |
 | certificate_template_versions | ✗ | ✗ | `settings.view` / `certificates.view` | insert `settings.edit`, or `publish_certificate_template` |
 | notification_settings, email_templates | ✗ | ✗ | `settings.view` | `settings.edit` |
-| email_logs | ✗ | ✗ | `settings.view` / `audit.view` | `log_email` |
-| imports, import_rows | ✗ | ✗ | `employees.create` or `settings.edit` | same |
-| audit_logs | ✗ | ✗ | `audit.view` | append-only (see section 12) |
+| email_logs | ✗ | ✗ | `settings.view` / `audit.view` | `log_email` (service role only) |
+| imports, import_rows, import_sources | ✗ | ✗ | `employees.create` or `settings.edit`, **and** the permission the import type writes (`employees.create`; master data / holidays `settings.edit`; balances `leave.edit`; dependents `personal_data.create/edit`) | same |
+| expiry_alert_runs, expiry_alert_log | ✗ | ✗ | `documents.view` | `run_expiry_alerts` only |
+| audit_logs | ✗ | ✗ | `audit.view` | append-only; triggers, definer RPCs and service-role `log_audit_event` only (section 12) |
 | document_sequences | ✗ | ✗ | ✗ | `next_document_number` only |
 
 Guard triggers add a second line of defence against direct Data API writes by `authenticated`. They
@@ -280,7 +306,7 @@ Arguments marked `= null` / `= …` have defaults. Everything else is required.
 | `set_user_roles(p_user_id uuid, p_role_keys text[])` | org `users.administer`. Only a super admin may grant or revoke `super_admin` or change a super admin's roles; the last super admin is protected | void | forbidden, notFound, roleNotFound, lastSuperAdmin |
 | `set_user_status(p_user_id uuid, p_status text, p_note text = null)` | org `users.edit`. `active` or `disabled`; not on yourself; super admins only by a super admin | void | forbidden, validation, notFound, lastSuperAdmin |
 | `set_user_employee(p_user_id uuid, p_employee_id uuid)` | org `users.edit`; `null` unlinks | void | forbidden, notFound, employeeAlreadyLinked |
-| `record_login()` | any signed-in user, right after sign-in. Sets `last_login_at` and writes `auth.login` | void | unauthorized |
+| `record_login()` | signed-in user whose profile is `pending`, `info_requested` or `active`, right after sign-in. Sets `last_login_at` and writes `auth.login` — **once per auth session** (JWT `session_id`, kept in `changes.session_id`); repeated calls in the same session are no-ops | void | unauthorized, forbidden (disabled / rejected) |
 | `get_employee_manager(p_employee_id uuid)` | anyone who can view the employee | `{id, employee_number, name_ar, name_en, job_title_ar, job_title_en, company_email, avatar_path}` or null | — |
 
 ### Search, dashboard and administration
@@ -289,9 +315,9 @@ Arguments marked `= null` / `= …` have defaults. Everything else is required.
 |---|---|---|---|
 | `global_search(p_query text, p_locale text = 'ar', p_limit int = 20)` | **security invoker**, so RLS applies. Employees by name (Arabic hamza/ya/ta-marbuta folding), number or company e-mail; requests by number; certificates by number. National-ID matches only with `personal_data.view` | rows `(kind, id, title, subtitle, href)`; kind ∈ `employee, request, certificate` | — |
 | `dashboard_stats()` | **security invoker**. The sections present depend on the caller: `employee`, `manager`, `hr`, `admin` (see below) | jsonb | — |
-| `log_audit_event(p_action text, p_entity_type text = null, p_entity_id text = null, p_summary text = null, p_changes jsonb = null)` | any signed-in user or the service role. Action format `a.b[.c]`; sensitive keys are masked | void | forbidden, validation |
+| `log_audit_event(p_action text, p_entity_type text = null, p_entity_id text = null, p_summary text = null, p_changes jsonb = null, p_actor_id uuid = null, p_ip text = null, p_user_agent text = null)` | **service role only** (EXECUTE revoked from `authenticated` / `anon`). Server code calls it through `src/lib/audit.ts` after its own permission check; `p_actor_id` is the verified session user (null = system event, must exist otherwise), `p_ip` / `p_user_agent` come from the end-user request. Action format `a.b[.c]` (≤ 100 chars); sensitive keys are masked; `entity_type = 'employee'` links the row to that employee's Activity tab | void | forbidden, validation (`action`, `actor`) |
 | `claim_notification_emails(p_notification_ids uuid[])` | the actor who caused the notifications (`created_by`), or the service role. Marks them `emailed_at` and returns what is needed to render the e-mail (section 11) | rows | forbidden |
-| `log_email(p_recipient, p_status, p_subject = null, p_template_key = null, p_related_entity_type = null, p_related_entity_id = null, p_provider = null, p_provider_message_id = null, p_error = null)` | active user or the service role | log id | forbidden, validation |
+| `log_email(p_recipient, p_status, p_subject = null, p_template_key = null, p_related_entity_type = null, p_related_entity_id = null, p_provider = null, p_provider_message_id = null, p_error = null)` | **service role only** (`recordEmail` in `src/lib/email/send.ts`) | log id | forbidden, validation |
 | `generate_expiry_alerts()` | service role (cron) or super admin | notifications created | forbidden |
 | `publish_certificate_template(p_template_id uuid, p_change_notes text = null)` | org `settings.edit`. Snapshots a new version | new version | forbidden, notFound |
 | `restore_certificate_template_version(p_template_id uuid, p_version int)` | org `settings.edit`. Restores, then publishes as a new version | void | forbidden, notFound |
@@ -301,8 +327,34 @@ Arguments marked `= null` / `= …` have defaults. Everything else is required.
 
 | Function | Who | Returns |
 |---|---|---|
-| `verify_certificate(p_number text)` | **anon** and authenticated | at most one row `(certificate_number, employee_name, certificate_type, issue_date, status)`. The name follows the certificate language (`ar`, `en`, or `"ar / en"`). Nothing else is exposed |
+| `verify_certificate(p_number text, p_code text = null)` | **anon** and authenticated | at most one row `(certificate_number, employee_name, certificate_type, issue_date, status)`. `employee_name`, `certificate_type` and `issue_date` are filled only when `p_code` matches `certificates.verification_code` (normalized: case and separators ignored); the number alone confirms existence and status. The name follows the certificate language (`ar`, `en`, or `"ar / en"`). Nothing else is exposed |
 | `get_public_branding()` | **anon** and authenticated | `{portal_name_ar/en, company_name_ar/en, logo_bucket: 'branding', logo_path, login_image_path, primary_color, secondary_color, login_title_ar/en, login_subtitle_ar/en, default_language, allow_self_registration, setup_completed}`. Public logo URL: `${SUPABASE_URL}/storage/v1/object/public/branding/${logo_path}` |
+
+### Module RPCs
+
+Added by the module migrations (section 1). **Definer** functions check the caller explicitly
+(`forbidden` otherwise); **invoker** functions add no access — RLS decides what they see or count.
+
+| Function | Kind · who | Returns |
+|---|---|---|
+| `save_request_type(p_id uuid, p_values jsonb)`, `duplicate_request_type(p_source_id uuid, p_key text, p_name_ar text, p_name_en text)`, `save_request_fields(p_request_type_id uuid, p_fields jsonb)`, `save_request_workflow(p_request_type_id uuid, p_steps jsonb)` | definer · active, org `settings.edit`. Atomic builder saves; the workflow and the `requires_*_approval` flags stay in step | uuid / jsonb |
+| `request_type_usage()`, `request_field_usage(p_request_type_id uuid)` | definer · active, org `settings.view` | aggregate rows |
+| `email_log_links(p_notification_ids uuid[])` | definer · active, org `settings.view` or `audit.view` | `(notification_id, type, link, entity_type, entity_id)` |
+| `master_data_usage(p_entity text)` | definer · org `settings.view` or `employees.view` | per-row employee / sub-department counts |
+| `settings_overview()` | definer · active; each section only with its permission | jsonb |
+| `employee_directory_stats(p_manager_id uuid = null)`, `employee_filter_options()`, `employee_manager_candidates(p_employee_id uuid, p_query text, p_limit int)` | invoker | jsonb / rows |
+| `save_employee(p_employee_id uuid, p_employee jsonb, p_compensation jsonb, p_bank jsonb)` | invoker (every write goes through the table policies and guards) · creates / updates an employee with compensation and primary bank account in one transaction | uuid |
+| `get_my_request_access()`, `get_request_capabilities(p_request_id uuid)` | definer · active; flags computed with the same private predicates as the request RPCs | jsonb |
+| `list_request_assignees(p_request_id uuid, p_query text, p_limit int)`, `list_request_handlers()` | definer · callers who may reassign / org `requests.view` | people rows |
+| `request_center_counts(p_now timestamptz, p_month_start timestamptz)` | invoker · all Request Center / Approvals counters in one scan | jsonb |
+| `review_employee_document(p_document_id uuid, p_decision text, p_note text)` | definer · org `documents.approve` (or super admin) | new status |
+| `run_expiry_alerts(p_source text)` | definer · service role (cron), super admin or org `documents.edit` | jsonb summary |
+| `cleanup_orphan_employee_documents(p_min_age interval)` | definer · service role (cron) or super admin | rows removed |
+| `create_certificate_template(p_data jsonb, p_change_notes text)`, `save_certificate_template(p_template_id uuid, p_data jsonb, p_change_notes text, p_expected_version int)`, `publish_certificate_template_draft(p_template_id uuid)`, `restore_certificate_template_draft(p_template_id uuid, p_version int, p_change_notes text)`, `set_certificate_template_active(p_template_id uuid, p_active boolean)`, `set_default_certificate_template(p_template_id uuid)` | definer · org `settings.edit` | uuid / version / void |
+| `issue_certificate(p_certificate_number text, p_request_id uuid, p_employee_id uuid, p_template_id uuid, p_template_version int, p_language text, p_addressed_to text, p_purpose text, p_verification_code text)` | definer · org `certificates.create`; the PDF must already exist in Storage | uuid |
+| `revoke_certificate(p_certificate_id uuid, p_reason text)` | definer · org `certificates.edit` or `certificates.create` | void |
+| `dashboard_employee_breakdown()`, `dashboard_compliance_counts()`, `dashboard_expiry_items(p_days int, p_limit int, p_employee_id uuid)`, `notification_counts()`, `audit_log_facets(p_since timestamptz)` | invoker | jsonb / rows |
+| `report_*_rows(p_filters jsonb)`, `report_summary(p_report text, p_filters jsonb)`, `report_catalog_stats()`, `report_headcount_trend(p_filters jsonb)`, `report_employee_breakdown(p_dimension text, p_filters jsonb)`, `report_sla_rows(p_filters jsonb)`, `report_audit_events(p_filters jsonb)` | invoker · filters re-validated in SQL (uuid / date parsing, whitelisted enums) | rows / jsonb |
 
 `dashboard_stats()` sections:
 
@@ -477,7 +529,7 @@ client-side from `locales/*/notifications.json` (`types.<type>.title/body`) with
 1. Take `notification_ids` from the RPC result.
 2. Call `claim_notification_emails(ids)`. It returns `recipient_email, recipient_name, language, type, params, link, template_key` for types whose `email_enabled` is on, and marks them `emailed_at` (idempotent).
 3. Render `email_templates[template_key]` in `language` and send it.
-4. Call `log_email(...)`.
+4. Call `log_email(...)` through the **service-role** client (`recordEmail`); users cannot write `email_logs`.
 
 Template mapping: `account_invited → account_invitation`, `expiry_alert → {kind}_expiry`, and
 otherwise the same key as the type.
@@ -503,7 +555,9 @@ role.
 - `summary`: a readable label.
 - `employee_id`: the related employee.
 - `actor_id` and `actor_email`.
-- `ip` and `user_agent`, taken from PostgREST request headers.
+- `ip` and `user_agent`: for app events, the end-user request's `x-forwarded-for` / `user-agent`
+  (passed by `src/lib/audit.ts`); for triggers and RPCs, the PostgREST request headers (the Next.js
+  server when the call comes from server code).
 
 **Masking:** `iban`, `basic_salary`, `housing_allowance`, `transport_allowance`, `other_allowance`,
 `total_salary`, `national_id` and `passport_number` are stored as `"***"`, but the field is still
@@ -513,7 +567,17 @@ named. `log_audit_event` masks the same keys.
 `user.roles_update`, `user.enable|disable`, `auth.login`, `leave_balance.initialize|update`,
 `organization.reset`.
 
-**App events** go through `log_audit_event`: `export.<dataset>`, `auth.logout`, `backup.*`, `import.*`.
+**App events** (no row change) are written by server code with `logAuditEvent()` (`src/lib/audit.ts`)
+**after** the action's own permission check: the service-role client calls `log_audit_event` with the
+verified session user (`auth.getClaims().sub`) as `p_actor_id`. A user JWT cannot call the RPC, so the
+trail cannot be forged or flooded from the Data API. Events: `auth.logout`, `auth.password_changed`,
+`export.<dataset>`, `backup.*`, `employee.import`, `import.<type>`, `employee.iban_reveal`,
+`document.*` (upload, replace_file, approve, reject, withdraw, delete, expiry_check), `certificate.revoke`,
+`email.test`, `email_template.test`, `role.permissions_update`, `user.invitation_sent`,
+`user.password_reset_sent`, `user.bootstrap_super_admin` (CLI, no actor).
+
+`auth.login` is written by `record_login()` (section 7): once per auth session, never for disabled or
+rejected accounts.
 
 **Append-only:** UPDATE, DELETE and TRUNCATE are revoked from `authenticated`, `service_role` and the
 owner. A trigger also rejects UPDATE, DELETE and TRUNCATE even if privileges are re-granted. Seeds and
@@ -709,12 +773,15 @@ file:
 5. Prints `PASS`/`FAIL` per check, then **rolls back**.
 
 The script exits non-zero on any failure. Assertions are relative to what already exists, so the
-suite also passes on a database that holds the QA fixtures or other data.
+suite also passes on a database that holds the QA fixtures or real data: document numbers are checked
+against the current `document_sequences` value (locked `FOR UPDATE` for the test), storage counts are
+scoped to the file's own fixture paths, and the organization-reset check compares the configuration with
+a second `seed_defaults()` run instead of hard-coded seed counts.
 
 | File | Covers |
 |---|---|
-| `01_rls_isolation.sql` | employee isolation (rows, compensation, bank, insurance, dependents, documents, requests, leave, comments, notifications); manager visibility (reports' rows, leave and team requests; no compensation, bank, insurance, documents or internal comments); HR visibility; pending/disabled see only their profile; anon limited to the two public RPCs |
-| `02_permissions.sql` | hr_officer vs hr_admin driven by `role_permissions` (and changing rows changes access); audit masking and append-only for super admin, service role and owner; escalation attempts (profile status/link, user_roles inserts, super-admin grants, last super admin via RPC and service role, custom org roles, document path hijacking, certificate issuing); function-privilege lint |
+| `01_rls_isolation.sql` | employee isolation (rows, compensation, bank, insurance, dependents, documents, requests, leave, comments, notifications, full `profiles` rows vs `profile_cards`); manager visibility (reports' rows, leave and team requests; no compensation, bank, insurance, documents or internal comments); HR visibility; pending/disabled see only their profile; anon limited to the two public RPCs |
+| `02_permissions.sql` | hr_officer vs hr_admin driven by `role_permissions` (and changing rows changes access); audit masking and append-only for super admin, service role and owner; `log_audit_event` service-role only (users, disabled users and anon refused), `record_login` once per session and refused for disabled accounts; escalation attempts (profile status/link, user_roles inserts, super-admin grants, last super admin via RPC and service role, custom org roles, document path hijacking, certificate issuing); function-privilege lint |
 | `03_requests_workflow.sql` | numbering, manager→HR routing, notifications and params, self-approval, HR acting on a manager step, acting twice, start/complete/final states, skipped manager steps, non-report manager, return and resume at the right step, reassign, cancel rules, drafts, form validation and visibility, bank and info-update effects, SLA business-day math with holidays, policy vs `can_view_request` equivalence |
 | `04_leave.sql` | day counting (working/calendar, holidays); submit/approve/reject/cancel-before/cancel-after/return-resubmit maths with no double deduction; availability with holds; overlap, gender, max days, empty range, attachment; non-deducting types; adjustments, set/initialize balances, direct-edit restrictions |
 | `05_storage.sql` | `storage.objects` policies per bucket and role (own vs others' documents, confidential files, avatars, request attachments by requester/approver/HR, certificate PDFs valid vs revoked, stamp, branding public read and admin write) |
@@ -749,12 +816,16 @@ the file is stale.
 
 ## 19. Known limitations
 
-- **Managers can read the whole `employees` row of their direct reports.** That includes the
-  identity-document columns (national ID, passport). RLS is row-level. Manager-facing screens should
-  select directory columns only.
+- ~~Managers can read the whole `employees` row of their direct reports~~ — fixed by
+  `20260928210301_employees_fix_personal_column_scope.sql`: column privileges limit `authenticated` to
+  the directory / employment columns; identity and personal columns are read through `employee_records`
+  (masked per row by `private.employee_personal`).
 - **Leave spanning two calendar years is charged to the start date's year.**
-- **`verify_certificate` is keyed by the sequential certificate number.** Anyone can enumerate numbers
-  and learn employee names and certificate types, and nothing else. A per-certificate verification
-  token in the QR URL would close this if needed.
+- ~~`verify_certificate` is keyed by the sequential certificate number~~ — fixed by
+  `20260928210702_certificates_fix_verification_code.sql`: holder details need the per-certificate
+  verification code printed on the PDF (certificates issued before it verify with their status only).
+- **`profile_cards` is a definer view.** It bypasses RLS on `profiles` by design and carries its own row
+  filter (same visibility as the former `profiles` policy branch) and only four display columns; it is
+  SELECT-only. Keep new columns out of it unless every viewer may see them.
 - **Workflow edits apply to requests already in flight.** The next step is resolved when the request
   gets there; no snapshot is taken at submission.

@@ -191,14 +191,18 @@ export async function loadEmployeeContext(
   supabase: ServerSupabaseClient,
   employeeId: string,
 ): Promise<{ employee: IssuingEmployee | null; compensation: IssuingCompensation | null }> {
-  const [{ data: emp, error: empError }, { data: comp }] = await Promise.all([
+  // Identity numbers are not column-readable on `employees`; `employee_records` returns them masked per
+  // caller (the employee themselves or org personal_data.view/edit), so a certificate never prints more
+  // than its issuer may see.
+  const [{ data: emp, error: empError }, { data: identity, error: identityError }, { data: comp }] = await Promise.all([
     supabase
       .from('employees')
       .select(
-        'id, employee_number, name_ar, name_en, nationality, passport_number, national_id, joining_date, job_title:job_titles(name_ar, name_en), department:departments!employees_department_id_fkey(name_ar, name_en)',
+        'id, employee_number, name_ar, name_en, nationality, joining_date, job_title:job_titles(name_ar, name_en), department:departments!employees_department_id_fkey(name_ar, name_en)',
       )
       .eq('id', employeeId)
       .maybeSingle(),
+    supabase.from('employee_records').select('passport_number, national_id').eq('id', employeeId).maybeSingle(),
     supabase
       .from('employee_compensation')
       .select('basic_salary, housing_allowance, transport_allowance, other_allowance, total_salary, currency')
@@ -206,8 +210,11 @@ export async function loadEmployeeContext(
       .maybeSingle(),
   ]);
   if (empError) throw empError;
+  if (identityError) throw identityError;
   return {
-    employee: (emp as IssuingEmployee | null) ?? null,
+    employee: emp
+      ? ({ ...emp, passport_number: identity?.passport_number ?? null, national_id: identity?.national_id ?? null } as IssuingEmployee)
+      : null,
     compensation: (comp as IssuingCompensation | null) ?? null,
   };
 }
