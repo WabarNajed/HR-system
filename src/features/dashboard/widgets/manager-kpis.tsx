@@ -6,8 +6,12 @@ import { formatInteger } from '@/lib/format';
 import { WidgetError } from '../components/widget-parts';
 import { getDashboardStats } from '../queries';
 
-/** Manager KPI row: pending approvals, direct reports, team on leave today, upcoming team leave. */
-export async function ManagerKpis() {
+/**
+ * Manager KPI row: pending approvals, direct reports, team on leave today, upcoming team leave.
+ * Every card links to a team-scoped view. `alongsideHr`: the HR row (org queue) is also on the
+ * dashboard, so the approvals card is labelled as the manager's own queue to avoid contradicting it.
+ */
+export async function ManagerKpis({ employeeId, alongsideHr = false }: { employeeId: string; alongsideHr?: boolean }) {
   const [stats, t, locale] = await Promise.all([getDashboardStats(), getTranslations('dashboard.kpi'), getLocale()]);
   if (!stats.ok) return <WidgetError className="rounded-lg border border-border bg-card" />;
   const s = stats.data.manager;
@@ -16,7 +20,7 @@ export async function ManagerKpis() {
   return (
     <KpiGrid>
       <StatCard
-        label={t('pendingApprovals')}
+        label={alongsideHr ? t('teamApprovals') : t('pendingApprovals')}
         value={n(s.pending_approvals)}
         icon={ClipboardCheckIcon}
         tone={s.pending_approvals > 0 ? 'warning' : 'success'}
@@ -28,7 +32,7 @@ export async function ManagerKpis() {
         value={n(s.direct_reports)}
         icon={UsersIcon}
         tone="primary"
-        href="/employees"
+        href={`/employees?manager=${encodeURIComponent(employeeId)}`}
         hint={t('teamOpenRequests', { count: s.team_open_requests })}
       />
       <StatCard
@@ -36,7 +40,7 @@ export async function ManagerKpis() {
         value={n(s.team_on_leave_today)}
         icon={PalmtreeIcon}
         tone="info"
-        href="/leave"
+        href="/leave?tab=calendar&scope=team"
         hint={t('teamOnLeaveHint', { count: Math.max(0, s.direct_reports - s.team_on_leave_today) })}
       />
       <StatCard
@@ -44,7 +48,7 @@ export async function ManagerKpis() {
         value={n(s.team_upcoming_leave)}
         icon={CalendarClockIcon}
         tone="secondary"
-        href="/leave"
+        href="/leave?scope=team"
         hint={t('upcomingTeamLeaveHint')}
       />
     </KpiGrid>

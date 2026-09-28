@@ -77,8 +77,16 @@ export async function getViewer(ctx: SessionContext): Promise<EmployeeViewer> {
 const DIRECTORY_SELECT_BASE =
   'id, employee_number, name_ar, name_en, company_email, mobile, nationality, employment_status, employment_type, joining_date, avatar_path, archived_at, manager_id, ' +
   'department:departments!department_id(id, name_ar, name_en), job_title:job_titles!job_title_id(id, name_ar, name_en), ' +
-  'location:locations!location_id(id, name_ar, name_en), manager:manager_id(id, name_ar, name_en, employee_number), ' +
+  'location:locations!location_id(id, name_ar, name_en), manager:manager_record(id, name_ar, name_en, employee_number), ' +
   'portal:profiles!profiles_employee_id_fkey(id, status)';
+
+/**
+ * Directory / export / full-record source: the same rows as `employees` (RLS), with identity and
+ * personal columns masked per row by the database (self or org `personal_data.view`/`.edit` only).
+ * `authenticated` cannot select those columns from the `employees` table itself. The manager is
+ * embedded through the `manager_record` computed relationship (the view's self-FK is ambiguous).
+ */
+export const EMPLOYEE_RECORDS = 'employee_records' as const;
 
 /** Directory columns; government-ID data only for org viewers (managers get directory columns only). */
 export function directorySelect(viewer: Pick<EmployeeViewer, 'isOrgViewer'>): string {
@@ -188,7 +196,7 @@ export async function fetchDirectoryPage(
   params: ListParams<DirectorySort, DirectoryFilterKey>,
   viewer: EmployeeViewer,
 ): Promise<{ rows: DirectoryRow[]; total: number }> {
-  let query = supabase.from('employees').select(directorySelect(viewer), { count: 'exact' });
+  let query = supabase.from(EMPLOYEE_RECORDS).select(directorySelect(viewer), { count: 'exact' });
   query = applyDirectoryFilters(query, params, viewer);
   // Team viewers never see Iqama data: a hand-typed `?sort=iqama_expiry_date` must not order by it.
   const sortParams = !viewer.isOrgViewer && params.sort === 'iqama_expiry_date' ? { ...params, sort: 'name' as const } : params;
@@ -199,7 +207,7 @@ export async function fetchDirectoryPage(
     // (PGRST103 — some gateways even drop the connection). Report the real total so the page can
     // send the user to the last page instead of failing. (The portal embed keeps `?portal=` usable.)
     const head = applyDirectoryFilters(
-      supabase.from('employees').select('id, portal:profiles!profiles_employee_id_fkey(id)', { count: 'exact', head: true }),
+      supabase.from(EMPLOYEE_RECORDS).select('id, portal:profiles!profiles_employee_id_fkey(id)', { count: 'exact', head: true }),
       params,
       viewer,
     );
@@ -225,7 +233,7 @@ export async function fetchDirectoryIds(
   const ids: string[] = [];
   const pageSize = 1000;
   for (let from = 0; from < limit; from += pageSize) {
-    let query = supabase.from('employees').select('id, portal:profiles!profiles_employee_id_fkey(id)');
+    let query = supabase.from(EMPLOYEE_RECORDS).select('id, portal:profiles!profiles_employee_id_fkey(id)');
     query = applyDirectoryFilters(query, params, viewer);
     const { data, error } = await query.order('id').range(from, Math.min(from + pageSize, limit) - 1);
     if (error) throw error;
@@ -365,11 +373,10 @@ export async function getEmployeeRecord(id: string, viewer: EmployeeViewer): Pro
   // Identity documents, DOB, address, emergency contact: only for the employee themselves and org
   // viewers holding personal data rights — never selected (and so never serialized) for anyone else.
   const full = isSelf || (viewer.isOrgViewer && (viewer.orgCan('personal_data.view') || viewer.orgCan('personal_data.edit')));
-  const { data, error } = await supabase
-    .from('employees')
-    .select(full ? RECORD_SELECT : TEAM_RECORD_SELECT)
-    .eq('id', id)
-    .maybeSingle();
+  // Full: the masked read model (the database hides personal columns from anyone else as well).
+  const { data, error } = full
+    ? await supabase.from(EMPLOYEE_RECORDS).select(RECORD_SELECT).eq('id', id).maybeSingle()
+    : await supabase.from('employees').select(TEAM_RECORD_SELECT).eq('id', id).maybeSingle();
   if (error) throw error;
   if (!data) return null;
   const row = data as unknown as EmployeeRecord;

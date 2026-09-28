@@ -210,6 +210,7 @@ export type Database = {
           template_version: number | null
           updated_at: string
           updated_by: string | null
+          verification_code: string
         }
         Insert: {
           addressed_to?: string | null
@@ -232,6 +233,7 @@ export type Database = {
           template_version?: number | null
           updated_at?: string
           updated_by?: string | null
+          verification_code?: string
         }
         Update: {
           addressed_to?: string | null
@@ -254,6 +256,7 @@ export type Database = {
           template_version?: number | null
           updated_at?: string
           updated_by?: string | null
+          verification_code?: string
         }
         Relationships: [
           {
@@ -3016,6 +3019,171 @@ export type Database = {
         }
         Relationships: []
       }
+      employee_records: {
+        Row: {
+          address: string | null
+          alt_mobile: string | null
+          archived_at: string | null
+          archived_by: string | null
+          avatar_path: string | null
+          company_email: string | null
+          contract_end_date: string | null
+          contract_start_date: string | null
+          cost_center_id: string | null
+          created_at: string | null
+          created_by: string | null
+          date_of_birth: string | null
+          department_id: string | null
+          division: string | null
+          emergency_contact_mobile: string | null
+          emergency_contact_name: string | null
+          emergency_contact_relationship: string | null
+          employee_number: string | null
+          employer_number: string | null
+          employment_status: string | null
+          employment_type: string | null
+          extra_data: Json | null
+          gender: string | null
+          grade: string | null
+          id: string | null
+          id_type: string | null
+          import_id: string | null
+          iqama_expiry_date: string | null
+          iqama_expiry_hijri: string | null
+          iqama_issue_date: string | null
+          iqama_profession: string | null
+          is_outside_kingdom: boolean | null
+          job_title_id: string | null
+          joining_date: string | null
+          location_id: string | null
+          manager_id: string | null
+          marital_status: string | null
+          mobile: string | null
+          name_ar: string | null
+          name_en: string | null
+          national_id: string | null
+          nationality: string | null
+          passport_expiry_date: string | null
+          passport_number: string | null
+          personal_email: string | null
+          probation_end_date: string | null
+          search_norm: string | null
+          search_text: string | null
+          section: string | null
+          termination_date: string | null
+          updated_at: string | null
+          updated_by: string | null
+        }
+        Insert: {
+          address?: string | null
+          alt_mobile?: string | null
+          archived_at?: string | null
+          archived_by?: string | null
+          avatar_path?: string | null
+          company_email?: string | null
+          contract_end_date?: string | null
+          contract_start_date?: string | null
+          cost_center_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          date_of_birth?: string | null
+          department_id?: string | null
+          division?: string | null
+          emergency_contact_mobile?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_relationship?: string | null
+          employee_number?: string | null
+          employer_number?: string | null
+          employment_status?: string | null
+          employment_type?: string | null
+          extra_data?: Json | null
+          gender?: string | null
+          grade?: string | null
+          id?: string | null
+          id_type?: string | null
+          import_id?: string | null
+          iqama_expiry_date?: string | null
+          iqama_expiry_hijri?: string | null
+          iqama_issue_date?: string | null
+          iqama_profession?: string | null
+          is_outside_kingdom?: boolean | null
+          job_title_id?: string | null
+          joining_date?: string | null
+          location_id?: string | null
+          manager_id?: string | null
+          marital_status?: string | null
+          mobile?: string | null
+          name_ar?: string | null
+          name_en?: string | null
+          national_id?: string | null
+          nationality?: string | null
+          passport_expiry_date?: string | null
+          passport_number?: string | null
+          personal_email?: string | null
+          probation_end_date?: string | null
+          search_norm?: string | null
+          search_text?: string | null
+          section?: string | null
+          termination_date?: string | null
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Update: {
+          address?: string | null
+          alt_mobile?: string | null
+          archived_at?: string | null
+          archived_by?: string | null
+          avatar_path?: string | null
+          company_email?: string | null
+          contract_end_date?: string | null
+          contract_start_date?: string | null
+          cost_center_id?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          date_of_birth?: string | null
+          department_id?: string | null
+          division?: string | null
+          emergency_contact_mobile?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_relationship?: string | null
+          employee_number?: string | null
+          employer_number?: string | null
+          employment_status?: string | null
+          employment_type?: string | null
+          extra_data?: Json | null
+          gender?: string | null
+          grade?: string | null
+          id?: string | null
+          id_type?: string | null
+          import_id?: string | null
+          iqama_expiry_date?: string | null
+          iqama_expiry_hijri?: string | null
+          iqama_issue_date?: string | null
+          iqama_profession?: string | null
+          is_outside_kingdom?: boolean | null
+          job_title_id?: string | null
+          joining_date?: string | null
+          location_id?: string | null
+          manager_id?: string | null
+          marital_status?: string | null
+          mobile?: string | null
+          name_ar?: string | null
+          name_en?: string | null
+          national_id?: string | null
+          nationality?: string | null
+          passport_expiry_date?: string | null
+          passport_number?: string | null
+          personal_email?: string | null
+          probation_end_date?: string | null
+          search_norm?: string | null
+          search_text?: string | null
+          section?: string | null
+          termination_date?: string | null
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       expiry_items: {
         Row: {
           department_id: string | null
@@ -3091,6 +3259,27 @@ export type Database = {
           search_text?: string | null
           source_table?: string | null
           subject?: string | null
+        }
+        Relationships: []
+      }
+      profile_cards: {
+        Row: {
+          employee_id: string | null
+          full_name: string | null
+          id: string | null
+          status: string | null
+        }
+        Insert: {
+          employee_id?: string | null
+          full_name?: string | null
+          id?: string | null
+          status?: string | null
+        }
+        Update: {
+          employee_id?: string | null
+          full_name?: string | null
+          id?: string | null
+          status?: string | null
         }
         Relationships: []
       }
@@ -3267,7 +3456,7 @@ export type Database = {
         Returns: number
       }
       issue_certificate: {
-        Args: { p_addressed_to?: string; p_certificate_number: string; p_employee_id: string; p_language: string; p_purpose?: string; p_request_id: string; p_template_id: string; p_template_version: number }
+        Args: { p_addressed_to?: string; p_certificate_number: string; p_employee_id: string; p_language: string; p_purpose?: string; p_request_id: string; p_template_id: string; p_template_version: number; p_verification_code?: string }
         Returns: string
       }
       list_request_assignees: {
@@ -3294,12 +3483,69 @@ export type Database = {
           }[]
       }
       log_audit_event: {
-        Args: { p_action: string; p_changes?: Json; p_entity_id?: string; p_entity_type?: string; p_summary?: string }
+        Args: { p_action: string; p_actor_id?: string; p_changes?: Json; p_entity_id?: string; p_entity_type?: string; p_ip?: string; p_summary?: string; p_user_agent?: string }
         Returns: undefined
       }
       log_email: {
         Args: { p_error?: string; p_provider?: string; p_provider_message_id?: string; p_recipient: string; p_related_entity_id?: string; p_related_entity_type?: string; p_status: string; p_subject?: string; p_template_key?: string }
         Returns: string
+      }
+      manager_record: {
+        Args: { "": unknown }
+        Returns: {
+            address: string | null
+            alt_mobile: string | null
+            archived_at: string | null
+            archived_by: string | null
+            avatar_path: string | null
+            company_email: string | null
+            contract_end_date: string | null
+            contract_start_date: string | null
+            cost_center_id: string | null
+            created_at: string
+            created_by: string | null
+            date_of_birth: string | null
+            department_id: string | null
+            division: string | null
+            emergency_contact_mobile: string | null
+            emergency_contact_name: string | null
+            emergency_contact_relationship: string | null
+            employee_number: string | null
+            employer_number: string | null
+            employment_status: string
+            employment_type: string | null
+            extra_data: Json
+            gender: string | null
+            grade: string | null
+            id: string
+            id_type: string | null
+            import_id: string | null
+            iqama_expiry_date: string | null
+            iqama_expiry_hijri: string | null
+            iqama_issue_date: string | null
+            iqama_profession: string | null
+            is_outside_kingdom: boolean | null
+            job_title_id: string | null
+            joining_date: string | null
+            location_id: string | null
+            manager_id: string | null
+            marital_status: string | null
+            mobile: string | null
+            name_ar: string | null
+            name_en: string | null
+            national_id: string | null
+            nationality: string | null
+            passport_expiry_date: string | null
+            passport_number: string | null
+            personal_email: string | null
+            probation_end_date: string | null
+            search_norm: string | null
+            search_text: string | null
+            section: string | null
+            termination_date: string | null
+            updated_at: string
+            updated_by: string | null
+          }[]
       }
       master_data_usage: {
         Args: { p_entity: string }
@@ -3596,6 +3842,10 @@ export type Database = {
             top_category: string
           }[]
       }
+      request_center_counts: {
+        Args: { p_month_start?: string; p_now?: string }
+        Returns: Json
+      }
       request_field_usage: {
         Args: { p_request_type_id: string }
         Returns: {
@@ -3700,7 +3950,7 @@ export type Database = {
         Returns: undefined
       }
       verify_certificate: {
-        Args: { p_number: string }
+        Args: { p_code?: string; p_number: string }
         Returns: {
             certificate_number: string
             certificate_type: string

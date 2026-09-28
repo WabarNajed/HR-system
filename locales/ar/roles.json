@@ -44,7 +44,11 @@
     "unsaved": "{count, plural, one {تغيير واحد غير محفوظ} two {تغييران غير محفوظين} few {# تغييرات غير محفوظة} many {# تغييرًا غير محفوظ} other {# تغيير غير محفوظ}}",
     "module": "الوحدة",
     "toggleColumn": "تبديل صلاحية «{action}» لجميع الوحدات",
-    "toggleRow": "تبديل جميع صلاحيات «{module}»"
+    "toggleRow": "تبديل جميع صلاحيات «{module}»",
+    "allModules": "جميع الوحدات",
+    "moduleSummary": "{granted} من {total} ممنوحة",
+    "changedCount": "{count, plural, one {تغيير واحد} two {تغييران} few {# تغييرات} many {# تغييرًا} other {# تغيير}}",
+    "allActions": "جميع صلاحيات هذه الوحدة"
   },
   "members": {
     "title": "الأعضاء",

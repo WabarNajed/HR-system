@@ -220,7 +220,8 @@
     "selectedFilters": "{count} selected",
     "noFilterOptions": "No options",
     "updating": "Updating…",
-    "total": "{count, plural, =0 {No records} one {# record} other {# records}}"
+    "total": "{count, plural, =0 {No records} one {# record} other {# records}}",
+    "exportReady": "Your export file is ready."
   },
   "pagination": {
     "label": "Pagination",
@@ -319,7 +320,8 @@
     "nextSlide": "Next",
     "sortedAscending": "sorted ascending",
     "sortedDescending": "sorted descending",
-    "required": "required"
+    "required": "required",
+    "suggestions": "Suggestions"
   },
   "dev": {
     "galleryTitle": "UI gallery",
@@ -343,5 +345,20 @@
     "generatedBy": "By {name}",
     "search": "Search: {query}",
     "rowLimit": "Showing the first {count} records"
+  },
+  "calendar": {
+    "navigation": "Month navigation",
+    "previousMonth": "Go to the previous month",
+    "nextMonth": "Go to the next month",
+    "chooseMonth": "Choose the month",
+    "chooseYear": "Choose the year",
+    "weekNumber": "Week {week}",
+    "weekNumberHeader": "Week number",
+    "todayDay": "Today, {date}",
+    "selectedDay": "{date}, selected"
+  },
+  "toast": {
+    "region": "Notifications",
+    "close": "Close notification"
   }
 }

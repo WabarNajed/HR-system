@@ -4,6 +4,7 @@ import { PrinterIcon, UsersRoundIcon } from 'lucide-react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useLocale } from 'next-intl';
 import { useEffect, useMemo, useState, useTransition } from 'react';
+import { ErrorState } from '@/components/shared/error-state';
 import { PageHeader } from '@/components/shared/page-header';
 import { KpiGrid, PageStack } from '@/components/shared/responsive-grid';
 import { SegmentedTabs } from '@/components/shared/link-tabs';
@@ -32,9 +33,14 @@ export type ReportViewProps = {
   state: ReportFilterState;
   options: Partial<Record<string, FilterOption[]>>;
   employeeOptions: FacetOption[];
-  summary: ReportSummary;
+  /** KPI values + chart series (null when the summary query failed — see `summaryErrorKey`). */
+  summary: ReportSummary | null;
+  /** i18n key of the summary load error (src/lib/errors.ts), or null. */
+  summaryErrorKey?: string | null;
   rows: Record<string, unknown>[];
   total: number;
+  /** i18n key of the table load error (src/lib/errors.ts), or null. */
+  tableErrorKey?: string | null;
   /** i18n key explaining why export is unavailable (null = allowed). */
   exportDisabledKey: string | null;
   teamScope: boolean;
@@ -99,9 +105,11 @@ export function ReportView({
   state,
   options,
   employeeOptions,
-  summary,
+  summary: loadedSummary,
+  summaryErrorKey = null,
   rows,
   total,
+  tableErrorKey = null,
   exportDisabledKey,
   teamScope,
   generatedAt,
@@ -117,6 +125,10 @@ export function ReportView({
   const [chartIndex, setChartIndex] = useState(0);
 
   useEffect(() => rememberReport(reportKey), [reportKey]);
+
+  const summary = loadedSummary ?? EMPTY_SUMMARY;
+  // A failed section re-runs the server render (the other sections keep their data meanwhile).
+  const retry = () => startTransition(() => router.refresh());
 
   const navigate = (patch: FilterPatch) => {
     const next = mergeSearchParams(searchParams, patch);
@@ -140,7 +152,7 @@ export function ReportView({
   const chartHasData = def.charts.some((c) =>
     (summary.charts[c.key] ?? []).some((p) => c.series.some((s) => Number((p as Record<string, unknown>)[s.key]) > 0)),
   );
-  const showChart = Boolean(chart) && (chartHasData || total > 0);
+  const showChart = !summaryErrorKey && Boolean(chart) && (chartHasData || total > 0);
   const GroupIcon = def.icon;
   const kpiCount = Math.min(Math.max(def.kpis.length, 3), 5) as 3 | 4 | 5;
 
@@ -195,19 +207,29 @@ export function ReportView({
         className={cn('flex flex-col gap-5 transition-opacity duration-200', isPending && 'pointer-events-none opacity-60')}
         aria-busy={isPending || undefined}
       >
-        <KpiGrid count={kpiCount} className={cn(kpiCount === 5 && 'xl:grid-cols-5', kpiCount === 3 && 'lg:grid-cols-3')}>
-          {def.kpis.map((kpi, i) => (
-            <StatCard
-              key={kpi.key}
-              className={cn(def.kpis.length % 2 === 1 && i === def.kpis.length - 1 && 'max-lg:col-span-2')}
-              label={t(kpi.labelKey)}
-              value={formatValue(summary.kpis[kpi.key] ?? (kpi.format === 'integer' ? 0 : null), kpi.format, locale, t)}
-              icon={kpi.icon}
-              tone={kpi.tone}
-              hint={kpiHint(kpi, summary.kpis, locale, t)}
-            />
-          ))}
-        </KpiGrid>
+        {summaryErrorKey ? (
+          <ErrorState
+            variant="card"
+            title={t('reports.view.summaryFailed')}
+            description={t(summaryErrorKey)}
+            onRetry={retry}
+            className="print:hidden"
+          />
+        ) : (
+          <KpiGrid count={kpiCount} className={cn(kpiCount === 5 && 'xl:grid-cols-5', kpiCount === 3 && 'lg:grid-cols-3')}>
+            {def.kpis.map((kpi, i) => (
+              <StatCard
+                key={kpi.key}
+                className={cn(def.kpis.length % 2 === 1 && i === def.kpis.length - 1 && 'max-lg:col-span-2')}
+                label={t(kpi.labelKey)}
+                value={formatValue(summary.kpis[kpi.key] ?? (kpi.format === 'integer' ? 0 : null), kpi.format, locale, t)}
+                icon={kpi.icon}
+                tone={kpi.tone}
+                hint={kpiHint(kpi, summary.kpis, locale, t)}
+              />
+            ))}
+          </KpiGrid>
+        )}
 
         {chart && showChart ? (
           <section
@@ -245,9 +267,21 @@ export function ReportView({
             <h2 id="report-table-title" className="text-section-title text-foreground">
               {t(def.tableTitleKey ?? 'reports.view.details')}
             </h2>
-            <span className="text-meta text-muted-foreground numeric">{t('reports.view.rowsTotal', { count: total })}</span>
+            {tableErrorKey ? null : (
+              <span className="text-meta text-muted-foreground numeric">{t('reports.view.rowsTotal', { count: total })}</span>
+            )}
           </div>
-          <ReportTable def={def} rows={rows} total={total} filtered={filtered} />
+          {tableErrorKey ? (
+            <ErrorState
+              variant="card"
+              title={t('reports.view.tableFailed')}
+              description={t(tableErrorKey)}
+              onRetry={retry}
+              className="print:hidden"
+            />
+          ) : (
+            <ReportTable def={def} rows={rows} total={total} filtered={filtered} />
+          )}
         </section>
       </div>
 
@@ -257,6 +291,8 @@ export function ReportView({
 }
 
 /** Print: hide the app chrome and interactive controls; keep header, KPIs, chart and table. */
+const EMPTY_SUMMARY: ReportSummary = { kpis: {}, charts: {} };
+
 const PRINT_CSS = `
 @media print {
   @page { size: A4 landscape; margin: 12mm; }

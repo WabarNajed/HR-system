@@ -1,7 +1,8 @@
 'use client';
 
 import type { ColumnDef } from '@tanstack/react-table';
-import { CalendarDaysIcon, CircleDotIcon, CircleOffIcon, CirclePowerIcon, InfoIcon, PencilIcon, PlusIcon, Trash2Icon } from 'lucide-react';
+import { CalendarDaysIcon, CircleDotIcon, CircleOffIcon, CirclePowerIcon, InfoIcon, PencilIcon, PlusIcon, Trash2Icon, UploadIcon } from 'lucide-react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { useId, useMemo, useState, useTransition, type ReactNode } from 'react';
@@ -9,6 +10,7 @@ import { toast } from 'sonner';
 import { actionsColumn, DataTable, DataTableExportMenu, type FilterDef } from '@/components/data-table';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog';
 import { DatePicker } from '@/components/shared/date-picker';
+import { PageHeader } from '@/components/shared/page-header';
 import { StatusBadge } from '@/components/shared/status-badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -18,6 +20,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Sheet, SheetBody, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Switch } from '@/components/ui/switch';
+import { SimpleTooltip } from '@/components/ui/tooltip';
 import { daysBetween } from '@/lib/dates';
 import type { Locale } from '@/lib/i18n/config';
 import { localized } from '@/lib/i18n/localized';
@@ -188,6 +191,7 @@ export function HolidaysManager({
   canEdit,
   canExport = false,
   yearParam = 'year',
+  page,
 }: {
   rows: HolidayRow[];
   year: number;
@@ -198,6 +202,12 @@ export function HolidaysManager({
   /** `settings.export`: export the selected year (Excel / CSV / PDF). */
   canExport?: boolean;
   yearParam?: string;
+  /**
+   * Settings route: render the master-data page header (Import + Add, KPIs below) like departments;
+   * inside the /leave tab the Add button stays in the table toolbar. `importHref` null = no import
+   * access (data management).
+   */
+  page?: { title: string; description: string; importHref: string | null; kpis?: ReactNode };
 }) {
   const t = useTranslations('leave.holidays');
   const tc = useTranslations('common');
@@ -323,8 +333,46 @@ export function HolidaysManager({
       {t('add')}
     </Button>
   ) : null;
+  const importLink = (size?: 'sm') =>
+    page?.importHref ? (
+      <Button variant="outline" size={size} asChild>
+        <Link href={page.importHref}>
+          <UploadIcon />
+          {tc('import')}
+        </Link>
+      </Button>
+    ) : null;
 
-  return (
+  // Settings page header (master-data pattern: Import + Add in the header, Export in the toolbar).
+  const header = page ? (
+    <PageHeader
+      compact
+      title={page.title}
+      description={page.description}
+      actions={
+        <>
+          {importLink()}
+          {canEdit ? (
+            <Button onClick={() => setSheet({ open: true, row: null })}>
+              <PlusIcon />
+              {t('add')}
+            </Button>
+          ) : (
+            <SimpleTooltip content={t('readOnly')}>
+              <span tabIndex={0}>
+                <Button disabled>
+                  <PlusIcon />
+                  {t('add')}
+                </Button>
+              </span>
+            </SimpleTooltip>
+          )}
+        </>
+      }
+    />
+  ) : null;
+
+  const content = (
     <div className="flex flex-col gap-3">
       <DataTable
         tableId="public-holidays"
@@ -345,7 +393,7 @@ export function HolidaysManager({
               options={years.map((y) => ({ value: String(y), label: String(y) }))}
             />
             {canExport ? <DataTableExportMenu dataset="public_holidays" queryString={`year=${year}`} /> : null}
-            {addButton}
+            {page ? null : addButton}
           </>
         }
         defaultSort={{ id: 'start_date', desc: false }}
@@ -355,7 +403,12 @@ export function HolidaysManager({
           icon: CalendarDaysIcon,
           title: t('emptyTitle', { year }),
           description: canEdit ? t('emptyDescription') : t('emptyReadOnly'),
-          action: canEdit ? addButton : undefined,
+          action: canEdit ? (
+            <>
+              {addButton}
+              {importLink('sm')}
+            </>
+          ) : undefined,
         }}
         renderMobileCard={(r) => (
           <div className="flex items-center justify-between gap-3">
@@ -406,5 +459,14 @@ export function HolidaysManager({
         </>
       ) : null}
     </div>
+  );
+  return page ? (
+    <>
+      {header}
+      {page.kpis}
+      {content}
+    </>
+  ) : (
+    content
   );
 }

@@ -7,13 +7,15 @@ import { deliverRegistrationEmails } from '@/features/users/registration-emails'
 import { ActionError, fail, ok, withAction } from '@/lib/action';
 import { logAuditEvent } from '@/lib/audit';
 import { safeNextPath } from '@/lib/auth/guards';
+import { canSendAccountEmails, deliverSelfServicePasswordReset, portalSignUpEnabled, registerSelfService } from '@/lib/auth/provisioning';
 import { getPublicBranding } from '@/lib/branding';
 import { mapError } from '@/lib/errors';
-import { LOCALE_COOKIE, isLocale, type Locale } from '@/lib/i18n/config';
+import { LOCALE_COOKIE, defaultLocale, isLocale, type Locale } from '@/lib/i18n/config';
 import { writeLocaleCookie } from '@/lib/i18n/cookie';
 import { siteUrl } from '@/lib/supabase/env';
 import { createClient } from '@/lib/supabase/server';
 import { isRecentLinkSession } from './link-session';
+import { strictNextPath } from './next-path';
 import { forgotPasswordSchema, loginSchema, registerSchema, resetPasswordSchema } from './schemas';
 
 /**
@@ -60,7 +62,8 @@ export const signIn = withAction(
       return fail(key === 'errors.generic' ? 'errors.invalidCredentials' : key);
     }
     await afterSignIn(data.user.id);
-    redirect(safeNextPath(next));
+    // strictNextPath rejects control characters / backslashes / other origins (open-redirect guard).
+    redirect(safeNextPath(strictNextPath(next)));
   },
   { auth: 'none', scope: 'auth.signIn' },
 );
@@ -87,6 +90,18 @@ export const signUp = withAction(
   async ({ fullName, employeeNumber, email, mobile, password, language }) => {
     const branding = await getPublicBranding();
     if (!branding.isFallback && !branding.allowSelfRegistration) throw new ActionError('errors.signupDisabled');
+    if (await portalSignUpEnabled()) {
+      // Portal e-mail (bilingual `registration_confirm`, applicant's language) instead of GoTrue's default.
+      const { newUserId, sendConfirmation } = await registerSelfService({ email, password, fullName, mobile, employeeNumber, language });
+      await writeLocaleCookie(language);
+      after(async () => {
+        await sendConfirmation();
+        // The sign-up trigger notified the registration reviewers; e-mail them (service role, idempotent).
+        if (newUserId) await deliverRegistrationEmails(newUserId, ['registration_submitted']);
+      });
+      // Same answer whether or not the address is already registered.
+      return ok({ needsConfirmation: true as const, email });
+    }
     const supabase = await createClient();
     const { data, error } = await supabase.auth.signUp({
       email,
@@ -113,6 +128,14 @@ export const signUp = withAction(
 export const requestPasswordReset = withAction(
   forgotPasswordSchema,
   async ({ email }) => {
+    if (canSendAccountEmails()) {
+      // Portal e-mail (bilingual `password_reset` in the account's language). Runs after the response,
+      // so neither the answer nor its timing reveals whether the address exists.
+      const cookieLocale = (await cookies()).get(LOCALE_COOKIE)?.value;
+      const locale: Locale = isLocale(cookieLocale) ? cookieLocale : defaultLocale;
+      after(() => deliverSelfServicePasswordReset(email, locale));
+      return ok({ email });
+    }
     const supabase = await createClient();
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${siteUrl()}/auth/callback?next=/reset-password`,

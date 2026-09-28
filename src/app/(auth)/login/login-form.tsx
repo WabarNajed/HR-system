@@ -10,14 +10,15 @@ import { useErrorMessage } from '@/components/ui/form';
 import { InputGroup } from '@/components/ui/input-group';
 import { Label } from '@/components/ui/label';
 import { PasswordInput } from '@/features/auth/components/password-input';
-import type { LoginNotice } from '@/features/auth/components/login-form';
 import { signInWithForm, type LoginFormState } from './actions';
+import type { LoginNotice } from './notice';
 
 const INITIAL: LoginFormState = { error: null, fieldErrors: {}, email: '' };
 
 /**
- * Sign-in form. Progressive enhancement: `<form method="POST" action={serverAction}>` (uppercase, as React renders it), so a submit
- * before hydration POSTs to the Server Action (React renders the action id into the markup) —
+ * Sign-in form. Progressive enhancement: `<form action={serverAction}>` — React itself renders
+ * `method="POST"` + the action id for a Server Action (setting `method` here is a React error), so a
+ * submit before hydration POSTs to the Server Action —
  * e-mail and password are never put in a URL. Uncontrolled inputs keep what the user typed across
  * a failed attempt; field errors and the alert come back from the server as i18n keys.
  */
@@ -41,7 +42,7 @@ export function LoginForm({ next, notice, allowRegister }: { next?: string; noti
   const noticeTone = notice === 'passwordUpdated' || notice === 'signedOut' ? 'success' : notice === 'linkExpired' ? 'warning' : 'info';
 
   return (
-    <form method="POST" action={formAction} noValidate className="flex flex-col gap-4" aria-busy={pending}>
+    <form action={formAction} noValidate className="flex flex-col gap-4" aria-busy={pending}>
       <input type="hidden" name="next" value={next ?? ''} />
 
       {!error && notice ? (

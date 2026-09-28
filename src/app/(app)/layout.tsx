@@ -7,9 +7,12 @@ import { PermissionsProvider } from '@/components/shared/permission-gate';
 import { AppShell } from '@/components/shell/app-shell';
 import { NAV_GROUPS } from '@/components/shell/nav-config';
 import { SIDEBAR_COOKIE, type ShellUser } from '@/components/shell/types';
+import { SessionTimeoutGuard } from '@/features/auth/components/session-timeout-guard';
 import { getSessionState, type SessionContext } from '@/lib/auth/session';
 import { requireActiveUser } from '@/lib/auth/guards';
 import { brandingPortalName, getPublicBranding } from '@/lib/branding';
+import { ClientMessages } from '@/lib/i18n/client-messages';
+import { APP_CLIENT_NAMESPACES } from '@/lib/i18n/client-namespaces';
 import { employeeDisplayName, localized } from '@/lib/i18n/localized';
 import { can, checkAccess } from '@/lib/permissions';
 import { createClient } from '@/lib/supabase/server';
@@ -19,6 +22,27 @@ async function unreadCount(): Promise<number | null> {
     const supabase = await createClient({ timeoutMs: 3000 });
     const { count, error } = await supabase.from('notifications').select('id', { count: 'exact', head: true }).is('read_at', null);
     return error ? null : (count ?? 0);
+  } catch (error) {
+    unstable_rethrow(error);
+    return null;
+  }
+}
+
+/**
+ * Idle-session limit (Settings › Security › `organization_settings.session_timeout_minutes`, readable
+ * by every active user). `null` when it cannot be read — the guard is then not mounted (the Supabase
+ * session itself still expires).
+ */
+async function sessionTimeoutMinutes(): Promise<number | null> {
+  try {
+    const supabase = await createClient({ timeoutMs: 3000 });
+    const { data, error } = await supabase.from('organization_settings').select('session_timeout_minutes').maybeSingle();
+    if (error) {
+      console.error('[shell] session timeout lookup failed:', error.code, error.message);
+      return null;
+    }
+    const minutes = data?.session_timeout_minutes;
+    return typeof minutes === 'number' && Number.isFinite(minutes) && minutes > 0 ? minutes : null;
   } catch (error) {
     unstable_rethrow(error);
     return null;
@@ -38,9 +62,10 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   if (state.status === 'unavailable') return <ConfigurationRequired reason={state.reason} />;
 
   const ctx = await requireActiveUser();
-  const [branding, unread, cookieStore, t] = await Promise.all([
+  const [branding, unread, timeoutMinutes, cookieStore, t] = await Promise.all([
     getPublicBranding(),
     unreadCount(),
+    sessionTimeoutMinutes(),
     cookies(),
     getTranslations('common'),
   ]);
@@ -59,17 +84,20 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   };
 
   return (
-    <PermissionsProvider permissions={Array.from(ctx.permissions)} roles={ctx.roles}>
-      <AppShell
-        branding={{ portalName: brandingPortalName(branding, ctx.locale, t('appName')), logoUrl: branding.logoUrl }}
-        user={user}
-        permissions={{ canAddEmployee: can(ctx, 'employees.create') }}
-        visibleNavIds={visibleNavIds}
-        initialCollapsed={cookieStore.get(SIDEBAR_COOKIE)?.value === '1'}
-        initialUnread={unread}
-      >
-        {children}
-      </AppShell>
-    </PermissionsProvider>
+    <ClientMessages ns={APP_CLIENT_NAMESPACES}>
+      <PermissionsProvider permissions={Array.from(ctx.permissions)} roles={ctx.roles}>
+        <AppShell
+          branding={{ portalName: brandingPortalName(branding, ctx.locale, t('appName')), logoUrl: branding.logoUrl }}
+          user={user}
+          permissions={{ canAddEmployee: can(ctx, 'employees.create') }}
+          visibleNavIds={visibleNavIds}
+          initialCollapsed={cookieStore.get(SIDEBAR_COOKIE)?.value === '1'}
+          initialUnread={unread}
+        >
+          {children}
+        </AppShell>
+        {timeoutMinutes ? <SessionTimeoutGuard timeoutMinutes={timeoutMinutes} /> : null}
+      </PermissionsProvider>
+    </ClientMessages>
   );
 }

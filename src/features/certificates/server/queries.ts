@@ -208,7 +208,7 @@ export async function loadPublishedTemplate(
 /* ─── Issued certificates ─────────────────────────────────────────────────── */
 
 const ISSUED_COLUMNS =
-  'id, certificate_number, employee_id, request_id, certificate_type, language, addressed_to, purpose, issue_date, status, storage_path, revoked_at, revoke_reason, created_at, employee:employees(id, employee_number, name_ar, name_en), template:certificate_templates(name_ar, name_en)';
+  'id, certificate_number, employee_id, request_id, certificate_type, language, addressed_to, purpose, issue_date, status, storage_path, verification_code, revoked_at, revoke_reason, created_at, employee:employees(id, employee_number, name_ar, name_en), template:certificate_templates(name_ar, name_en)';
 
 type RawIssued = Omit<IssuedCertificateRow, 'template_name_ar' | 'template_name_en'> & {
   template: { name_ar: string | null; name_en: string | null } | null;

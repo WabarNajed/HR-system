@@ -70,12 +70,13 @@ export function CertificateRequestsTable({ rows, total, hrView, canIssue, reques
               employee={row.original.employee}
               subtitle={row.original.employee.employee_number ? <bdi dir="ltr">{row.original.employee.employee_number}</bdi> : null}
               size="sm"
+              className="max-w-48"
             />
           ) : (
             '—'
           ),
         enableSorting: false,
-        meta: { label: t('fields.employee'), width: '13rem' },
+        meta: { label: t('fields.employee'), width: '12rem' },
       },
       {
         id: 'type',
@@ -89,12 +90,18 @@ export function CertificateRequestsTable({ rows, total, hrView, canIssue, reques
                   {labels.language(row.original.language)}
                 </Badge>
               ) : null}
-              {row.original.addressed_to ? <span className="truncate">{row.original.addressed_to}</span> : null}
+              {row.original.addressed_to ? (
+                <span className="min-w-0 truncate" title={row.original.addressed_to}>
+                  {row.original.addressed_to}
+                </span>
+              ) : null}
             </div>
           </div>
         ),
         enableSorting: false,
-        meta: { label: t('fields.type') },
+        // Free text (addressee): `max-w-0` stops its nowrap text from widening the auto-layout column and
+        // `w-full` hands this column the remaining width (at least `width`), so the addressee truncates instead.
+        meta: { label: t('fields.type'), width: '9rem', cellClassName: 'w-full max-w-0' },
       },
       {
         id: 'created_at',

@@ -27,6 +27,7 @@ import {
   listAuditLogs,
   type AuditFacet,
 } from '@/features/audit/queries';
+import { getAuditSummaryLookups } from '@/features/audit/summary';
 import { toAuditView } from '@/features/audit/view';
 import { requireAccess } from '@/lib/auth/guards';
 import { formatInteger } from '@/lib/format';
@@ -87,8 +88,11 @@ export default async function AuditLogsPage({ searchParams }: { searchParams: Pr
     const actorIds = [...list.rows.map((r) => r.actor_id), event?.actor_id, ...facets.filter((f) => f.facet === 'actor').map((f) => f.value)].filter(
       (v): v is string => Boolean(v),
     );
-    const actors = await getActorProfiles(supabase, actorIds);
-    data = { list, facets, facets24h, event, actors, scopedEmployee };
+    const [actors, lookups] = await Promise.all([
+      getActorProfiles(supabase, actorIds),
+      getAuditSummaryLookups(supabase, event ? [...list.rows, event] : list.rows),
+    ]);
+    data = { list, facets, facets24h, event, actors, lookups, scopedEmployee };
   } catch (error) {
     console.error('[audit] load failed', error);
     return (
@@ -99,13 +103,13 @@ export default async function AuditLogsPage({ searchParams }: { searchParams: Pr
     );
   }
 
-  const { list, facets, facets24h, event, actors, scopedEmployee } = data;
+  const { list, facets, facets24h, event, actors, lookups, scopedEmployee } = data;
   if (params.page > 1 && list.rows.length === 0 && list.total <= params.from) {
     const last = pageCount(list.total, params.pageSize);
     redirect(`/admin/audit-logs?${mergeSearchParams(sp, { page: last > 1 ? last : null }).toString()}`);
   }
-  const rows = list.rows.map((r) => toAuditView(r, ctx, ta, actors));
-  const initialEvent = event ? (rows.find((r) => r.id === Number(event.id)) ?? toAuditView(event, ctx, ta, actors)) : null;
+  const rows = list.rows.map((r) => toAuditView(r, ctx, ta, actors, lookups));
+  const initialEvent = event ? (rows.find((r) => r.id === Number(event.id)) ?? toAuditView(event, ctx, ta, actors, lookups)) : null;
 
   // Filter options with counts (whole log).
   const actionFacets = facets.filter((f) => f.facet === 'action');

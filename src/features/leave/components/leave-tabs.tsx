@@ -175,6 +175,7 @@ export async function BalancesTab({ sp, ctx, access, settings, locale }: TabProp
         typeOptions={typeOptions(deducting.length ? deducting : types, locale).map(({ value, label }) => ({ value, label }))}
         departmentOptions={departments}
         canEdit={access.orgEdit}
+        lockedEmployeeId={access.canEditOwnBalances ? null : access.employeeId}
         canExport={access.canExport}
         emptyAction={access.orgEdit && scope === 'org' ? <InitializeBalancesButton year={year} variant="default" /> : undefined}
       />

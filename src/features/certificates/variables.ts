@@ -36,6 +36,7 @@ export const TEMPLATE_VARIABLES = [
   { key: 'company_phone', group: 'company' },
   { key: 'company_website', group: 'company' },
   { key: 'certificate_number', group: 'certificate' },
+  { key: 'verification_code', group: 'certificate' },
   { key: 'current_date', group: 'certificate' },
   { key: 'current_date_hijri', group: 'certificate' },
   { key: 'addressed_to', group: 'certificate' },

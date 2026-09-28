@@ -17,7 +17,7 @@ import { SearchXIcon } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { useCallback, useEffect, useMemo, useState, type KeyboardEvent, type MouseEvent, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent, type MouseEvent, type ReactNode, type RefObject } from 'react';
 import { EmptyState } from '@/components/shared/empty-state';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -79,7 +79,10 @@ export type DataTableProps<TData> = {
   density?: 'default' | 'compact';
   /** Pin the first data column during horizontal scroll (default true). */
   stickyFirstColumn?: boolean;
-  /** Max height of the scroll area (sticky header inside). `'none'` = grow with the page. */
+  /**
+   * Max height of the scroll area (the header sticks inside it). Default `'none'`: the table grows with the
+   * page and its header sticks below the app header while the page scrolls (no nested vertical scrolling).
+   */
   maxHeight?: string;
   /** Show the pagination footer (default true). */
   pagination?: boolean;
@@ -193,17 +196,33 @@ function DataTableView<TData>({
     }
     return v;
   }, [columns]);
+  /* Low-priority columns (`meta.defaultHiddenBelow`) start hidden on narrower viewports — client-only. */
+  const hiddenBelow = useMemo(() => {
+    const list: [string, number][] = [];
+    for (const c of columns) {
+      const id = c.id ?? ('accessorKey' in c ? String(c.accessorKey) : undefined);
+      if (id && c.meta?.defaultHiddenBelow) list.push([id, c.meta.defaultHiddenBelow]);
+    }
+    return list;
+  }, [columns]);
+  const clientDefaults = useCallback((): VisibilityState => {
+    const v = { ...defaultVisibility };
+    for (const [id, below] of hiddenBelow) if (window.innerWidth < below) v[id] = false;
+    return v;
+  }, [defaultVisibility, hiddenBelow]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(defaultVisibility);
   useEffect(() => {
+    let saved: VisibilityState = {};
     try {
       const raw = window.localStorage.getItem(storageKey);
-      if (raw) setColumnVisibility({ ...defaultVisibility, ...(JSON.parse(raw) as VisibilityState) });
+      if (raw) saved = JSON.parse(raw) as VisibilityState;
     } catch {
       /* storage unavailable — keep defaults */
     }
+    if (hiddenBelow.length || Object.keys(saved).length) setColumnVisibility({ ...clientDefaults(), ...saved });
     // Keyed by content, not identity: callers may build `columns` inline on every render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [storageKey, JSON.stringify(defaultVisibility)]);
+  }, [storageKey, JSON.stringify(defaultVisibility), JSON.stringify(hiddenBelow)]);
   const onVisibilityChange = useCallback(
     (updater: Updater<VisibilityState>) => {
       setColumnVisibility((prev) => {
@@ -219,13 +238,13 @@ function DataTableView<TData>({
     [storageKey],
   );
   const resetVisibility = useCallback(() => {
-    setColumnVisibility(defaultVisibility);
+    setColumnVisibility(clientDefaults());
     try {
       window.localStorage.removeItem(storageKey);
     } catch {
       /* ignore */
     }
-  }, [defaultVisibility, storageKey]);
+  }, [clientDefaults, storageKey]);
 
   /* Selection resets when the visible data set changes */
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
@@ -300,10 +319,28 @@ function DataTableView<TData>({
   }
   for (const c of leafColumns) if (c.columnDef.meta?.sticky) stickyIds.add(c.id);
   const hasSelect = leafColumns[0]?.id === 'select';
+  const startEdgeId = stickyIds.size ? leafColumns.filter((c) => stickyIds.has(c.id)).at(-1)?.id : undefined;
+  /* Trailing row-actions column stays reachable at the inline end while the table scrolls sideways. */
+  const lastColumn = leafColumns.at(-1);
+  const endStickyId =
+    lastColumn &&
+    !stickyIds.has(lastColumn.id) &&
+    (lastColumn.columnDef.meta?.stickyEnd ?? (lastColumn.id === 'actions' || (!lastColumn.accessorFn && !lastColumn.getCanHide())))
+      ? lastColumn.id
+      : undefined;
   const stickyClass = (id: string) =>
     stickyIds.has(id)
-      ? cn('sticky z-[1] bg-inherit', id === 'select' || !hasSelect ? 'start-0' : 'start-11', id === leafColumns[firstDataIndex]?.id && 'max-md:border-e max-md:border-border')
-      : '';
+      ? cn('sticky z-[1] bg-inherit', id === 'select' || !hasSelect ? 'start-0' : 'start-11')
+      : id === endStickyId
+        ? 'sticky end-0 z-[1] bg-inherit'
+        : '';
+  const stickyEdge = (id: string) => (id === startEdgeId ? 'start' : id === endStickyId ? 'end' : undefined);
+
+  const growWithPage = !maxHeight || maxHeight === 'none';
+  const scrollerRef = useRef<HTMLDivElement>(null);
+  const theadRef = useRef<HTMLTableSectionElement>(null);
+  useScrollEdges(scrollerRef);
+  usePageStickyHeader(scrollerRef, theadRef, growWithPage);
 
   const alignClass = (align?: 'start' | 'center' | 'end') =>
     align === 'end' ? 'text-end' : align === 'center' ? 'text-center' : 'text-start';
@@ -408,15 +445,17 @@ function DataTableView<TData>({
         ) : null}
 
         <div
+          ref={scrollerRef}
+          data-slot="data-table-scroller"
           className={cn(
             'relative w-full overflow-auto',
             renderMobileCard && visibleRows.length ? 'hidden md:block' : '',
-            maxHeight !== 'none' && 'md:max-h-(--dt-max-h)',
+            !growWithPage && 'md:max-h-(--dt-max-h)',
           )}
-          style={{ ['--dt-max-h' as string]: maxHeight && maxHeight !== 'none' ? maxHeight : 'calc(100dvh - 13rem)' }}
+          style={growWithPage ? undefined : { ['--dt-max-h' as string]: maxHeight }}
         >
           <table className="w-full caption-bottom border-separate border-spacing-0 text-sm numeric">
-            <thead className="sticky top-0 z-10 bg-subtle">
+            <thead ref={theadRef} className={cn('z-10 bg-subtle', growWithPage ? 'relative will-change-transform' : 'sticky top-0')}>
               {table.getHeaderGroups().map((headerGroup) => (
                 <tr key={headerGroup.id} className="bg-subtle">
                   {headerGroup.headers.map((header) => {
@@ -425,6 +464,7 @@ function DataTableView<TData>({
                       <th
                         key={header.id}
                         scope="col"
+                        data-sticky-edge={stickyEdge(header.column.id)}
                         style={meta?.width ? { width: meta.width, minWidth: meta.width } : undefined}
                         aria-sort={
                           header.column.getIsSorted() === 'asc'
@@ -475,6 +515,7 @@ function DataTableView<TData>({
                     return (
                       <td
                         key={cell.id}
+                        data-sticky-edge={stickyEdge(cell.column.id)}
                         className={cn(
                           rowHeight,
                           'border-b border-border px-3 py-1.5 align-middle whitespace-nowrap text-foreground first:ps-4 last:pe-4 group-last/row:border-b-0',
@@ -483,7 +524,13 @@ function DataTableView<TData>({
                           meta?.cellClassName,
                         )}
                       >
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                        {meta?.maxWidth ? (
+                          <div className="min-w-0" style={{ maxWidth: meta.maxWidth }}>
+                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                          </div>
+                        ) : (
+                          flexRender(cell.column.columnDef.cell, cell.getContext())
+                        )}
                       </td>
                     );
                   })}
@@ -511,4 +558,86 @@ function DataTableView<TData>({
       </div>
     </div>
   );
+}
+
+/**
+ * Marks the scroller with `data-overflow-start` / `data-overflow-end` while content is hidden on that side,
+ * so the pinned columns cast an edge shadow (see `[data-sticky-edge]` in globals.css) — the scroll hint.
+ */
+function useScrollEdges(ref: RefObject<HTMLDivElement | null>) {
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      const offset = Math.abs(el.scrollLeft); // RTL scrollLeft runs 0 → negative
+      const hiddenStart = offset > 1;
+      const hiddenEnd = offset + el.clientWidth < el.scrollWidth - 1;
+      el.toggleAttribute('data-overflow-start', hiddenStart);
+      el.toggleAttribute('data-overflow-end', hiddenEnd);
+    };
+    const schedule = () => {
+      if (!frame) frame = requestAnimationFrame(update);
+    };
+    update();
+    el.addEventListener('scroll', schedule, { passive: true });
+    const ro = new ResizeObserver(schedule);
+    ro.observe(el);
+    if (el.firstElementChild) ro.observe(el.firstElementChild);
+    return () => {
+      el.removeEventListener('scroll', schedule);
+      ro.disconnect();
+      if (frame) cancelAnimationFrame(frame);
+    };
+  }, [ref]);
+}
+
+/**
+ * Page-level sticky header for tables that grow with the page: the scroller must clip horizontally, which
+ * also makes it the sticky containing block, so the header is translated to stay under the app header.
+ */
+function usePageStickyHeader(
+  scrollerRef: RefObject<HTMLDivElement | null>,
+  theadRef: RefObject<HTMLTableSectionElement | null>,
+  enabled: boolean,
+) {
+  useEffect(() => {
+    const scroller = scrollerRef.current;
+    const thead = theadRef.current;
+    if (!enabled || !scroller || !thead) return;
+    // Only for tables in the page flow (dialogs/sheets scroll on their own).
+    if (scroller.closest('[role=dialog],[role=alertdialog]')) return;
+    let frame = 0;
+    let applied = 0;
+    const update = () => {
+      frame = 0;
+      const header = document.querySelector<HTMLElement>('[data-slot=app-header]');
+      const top = header ? header.getBoundingClientRect().bottom : 0;
+      const rect = scroller.getBoundingClientRect();
+      const max = Math.max(0, rect.height - thead.offsetHeight - 48);
+      const offset = Math.min(Math.max(0, top - rect.top), max);
+      if (offset !== applied) {
+        applied = offset;
+        thead.style.transform = offset ? `translateY(${offset}px)` : '';
+        thead.toggleAttribute('data-stuck', offset > 0);
+      }
+    };
+    const schedule = () => {
+      if (!frame) frame = requestAnimationFrame(update);
+    };
+    update();
+    window.addEventListener('scroll', schedule, { passive: true });
+    window.addEventListener('resize', schedule);
+    const ro = new ResizeObserver(schedule);
+    ro.observe(scroller);
+    return () => {
+      window.removeEventListener('scroll', schedule);
+      window.removeEventListener('resize', schedule);
+      ro.disconnect();
+      if (frame) cancelAnimationFrame(frame);
+      thead.style.transform = '';
+      thead.removeAttribute('data-stuck');
+    };
+  }, [scrollerRef, theadRef, enabled]);
 }

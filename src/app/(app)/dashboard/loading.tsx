@@ -24,13 +24,13 @@ export default function DashboardLoading() {
       <div className="flex flex-col gap-3">
         <Skeleton className="h-4 w-32" />
         <KpiRowSkeleton />
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-3">
           <div className="lg:col-span-2">
             <WidgetSkeleton rows={5} />
           </div>
           <WidgetSkeleton rows={5} />
         </div>
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid grid-cols-1 items-start gap-4 md:grid-cols-2 xl:grid-cols-3">
           <WidgetSkeleton rows={4} chart />
           <WidgetSkeleton rows={4} chart />
           <WidgetSkeleton rows={4} />

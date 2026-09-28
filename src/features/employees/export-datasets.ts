@@ -5,7 +5,8 @@ import { employeeDisplayName, localized } from '@/lib/i18n/localized';
 import type { ListParams } from '@/lib/list-params';
 import type { ServerSupabaseClient } from '@/lib/supabase/server';
 import { DIRECTORY_FILTER_KEYS, DIRECTORY_SORTS, sanitizeFilter, type DirectoryFilterKey } from './directory-params';
-import { applyDirectoryFilters, applyDirectorySort, fetchDirectoryIds, getViewer, type EmployeeViewer } from './queries';
+import { nationalityKey } from './nationality';
+import { EMPLOYEE_RECORDS, applyDirectoryFilters, applyDirectorySort, fetchDirectoryIds, getViewer, type EmployeeViewer } from './queries';
 import type { NamedRef } from './types';
 
 /**
@@ -91,7 +92,13 @@ type EmployeeExportRow = {
 const EMBEDS =
   'department:departments!department_id(id, name_ar, name_en), job_title:job_titles!job_title_id(id, name_ar, name_en), ' +
   'location:locations!location_id(id, name_ar, name_en), cost_center:cost_centers!cost_center_id(id, name_ar, name_en), ' +
-  'manager:manager_id(name_ar, name_en, employee_number), portal:profiles!profiles_employee_id_fkey(status)';
+  'manager:manager_record(name_ar, name_en, employee_number), portal:profiles!profiles_employee_id_fkey(status)';
+
+/** Canonical Saudi / Non-Saudi values in the export language; other nationalities as recorded. */
+const nationalityText = (t: LooseTranslator, value: string | null | undefined) => {
+  const key = nationalityKey(value);
+  return key ? t(`employees.nationalityValues.${key}`) : (value ?? '');
+};
 
 const tr = (t: LooseTranslator, key: string, value: string | null | undefined) => {
   if (!value) return '';
@@ -153,7 +160,9 @@ function describeDirectoryFilters(params: ListParams, t: LooseTranslator): strin
     );
   }
   const nationality = f('nationality');
-  if (nationality.length) out.push(t('employees.export.filter', { name: t('employees.filters.nationality'), value: nationality.join(sep) }));
+  if (nationality.length) {
+    out.push(t('employees.export.filter', { name: t('employees.filters.nationality'), value: nationality.map((n) => nationalityText(t, n)).join(sep) }));
+  }
   const gender = f('gender');
   if (gender.length) {
     out.push(t('employees.export.filter', { name: t('employees.filters.gender'), value: gender.map((g) => tr(t, 'enums.gender', g)).join(sep) }));
@@ -186,7 +195,8 @@ async function fetchEmployees(
   const rows: EmployeeExportRow[] = [];
   const pageSize = 1000;
   for (let from = 0; from < ctx.limit; from += pageSize) {
-    let query = supabase.from('employees').select(select);
+    // Masked read model: identity / personal columns only reach callers the database allows.
+    let query = supabase.from(EMPLOYEE_RECORDS).select(select);
     query = applyDirectoryFilters(query, params, viewer);
     query = applyDirectorySort(query, params, ctx.locale);
     const { data, error } = await query.range(from, Math.min(from + pageSize, ctx.limit) - 1);
@@ -224,7 +234,7 @@ const employeesDataset = defineDataset<EmployeeExportRow>({
       { key: 'mobile', header: t('employees.fields.mobile'), width: 16 },
       { key: 'alt_mobile', header: t('employees.fields.altMobile'), width: 16 },
       { key: 'gender', header: t('employees.fields.gender'), width: 10, value: (r) => tr(t, 'enums.gender', r.gender) },
-      { key: 'nationality', header: t('employees.fields.nationality'), width: 16 },
+      { key: 'nationality', header: t('employees.fields.nationality'), width: 16, value: (r) => nationalityText(t, r.nationality) },
       personal && { key: 'date_of_birth', header: t('employees.fields.dateOfBirth'), type: 'date' },
       personal && {
         key: 'marital_status',
@@ -354,7 +364,7 @@ const employeesListDataset = defineDataset<EmployeeExportRow>({
       ctx,
       `id, employee_number, name_ar, name_en, mobile, employment_status, joining_date, ${viewer.isOrgViewer ? 'iqama_expiry_date, ' : ''}archived_at, ` +
         'department:departments!department_id(id, name_ar, name_en), job_title:job_titles!job_title_id(id, name_ar, name_en), ' +
-        'manager:manager_id(name_ar, name_en, employee_number), portal:profiles!profiles_employee_id_fkey(status)',
+        'manager:manager_record(name_ar, name_en, employee_number), portal:profiles!profiles_employee_id_fkey(status)',
     );
   },
   describeFilters: describeDirectoryFilters,

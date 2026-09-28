@@ -110,19 +110,24 @@ do $$
 declare
   v_json jsonb;
 begin
-  insert into public.certificates (certificate_number, employee_id, certificate_type, language, issue_date, status)
-  values ('CERT-2026-000777', pg_temp.id('e_emp1'), 'salary', 'bilingual', '2026-09-01', 'valid'),
-         ('CERT-2026-000778', pg_temp.id('e_emp1'), 'employment', 'en', '2026-09-02', 'revoked');
+  insert into public.certificates (certificate_number, employee_id, certificate_type, language, issue_date, status, verification_code)
+  values ('CERT-2026-000777', pg_temp.id('e_emp1'), 'salary', 'bilingual', '2026-09-01', 'valid', 'ABCDEFGHJKLM'),
+         ('CERT-2026-000778', pg_temp.id('e_emp1'), 'employment', 'en', '2026-09-02', 'revoked', 'NPQRSTUVWXYZ');
   perform pg_temp.as_anon();
-  select to_jsonb(v) into v_json from public.verify_certificate(' cert-2026-000777 ') v;
-  perform pg_temp.check('anon verifies a certificate (trimmed, case-insensitive)', v_json ->> 'status' = 'valid'
+  select to_jsonb(v) into v_json from public.verify_certificate(' cert-2026-000777 ', 'abcd-efgh-jklm') v;
+  perform pg_temp.check('anon verifies a certificate with its code (number trimmed / case-insensitive, code normalized)',
+    v_json ->> 'status' = 'valid'
     and v_json ->> 'certificate_type' = 'salary' and v_json ->> 'issue_date' = '2026-09-01'
     and v_json ->> 'employee_name' = 'موظف أول / EN T-001');
   perform pg_temp.check('verification output has exactly the 5 public fields',
     (select array_agg(k order by k) from jsonb_object_keys(v_json) k)
       = array['certificate_number', 'certificate_type', 'employee_name', 'issue_date', 'status']);
+  perform pg_temp.check('the number alone (or a wrong code) only confirms existence and status — no holder details',
+    (select status = 'valid' and employee_name is null and certificate_type is null and issue_date is null
+       from public.verify_certificate('CERT-2026-000777'))
+    and (select status = 'valid' and employee_name is null from public.verify_certificate('CERT-2026-000777', 'NPQRSTUVWXYZ')));
   perform pg_temp.check('revoked certificates verify as revoked (English name for English certificates)',
-    (select status = 'revoked' and employee_name = 'EN T-001' from public.verify_certificate('CERT-2026-000778')));
+    (select status = 'revoked' and employee_name = 'EN T-001' from public.verify_certificate('CERT-2026-000778', 'NPQRSTUVWXYZ')));
   perform pg_temp.check('verification does not leak salary / national ID / IBAN anywhere in the output',
     v_json::text !~ '(10000|12500|NID-|SA03|T-001\b)');
   perform pg_temp.as_postgres();
@@ -209,7 +214,10 @@ begin
   select count(*) into v_n from public.claim_notification_emails(v_ids);
   perform pg_temp.check('the actor claims the e-mails for notifications they caused (submitted + approval required)', v_n = 2);
   perform pg_temp.check('claiming is idempotent', (select count(*) from public.claim_notification_emails(v_ids)) = 0);
-  perform pg_temp.check('email log can be written by the sender', public.log_email('a@b.c', 'skipped', 'Subject', 'request_submitted', 'hr_request', null) is not null);
+  perform pg_temp.throws('users cannot write e-mail log rows (forgery)',
+    'select public.log_email(''a@b.c'', ''sent'', ''Subject'', ''request_submitted'', ''hr_request'', null)', 'permission denied');
+  perform pg_temp.as_service();
+  perform pg_temp.check('email log is written by the service role', public.log_email('a@b.c', 'skipped', 'Subject', 'request_submitted', 'hr_request', null) is not null);
   perform pg_temp.as_postgres();
   perform pg_temp.check('claimed rows carry template keys and recipient data',
     (select count(*) from public.notifications where id = any (v_ids) and emailed_at is not null) = 2);
@@ -260,6 +268,7 @@ declare
   v_audit bigint;
   v_roles bigint := (select count(*) from public.roles);
   v_perms bigint := (select count(*) from public.role_permissions);
+  v_config bigint[];
 begin
   perform pg_temp.as_user('hra');
   perform pg_temp.throws('only super admins can reset', 'select public.reset_organization(''RESET ORGANIZATION'')', 'hr:errors.forbidden');
@@ -270,6 +279,7 @@ begin
   insert into public.departments (code, name_ar) values ('OPS', 'العمليات');
   update public.organizations set name_en = 'Acme';
   delete from public.leave_types where code = 'other';
+  insert into public.leave_types (code, name_ar, name_en) values ('qa_custom', 'مخصص', 'QA custom');
   v_audit := (select count(*) from public.audit_logs);
 
   perform pg_temp.as_user('sa');
@@ -286,11 +296,23 @@ begin
     and exists (select 1 from public.profiles where id = pg_temp.id('sa') and status = 'active')
     and not exists (select 1 from auth.users where id = pg_temp.id('emp1'))
     and exists (select 1 from public.user_roles ur join public.roles r on r.id = ur.role_id where ur.user_id = pg_temp.id('sa') and r.key = 'super_admin'));
+  -- no magic numbers (modules add seeds over time): the configuration after the reset IS the seed set —
+  -- custom rows are gone, deleted defaults are back, and seeding again adds nothing.
+  v_config := array[(select count(*) from public.leave_types), (select count(*) from public.request_types),
+                    (select count(*) from public.request_fields), (select count(*) from public.certificate_templates),
+                    (select count(*) from public.email_templates), (select count(*) from public.notification_settings)];
+  perform set_config('hr.suppress_audit', 'on', true);
+  perform private.seed_defaults();
+  perform set_config('hr.suppress_audit', 'off', true);
   perform pg_temp.check('default configuration restored',
-    (select count(*) from public.leave_types) = 11 and (select count(*) from public.request_types) = 12
-    and (select count(*) from public.request_fields) = 90 and (select count(*) from public.certificate_templates) = 7
-    and (select count(*) from public.email_templates) = 16 and (select count(*) from public.notification_settings) = 18
-    and (select name_en from public.organizations) is null and (select setup_completed_at from public.organization_settings) is null);
+    0 < all (v_config)
+    and v_config = array[(select count(*) from public.leave_types), (select count(*) from public.request_types),
+                         (select count(*) from public.request_fields), (select count(*) from public.certificate_templates),
+                         (select count(*) from public.email_templates), (select count(*) from public.notification_settings)]
+    and exists (select 1 from public.leave_types where code = 'other')
+    and not exists (select 1 from public.leave_types where code = 'qa_custom')
+    and (select name_en from public.organizations) is null and (select setup_completed_at from public.organization_settings) is null,
+    array_to_string(v_config, ','));
   perform pg_temp.check('roles, permissions and audit history kept; reset audited',
     (select count(*) from public.roles) = v_roles and (select count(*) from public.role_permissions) = v_perms
     and (select count(*) from public.audit_logs) = v_audit + 1

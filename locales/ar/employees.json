@@ -164,6 +164,10 @@
     "portalAccount": "حساب البوابة",
     "lastLogin": "آخر تسجيل دخول"
   },
+  "nationalityValues": {
+    "saudi": "سعودي",
+    "nonSaudi": "غير سعودي"
+  },
   "form": {
     "createTitle": "إضافة موظف",
     "createDescription": "أنشئ سجل الموظف، ويمكن منحه حسابًا في البوابة لاحقًا من ملفه.",

@@ -8,17 +8,16 @@ import { KpiGrid, PageStack } from '@/components/shared/responsive-grid';
 import { StatCard } from '@/components/shared/stat-card';
 import { ROUTE_ACCESS } from '@/components/shell/nav-config';
 import { ApprovalsTable, type ApprovalsTab } from '@/features/approvals/components/approvals-table';
-import { OPEN_STATUSES } from '@/features/requests/constants';
 import {
   countMyDecisions,
   getRequestAccess,
   listMyDecisions,
   listRequests,
   loadDepartments,
-  loadEmployeeOptions,
+  loadEmployeeFilterOptions,
   loadRequestTypes,
   monthStartIso,
-  pendingForMeOr,
+  requestCenterCounts,
   subtypeMap,
 } from '@/features/requests/queries';
 import { requireAccess } from '@/lib/auth/guards';
@@ -50,18 +49,8 @@ export default async function ApprovalsPage({ searchParams }: { searchParams: Pr
   const typeIdsByKey = new Map(types.map((x) => [x.key, x.id]));
   const subtypes = subtypeMap(types);
   const now = new Date();
-  const nowIso = now.toISOString();
-  const soonIso = new Date(now.getTime() + 24 * 3600 * 1000).toISOString();
-  const queue = pendingForMeOr(access);
-  const count = async (build: (q: ReturnType<typeof base>) => ReturnType<typeof base>) => {
-    const { count: n } = await build(base());
-    return n ?? 0;
-  };
-  function base() {
-    return supabase.from('hr_requests').select('id', { count: 'exact', head: true }).or(queue);
-  }
 
-  const [list, pendingCount, overdueCount, dueSoonCount, approvedCount, rejectedCount, decidedMonth, departments, employees] = await Promise.all([
+  const [list, { queue }, approvedCount, rejectedCount, decidedMonth, departments, employees] = await Promise.all([
     tab === 'pending'
       ? listRequests(supabase, params, { tab: 'pending', access, typeIdsByKey, pendingForMe: true, subtypes, locale: ctx.locale })
       : listMyDecisions(supabase, params, {
@@ -71,15 +60,14 @@ export default async function ApprovalsPage({ searchParams }: { searchParams: Pr
           subtypes,
           locale: ctx.locale,
         }),
-    count((q) => q),
-    count((q) => q.in('status', OPEN_STATUSES as string[]).lt('due_at', nowIso)),
-    count((q) => q.gte('due_at', nowIso).lte('due_at', soonIso)),
+    requestCenterCounts(supabase, now),
     countMyDecisions(supabase, ctx.user.id, ['approved']),
     countMyDecisions(supabase, ctx.user.id, ['rejected', 'returned']),
     countMyDecisions(supabase, ctx.user.id, ['approved', 'rejected', 'returned'], monthStartIso(now)),
     loadDepartments(supabase),
-    loadEmployeeOptions(supabase),
+    loadEmployeeFilterOptions(supabase, params.filters.employee ?? [], ctx.locale),
   ]);
+  const { pending: pendingCount, overdue: overdueCount, dueSoon: dueSoonCount } = queue;
 
   // Stale `?page=` past the last page (e.g. the queue shrank after decisions): go to the last page.
   const lastPage = Math.max(1, Math.ceil(list.total / params.pageSize));
@@ -124,7 +112,7 @@ export default async function ApprovalsPage({ searchParams }: { searchParams: Pr
           options={{
             types: types.map((x) => ({ key: x.key, name_ar: x.name_ar, name_en: x.name_en })),
             departments,
-            employees,
+            employees: employees.options,
           }}
         />
       </div>

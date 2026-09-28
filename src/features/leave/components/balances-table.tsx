@@ -23,19 +23,35 @@ export type BalancesTableProps = {
   typeOptions: Option[];
   departmentOptions: Option[];
   canEdit: boolean;
+  /**
+   * The viewer's own employee id when `canEdit` must NOT apply to their own rows (segregation of
+   * duties: HR can't change their own balance; the RPCs refuse it too). Null = no restriction.
+   */
+  lockedEmployeeId?: string | null;
   canExport: boolean;
   /** Extra toolbar controls (scope switch, year select, initialize). */
   toolbar?: ReactNode;
   emptyAction?: ReactNode;
 };
 
-export function BalancesTable({ rows, total, typeOptions, departmentOptions, canEdit, canExport, toolbar, emptyAction }: BalancesTableProps) {
+export function BalancesTable({
+  rows,
+  total,
+  typeOptions,
+  departmentOptions,
+  canEdit,
+  lockedEmployeeId = null,
+  canExport,
+  toolbar,
+  emptyAction,
+}: BalancesTableProps) {
   const t = useTranslations('leave');
   const tc = useTranslations('common');
   const locale = useLocale() as Locale;
   const d = useCallback((v: number) => formatDays(v, locale), [locale]);
   const [target, setTarget] = useState<BalanceTarget | null>(null);
   const [dialog, setDialog] = useState<'adjust' | 'edit' | 'history' | null>(null);
+  const isLocked = useCallback((r: BalanceRow) => Boolean(lockedEmployeeId && r.employee?.id === lockedEmployeeId), [lockedEmployeeId]);
 
   const columns = useMemo<ColumnDef<BalanceRow>[]>(() => {
     const open = (kind: 'adjust' | 'edit' | 'history', row: BalanceRow) => {
@@ -117,13 +133,17 @@ export function BalancesTable({ rows, total, typeOptions, departmentOptions, can
         enableSorting: false,
         meta: { label: t('fields.available'), align: 'end', headerClassName: 'whitespace-nowrap', defaultHidden: true },
       },
-      actionsColumn<BalanceRow>((row) => [
-        { label: t('adjust.title'), icon: SlidersHorizontalIcon, onSelect: () => open('adjust', row), hidden: !canEdit },
-        { label: t('editBalance.title'), icon: PencilLineIcon, onSelect: () => open('edit', row), hidden: !canEdit },
-        { label: t('history.title'), icon: HistoryIcon, onSelect: () => open('history', row), separatorBefore: canEdit },
-      ]),
+      actionsColumn<BalanceRow>((row) => {
+        const locked = isLocked(row);
+        const lockedReason = locked ? t('balances.selfLocked') : undefined;
+        return [
+          { label: t('adjust.title'), icon: SlidersHorizontalIcon, onSelect: () => open('adjust', row), hidden: !canEdit, disabled: locked, disabledReason: lockedReason },
+          { label: t('editBalance.title'), icon: PencilLineIcon, onSelect: () => open('edit', row), hidden: !canEdit, disabled: locked, disabledReason: lockedReason },
+          { label: t('history.title'), icon: HistoryIcon, onSelect: () => open('history', row), separatorBefore: canEdit },
+        ];
+      }),
     ];
-  }, [t, locale, canEdit, d]);
+  }, [t, locale, canEdit, isLocked, d]);
 
   const filters: FilterDef<BalanceRow>[] = [
     { key: 'type', title: t('fields.leaveType'), icon: TagIcon, options: typeOptions },
@@ -184,7 +204,7 @@ export function BalancesTable({ rows, total, typeOptions, departmentOptions, can
                 </span>
               </div>
               <div className="-me-1.5 flex shrink-0 items-center">
-                {canEdit ? (
+                {canEdit && !isLocked(r) ? (
                   <Button variant="ghost" size="icon-sm" aria-label={t('adjust.title')} onClick={() => openFor('adjust', r)}>
                     <SlidersHorizontalIcon />
                   </Button>

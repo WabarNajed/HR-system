@@ -1,4 +1,4 @@
-import { LockKeyholeIcon, SearchXIcon, ShieldCheckIcon, ShieldXIcon } from 'lucide-react';
+import { KeyRoundIcon, LockKeyholeIcon, SearchXIcon, ShieldAlertIcon, ShieldCheckIcon, ShieldXIcon } from 'lucide-react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { getLocale, getTranslations } from 'next-intl/server';
@@ -11,6 +11,7 @@ import { formatDate, formatDateTime, formatHijri } from '@/lib/dates';
 import { resolveLocale } from '@/lib/i18n/config';
 import { pageMetadata } from '@/lib/metadata';
 import { createClient } from '@/lib/supabase/server';
+import { formatVerificationCode, normalizeVerificationCode } from '@/features/certificates/verification-code';
 import { cn } from '@/lib/utils';
 import { VerifyLookup } from './verify-lookup';
 
@@ -20,7 +21,14 @@ export async function generateMetadata(): Promise<Metadata> {
   return { ...(await pageMetadata('verify.title', 'verify.description')), robots: { index: false, follow: false } };
 }
 
-type VerifyRow = { certificate_number: string; employee_name: string | null; certificate_type: string; issue_date: string; status: string };
+/** Without the matching verification code the RPC returns only the number and the status (details are null). */
+type VerifyRow = {
+  certificate_number: string;
+  employee_name: string | null;
+  certificate_type: string | null;
+  issue_date: string | null;
+  status: string;
+};
 
 function safeDecode(value: string): string {
   try {
@@ -30,16 +38,16 @@ function safeDecode(value: string): string {
   }
 }
 
-async function lookup(number: string): Promise<VerifyRow | null | 'error'> {
+async function lookup(number: string, code: string): Promise<VerifyRow | null | 'error'> {
   if (!number || number.length > 40) return null;
   try {
     const supabase = await createClient({ timeoutMs: 6000 });
-    const { data, error } = await supabase.rpc('verify_certificate', { p_number: number });
+    const { data, error } = await supabase.rpc('verify_certificate', code ? { p_number: number, p_code: code } : { p_number: number });
     if (error) {
       console.error('[verify] rpc failed:', error.message);
       return 'error';
     }
-    const rows = (data ?? []) as VerifyRow[];
+    const rows = (data ?? []) as unknown as VerifyRow[];
     return rows[0] ?? null;
   } catch (error) {
     console.error('[verify] lookup failed:', error instanceof Error ? error.message : error);
@@ -49,11 +57,21 @@ async function lookup(number: string): Promise<VerifyRow | null | 'error'> {
 
 /**
  * PUBLIC certificate verification (no sign-in). Calls `verify_certificate` (anon-granted) and shows
- * ONLY: certificate number, employee name, certificate type, issue date and status.
+ * ONLY: certificate number, employee name, certificate type, issue date and status. The name, type and
+ * date need the certificate's verification code (`?code=` from the QR link, or typed in); with the
+ * number alone the page confirms only that the certificate exists and its status, so sequential numbers
+ * cannot be used to harvest employee names.
  */
-export default async function VerifyCertificatePage({ params }: { params: Promise<{ certificateNumber: string }> }) {
-  const [{ certificateNumber }, t, tCommon, tEnums, branding, rawLocale] = await Promise.all([
+export default async function VerifyCertificatePage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ certificateNumber: string }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
+  const [{ certificateNumber }, sp, t, tCommon, tEnums, branding, rawLocale] = await Promise.all([
     params,
+    searchParams,
     getTranslations('verify'),
     getTranslations('common'),
     getTranslations('enums'),
@@ -62,15 +80,30 @@ export default async function VerifyCertificatePage({ params }: { params: Promis
   ]);
   const locale = resolveLocale(rawLocale);
   const number = safeDecode(certificateNumber).trim().toUpperCase().slice(0, 60);
-  const result = await lookup(number);
+  const rawCode = Array.isArray(sp.code) ? sp.code[0] : sp.code;
+  const code = normalizeVerificationCode(rawCode);
+  const result = await lookup(number, code);
   const portalName = brandingPortalName(branding, locale, tCommon('appName'));
   const company = brandingCompanyName(branding, locale) || portalName || t('theOrganization');
   const row = result && result !== 'error' ? result : null;
-  const state: 'valid' | 'revoked' | 'notFound' | 'error' =
-    result === 'error' ? 'error' : !row ? 'notFound' : row.status === 'revoked' ? 'revoked' : 'valid';
+  // details (name/type/date) come back only with the matching code
+  const unlocked = Boolean(row?.certificate_type);
+  const state: 'valid' | 'revoked' | 'codeRequired' | 'codeMismatch' | 'notFound' | 'error' =
+    result === 'error'
+      ? 'error'
+      : !row
+        ? 'notFound'
+        : !unlocked
+          ? code
+            ? 'codeMismatch'
+            : 'codeRequired'
+          : row.status === 'revoked'
+            ? 'revoked'
+            : 'valid';
+  const locked = state === 'codeRequired' || state === 'codeMismatch';
 
   const typeKey = row?.certificate_type ?? '';
-  const typeLabel = row
+  const typeLabel = typeKey
     ? (tEnums as unknown as { has: (k: string) => boolean }).has(`certificateType.${typeKey}`)
       ? tEnums(`certificateType.${typeKey}` as 'certificateType.salary')
       : typeKey
@@ -79,6 +112,8 @@ export default async function VerifyCertificatePage({ params }: { params: Promis
   const hero = {
     valid: { icon: ShieldCheckIcon, tone: 'bg-success-soft text-success ring-success/20', title: t('validTitle'), description: t('validDescription', { company }) },
     revoked: { icon: ShieldXIcon, tone: 'bg-danger-soft text-danger ring-danger/20', title: t('revokedTitle'), description: t('revokedDescription', { company }) },
+    codeRequired: { icon: KeyRoundIcon, tone: 'bg-info-soft text-info ring-info/20', title: t('codeRequiredTitle'), description: t('codeRequiredDescription', { company }) },
+    codeMismatch: { icon: ShieldAlertIcon, tone: 'bg-warning-soft text-warning ring-warning/20', title: t('codeMismatchTitle'), description: t('codeMismatchDescription') },
     notFound: { icon: SearchXIcon, tone: 'bg-muted text-muted-foreground ring-border', title: t('notFoundTitle'), description: t('notFoundDescription') },
     error: { icon: SearchXIcon, tone: 'bg-warning-soft text-warning ring-warning/20', title: tCommon('states.errorTitle'), description: tCommon('states.errorDescription') },
   }[state];
@@ -106,7 +141,15 @@ export default async function VerifyCertificatePage({ params }: { params: Promis
           <div
             className={cn(
               'h-1 w-full',
-              state === 'valid' ? 'bg-success' : state === 'revoked' ? 'bg-danger' : state === 'error' ? 'bg-warning' : 'bg-border-strong',
+              state === 'valid'
+                ? 'bg-success'
+                : state === 'revoked'
+                  ? 'bg-danger'
+                  : state === 'error' || state === 'codeMismatch'
+                    ? 'bg-warning'
+                    : state === 'codeRequired'
+                      ? 'bg-info'
+                      : 'bg-border-strong',
             )}
           />
           <div className="flex flex-col items-center gap-3 px-6 pt-8 pb-6 text-center">
@@ -128,14 +171,20 @@ export default async function VerifyCertificatePage({ params }: { params: Promis
                   {row.certificate_number}
                 </bdi>
               </DetailRow>
-              <DetailRow label={t('fields.employee')}>
-                <span className="font-medium">{row.employee_name || '—'}</span>
-              </DetailRow>
-              <DetailRow label={t('fields.type')}>{typeLabel}</DetailRow>
-              <DetailRow label={t('fields.issueDate')}>
-                <span className="numeric">{formatDate(row.issue_date, locale, 'long')}</span>
-                <span className="block text-meta text-muted-foreground">{hijriLabel(row.issue_date, locale)}</span>
-              </DetailRow>
+              {unlocked ? (
+                <>
+                  <DetailRow label={t('fields.employee')}>
+                    <span className="font-medium">{row.employee_name || '—'}</span>
+                  </DetailRow>
+                  <DetailRow label={t('fields.type')}>{typeLabel}</DetailRow>
+                  {row.issue_date ? (
+                    <DetailRow label={t('fields.issueDate')}>
+                      <span className="numeric">{formatDate(row.issue_date, locale, 'long')}</span>
+                      <span className="block text-meta text-muted-foreground">{hijriLabel(row.issue_date, locale)}</span>
+                    </DetailRow>
+                  ) : null}
+                </>
+              ) : null}
               <DetailRow label={t('fields.status')}>
                 <StatusBadge domain="certificate" status={row.status} />
               </DetailRow>
@@ -155,8 +204,14 @@ export default async function VerifyCertificatePage({ params }: { params: Promis
         </section>
 
         <section className="rounded-xl border border-border bg-card p-5 shadow-card">
-          <h2 className="mb-3 text-card-title">{t('lookup.title')}</h2>
-          <VerifyLookup defaultValue={state === 'notFound' ? number : ''} />
+          <h2 className="mb-3 text-card-title">{locked ? t('lookup.unlockTitle') : t('lookup.title')}</h2>
+          <VerifyLookup
+            // remount when the looked-up certificate changes so the fields reflect it
+            key={`${state}:${number}:${code}`}
+            defaultNumber={state === 'notFound' || locked ? number : ''}
+            defaultCode={state === 'codeMismatch' ? formatVerificationCode(code) : ''}
+            focusCode={locked}
+          />
         </section>
 
         <footer className="mt-auto flex flex-col items-center gap-1 pt-2 text-center text-meta text-faint-foreground">

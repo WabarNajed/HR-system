@@ -12,14 +12,13 @@ import { Button } from '@/components/ui/button';
 import { RequestsTable } from '@/features/requests/components/requests-table';
 import { parseRequestTab, REQUEST_FILTER_KEYS, REQUEST_SORTS, type RequestTab } from '@/features/requests/constants';
 import {
-  countRequestTabs,
   getRequestAccess,
   listRequests,
   loadDepartments,
-  loadEmployeeOptions,
+  loadEmployeeFilterOptions,
   loadRequestHandlers,
   loadRequestTypes,
-  requestKpis,
+  requestCenterCounts,
   subtypeMap,
 } from '@/features/requests/queries';
 import { requireAccess } from '@/lib/auth/guards';
@@ -29,7 +28,7 @@ import { pageMetadata } from '@/lib/metadata';
 import { can, checkAccess } from '@/lib/permissions';
 import { createClient } from '@/lib/supabase/server';
 
-/** Same set as the "Open requests" KPI (requestKpis: open statuses + returned), as status filter values. */
+/** Same set as the "Open requests" KPI (request_center_counts: open statuses + returned), as status filter values. */
 const OPEN_FILTER = ['pending_manager_approval', 'pending_hr_review', 'returned', 'approved', 'in_progress'] as const;
 
 export const generateMetadata = (): Promise<Metadata> => pageMetadata('requests.title');
@@ -53,12 +52,11 @@ export default async function RequestsPage({ searchParams }: { searchParams: Pro
   const seesOthers = access.orgView || ctx.isManager || access.roleStepIds.length > 0;
   const canCreate = can(ctx, 'requests.create') || can(ctx, 'leave.create') || access.orgCreate;
 
-  const [list, counts, kpis, departments, employees, handlers] = await Promise.all([
+  const [list, { tabs: counts, kpis }, departments, employees, handlers] = await Promise.all([
     listRequests(supabase, params, { tab, access, typeIdsByKey, subtypes: subtypeMap(types), locale: ctx.locale }),
-    countRequestTabs(supabase),
-    requestKpis(supabase, access),
+    requestCenterCounts(supabase),
     seesOthers ? loadDepartments(supabase) : Promise.resolve(null),
-    seesOthers ? loadEmployeeOptions(supabase) : Promise.resolve(null),
+    seesOthers ? loadEmployeeFilterOptions(supabase, params.filters.employee ?? [], ctx.locale) : Promise.resolve(null),
     access.orgView ? loadRequestHandlers(supabase) : Promise.resolve(null),
   ]);
 
@@ -151,7 +149,7 @@ export default async function RequestsPage({ searchParams }: { searchParams: Pro
           options={{
             types: types.map((x) => ({ key: x.key, name_ar: x.name_ar, name_en: x.name_en })),
             departments,
-            employees,
+            employees: employees?.options ?? null,
             handlers,
           }}
         />

@@ -5,7 +5,9 @@ import Link from 'next/link';
 import { useTheme } from 'next-themes';
 import { useTranslations } from 'next-intl';
 import { useTransition, type ReactNode } from 'react';
+import { toast } from 'sonner';
 import { EmployeeAvatar } from '@/components/shared/employee-avatar';
+import { safeAction } from '@/components/shared/safe-action';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -26,6 +28,7 @@ import type { ShellUser } from './types';
 function UserMenuContent({ user, compactExtras, align }: { user: ShellUser; compactExtras?: boolean; align: 'start' | 'end' }) {
   const t = useTranslations('nav.header');
   const tAuth = useTranslations('auth');
+  const tErrors = useTranslations('errors');
   const [signingOut, startSignOut] = useTransition();
   const { pending: switching, switchLanguage, targetName, target } = useLanguageSwitch();
   const { theme, setTheme } = useTheme();
@@ -107,7 +110,8 @@ function UserMenuContent({ user, compactExtras, align }: { user: ShellUser; comp
         onSelect={(e) => {
           e.preventDefault();
           startSignOut(async () => {
-            await signOut();
+            const failure = await safeAction(() => signOut());
+            if (typeof failure === 'object' && failure !== null) toast.error(tErrors(failure.error.slice('errors.'.length) as 'generic'));
           });
         }}
       >

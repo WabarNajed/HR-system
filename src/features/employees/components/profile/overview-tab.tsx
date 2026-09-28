@@ -26,7 +26,7 @@ import { PortalAccessCard } from '@/features/users/components/portal-access-card
 import { getDirectReports, getInsurance, getLeaveSnapshot, getRecentRequests, type LeaveSnapshotRow } from '../../queries';
 import type { EmployeeRecord, ManagerCard } from '../../types';
 import { ExpiryBadge } from '../expiry-badge';
-import { daysLeft, serviceLength } from './profile-parts';
+import { daysLeft, iqamaExpiryHijri, serviceLength } from './profile-parts';
 
 export type OverviewCaps = {
   compliance: boolean;
@@ -197,7 +197,7 @@ export async function OverviewTab({
               icon={IdCardIcon}
               label={t('profile.overview.iqama')}
               date={employee.iqama_expiry_date}
-              hint={employee.iqama_expiry_hijri}
+              hint={iqamaExpiryHijri(employee, locale)}
               emptyText={employee.iqama_expiry_hijri ? t('profile.personal.hijri', { date: employee.iqama_expiry_hijri }) : null}
               locale={locale}
               t={t}

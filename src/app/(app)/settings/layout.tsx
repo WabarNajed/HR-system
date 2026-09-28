@@ -7,8 +7,8 @@ import { checkAccess, hasAny } from '@/lib/permissions';
 import { createClient } from '@/lib/supabase/server';
 
 /**
- * Settings console: grouped section nav on the logical start side (desktop) / section picker
- * (mobile) + content. Items the user can't open are hidden; each page still guards itself with
+ * Settings console: grouped section nav on the logical start side (wide content area) / section
+ * picker (mobile, tablet, small laptop) + content. Items the user can't open are hidden; each page still guards itself with
  * `requireAccess(ROUTE_ACCESS[...])`. Count badges: pending self-registrations.
  */
 export default async function SettingsLayout({ children }: { children: ReactNode }) {
@@ -25,7 +25,9 @@ export default async function SettingsLayout({ children }: { children: ReactNode
   }
 
   return (
-    <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-6">
+    // Row (nav beside the page) only when the content area is wide enough: same breakpoints as
+    // the nav/picker switch in `SettingsNav` (≥ 90rem, or ≥ xl with the app sidebar collapsed).
+    <div className="flex flex-col gap-4 min-[90rem]:flex-row min-[90rem]:items-start min-[90rem]:gap-6 xl:in-data-[sidebar=collapsed]:flex-row xl:in-data-[sidebar=collapsed]:items-start xl:in-data-[sidebar=collapsed]:gap-6">
       <SettingsNav groups={groups} badges={badges} />
       <div className="min-w-0 flex-1">{children}</div>
     </div>

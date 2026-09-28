@@ -11,7 +11,7 @@ import { formats } from '@/lib/i18n/formats';
 
 export type ProvidersProps = {
   locale: Locale;
-  /** Messages for the client (usually `getMessages()` from the root layout). */
+  /** Messages for the client: `ROOT_CLIENT_NAMESPACES` (route layouts add more with `ClientMessages`). */
   messages: AbstractIntlMessages;
   timeZone: string;
   /** Server "now" for stable relative-time rendering during hydration. */

@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
-import { PageHeader } from '@/components/shared/page-header';
 import { PageStack } from '@/components/shared/responsive-grid';
 import { ROUTE_ACCESS } from '@/components/shell/nav-config';
 import { LeaveTypesManager } from '@/features/leave/components/leave-types-manager';
@@ -17,9 +16,12 @@ export default async function SettingsLeaveTypesPage() {
   const [access, rows, t] = await Promise.all([getLeaveAccess(ctx), listLeaveTypes(), getTranslations()]);
   return (
     <PageStack>
-      <PageHeader compact title={t('nav.settings.items.leaveTypes')} description={t('leave.types.pageDescription')} />
-      <LeaveTypesKpis rows={rows} />
-      <LeaveTypesManager rows={rows} canEdit={access.canConfigure} canExport={access.canExportConfig} />
+      <LeaveTypesManager
+        rows={rows}
+        canEdit={access.canConfigure}
+        canExport={access.canExportConfig}
+        page={{ title: t('nav.settings.items.leaveTypes'), description: t('leave.types.pageDescription'), kpis: <LeaveTypesKpis rows={rows} /> }}
+      />
     </PageStack>
   );
 }

@@ -1,5 +1,6 @@
 import 'server-only';
 
+import { randomBytes } from 'node:crypto';
 import QRCode from 'qrcode';
 import { formatDate, formatHijri, todayIso } from '@/lib/dates';
 import { formatCurrency, formatNumber } from '@/lib/format';
@@ -14,6 +15,12 @@ import { BUCKETS } from '@/lib/storage';
 import { escapeHtml, isBlankHtml, processTemplateHtml, type TemplateRenderMode } from '../html';
 import type { CertificateLanguage } from '../variables';
 import { SALARY_VARIABLES, VARIABLE_KEYS } from '../variables';
+import {
+  certificateVerifyPath,
+  formatVerificationCode,
+  VERIFICATION_CODE_ALPHABET,
+  VERIFICATION_CODE_LENGTH,
+} from '../verification-code';
 
 /**
  * Certificate document builder: organization letterhead + template content (per language) +
@@ -242,7 +249,7 @@ function hijri(value: string | null | undefined, lang: Locale): string {
 export function variableResolver(
   ctx: IssuingContext,
   lang: Locale,
-  data: { certificateNumber: string; issueDate: string; options: CertificateOptions },
+  data: { certificateNumber: string; verificationCode: string; issueDate: string; options: CertificateOptions },
 ): (token: string) => string | null {
   const { employee: e, compensation: c, organization: o } = ctx;
   const currency = c?.currency || o.currency || 'SAR';
@@ -274,6 +281,7 @@ export function variableResolver(
     company_phone: clean(o.phone),
     company_website: clean(o.website),
     certificate_number: data.certificateNumber,
+    verification_code: formatVerificationCode(data.verificationCode),
     current_date: lang === 'ar' ? `${gregorian(data.issueDate, 'ar')} الموافق ${hijri(data.issueDate, 'ar')}` : gregorian(data.issueDate, 'en'),
     current_date_hijri: hijri(data.issueDate, lang),
     addressed_to: clean(data.options.addressedTo),
@@ -293,6 +301,8 @@ export type BuildDocumentInput = {
   language: CertificateLanguage;
   ctx: IssuingContext;
   certificateNumber: string;
+  /** Printed under the QR code and carried by its link (`previewVerificationCode()` for previews). */
+  verificationCode: string;
   issueDate?: string;
   options: CertificateOptions;
   /** `placeholders`: editor preview without an employee (tokens shown as chips). */
@@ -323,8 +333,19 @@ async function qrDataUri(url: string): Promise<string> {
   return `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`;
 }
 
-export function verificationUrl(certificateNumber: string): string {
-  return `${siteUrl()}/verify/${encodeURIComponent(certificateNumber)}`;
+/** QR target: `/verify/<number>?code=<code>` — the code unlocks the holder's name and type on the public page. */
+export function verificationUrl(certificateNumber: string, verificationCode: string): string {
+  return `${siteUrl()}${certificateVerifyPath(certificateNumber, verificationCode)}`;
+}
+
+/** New random verification code (60 bits; 256 is a multiple of the 32-symbol alphabet, so it is unbiased). */
+export function newVerificationCode(): string {
+  return Array.from(randomBytes(VERIFICATION_CODE_LENGTH), (b) => VERIFICATION_CODE_ALPHABET[b % VERIFICATION_CODE_ALPHABET.length]).join('');
+}
+
+/** Placeholder code for previews (never valid: `X` repeated). */
+export function previewVerificationCode(): string {
+  return 'X'.repeat(VERIFICATION_CODE_LENGTH);
 }
 
 function signatoryBlock(ctx: IssuingContext, template: TemplateContent, languages: Locale[]): string {
@@ -365,7 +386,7 @@ export async function buildCertificateDocument(input: BuildDocumentInput): Promi
     include_allowances: Boolean(options.includeAllowances),
     addressed_to: Boolean(clean(options.addressedTo)),
   };
-  const data = { certificateNumber: input.certificateNumber, issueDate, options };
+  const data = { certificateNumber: input.certificateNumber, verificationCode: input.verificationCode, issueDate, options };
   const process = (html: string | null | undefined, lang: Locale) =>
     processTemplateHtml(html, { resolve: variableResolver(ctx, lang, data), flags, mode, placeholderLabel: input.placeholderLabel });
 
@@ -385,11 +406,13 @@ export async function buildCertificateDocument(input: BuildDocumentInput): Promi
 
   let qr = '';
   if (template.show_qr) {
-    const url = verificationUrl(input.certificateNumber);
+    const url = verificationUrl(input.certificateNumber, input.verificationCode);
     const captions = sections.map((lang) => escapeHtml(getTranslator(lang)('certificates.pdf.verifyCaption'))).join('<br>');
+    const codeLabel = sections.map((lang) => escapeHtml(getTranslator(lang)('certificates.pdf.verificationCode'))).join(' · ');
     qr = `<div class="qr">
       <img src="${await qrDataUri(url)}" alt="">
-      <div class="qr-caption">${captions}<div class="qr-number num">${escapeHtml(input.certificateNumber)}</div></div>
+      <div class="qr-caption">${captions}<div class="qr-number num">${escapeHtml(input.certificateNumber)}</div>
+        <div class="qr-code-label">${codeLabel}</div><div class="qr-code num">${escapeHtml(formatVerificationCode(input.verificationCode))}</div></div>
     </div>`;
   }
 
@@ -458,6 +481,8 @@ table.sheet > tbody > tr > td { padding: 0 ${language === 'bilingual' ? '17mm' :
 .qr img { width: 23mm; height: 23mm; display: block; }
 .qr-caption { font-size: 7.4pt; line-height: 1.5; color: var(--muted); max-width: 34mm; }
 .qr-number { margin-top: 1mm; font-weight: 700; color: var(--ink); font-size: 7.8pt; }
+.qr-code-label { margin-top: .6mm; }
+.qr-code { font-weight: 700; color: var(--ink); font-size: 7.8pt; letter-spacing: .04em; white-space: nowrap; }
 .tpl-var { background: #fff4dc; color: #7a5210; border: .5pt dashed #d8a64a; border-radius: 1mm; padding: 0 1mm; font-size: .92em; white-space: nowrap; }
 .tpl-var-unknown { background: #fde8e7; color: #a4221c; border-color: #e0827d; }
 .watermark { position: fixed; top: 46%; left: 0; right: 0; text-align: center; transform: rotate(-28deg); font-size: 46pt; font-weight: 700; color: rgba(15, 94, 107, .07); letter-spacing: .04em; pointer-events: none; z-index: 5; }

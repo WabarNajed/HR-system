@@ -276,6 +276,10 @@
       "label": "رقم الشهادة",
       "description": "CERT-YYYY-000001"
     },
+    "verification_code": {
+      "label": "رمز التحقق",
+      "description": "XXXX-XXXX-XXXX — يفتح تفاصيل الشهادة في صفحة التحقق العامة"
+    },
     "current_date": {
       "label": "تاريخ الإصدار",
       "description": "ميلادي، ويُضاف الهجري في العربية"

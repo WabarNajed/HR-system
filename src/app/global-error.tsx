@@ -10,7 +10,7 @@ import './globals.css';
  * Last-resort boundary when the root layout itself fails (no providers available). Renders both
  * languages from the static catalogs and a plain reload button.
  */
-export default function GlobalError({ reset }: { error: Error & { digest?: string }; reset: () => void }) {
+export default function GlobalError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   return (
     <html lang="ar" dir="rtl">
       <body>
@@ -29,6 +29,14 @@ export default function GlobalError({ reset }: { error: Error & { digest?: strin
             <p className="mt-1 text-meta text-muted-foreground" lang="en" dir="ltr">
               {enErrors.pageErrorDescription}
             </p>
+            {error.digest ? (
+              <p className="mt-4 text-xs text-faint-foreground">
+                <span lang="ar">{arErrors.errorReferenceRich.split('<ref>')[0]}</span>{' '}
+                <bdi dir="ltr" className="font-mono select-all">
+                  {error.digest}
+                </bdi>
+              </p>
+            ) : null}
             <button
               type="button"
               onClick={() => reset()}

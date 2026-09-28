@@ -300,6 +300,10 @@
   --radius-2xl: 18px;
 
   /* Type scale (Arabic sizes are bumped through the --fs-* variables) */
+  /* Smallest meaningful text (ARCHITECTURE §5 floor: 12px) — eyebrows, group labels, count badges,
+     timestamps. Use instead of arbitrary 0.625rem/0.6875rem sizes; sub-12px only for kbd hints. */
+  --text-2xs: 0.75rem;
+  --text-2xs--line-height: 1rem;
   --text-xs: var(--fs-xs);
   --text-xs--line-height: 1.125rem;
   --text-meta: var(--fs-meta);
@@ -490,11 +494,64 @@
   }
 }
 
-/** Hide scrollbars while keeping scroll (tab strips, chip rows). */
+/**
+ * Hide scrollbars while keeping scroll (tab strips, chip rows, toolbars). Because there is no visible
+ * scrollbar, a sideways-overflowing strip fades out at the edge(s) that still hide content (pure CSS
+ * scroll-driven animation; inactive — no fade — when nothing overflows or where unsupported).
+ */
 @utility scrollbar-none {
   scrollbar-width: none;
   &::-webkit-scrollbar {
     display: none;
+  }
+  @supports (animation-timeline: scroll()) {
+    mask-image: linear-gradient(
+      to right,
+      transparent 0,
+      #000 var(--scroll-fade-start),
+      #000 calc(100% - var(--scroll-fade-end)),
+      transparent 100%
+    );
+    animation: scroll-edge-fade linear both;
+    animation-timeline: scroll(self inline);
+    &:where([dir='rtl'], [dir='rtl'] *) {
+      mask-image: linear-gradient(
+        to left,
+        transparent 0,
+        #000 var(--scroll-fade-start),
+        #000 calc(100% - var(--scroll-fade-end)),
+        transparent 100%
+      );
+    }
+  }
+}
+
+@property --scroll-fade-start {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0px;
+}
+
+@property --scroll-fade-end {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0px;
+}
+
+@keyframes scroll-edge-fade {
+  0% {
+    --scroll-fade-start: 0px;
+    --scroll-fade-end: 2.5rem;
+  }
+  6% {
+    --scroll-fade-start: 2.5rem;
+  }
+  94% {
+    --scroll-fade-end: 2.5rem;
+  }
+  100% {
+    --scroll-fade-start: 2.5rem;
+    --scroll-fade-end: 0px;
   }
 }
 
@@ -517,4 +574,36 @@
   &:where([dir='rtl'], [dir='rtl'] *) {
     transform: scaleX(-1);
   }
+}
+
+/* ── Data table: pinned-column edge shadows + page-sticky header ─────────────
+ * `data-overflow-start|end` are toggled on the scroller while content is hidden on that side
+ * (data-table.tsx → useScrollEdges); the pinned start/end columns then cast a shadow over the
+ * scrolled content — the visual hint that the table scrolls sideways. `thead[data-stuck]` is set
+ * while the header is held below the app header during page scroll.
+ */
+[data-slot='data-table-scroller'] [data-sticky-edge],
+[data-slot='data-table-scroller'] thead[data-stuck] th {
+  box-shadow: var(--dt-edge-shadow, 0 0 #0000), var(--dt-stuck-shadow, 0 0 #0000);
+  transition: box-shadow 150ms ease-out;
+}
+
+[data-slot='data-table-scroller'] thead[data-stuck] th {
+  --dt-stuck-shadow: 0 6px 8px -6px hsl(var(--shadow-color) / 0.2);
+}
+
+[data-slot='data-table-scroller'][data-overflow-end] [data-sticky-edge='end'] {
+  --dt-edge-shadow: inset 1px 0 0 var(--border), -10px 0 12px -10px hsl(var(--shadow-color) / 0.3);
+}
+
+[data-slot='data-table-scroller'][data-overflow-start] [data-sticky-edge='start'] {
+  --dt-edge-shadow: inset -1px 0 0 var(--border), 10px 0 12px -10px hsl(var(--shadow-color) / 0.3);
+}
+
+[dir='rtl'] [data-slot='data-table-scroller'][data-overflow-end] [data-sticky-edge='end'] {
+  --dt-edge-shadow: inset -1px 0 0 var(--border), 10px 0 12px -10px hsl(var(--shadow-color) / 0.3);
+}
+
+[dir='rtl'] [data-slot='data-table-scroller'][data-overflow-start] [data-sticky-edge='start'] {
+  --dt-edge-shadow: inset 1px 0 0 var(--border), -10px 0 12px -10px hsl(var(--shadow-color) / 0.3);
 }

@@ -19,7 +19,18 @@ export default function RootError({ error, reset }: { error: Error & { digest?: 
         description={
           <>
             {t('pageErrorDescription')}
-            {error.digest ? <span className="mt-2 block font-mono text-xs text-faint-foreground">{t('errorReference', { id: error.digest })}</span> : null}
+            {error.digest ? (
+              <span className="mt-2 block text-xs text-faint-foreground">
+                {t.rich('errorReferenceRich', {
+                  id: error.digest,
+                  ref: (chunks) => (
+                    <bdi dir="ltr" className="font-mono select-all">
+                      {chunks}
+                    </bdi>
+                  ),
+                })}
+              </span>
+            ) : null}
           </>
         }
         onRetry={() => reset()}

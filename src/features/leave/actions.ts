@@ -163,16 +163,24 @@ export const deletePublicHoliday = withAction(
 
 /* ─── Balances ───────────────────────────────────────────────────────────── */
 
-async function requireOrgLeaveEdit(ctx: Parameters<typeof getOrgPermissions>[0]) {
+/**
+ * Organization `leave.edit`, and — segregation of duties, mirrored by the RPCs — never on the actor's
+ * own balance (super_admin excepted, as for approvals). `employeeId` null = every employee (bulk init).
+ */
+async function requireOrgLeaveEdit(ctx: Parameters<typeof getOrgPermissions>[0], employeeId: string | null) {
   requirePermissionIn(ctx, 'leave.edit');
   const org = await getOrgPermissions(ctx);
   if (!org.has('leave.edit')) throw new ActionError('errors.forbidden');
+  const access = await getLeaveAccess(ctx);
+  if (employeeId && employeeId === access.employeeId && !access.canEditOwnBalances) {
+    throw new ActionError('errors.selfChangeNotAllowed');
+  }
 }
 
 export const adjustLeaveBalance = withAction(
   adjustBalanceSchema,
   async (input, { ctx }) => {
-    await requireOrgLeaveEdit(ctx);
+    await requireOrgLeaveEdit(ctx, input.employeeId);
     const supabase = await createClient();
     const { error } = await supabase.rpc('adjust_leave_balance', {
       p_employee_id: input.employeeId,
@@ -191,7 +199,7 @@ export const adjustLeaveBalance = withAction(
 export const setLeaveBalance = withAction(
   setBalanceSchema,
   async (input, { ctx }) => {
-    await requireOrgLeaveEdit(ctx);
+    await requireOrgLeaveEdit(ctx, input.employeeId);
     const supabase = await createClient();
     const { error } = await supabase.rpc('set_leave_balance', {
       p_employee_id: input.employeeId,
@@ -210,7 +218,7 @@ export const setLeaveBalance = withAction(
 export const initializeLeaveBalances = withAction(
   initializeBalancesSchema,
   async (input, { ctx }) => {
-    await requireOrgLeaveEdit(ctx);
+    await requireOrgLeaveEdit(ctx, input.employeeId ?? null);
     const supabase = await createClient();
     const { data, error } = await supabase.rpc(
       'initialize_leave_balances',

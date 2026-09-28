@@ -39,14 +39,16 @@ export async function EmployeeLeaveTab({ employeeId }: { employeeId: string }) {
     (lt) => lt.deducts_balance && !have.has(lt.id) && (!lt.gender_restriction || lt.gender_restriction === employee?.gender),
   ).length;
   const isSelf = access.employeeId === employeeId;
-  const canAdjust = access.orgEdit;
+  // Segregation of duties: HR never changes their own balance (the RPCs refuse it too).
+  const selfLocked = access.orgEdit && isSelf && !access.canEditOwnBalances;
+  const canAdjust = access.orgEdit && !selfLocked;
   const d = (v: number) => formatDays(v, locale);
 
   return (
     <div className="flex flex-col gap-5">
       <SectionCard
         title={t('employeeTab.balancesTitle', { year: settings.year })}
-        description={t('employeeTab.balancesDescription')}
+        description={selfLocked ? t('balances.selfLocked') : t('employeeTab.balancesDescription')}
         icon={<WalletCardsIcon />}
         actions={
           canAdjust && balances.length && missing > 0 ? (

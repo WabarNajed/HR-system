@@ -63,6 +63,8 @@ export type IssuedCertificateRow = {
   issue_date: string;
   status: 'valid' | 'revoked';
   storage_path: string | null;
+  /** Printed on the certificate; completes the public verification link (see `verification-code.ts`). */
+  verification_code: string | null;
   revoked_at: string | null;
   revoke_reason: string | null;
   template_name_ar: string | null;

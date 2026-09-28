@@ -125,6 +125,11 @@ export type LeaveAccess = {
   orgView: boolean;
   /** Adjust / initialize / edit balances (`has_org_permission('leave','edit')`). */
   orgEdit: boolean;
+  /**
+   * `orgEdit` also covers the viewer's OWN balance. Only super_admin (single-admin orgs); everyone
+   * else is refused by the balance RPCs (segregation of duties — `errors.selfChangeNotAllowed`).
+   */
+  canEditOwnBalances: boolean;
   /** Manage leave types & public holidays (`settings.edit` or `leave.administer`, organization-scoped). */
   canConfigure: boolean;
   /** Leave exports (`leave.export`). */
@@ -153,6 +158,7 @@ export const getLeaveAccess = cache(async (ctx: SessionContext): Promise<LeaveAc
     employeeId,
     orgView,
     orgEdit: org.has('leave.edit'),
+    canEditOwnBalances: ctx.isSuperAdmin,
     canConfigure: org.has('settings.edit') || org.has('leave.administer'),
     canExport: ctx.isSuperAdmin || ctx.permissions.has('leave.export'),
     canExportConfig: ctx.isSuperAdmin || ctx.permissions.has('settings.export'),
@@ -609,7 +615,7 @@ export async function getBalanceHistory(balanceId: string, viewer: Pick<LeaveAcc
   const [adj, reqs] = await Promise.all([
     supabase
       .from('leave_adjustments')
-      .select('id, amount, reason, old_remaining, new_remaining, changed_at, changer:profiles!changed_by(full_name, email)')
+      .select('id, amount, reason, old_remaining, new_remaining, changed_at, changer:profile_cards!changed_by(full_name)')
       .eq('leave_balance_id', balanceId)
       .order('changed_at', { ascending: false })
       .limit(200),
@@ -634,14 +640,14 @@ export async function getBalanceHistory(balanceId: string, viewer: Pick<LeaveAcc
       remaining: Number(bal.remaining),
     },
     adjustments: (adj.data ?? []).map((a) => {
-      const changer = a.changer as unknown as { full_name: string | null; email: string | null } | null;
+      const changer = a.changer as unknown as { full_name: string | null } | null;
       return {
         id: a.id,
         amount: Number(a.amount),
         reason: a.reason,
         old_remaining: a.old_remaining === null ? null : Number(a.old_remaining),
         new_remaining: a.new_remaining === null ? null : Number(a.new_remaining),
-        changed_by_name: changer?.full_name || changer?.email || null,
+        changed_by_name: changer?.full_name || null,
         changed_at: a.changed_at,
       };
     }),

@@ -100,7 +100,7 @@ export function AppShell({ branding, user, permissions, visibleNavIds, initialCo
 
         <div className="flex min-h-dvh flex-col transition-[padding] duration-200 ease-out lg:ps-(--shell-sidebar)">
           {/* Header */}
-          <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-2 border-b border-border bg-background/85 px-3 backdrop-blur-md supports-[backdrop-filter]:bg-background/70 md:px-6">
+          <header data-slot="app-header" className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-2 border-b border-border bg-background/85 px-3 backdrop-blur-md supports-[backdrop-filter]:bg-background/70 md:px-6">
             <Button
               variant="ghost"
               size="icon"

@@ -37,8 +37,14 @@ function CountBadge({ count, active }: { count: number; active?: boolean }) {
 }
 
 /**
- * Settings console navigation: grouped vertical nav on the logical start side (desktop, sticky)
- * and a section picker on mobile. Hidden on the console home (`/settings`), whose cards navigate.
+ * Settings console navigation: grouped vertical nav on the logical start side (sticky) when there is
+ * room for it next to the page, and a section picker otherwise. Hidden on the console home
+ * (`/settings`), whose cards navigate.
+ *
+ * "Room" = viewport ≥ 90rem, or ≥ xl with the app sidebar collapsed (`data-sidebar` on the shell).
+ * Below that (tablets, small laptops with the 256px app sidebar) a 208px nav would squeeze pages
+ * such as roles / form builder to ~480px, so the picker is used instead. The console wrapper in
+ * `app/(app)/settings/layout.tsx` switches to a row at the same breakpoints; keep them in sync.
  */
 export function SettingsNav({ groups, badges = {} }: { groups: VisibleSettingsGroup[]; badges?: Partial<Record<SettingsItemKey, number>> }) {
   const t = useTranslations('nav.settings');
@@ -49,8 +55,8 @@ export function SettingsNav({ groups, badges = {} }: { groups: VisibleSettingsGr
 
   return (
     <>
-      {/* Mobile / tablet: section picker */}
-      <div className="lg:hidden">
+      {/* Narrow content area (mobile, tablet, small laptop): section picker */}
+      <div className="min-[90rem]:hidden sm:max-w-sm xl:in-data-[sidebar=collapsed]:hidden">
         <Select
           value={active ?? undefined}
           onValueChange={(key) => router.push(key === HOME ? '/settings' : SETTINGS_ITEMS_BY_KEY[key as SettingsItemKey].href)}
@@ -84,8 +90,12 @@ export function SettingsNav({ groups, badges = {} }: { groups: VisibleSettingsGr
         </Select>
       </div>
 
-      {/* Desktop: grouped vertical nav */}
-      <nav aria-label={t('sections')} className="sticky top-[4.75rem] hidden max-h-[calc(100dvh-6rem)] w-52 shrink-0 overflow-y-auto pe-1 pb-4 lg:block 2xl:w-60">
+      {/* Wide content area: grouped vertical nav. Sticks below the header at the page padding and
+          ends at the bottom padding (header + 2 × 1.5rem), so short pages don't scroll. */}
+      <nav
+        aria-label={t('sections')}
+        className="sticky top-[calc(var(--spacing-header)+1.5rem)] hidden max-h-[calc(100dvh-var(--spacing-header)-3rem)] w-52 shrink-0 overflow-y-auto pe-1 pb-4 min-[90rem]:block xl:in-data-[sidebar=collapsed]:block 2xl:w-60"
+      >
         <Link
           href="/settings"
           className="mb-3 flex items-center gap-2 rounded-md px-2.5 py-1 text-card-title text-foreground outline-none hover:text-primary focus-visible:ring-2 focus-visible:ring-ring/50"

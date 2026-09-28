@@ -192,7 +192,8 @@
       "submit": "تقديم طلب تسجيل",
       "approve": "اعتماد طلب تسجيل",
       "reject": "رفض طلب تسجيل",
-      "request_info": "طلب معلومات تسجيل إضافية"
+      "request_info": "طلب معلومات تسجيل إضافية",
+      "blocked": "حظر طلب تسجيل"
     },
     "request": {
       "create": "إنشاء مسودة طلب",
@@ -242,7 +243,24 @@
     },
     "role": {
       "permissions_update": "تحديث صلاحيات دور"
+    },
+    "email_template": {
+      "test": "إرسال بريد تجريبي لقالب"
+    },
+    "email": {
+      "test": "اختبار إرسال البريد"
     }
+  },
+  "summaries": {
+    "export": "{format} · {count, plural, =0 {لا سجلات} one {سجل واحد} two {سجلان} few {# سجلات} many {# سجلًا} other {# سجل}}",
+    "exportDataset": "{dataset} · {format} · {count, plural, =0 {لا سجلات} one {سجل واحد} two {سجلان} few {# سجلات} many {# سجلًا} other {# سجل}}",
+    "importCounts": "أُنشئ {created} · حُدّث {updated} · لم يُستورد {failed}",
+    "backup": "{tables, plural, one {جدول واحد} two {جدولان} few {# جداول} many {# جدولًا} other {# جدول}} · {rows, plural, =0 {لا سجلات} one {سجل واحد} two {سجلان} few {# سجلات} many {# سجلًا} other {# سجل}}",
+    "backupSensitive": "يشمل الرواتب والحسابات البنكية",
+    "reauthFailed": "فشل التحقق من الهوية",
+    "leaveInitialize": "{year}: {count, plural, =0 {لا أرصدة} one {رصيد واحد} two {رصيدان} few {# أرصدة} many {# رصيدًا} other {# رصيد}}",
+    "expiryCheck": "{items, plural, =0 {لا عناصر قاربت على الانتهاء} one {عنصر واحد قارب على الانتهاء} two {عنصران قاربا على الانتهاء} few {# عناصر قاربت على الانتهاء} many {# عنصرًا قارب على الانتهاء} other {# عنصر قارب على الانتهاء}} · {notifications, plural, =0 {لا إشعارات} one {إشعار واحد} two {إشعاران} few {# إشعارات} many {# إشعارًا} other {# إشعار}}",
+    "emailTest": "{email}: {status}"
   },
   "activity": {
     "title": "النشاط",

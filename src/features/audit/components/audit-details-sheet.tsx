@@ -3,7 +3,7 @@
 import { ArrowRightIcon, ExternalLinkIcon, LockIcon, UserRoundIcon } from 'lucide-react';
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
-import type { ReactNode } from 'react';
+import { useRef, type ReactNode } from 'react';
 import { CopyButton } from '@/components/shared/copy-button';
 import { EmployeeAvatar } from '@/components/shared/employee-avatar';
 import { Badge, type BadgeVariant } from '@/components/ui/badge';
@@ -89,6 +89,9 @@ function Field({ label, children, className }: { label: ReactNode; children: Rea
 export function AuditDetailsSheet({ event, onOpenChange }: { event: AuditEventView | null; onOpenChange: (open: boolean) => void }) {
   const t = useTranslations('audit');
   const locale = useLocale();
+  // The sheet is opened programmatically (row / timeline button, deep link), so Radix has no trigger
+  // to return focus to: remember the opener ourselves and restore it on close.
+  const openerRef = useRef<HTMLElement | null>(null);
   const entries = event ? parseChanges(event.changes) : [];
   const masked = hasMasked(entries);
   const diffs = entries.filter((e) => e.kind === 'diff');
@@ -102,7 +105,26 @@ export function AuditDetailsSheet({ event, onOpenChange }: { event: AuditEventVi
 
   return (
     <Sheet open={Boolean(event)} onOpenChange={onOpenChange}>
-      <SheetContent side="end" className="sm:max-w-xl">
+      <SheetContent
+        side="end"
+        className="sm:max-w-xl"
+        onOpenAutoFocus={(e) => {
+          const active = document.activeElement;
+          openerRef.current = active instanceof HTMLElement && active !== document.body ? active : null;
+          // Focus the dialog itself (announced by its title) instead of the first tabbable control —
+          // a Copy button whose tooltip would open and swallow the first Escape.
+          e.preventDefault();
+          (e.currentTarget as HTMLElement | null)?.focus({ preventScroll: true });
+        }}
+        onCloseAutoFocus={(e) => {
+          const opener = openerRef.current;
+          openerRef.current = null;
+          if (opener?.isConnected) {
+            e.preventDefault();
+            opener.focus({ preventScroll: true });
+          }
+        }}
+      >
         {event ? (
           <>
             <SheetHeader>

@@ -164,6 +164,10 @@
     "portalAccount": "Portal account",
     "lastLogin": "Last sign-in"
   },
+  "nationalityValues": {
+    "saudi": "Saudi",
+    "nonSaudi": "Non-Saudi"
+  },
   "form": {
     "createTitle": "Add employee",
     "createDescription": "Create the employee record. Portal access can be granted afterwards from the profile.",

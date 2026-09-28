@@ -15,6 +15,7 @@ import {
   type AuditTranslator,
 } from './labels';
 import type { ActorProfile, AuditRow } from './queries';
+import { auditSummary, type AuditSummaryLookups } from './summary';
 import type { AuditEventView } from './types';
 
 /** True when the viewer may open `href` (route rules from nav-config). */
@@ -24,7 +25,13 @@ export function canOpenHref(ctx: SessionContext, href: string): boolean {
 }
 
 /** Resolves labels, tone and permitted links of an audit row for the client. */
-export function toAuditView(row: AuditRow, ctx: SessionContext, t: AuditTranslator, actors: Map<string, ActorProfile>): AuditEventView {
+export function toAuditView(
+  row: AuditRow,
+  ctx: SessionContext,
+  t: AuditTranslator,
+  actors: Map<string, ActorProfile>,
+  lookups: AuditSummaryLookups = {},
+): AuditEventView {
   const href = auditEntityHref(row);
   const employeeHref = row.employee_id ? `/employees/${row.employee_id}` : null;
   const actor = row.actor_id ? actors.get(row.actor_id) : undefined;
@@ -43,7 +50,7 @@ export function toAuditView(row: AuditRow, ctx: SessionContext, t: AuditTranslat
     href: href && canOpenHref(ctx, href) ? href : null,
     employeeId: row.employee_id,
     employeeHref: employeeHref && canOpenHref(ctx, employeeHref) ? employeeHref : null,
-    summary: row.summary,
+    summary: auditSummary(t, row, ctx.locale, lookups),
     actor: { id: row.actor_id, name: actorName, email: row.actor_email ?? actor?.email ?? null },
     changes: row.changes ?? null,
     ip: row.ip,

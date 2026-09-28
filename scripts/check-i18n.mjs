@@ -11,6 +11,13 @@
  *      - string literals passed to placeholder / title / aria-label / aria-description / label / alt
  *      Opt out per line with a trailing `// i18n-ignore` (or `{/* i18n-ignore *\/}` in JSX).
  *      src/app/dev/** (dev-only gallery) is ignored.
+ *  (f) client message coverage: only some namespaces are serialized to the browser (root layout:
+ *      ROOT_CLIENT_NAMESPACES; route layouts add theirs with `<ClientMessages ns={…}>`, see
+ *      src/lib/i18n/client-namespaces.ts). Every Client Component reachable from a route (import
+ *      graph from page/layout/loading/error/… files, from the first `'use client'` module on) may
+ *      only use namespaces its route provides: `useTranslations('ns…')`, and literal keys passed to
+ *      a root translator (`t('ns.key')`, `t(`ns.${x}`)`). `node scripts/check-i18n.mjs --client-usage
+ *      [--verbose]` prints the namespaces each route group / section uses on the client.
  *
  * Exits 1 when any problem is found.
  */
@@ -28,7 +35,7 @@ const IGNORED_DIRS = [path.join(SRC, 'app', 'dev')];
 const CHECKED_PROPS = new Set(['placeholder', 'title', 'aria-label', 'aria-description', 'aria-placeholder', 'label', 'alt']);
 const LETTERS = /[A-Za-z؀-ۿݐ-ݿﭐ-﷿ﹰ-﻿]/;
 
-const problems = { registry: [], parity: [], empty: [], placeholders: [], hardcoded: [] };
+const problems = { registry: [], parity: [], empty: [], placeholders: [], hardcoded: [], client: [] };
 const rel = (p) => path.relative(ROOT, p);
 
 /* ─── Locale files ─────────────────────────────────────────────────────────── */
@@ -259,6 +266,274 @@ function scanFile(file) {
 
 for (const file of walkFiles(SRC)) scanFile(file);
 
+/* ─── Client message coverage ──────────────────────────────────────────────── */
+
+const APP_DIR = path.join(SRC, 'app');
+const CLIENT_NS_TS = path.join(SRC, 'lib/i18n/client-namespaces.ts');
+const ROUTE_FILES = /^(page|layout|template|loading|error|not-found|forbidden|unauthorized|default)\.tsx?$/;
+const EXTS = ['.ts', '.tsx', '.js', '.mjs', '/index.ts', '/index.tsx'];
+const sourceCache = new Map();
+
+function parse(file) {
+  if (!sourceCache.has(file)) {
+    const text = fs.readFileSync(file, 'utf8');
+    sourceCache.set(file, ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true, file.endsWith('x') ? ts.ScriptKind.TSX : ts.ScriptKind.TS));
+  }
+  return sourceCache.get(file);
+}
+
+function directive(source, name) {
+  for (const st of source.statements) {
+    if (!ts.isExpressionStatement(st) || !ts.isStringLiteral(st.expression)) return false;
+    if (st.expression.text === name) return true;
+  }
+  return false;
+}
+
+function resolveImport(from, spec) {
+  let base;
+  if (spec.startsWith('@/')) base = path.join(SRC, spec.slice(2));
+  else if (spec.startsWith('.')) base = path.resolve(path.dirname(from), spec);
+  else return null;
+  if (/\.(json|css)$/.test(base)) return null;
+  if (fs.existsSync(base) && fs.statSync(base).isFile()) return base;
+  for (const ext of EXTS) if (fs.existsSync(base + ext)) return base + ext;
+  return null;
+}
+
+/** Runtime (non type-only) imports, re-exports and dynamic `import()`s of a module. */
+function importsOf(file) {
+  const source = parse(file);
+  const out = [];
+  const add = (spec) => {
+    const target = resolveImport(file, spec);
+    if (target) out.push(target);
+  };
+  for (const st of source.statements) {
+    if (ts.isImportDeclaration(st) && ts.isStringLiteral(st.moduleSpecifier)) {
+      const clause = st.importClause;
+      if (clause?.isTypeOnly) continue;
+      const named = clause?.namedBindings && ts.isNamedImports(clause.namedBindings) ? clause.namedBindings.elements : null;
+      if (clause && !clause.name && named && named.length && named.every((e) => e.isTypeOnly)) continue;
+      add(st.moduleSpecifier.text);
+    } else if (ts.isExportDeclaration(st) && st.moduleSpecifier && ts.isStringLiteral(st.moduleSpecifier) && !st.isTypeOnly) {
+      add(st.moduleSpecifier.text);
+    }
+  }
+  const visit = (node) => {
+    if (ts.isCallExpression(node) && node.expression.kind === ts.SyntaxKind.ImportKeyword && node.arguments[0] && ts.isStringLiteral(node.arguments[0])) {
+      add(node.arguments[0].text);
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(source);
+  return out;
+}
+
+const unwrap = (node) => {
+  while (node && (ts.isAsExpression(node) || ts.isParenthesizedExpression(node) || ts.isSatisfiesExpression?.(node) || ts.isNonNullExpression(node))) node = node.expression;
+  return node;
+};
+
+/** Leading text of a key argument (string / template literal, both branches of `a ? 'x' : 'y'`). */
+function keyHeads(node) {
+  node = unwrap(node);
+  if (!node) return [];
+  if (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) return [node.text];
+  if (ts.isTemplateExpression(node)) return [node.head.text];
+  if (ts.isConditionalExpression(node)) return [...keyHeads(node.whenTrue), ...keyHeads(node.whenFalse)];
+  return [];
+}
+
+const namespaceOf = (key) => {
+  const ns = key.split('.')[0];
+  return allNamespaces.includes(ns) && (key.includes('.') || key === ns) ? ns : null;
+};
+
+/** Namespaces a client module reads from the message catalog. */
+const clientUsageCache = new Map();
+function clientNamespaces(file) {
+  if (clientUsageCache.has(file)) return clientUsageCache.get(file);
+  const source = parse(file);
+  const used = new Set();
+  const named = new Set(); // translator variables bound to a namespace
+  let hasRoot = false;
+  const visit = (node) => {
+    if (ts.isCallExpression(node) && ts.isIdentifier(node.expression) && node.expression.text === 'useTranslations') {
+      const arg = node.arguments[0];
+      const decl = ts.isVariableDeclaration(node.parent) && ts.isIdentifier(node.parent.name) ? node.parent.name.text : null;
+      if (!arg) {
+        hasRoot = true;
+      } else {
+        for (const head of keyHeads(arg)) {
+          const ns = namespaceOf(head.includes('.') ? head : `${head}.`) ?? (allNamespaces.includes(head.split('.')[0]) ? head.split('.')[0] : null);
+          if (ns) used.add(ns);
+        }
+        if (decl) named.add(decl);
+      }
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(source);
+  if (hasRoot) {
+    // Literal keys passed to translator-like callees (`t(…)`, `tRoot(…)`, `t.has(…)`, `t.rich(…)`).
+    const scan = (node) => {
+      if (ts.isCallExpression(node) && node.arguments[0]) {
+        let callee = node.expression;
+        if (ts.isPropertyAccessExpression(callee) && ['has', 'rich', 'markup', 'raw'].includes(callee.name.text)) callee = callee.expression;
+        if (ts.isIdentifier(callee) && /^t[A-Z0-9]?\w*$/.test(callee.text) && !named.has(callee.text)) {
+          for (const head of keyHeads(node.arguments[0])) {
+            const ns = namespaceOf(head);
+            if (ns) used.add(ns);
+          }
+        }
+      }
+      ts.forEachChild(node, scan);
+    };
+    scan(source);
+  }
+  clientUsageCache.set(file, used);
+  return used;
+}
+
+/** `export const NAME = ['a', ...OTHER] as const` arrays of src/lib/i18n/client-namespaces.ts. */
+function namespaceLists() {
+  const lists = {};
+  if (!fs.existsSync(CLIENT_NS_TS)) return lists;
+  const source = parse(CLIENT_NS_TS);
+  const elementsOf = (expr) => {
+    expr = unwrap(expr);
+    if (!expr || !ts.isArrayLiteralExpression(expr)) return null;
+    const out = [];
+    for (const el of expr.elements) {
+      if (ts.isStringLiteral(el)) out.push(el.text);
+      else if (ts.isSpreadElement(el) && ts.isIdentifier(el.expression) && lists[el.expression.text]) out.push(...lists[el.expression.text]);
+    }
+    return out;
+  };
+  for (const st of source.statements) {
+    if (!ts.isVariableStatement(st)) continue;
+    for (const d of st.declarationList.declarations) {
+      const values = ts.isIdentifier(d.name) ? elementsOf(d.initializer) : null;
+      if (values) lists[d.name.text] = values;
+    }
+  }
+  return lists;
+}
+
+/** Namespaces a route file adds with `<ClientMessages ns={…}>` (array literal or a list constant). */
+function providedBy(file, lists) {
+  const source = parse(file);
+  const out = new Set();
+  const read = (expr) => {
+    expr = unwrap(expr);
+    if (!expr) return;
+    if (ts.isIdentifier(expr) && lists[expr.text]) lists[expr.text].forEach((n) => out.add(n));
+    else if (ts.isArrayLiteralExpression(expr)) {
+      for (const el of expr.elements) {
+        if (ts.isStringLiteral(el)) out.add(el.text);
+        else if (ts.isSpreadElement(el)) read(el.expression);
+      }
+    } else problems.client.push(`${rel(file)}: <ClientMessages ns> must be an array literal or a list from client-namespaces.ts`);
+  };
+  const visit = (node) => {
+    if ((ts.isJsxOpeningElement(node) || ts.isJsxSelfClosingElement(node)) && node.tagName.getText(source) === 'ClientMessages') {
+      for (const attr of node.attributes.properties) {
+        if (ts.isJsxAttribute(attr) && attr.name.getText(source) === 'ns' && attr.initializer && ts.isJsxExpression(attr.initializer)) read(attr.initializer.expression);
+      }
+    }
+    ts.forEachChild(node, visit);
+  };
+  visit(source);
+  return out;
+}
+
+function routeFiles(dir, out = []) {
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) routeFiles(full, out);
+    else if (ROUTE_FILES.test(entry.name)) out.push(full);
+  }
+  return out;
+}
+
+const clientUsageReport = new Map(); // group → Map<ns, Set<file>>
+function checkClientMessages() {
+  const lists = namespaceLists();
+  const root = lists.ROOT_CLIENT_NAMESPACES;
+  if (!root) {
+    problems.client.push(`${rel(CLIENT_NS_TS)}: \`export const ROOT_CLIENT_NAMESPACES = [...] as const\` not found`);
+    return;
+  }
+  for (const [name, values] of Object.entries(lists)) {
+    for (const ns of values) if (!allNamespaces.includes(ns)) problems.client.push(`${rel(CLIENT_NS_TS)}: ${name} lists unknown namespace "${ns}"`);
+  }
+  const layoutProvides = new Map();
+  const provides = (file) => {
+    if (!layoutProvides.has(file)) layoutProvides.set(file, providedBy(file, lists));
+    return layoutProvides.get(file);
+  };
+  const reported = new Set();
+
+  for (const entry of routeFiles(APP_DIR)) {
+    if (entry.startsWith(path.join(APP_DIR, 'dev') + path.sep)) continue;
+    // Root provider + every `<ClientMessages>` of the layouts above (and in) this route file.
+    const allowed = new Set(root);
+    let dir = path.dirname(entry);
+    const chain = [];
+    for (;;) {
+      chain.push(dir);
+      if (dir === APP_DIR) break;
+      dir = path.dirname(dir);
+    }
+    for (const d of chain) {
+      const layout = ['layout.tsx', 'layout.ts'].map((f) => path.join(d, f)).find((f) => fs.existsSync(f));
+      if (layout) provides(layout).forEach((n) => allowed.add(n));
+    }
+    provides(entry).forEach((n) => allowed.add(n));
+
+    // Report key: route group + top-level section, e.g. "(app)/settings", "(auth)", "(root)".
+    const parts = path.relative(APP_DIR, entry).split(path.sep);
+    const group = parts[0].startsWith('(') ? (parts.length > 2 ? `${parts[0]}/${parts[1]}` : parts[0]) : '(root)';
+    if (!clientUsageReport.has(group)) clientUsageReport.set(group, new Map());
+    const usage = clientUsageReport.get(group);
+
+    const seen = new Set();
+    const stack = [[entry, false]];
+    while (stack.length) {
+      const [file, inherited] = stack.pop();
+      const source = parse(file);
+      const isClient = inherited || directive(source, 'use client');
+      const key = `${file}|${isClient}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      if (isClient && directive(source, 'use server')) continue; // Server Actions run on the server
+      if (isClient) {
+        for (const ns of clientNamespaces(file)) {
+          if (!usage.has(ns)) usage.set(ns, new Set());
+          usage.get(ns).add(rel(file));
+          if (allowed.has(ns)) continue;
+          const id = `${file}|${ns}|${[...allowed].sort().join(',')}`;
+          if (reported.has(id)) continue;
+          reported.add(id);
+          problems.client.push(`${rel(file)} uses "${ns}" on the client, not provided for ${rel(entry)} — add it to a <ClientMessages ns> of that route`);
+        }
+      }
+      for (const next of importsOf(file)) stack.push([next, isClient]);
+    }
+  }
+}
+
+checkClientMessages();
+if (process.argv.includes('--client-usage')) {
+  for (const [group, usage] of [...clientUsageReport].sort()) {
+    console.log(`\n${group}: ${[...usage.keys()].sort().join(', ')}`);
+    if (process.argv.includes('--verbose')) {
+      for (const [ns, files] of [...usage].sort()) console.log(`  ${ns.padEnd(16)} ${files.size} file(s)  e.g. ${[...files][0]}`);
+    }
+  }
+}
+
 /* ─── Report ───────────────────────────────────────────────────────────────── */
 
 const sections = [
@@ -267,6 +542,7 @@ const sections = [
   ['Empty values', problems.empty],
   ['Placeholder / tag mismatches', problems.placeholders],
   ['Hard-coded UI strings (use next-intl, or add // i18n-ignore)', problems.hardcoded],
+  ['Client messages (namespaces not sent to the browser for a route)', problems.client],
 ];
 let total = 0;
 for (const [title, list] of sections) {

@@ -1,6 +1,7 @@
 import type { LucideIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { daysBetween, todayIso } from '@/lib/dates';
+import { daysBetween, formatHijri, todayIso } from '@/lib/dates';
+import type { Locale } from '@/lib/i18n/config';
 import { cn } from '@/lib/utils';
 
 /** Icon + text item for the profile header meta row. */
@@ -45,4 +46,14 @@ export function MobileCardShell({ onOpen, children }: { onOpen?: () => void; chi
   ) : (
     <div>{children}</div>
   );
+}
+
+/**
+ * Hijri (Umm al-Qura) Iqama expiry: the imported Hijri text when one was recorded, otherwise derived
+ * from the Gregorian expiry date (ARCHITECTURE §4 — Iqama expiry is always shown in Hijri as well).
+ */
+export function iqamaExpiryHijri(employee: { iqama_expiry_date: string | null; iqama_expiry_hijri: string | null }, locale: Locale): string | null {
+  const stored = employee.iqama_expiry_hijri?.trim();
+  if (stored) return stored;
+  return employee.iqama_expiry_date ? formatHijri(employee.iqama_expiry_date, locale) || null : null;
 }

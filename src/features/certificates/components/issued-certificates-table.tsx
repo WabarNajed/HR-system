@@ -41,7 +41,7 @@ export function IssuedCertificatesTable({ rows, total, hrView, canRevoke, canExp
 
   const copyLink = async (row: IssuedCertificateRow) => {
     try {
-      await navigator.clipboard.writeText(certificateVerifyUrl(row.certificate_number));
+      await navigator.clipboard.writeText(certificateVerifyUrl(row.certificate_number, row.verification_code));
       toast.success(t('toast.linkCopied'));
     } catch {
       toast.error(tc('copyToClipboard'));
@@ -52,7 +52,7 @@ export function IssuedCertificatesTable({ rows, total, hrView, canRevoke, canExp
     const download = row.status === 'valid' || hrView ? certificateDownloadUrl(row.storage_path) : null;
     return [
       { label: t('actions.download'), icon: DownloadIcon, onSelect: () => download && startDownload(download), hidden: !download },
-      { label: t('actions.openVerification'), icon: ExternalLinkIcon, onSelect: () => window.open(certificateVerifyPath(row.certificate_number), '_blank', 'noopener') },
+      { label: t('actions.openVerification'), icon: ExternalLinkIcon, onSelect: () => window.open(certificateVerifyPath(row.certificate_number, row.verification_code), '_blank', 'noopener') },
       { label: t('actions.copyVerifyLink'), icon: CopyIcon, onSelect: () => void copyLink(row) },
       { label: t('actions.openRequest'), icon: FileTextIcon, href: row.request_id ? `/requests/${row.request_id}` : undefined, hidden: !row.request_id },
       {
@@ -114,13 +114,17 @@ export function IssuedCertificatesTable({ rows, total, hrView, canRevoke, canExp
               <div className="truncate font-medium">{type}</div>
               {/* the template name only adds information when it differs from the type label */}
               {template && template.trim().toLowerCase() !== type.trim().toLowerCase() ? (
-                <div className="mt-0.5 truncate text-meta text-muted-foreground">{template}</div>
+                <div className="mt-0.5 truncate text-meta text-muted-foreground" title={template}>
+                  {template}
+                </div>
               ) : null}
             </div>
           );
         },
         enableSorting: false,
-        meta: { label: t('fields.type') },
+        // `max-w-0` keeps free text (template name) from widening the auto-layout column; `w-full` gives this
+        // column the remaining width (at least `width`) so long names truncate instead of pushing columns off-screen.
+        meta: { label: t('fields.type'), width: '10rem', cellClassName: 'w-full max-w-0' },
       },
       {
         id: 'language',
@@ -136,7 +140,11 @@ export function IssuedCertificatesTable({ rows, total, hrView, canRevoke, canExp
       {
         id: 'addressed_to',
         header: () => t('fields.addressedTo'),
-        cell: ({ row }) => <span className="line-clamp-1 text-muted-foreground">{row.original.addressed_to || '—'}</span>,
+        cell: ({ row }) => (
+          <span className="block max-w-64 truncate text-muted-foreground" title={row.original.addressed_to || undefined}>
+            {row.original.addressed_to || '—'}
+          </span>
+        ),
         enableSorting: false,
         meta: { label: t('fields.addressedTo'), defaultHidden: true },
       },
@@ -223,7 +231,7 @@ export function IssuedCertificatesTable({ rows, total, hrView, canRevoke, canExp
                   </Button>
                 ) : null}
                 <Button variant="outline" size="icon-sm" aria-label={t('actions.openVerification')} asChild>
-                  <a href={certificateVerifyPath(row.certificate_number)} target="_blank" rel="noopener noreferrer">
+                  <a href={certificateVerifyPath(row.certificate_number, row.verification_code)} target="_blank" rel="noopener noreferrer">
                     <ExternalLinkIcon />
                   </a>
                 </Button>

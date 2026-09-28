@@ -276,6 +276,10 @@
       "label": "Certificate number",
       "description": "CERT-YYYY-000001"
     },
+    "verification_code": {
+      "label": "Verification code",
+      "description": "XXXX-XXXX-XXXX — unlocks the certificate details on the public verification page"
+    },
     "current_date": {
       "label": "Issue date",
       "description": "Gregorian; Arabic adds the Hijri date"

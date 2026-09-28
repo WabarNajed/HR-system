@@ -192,7 +192,8 @@
       "submit": "Registration submitted",
       "approve": "Registration approved",
       "reject": "Registration rejected",
-      "request_info": "Registration info requested"
+      "request_info": "Registration info requested",
+      "blocked": "Registration blocked"
     },
     "request": {
       "create": "Request drafted",
@@ -242,7 +243,24 @@
     },
     "role": {
       "permissions_update": "Role permissions updated"
+    },
+    "email_template": {
+      "test": "Template test email"
+    },
+    "email": {
+      "test": "Email delivery test"
     }
+  },
+  "summaries": {
+    "export": "{format} · {count, plural, =0 {no rows} one {# row} other {# rows}}",
+    "exportDataset": "{dataset} · {format} · {count, plural, =0 {no rows} one {# row} other {# rows}}",
+    "importCounts": "{created} created · {updated} updated · {failed} not imported",
+    "backup": "{tables, plural, one {# table} other {# tables}} · {rows, plural, one {# row} other {# rows}}",
+    "backupSensitive": "incl. salary & bank",
+    "reauthFailed": "Re-authentication failed",
+    "leaveInitialize": "{year}: {count, plural, =0 {no balances} one {# balance} other {# balances}}",
+    "expiryCheck": "{items, plural, =0 {no expiring items} one {# expiring item} other {# expiring items}} · {notifications, plural, =0 {no notifications} one {# notification} other {# notifications}}",
+    "emailTest": "{email}: {status}"
   },
   "activity": {
     "title": "Activity",

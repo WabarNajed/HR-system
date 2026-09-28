@@ -106,10 +106,16 @@ begin
   perform pg_temp.check('peer employee cannot read the request attachment', pg_temp.objects('request-attachments', 'requests/' || pg_temp.id('r1') || '/%') = 0);
 
   perform pg_temp.as_user('hro');
+  -- counts are scoped to this file's fixtures (the bucket may already hold real files)
   perform pg_temp.check('HR (documents.view) reads all employee documents incl. confidential',
-    pg_temp.objects('employee-documents', '%.pdf') = 4);
-  perform pg_temp.check('HR reads all submitted request attachments', pg_temp.objects('request-attachments', 'requests/%') = 2);
-  perform pg_temp.check('HR (certificates.view) reads certificate PDFs and the stamp', pg_temp.objects('certificate-files', '%') = 3);
+    pg_temp.objects('employee-documents', e1 || '/%.pdf') + pg_temp.objects('employee-documents', e2 || '/%.pdf') = 4);
+  perform pg_temp.check('HR reads all submitted request attachments (not drafts)',
+    pg_temp.objects('request-attachments', 'requests/' || pg_temp.id('r1') || '/%')
+      + pg_temp.objects('request-attachments', 'requests/' || pg_temp.id('r3') || '/%') = 2
+    and pg_temp.objects('request-attachments', 'requests/' || pg_temp.id('r1_draft') || '/%') = 0);
+  perform pg_temp.check('HR (certificates.view) reads certificate PDFs and the stamp',
+    pg_temp.objects('certificate-files', 'certificates/' || e1 || '/%') = 2
+    and pg_temp.objects('certificate-files', 'branding/stamp.png') = 1);
   perform pg_temp.check('HR (certificates.create) can store a certificate PDF',
     pg_temp.affected(format('insert into storage.objects (bucket_id, name) values (''certificate-files'', %L)', 'certificates/' || e2 || '/CERT-TEST-000003.pdf')) = 1);
   perform pg_temp.throws('HR officer cannot upload the stamp (settings.edit required)',

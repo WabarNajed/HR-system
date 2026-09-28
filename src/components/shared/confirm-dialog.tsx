@@ -3,6 +3,7 @@
 import { AlertTriangleIcon, HelpCircleIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useId, useState, useTransition, type ReactNode } from 'react';
+import { toast } from 'sonner';
 import {
   AlertDialog,
   AlertDialogContent,
@@ -16,6 +17,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
+import { actionErrorKey } from './safe-action';
 
 export type ConfirmDialogProps = {
   /** Uncontrolled usage: the element that opens the dialog. */
@@ -54,6 +56,7 @@ export function ConfirmDialog({
   children,
 }: ConfirmDialogProps) {
   const t = useTranslations('common');
+  const tErrors = useTranslations('errors');
   const [internalOpen, setInternalOpen] = useState(false);
   const open = openProp ?? internalOpen;
   const [typed, setTyped] = useState('');
@@ -79,8 +82,10 @@ export function ConfirmDialog({
           setInternalOpen(false);
           onOpenChange?.(false);
         }
-      } catch {
-        // Keep the dialog open; the caller is responsible for surfacing a toast.
+      } catch (error) {
+        // Keep the dialog open. A thrown Server Action (offline, 5xx, stale deployment) would otherwise
+        // fail silently — callers only toast the `ActionResult` failures they receive.
+        toast.error(tErrors(actionErrorKey(error).slice('errors.'.length) as 'generic'));
       }
     });
   };

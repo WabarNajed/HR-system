@@ -60,10 +60,13 @@
   "signupDisabled": "Self-registration is currently turned off. Contact HR.",
   "errorReference": "Reference: {id}",
   "managerCycle": "An employee can't report to themselves or to one of their own reports.",
+  "selfChangeNotAllowed": "You can't change your own balance, salary or bank details. Another HR user must make this change.",
   "changeNotesRequired": "Add a short note describing your changes before saving.",
   "templateNotPublished": "This template isn’t published or active. Publish its latest version first.",
   "templateLanguageMismatch": "The selected template doesn’t support the requested certificate language.",
   "fieldKeyInUse": "This field already holds request data, so its key can’t change.",
   "approvalStepRequired": "A workflow needs at least one approval step.",
-  "invalidVisibilityRule": "A visibility rule refers to a field that isn’t on this form."
+  "invalidVisibilityRule": "A visibility rule refers to a field that isn’t on this form.",
+  "errorReferenceRich": "Reference: <ref>{id}</ref>",
+  "stale": "The system was updated since this page was opened. Refresh the page and try again."
 }

@@ -25,7 +25,14 @@ do $$
 declare
   v_year text := extract(year from private.org_today())::text;
   n1 text; n2 text;
+  v_hr0 int; v_cert0 int;
 begin
+  -- numbering continues from the current sequence (the database may already hold real documents);
+  -- FOR UPDATE keeps concurrent sessions from drawing numbers until this test transaction ends
+  select coalesce(max(last_value), 0) into v_hr0 from (
+    select s.last_value from public.document_sequences s where s.prefix = 'HR' and s.year = v_year::int for update) x;
+  select coalesce(max(last_value), 0) into v_cert0 from (
+    select s.last_value from public.document_sequences s where s.prefix = 'CERT' and s.year = v_year::int for update) x;
   perform pg_temp.as_user('emp1');
   perform pg_temp.attendance_request('r1', '2026-10-01');
   perform pg_temp.check('drafts have no request number yet',
@@ -36,13 +43,18 @@ begin
   perform pg_temp.as_postgres();
   select request_number into n1 from public.hr_requests where id = pg_temp.id('r1');
   select request_number into n2 from public.hr_requests where id = pg_temp.id('r2');
-  perform pg_temp.check('request numbers are HR-YYYY-000001 formatted and sequential',
-    n1 = 'HR-' || v_year || '-000001' and n2 = 'HR-' || v_year || '-000002', n1 || ' / ' || n2);
+  perform pg_temp.check('request numbers are HR-YYYY-NNNNNN formatted and sequential',
+    n1 ~ ('^HR-' || v_year || '-\d{6}$')
+    and n1 = 'HR-' || v_year || '-' || lpad((v_hr0 + 1)::text, 6, '0')
+    and n2 = 'HR-' || v_year || '-' || lpad((v_hr0 + 2)::text, 6, '0'), n1 || ' / ' || n2 || ' after ' || v_hr0);
 
   perform pg_temp.as_user('hro');
-  perform pg_temp.check('certificate numbers are CERT-YYYY-000001 formatted',
-    public.next_document_number('CERT') = 'CERT-' || v_year || '-000001'
-    and public.next_document_number('CERT') = 'CERT-' || v_year || '-000002');
+  n1 := public.next_document_number('CERT');
+  n2 := public.next_document_number('CERT');
+  perform pg_temp.check('certificate numbers are CERT-YYYY-NNNNNN formatted and sequential',
+    n1 ~ ('^CERT-' || v_year || '-\d{6}$')
+    and n1 = 'CERT-' || v_year || '-' || lpad((v_cert0 + 1)::text, 6, '0')
+    and n2 = 'CERT-' || v_year || '-' || lpad((v_cert0 + 2)::text, 6, '0'), n1 || ' / ' || n2 || ' after ' || v_cert0);
   perform pg_temp.as_user('emp1');
   perform pg_temp.throws('employees cannot draw certificate numbers', 'select public.next_document_number(''CERT'')', 'hr:errors.forbidden');
   perform pg_temp.throws('unknown number prefixes are rejected', 'select public.next_document_number(''XX'')', 'hr:errors.validation');

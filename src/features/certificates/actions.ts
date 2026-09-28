@@ -27,7 +27,9 @@ import {
   buildCertificateDocument,
   loadEmployeeContext,
   loadOrganizationContext,
+  newVerificationCode,
   previewCertificateNumber,
+  previewVerificationCode,
   renderCertificatePdf,
   type IssuingContext,
   type TemplateContent,
@@ -35,6 +37,7 @@ import {
 import { ISSUABLE_STATUSES, loadCertificateRequest, loadPublishedTemplate } from './server/queries';
 import type { TemplateDraft } from './types';
 import { templateSupportsLanguage, type CertificateLanguage } from './variables';
+import { certificateVerifyPath } from './verification-code';
 
 /* ─── Helpers ─────────────────────────────────────────────────────────────── */
 
@@ -244,6 +247,7 @@ export const previewTemplate = withAction(
       language: input.language,
       ctx: context,
       certificateNumber: previewCertificateNumber(),
+      verificationCode: previewVerificationCode(),
       options: { includeSalary: input.includeSalary, includeAllowances: input.includeAllowances, addressedTo: input.addressedTo ?? null },
       mode: input.employeeId ? 'final' : 'placeholders',
       placeholderLabel: (token) => (tv.has(`templates.variables.${token}.label`) ? tv(`templates.variables.${token}.label`) : token),
@@ -308,6 +312,7 @@ export const previewCertificate = withAction(
       language: input.language,
       ctx: context,
       certificateNumber: previewCertificateNumber(),
+      verificationCode: previewVerificationCode(),
       options: {
         addressedTo: input.addressedTo ?? null,
         purpose: input.purpose ?? null,
@@ -329,7 +334,7 @@ export type IssuedResult = { id: string; number: string; downloadUrl: string; ve
 
 /**
  * Generates the PDF and records the certificate:
- * number (next_document_number) → render → upload `certificates/{employee}/{number}.pdf` →
+ * number (next_document_number) + random verification code → render → upload `certificates/{employee}/{number}.pdf` →
  * `issue_certificate` RPC (insert + audit + employee notification + request history, atomically).
  * The uploaded file is removed again when the RPC fails.
  */
@@ -342,12 +347,15 @@ export const issueCertificate = withAction(
     const { data: number, error: numberError } = await supabase.rpc('next_document_number', { p_prefix: 'CERT' });
     if (numberError) throw numberError;
     const certificateNumber = String(number);
+    // printed on the PDF (QR link + caption) and stored with the row; unlocks the details on /verify
+    const verificationCode = newVerificationCode();
 
     const html = await buildCertificateDocument({
       template: template.content,
       language: input.language,
       ctx: context,
       certificateNumber,
+      verificationCode,
       options: {
         addressedTo: input.addressedTo ?? null,
         purpose: input.purpose ?? null,
@@ -375,6 +383,7 @@ export const issueCertificate = withAction(
       p_language: input.language,
       p_addressed_to: input.addressedTo ?? '',
       p_purpose: input.purpose ?? '',
+      p_verification_code: verificationCode,
     });
     if (error) {
       await removeFiles(supabase, BUCKETS.certificateFiles, [path]);
@@ -389,7 +398,7 @@ export const issueCertificate = withAction(
         id: id as string,
         number: certificateNumber,
         downloadUrl: fileRouteUrl(BUCKETS.certificateFiles, path, { download: true }),
-        verifyUrl: `/verify/${encodeURIComponent(certificateNumber)}`,
+        verifyUrl: certificateVerifyPath(certificateNumber, verificationCode),
       },
       'certificates.toast.issued',
     );

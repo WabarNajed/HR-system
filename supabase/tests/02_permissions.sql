@@ -120,19 +120,53 @@ begin
   perform pg_temp.throws('even with privileges re-granted, the guard trigger blocks updates',
     'grant update on public.audit_logs to postgres; update public.audit_logs set summary = ''x''', 'hr:errors.forbidden');
 
+  -- log_audit_event is service-role only: a user JWT (even an active one) can never write the trail
   v_before := (select count(*) from public.audit_logs);
   perform pg_temp.as_user('emp1');
-  perform public.log_audit_event('export.employees', 'employee', null, 'Exported employees', '{"iban": "SA123", "rows": 3}');
+  perform pg_temp.throws('users cannot write application audit events (forgery)',
+    'select public.log_audit_event(''employee.update'', ''employee'', null, ''forged'')', 'permission denied');
+  perform pg_temp.as_user('dis');
+  perform pg_temp.throws('disabled users cannot write application audit events',
+    'select public.log_audit_event(''auth.login'', ''profile'', null, ''forged'')', 'permission denied');
+  perform pg_temp.as_anon();
+  perform pg_temp.throws('anon cannot write application audit events',
+    'select public.log_audit_event(''auth.login'')', 'permission denied');
+  perform pg_temp.as_service();
+  perform public.log_audit_event('export.employees', 'employee', null, 'Exported employees', '{"iban": "SA123", "rows": 3}',
+                                 pg_temp.id('emp1'), '203.0.113.7', 'QA-Agent');
   perform pg_temp.as_postgres();
   select * into v_row from public.audit_logs order by id desc limit 1;
-  perform pg_temp.check('log_audit_event appends one row attributed to the caller',
+  perform pg_temp.check('log_audit_event (service role) appends one row attributed to the given actor',
     (select count(*) from public.audit_logs) = v_before + 1 and v_row.actor_id = pg_temp.id('emp1')
-    and v_row.action = 'export.employees');
+    and v_row.actor_email is not null and v_row.action = 'export.employees'
+    and v_row.ip = '203.0.113.7' and v_row.user_agent = 'QA-Agent');
   perform pg_temp.check('log_audit_event masks sensitive keys', v_row.changes ->> 'iban' = '***' and v_row.changes ->> 'rows' = '3');
-  perform pg_temp.as_user('emp1');
+  perform pg_temp.as_service();
   perform pg_temp.throws('log_audit_event rejects malformed actions', 'select public.log_audit_event(''bad action'', null, null, null)',
     'hr:errors.validation');
+  perform pg_temp.throws('log_audit_event rejects unknown actors',
+    format('select public.log_audit_event(''export.x'', null, null, null, null, %L)', gen_random_uuid()), 'hr:errors.validation');
+
+  -- record_login: one auth.login per session; blocked accounts are refused
   perform pg_temp.as_postgres();
+  perform set_config('request.jwt.claims',
+    json_build_object('sub', pg_temp.id('emp1'), 'role', 'authenticated', 'session_id', 'qa-session-1')::text, true);
+  perform set_config('role', 'authenticated', true);
+  perform public.record_login();
+  perform public.record_login();
+  perform public.record_login();
+  perform pg_temp.as_postgres();
+  perform pg_temp.check('record_login writes one auth.login event per session',
+    (select count(*) from public.audit_logs where action = 'auth.login' and actor_id = pg_temp.id('emp1')
+       and changes ->> 'session_id' = 'qa-session-1') = 1
+    and (select last_login_at from public.profiles where id = pg_temp.id('emp1')) is not null);
+  perform pg_temp.as_user('dis');
+  perform pg_temp.throws('disabled users cannot record logins', 'select public.record_login()', 'hr:errors.forbidden');
+  perform pg_temp.as_user('pend');
+  perform public.record_login();
+  perform pg_temp.as_postgres();
+  perform pg_temp.check('pending users (awaiting review) record their login',
+    (select last_login_at from public.profiles where id = pg_temp.id('pend')) is not null);
 end;
 $$;
 
@@ -178,7 +212,7 @@ begin
            pg_temp.id('d_other'), 'requests/' || gen_random_uuid() || '/x.pdf'), 'request_attachments_storage_path_check');
   perform pg_temp.throws('employee cannot issue certificates',
     format('insert into public.certificates (certificate_number, employee_id, certificate_type, language) values (''CERT-X'', %L, ''salary'', ''ar'')',
-           pg_temp.id('e_emp1')), 'row-level security');
+           pg_temp.id('e_emp1')), 'permission denied for table certificates');
   perform pg_temp.throws('employee cannot read document sequences', 'select 1 from public.document_sequences', 'permission denied');
 
   perform pg_temp.as_user('hra');

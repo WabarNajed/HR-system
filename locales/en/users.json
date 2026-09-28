@@ -137,7 +137,10 @@
     "inviteSubject": "You are invited to join {portal}",
     "resetSubject": "Reset your {portal} password",
     "inviteFallback": "You have been invited to {portal}. Use the button below to activate your account and set your password.",
-    "resetFallback": "Use the button below to set a new password for your {portal} account."
+    "resetFallback": "Use the button below to set a new password for your {portal} account.",
+    "confirmEmail": "Confirm email",
+    "confirmSubject": "Confirm your email for {portal}",
+    "confirmFallback": "Thank you for registering with {portal}. Use the button below to confirm your email address; HR will then review your registration."
   },
   "export": {
     "title": "Portal users",

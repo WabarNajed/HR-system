@@ -2,9 +2,9 @@
 
 import { arSA, enUS } from 'date-fns/locale';
 import { ChevronDownIcon, ChevronLeftIcon, ChevronRightIcon } from 'lucide-react';
-import { useLocale } from 'next-intl';
-import { useEffect, useRef, type ComponentProps } from 'react';
-import { DayPicker, getDefaultClassNames, type DayButton } from 'react-day-picker';
+import { useLocale, useTranslations } from 'next-intl';
+import { useEffect, useMemo, useRef, type ComponentProps } from 'react';
+import { DayPicker, getDefaultClassNames, type DayButton, type Labels } from 'react-day-picker';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { dir as directionOf } from '@/lib/i18n/config';
 import { cn } from '@/lib/utils';
@@ -28,10 +28,35 @@ function Calendar({
   buttonVariant = 'ghost',
   formatters,
   components,
+  labels,
   ...props
 }: CalendarProps) {
   const locale = useLocale();
+  const t = useTranslations('common.calendar');
   const defaultClassNames = getDefaultClassNames();
+  /* Accessible names — react-day-picker only ships English ones for the date-fns locales. */
+  const translatedLabels = useMemo<Partial<Labels>>(
+    () => ({
+      labelNav: () => t('navigation'),
+      labelPrevious: () => t('previousMonth'),
+      labelNext: () => t('nextMonth'),
+      labelMonthDropdown: () => t('chooseMonth'),
+      labelYearDropdown: () => t('chooseYear'),
+      labelWeekNumber: (week) => t('weekNumber', { week }),
+      labelWeekNumberHeader: () => t('weekNumberHeader'),
+      labelDayButton: (date, modifiers, _options, dateLib) => {
+        let label = dateLib ? dateLib.format(date, 'PPPP') : date.toDateString();
+        if (modifiers.today) label = t('todayDay', { date: label });
+        if (modifiers.selected) label = t('selectedDay', { date: label });
+        return label;
+      },
+      labelGridcell: (date, modifiers, _options, dateLib) => {
+        const label = dateLib ? dateLib.format(date, 'PPPP') : date.toDateString();
+        return modifiers?.today ? t('todayDay', { date: label }) : label;
+      },
+    }),
+    [t],
+  );
 
   return (
     <DayPicker
@@ -40,6 +65,7 @@ function Calendar({
       dir={directionOf(locale)}
       weekStartsOn={0}
       numerals="latn"
+      labels={{ ...translatedLabels, ...labels }}
       className={cn(
         'group/calendar bg-transparent p-3 [--cell-size:--spacing(9)] [[data-slot=card-content]_&]:bg-transparent [[data-slot=popover-content]_&]:bg-transparent',
         className,

@@ -5,12 +5,12 @@ import { logAuditEvent } from '@/lib/audit';
 import type { SessionContext } from '@/lib/auth/session';
 import { brandingCompanyName, brandingPortalName, getPublicBranding } from '@/lib/branding';
 import { renderEmailLayout, renderTemplate } from '@/lib/email/render';
-import { sendEmail, type SendEmailResult } from '@/lib/email/send';
+import { emailProvider, sendEmail, type SendEmailResult } from '@/lib/email/send';
 import { isLocale, type Locale } from '@/lib/i18n/config';
 import { getTranslator } from '@/lib/i18n/translator';
 import { can, hasAny } from '@/lib/permissions';
 import { createAdminClient, isAdminClientConfigured, type AdminSupabaseClient } from '@/lib/supabase/admin';
-import { siteUrl } from '@/lib/supabase/env';
+import { fetchWithTimeout, getSupabaseEnv, siteUrl } from '@/lib/supabase/env';
 import { createClient } from '@/lib/supabase/server';
 
 /**
@@ -30,6 +30,14 @@ import { createClient } from '@/lib/supabase/server';
  * portal's own bilingual e-mail templates (`account_invitation`, `password_reset`) as
  * `/auth/confirm?token_hash=…&type=invite|recovery&next=/reset-password` — this works on hosted
  * Supabase without customizing the GoTrue e-mail templates and never exposes a token to HR staff.
+ * Admin-invited accounts are created with a confirmed e-mail (docs/DATABASE.md §15): an unconfirmed
+ * account could otherwise be claimed through GoTrue's public sign-up when e-mail confirmations are
+ * off. Their activation link is therefore a `recovery` link (the reset page shows "Set your password").
+ *
+ * The anonymous self-service e-mails (forgot password, sign-up confirmation) use the same templates
+ * (`password_reset`, `registration_confirm`) in the recipient's language — see
+ * `deliverSelfServicePasswordReset` / `registerSelfService`. Without a service-role key or an e-mail
+ * provider the auth actions fall back to GoTrue's own e-mails.
  */
 
 export type ProvisioningStatus = 'active' | 'disabled';
@@ -92,20 +100,33 @@ function recipientLocale(value: string | null | undefined): Locale {
   return isLocale(value) ? value : 'ar';
 }
 
-function confirmLink(tokenHash: string, type: 'invite' | 'recovery'): string {
-  const params = new URLSearchParams({ token_hash: tokenHash, type, next: '/reset-password' });
+type LinkType = 'invite' | 'recovery' | 'signup';
+
+function confirmLink(tokenHash: string, type: LinkType): string {
+  const next = type === 'signup' ? '/pending-approval' : '/reset-password';
+  const params = new URLSearchParams({ token_hash: tokenHash, type, next });
   return `${siteUrl()}/auth/confirm?${params.toString()}`;
 }
+
+type AccountTemplateKey = 'account_invitation' | 'password_reset' | 'registration_confirm';
+
+/** i18n fallbacks (`users.email.*`) when a template row is missing or inactive. */
+const ACCOUNT_EMAIL_TEXT: Record<AccountTemplateKey, { action: string; subject: string; body: string }> = {
+  account_invitation: { action: 'users.email.activate', subject: 'users.email.inviteSubject', body: 'users.email.inviteFallback' },
+  password_reset: { action: 'users.email.setPassword', subject: 'users.email.resetSubject', body: 'users.email.resetFallback' },
+  registration_confirm: { action: 'users.email.confirmEmail', subject: 'users.email.confirmSubject', body: 'users.email.confirmFallback' },
+};
 
 type TemplateRow = { subject_ar: string; subject_en: string; body_ar: string; body_en: string; is_active: boolean };
 
 /**
- * Renders one of the account e-mail templates (`account_invitation` / `password_reset`) in the
- * recipient's language inside the branded layout and sends it (logged in `email_logs`).
+ * Renders one of the account e-mail templates (`account_invitation` / `password_reset` /
+ * `registration_confirm`) in the recipient's language inside the branded layout and sends it
+ * (logged in `email_logs`).
  */
 async function sendAccountEmail(
   admin: AdminSupabaseClient,
-  input: { templateKey: 'account_invitation' | 'password_reset'; to: string; name: string | null; locale: Locale; link: string; userId: string },
+  input: { templateKey: AccountTemplateKey; to: string; name: string | null; locale: Locale; link: string; userId: string },
 ): Promise<EmailDelivery> {
   const [{ data: template, error }, { data: settings }, branding] = await Promise.all([
     admin.from('email_templates').select('subject_ar, subject_en, body_ar, body_en, is_active').eq('key', input.templateKey).maybeSingle(),
@@ -124,13 +145,14 @@ async function sendAccountEmail(
     portal_name: portalName,
     link: input.link,
   };
-  const actionLabel = t(input.templateKey === 'account_invitation' ? 'users.email.activate' : 'users.email.setPassword');
+  const text = ACCOUNT_EMAIL_TEXT[input.templateKey];
+  const actionLabel = t(text.action);
   const subject = tpl?.is_active
     ? renderTemplate(input.locale === 'ar' ? tpl.subject_ar : tpl.subject_en, vars, { html: false })
-    : t(input.templateKey === 'account_invitation' ? 'users.email.inviteSubject' : 'users.email.resetSubject', { portal: portalName });
+    : t(text.subject, { portal: portalName });
   const bodyHtml = tpl?.is_active
     ? renderTemplate(input.locale === 'ar' ? tpl.body_ar : tpl.body_en, vars)
-    : `<p>${t(input.templateKey === 'account_invitation' ? 'users.email.inviteFallback' : 'users.email.resetFallback', { portal: portalName })}</p>`;
+    : `<p>${t(text.body, { portal: portalName })}</p>`;
   const html = renderEmailLayout({
     locale: input.locale,
     subject,
@@ -201,7 +223,8 @@ export async function inviteUser(input: InviteUserInput): Promise<ActionResult<I
     const locale: Locale = input.locale && isLocale(input.locale) ? input.locale : ctx.locale;
     const created = await admin.auth.admin.createUser({
       email,
-      email_confirm: false,
+      // Confirmed: an unconfirmed account could be claimed via GoTrue's public sign-up (autoconfirm).
+      email_confirm: true,
       app_metadata: { invited_by_admin: true },
       user_metadata: { full_name: fullName, preferred_language: locale },
     });
@@ -228,7 +251,7 @@ export async function inviteUser(input: InviteUserInput): Promise<ActionResult<I
 
     let delivery: EmailDelivery = 'failed';
     try {
-      const link = await generateAccountLink(admin, email, 'invite');
+      const link = await generateAccountLink(admin, email, 'recovery');
       delivery = await sendAccountEmail(admin, { templateKey: 'account_invitation', to: email, name: fullName, locale, link, userId });
     } catch (error) {
       console.error('[provisioning] invitation e-mail failed:', error instanceof Error ? error.message : error);
@@ -299,7 +322,7 @@ export async function sendPasswordReset(target: string | { userId?: string; emai
     const admin = requireAdmin();
     const { data: authUser, error: authError } = await admin.auth.admin.getUserById(profile.id);
     if (authError || !authUser.user) throw authError ?? new ActionError('errors.notFound');
-    if (!authUser.user.email_confirmed_at && profile.invited_at) {
+    if (profile.invited_at && !profile.last_login_at) {
       // Never activated: the useful e-mail is the invitation.
       return resendInvitation(profile.id);
     }
@@ -369,4 +392,220 @@ export async function setUserStatus(userId: string, status: ProvisioningStatus):
     }
     return ok(undefined, status === 'disabled' ? 'users.toast.disabled' : 'users.toast.enabled');
   });
+}
+
+/* ─── self-service e-mails (anonymous: forgot password, sign-up) ───────────── */
+
+/**
+ * The anonymous self-service flows run without a session, so the service role is used strictly for
+ * GoTrue admin operations (generate a link / create the applicant) and for reading the one profile /
+ * `email_logs` rows of the address being handled. Nothing reveals whether an address is registered.
+ */
+const RESEND_INTERVAL_MS = 60_000;
+const HOURLY_CAP_PER_ADDRESS = 5;
+const SIGNUP_WINDOW_MS = 5 * 60_000;
+const SIGNUP_WINDOW_CAP = 30;
+
+/** Whether the portal can send the self-service account e-mails itself (else GoTrue's e-mails are used). */
+export function canSendAccountEmails(): boolean {
+  return isAdminClientConfigured() && emailProvider() !== null && Boolean(process.env.EMAIL_FROM?.trim());
+}
+
+let autoconfirmCache: { value: boolean | null; at: number } | null = null;
+
+/** GoTrue `mailer_autoconfirm` (e-mail confirmations off), cached for 5 minutes; `null` when unknown. */
+async function gotrueAutoconfirm(): Promise<boolean | null> {
+  if (autoconfirmCache && Date.now() - autoconfirmCache.at < 5 * 60_000) return autoconfirmCache.value;
+  const env = getSupabaseEnv();
+  let value: boolean | null = null;
+  if (env) {
+    try {
+      const res = await fetchWithTimeout(5000)(`${env.url}/auth/v1/settings`, { headers: { apikey: env.anonKey }, cache: 'no-store' });
+      if (res.ok) {
+        const body = (await res.json()) as { mailer_autoconfirm?: unknown };
+        value = typeof body.mailer_autoconfirm === 'boolean' ? body.mailer_autoconfirm : null;
+      }
+    } catch (error) {
+      console.error('[provisioning] reading auth settings failed:', error instanceof Error ? error.message : error);
+    }
+  }
+  autoconfirmCache = { value, at: Date.now() };
+  return value;
+}
+
+/**
+ * Self-registration sends the portal's `registration_confirm` e-mail when the portal can send e-mail
+ * and GoTrue requires e-mail confirmation. With confirmations off GoTrue sends nothing and signs the
+ * applicant in, so the regular `supabase.auth.signUp` is kept.
+ */
+export async function portalSignUpEnabled(): Promise<boolean> {
+  if (!canSendAccountEmails()) return false;
+  return (await gotrueAutoconfirm()) !== true;
+}
+
+/** Per-address throttle over `email_logs`: one e-mail per minute, at most 5 per hour. */
+async function addressThrottled(admin: AdminSupabaseClient, to: string, templateKeys: AccountTemplateKey[]): Promise<boolean> {
+  const { data, error } = await admin
+    .from('email_logs')
+    .select('created_at')
+    .eq('recipient', to)
+    .in('template_key', templateKeys)
+    .gte('created_at', new Date(Date.now() - 60 * 60_000).toISOString())
+    .order('created_at', { ascending: false })
+    .limit(HOURLY_CAP_PER_ADDRESS);
+  if (error) {
+    console.error('[provisioning] throttle lookup failed:', error.code, error.message);
+    return false;
+  }
+  const rows = (data ?? []) as { created_at: string }[];
+  if (rows.length >= HOURLY_CAP_PER_ADDRESS) return true;
+  const last = rows[0] ? Date.parse(rows[0].created_at) : 0;
+  return Date.now() - last < RESEND_INTERVAL_MS;
+}
+
+/**
+ * Forgot password (anonymous): e-mails the portal's bilingual `password_reset` template — or a fresh
+ * invitation for an account that never activated — in the account's language (else `fallbackLocale`).
+ * Unknown, disabled and rejected addresses get nothing. Throttled per address. Never throws; run it
+ * inside `after()` so the response time does not depend on whether the address exists.
+ */
+export async function deliverSelfServicePasswordReset(email: string, fallbackLocale: Locale): Promise<void> {
+  try {
+    const admin = requireAdmin();
+    const address = email.trim().toLowerCase();
+    const { data, error } = await admin.from('profiles').select(PROFILE_LITE).eq('email', address).maybeSingle();
+    if (error) throw error;
+    const profile = data as ProfileLite | null;
+    if (!profile?.email || profile.status === 'disabled' || profile.status === 'rejected') return;
+    const invitation = Boolean(profile.invited_at) && !profile.last_login_at;
+    if (await addressThrottled(admin, profile.email, ['password_reset', 'account_invitation'])) return;
+
+    const { data: authUser, error: authError } = await admin.auth.admin.getUserById(profile.id);
+    if (authError || !authUser.user) throw authError ?? new Error('auth user not found');
+    const link = await generateAccountLink(admin, profile.email, invitation && !authUser.user.email_confirmed_at ? 'invite' : 'recovery');
+    const delivery = await sendAccountEmail(admin, {
+      templateKey: invitation ? 'account_invitation' : 'password_reset',
+      to: profile.email,
+      name: profile.full_name,
+      locale: isLocale(profile.preferred_language) ? profile.preferred_language : fallbackLocale,
+      link,
+      userId: profile.id,
+    });
+    await logAuditEvent(
+      {
+        action: invitation ? 'user.invitation_sent' : 'user.password_reset_sent',
+        entityType: 'profile',
+        entityId: profile.id,
+        summary: profile.email,
+        changes: { self_service: true, email_delivery: delivery },
+      },
+      admin,
+    );
+  } catch (error) {
+    console.error('[provisioning] self-service reset failed:', error instanceof Error ? error.message : error);
+  }
+}
+
+export type SelfRegistrationInput = {
+  email: string;
+  password: string;
+  fullName: string;
+  mobile: string;
+  employeeNumber: string;
+  language: Locale;
+};
+
+/**
+ * Self-registration with the portal's `registration_confirm` e-mail (docs/DATABASE.md §15): creates
+ * the unconfirmed applicant through `generateLink({ type: 'signup' })` — the `on_auth_user_created`
+ * trigger turns the untrusted metadata into a `pending` profile exactly like `auth.signUp` — and
+ * returns the new user id plus the e-mail step to run inside `after()`.
+ * An address that is already registered gets no account and no hint: a still-unconfirmed
+ * self-registration receives a fresh confirmation link (its password is not changed).
+ * Throws `errors.rateLimited` when too many accounts were registered in the last 5 minutes.
+ */
+export async function registerSelfService(input: SelfRegistrationInput): Promise<{ newUserId: string | null; sendConfirmation: () => Promise<void> }> {
+  const admin = requireAdmin();
+  const address = input.email.trim().toLowerCase();
+  const noop = { newUserId: null, sendConfirmation: async () => {} };
+
+  const { data: existing, error: existingError } = await admin
+    .from('profiles')
+    .select('id, full_name, invited_at, preferred_language')
+    .eq('email', address)
+    .maybeSingle();
+  if (existingError) throw existingError;
+
+  if (existing) {
+    const row = existing as { id: string; full_name: string | null; invited_at: string | null; preferred_language: string | null };
+    if (row.invited_at) return noop;
+    return {
+      newUserId: null,
+      sendConfirmation: async () => {
+        try {
+          const { data: authUser } = await admin.auth.admin.getUserById(row.id);
+          if (!authUser?.user || authUser.user.email_confirmed_at) return;
+          if (await addressThrottled(admin, address, ['registration_confirm'])) return;
+          const { data, error } = await admin.auth.admin.generateLink({ type: 'signup', email: address, password: input.password });
+          if (error) throw error;
+          const hashed = data?.properties?.hashed_token;
+          if (!hashed) throw new Error('generateLink returned no token');
+          await sendAccountEmail(admin, {
+            templateKey: 'registration_confirm',
+            to: address,
+            name: row.full_name,
+            locale: isLocale(row.preferred_language) ? row.preferred_language : input.language,
+            link: confirmLink(hashed, 'signup'),
+            userId: row.id,
+          });
+        } catch (error) {
+          console.error('[provisioning] confirmation resend failed:', error instanceof Error ? error.message : error);
+        }
+      },
+    };
+  }
+
+  const { count, error: countError } = await admin
+    .from('profiles')
+    .select('id', { count: 'exact', head: true })
+    .is('invited_at', null)
+    .gte('created_at', new Date(Date.now() - SIGNUP_WINDOW_MS).toISOString());
+  if (countError) throw countError;
+  if ((count ?? 0) >= SIGNUP_WINDOW_CAP) throw new ActionError('errors.rateLimited');
+
+  const { data, error } = await admin.auth.admin.generateLink({
+    type: 'signup',
+    email: address,
+    password: input.password,
+    options: {
+      // Untrusted metadata: copied into the pending profile's registration fields only (DATABASE §15).
+      data: { full_name: input.fullName, mobile: input.mobile, employee_number: input.employeeNumber, preferred_language: input.language },
+    },
+  });
+  if (error) {
+    const code = (error as { code?: string }).code;
+    // A concurrent registration of the same address: behave exactly like an existing one.
+    if (code === 'email_exists' || code === 'user_already_exists') return noop;
+    throw error;
+  }
+  const userId = data?.user?.id ?? null;
+  const hashed = data?.properties?.hashed_token;
+  if (!userId || !hashed) throw new Error('generateLink returned no user or token');
+  return {
+    newUserId: userId,
+    sendConfirmation: async () => {
+      try {
+        await sendAccountEmail(admin, {
+          templateKey: 'registration_confirm',
+          to: address,
+          name: input.fullName,
+          locale: input.language,
+          link: confirmLink(hashed, 'signup'),
+          userId,
+        });
+      } catch (error) {
+        console.error('[provisioning] confirmation e-mail failed:', error instanceof Error ? error.message : error);
+      }
+    },
+  };
 }

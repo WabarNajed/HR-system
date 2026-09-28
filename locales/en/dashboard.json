@@ -64,8 +64,9 @@
     "certificates": "Certificates",
     "certificatesHint": "Valid certificates issued to you",
     "pendingApprovals": "Pending approvals",
+    "teamApprovals": "Team approvals",
     "pendingApprovalsHint": "Waiting for your decision",
-    "pendingApprovalsClear": "Nothing waiting for you",
+    "pendingApprovalsClear": "No team requests awaiting you",
     "directReports": "Direct reports",
     "teamOpenRequests": "{count, plural, =0 {No open team requests} one {# open team request} other {# open team requests}}",
     "teamOnLeave": "Team on leave today",
@@ -112,8 +113,8 @@
       "title": "Approval queue",
       "description": "{count, plural, one {# request waiting for you} other {# requests waiting for you}}",
       "open": "Open approvals",
-      "emptyTitle": "No approvals waiting",
-      "emptyDescription": "Requests that need your decision will appear here.",
+      "emptyTitle": "No team approvals waiting",
+      "emptyDescription": "Your team's requests that need your decision will appear here.",
       "endOfQueue": "You're all caught up"
     },
     "teamRequests": {

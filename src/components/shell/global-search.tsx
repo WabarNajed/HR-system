@@ -143,6 +143,8 @@ export function GlobalSearch({ visibleNavIds }: { visibleNavIds: readonly string
   // whenever the result set changes (Enter then always opens the best match).
   const [selected, setSelected] = useState('');
   const seq = useRef(0);
+  // Opened from buttons and shortcuts (no DialogTrigger): remember what had focus and restore it on close.
+  const openerRef = useRef<HTMLElement | null>(null);
 
   // ⌘K / Ctrl+K anywhere; "/" when not typing in a field.
   useEffect(() => {
@@ -316,6 +318,18 @@ export function GlobalSearch({ visibleNavIds }: { visibleNavIds: readonly string
         <DialogContent
           showCloseButton={false}
           aria-describedby={undefined}
+          onOpenAutoFocus={() => {
+            const active = document.activeElement;
+            openerRef.current = active instanceof HTMLElement && active !== document.body ? active : null;
+          }}
+          onCloseAutoFocus={(e) => {
+            const opener = openerRef.current;
+            openerRef.current = null;
+            if (opener?.isConnected) {
+              e.preventDefault();
+              opener.focus({ preventScroll: true });
+            }
+          }}
           className="top-[12dvh] mt-0 overflow-hidden p-0 max-sm:top-0 max-sm:h-dvh max-sm:max-h-dvh max-sm:w-full max-sm:max-w-none max-sm:rounded-none max-sm:border-0 sm:max-w-2xl"
         >
           <DialogHeader className="sr-only">

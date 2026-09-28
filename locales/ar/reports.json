@@ -441,6 +441,8 @@
     "daysAgo": "{count, plural, one {منذ يوم} two {منذ يومين} few {منذ # أيام} many {منذ # يومًا} other {منذ # يوم}}",
     "rowsTotal": "{count, plural, =0 {لا صفوف} one {صف واحد} two {صفان} few {# صفوف} many {# صفًا} other {# صف}}",
     "loadFailed": "تعذر تحميل هذا التقرير.",
+    "summaryFailed": "تعذر تحميل مؤشرات التقرير",
+    "tableFailed": "تعذر تحميل صفوف التقرير",
     "filtersApplied": "{count, plural, one {عامل تصفية واحد مطبق} two {عاملا تصفية مطبقان} few {# عوامل تصفية مطبقة} many {# عامل تصفية مطبقًا} other {# عامل تصفية مطبق}}",
     "openRecord": "فتح"
   },

@@ -1,6 +1,7 @@
 'use client';
 
 import { AlertTriangleIcon, CheckCircle2Icon, InfoIcon, Loader2Icon, XCircleIcon } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useTheme } from 'next-themes';
 import { Toaster as Sonner, type ToasterProps } from 'sonner';
 
@@ -10,6 +11,7 @@ import { Toaster as Sonner, type ToasterProps } from 'sonner';
  */
 function Toaster({ dir = 'rtl', ...props }: ToasterProps) {
   const { resolvedTheme } = useTheme();
+  const t = useTranslations('common.toast');
   return (
     <Sonner
       theme={(resolvedTheme as ToasterProps['theme']) ?? 'system'}
@@ -20,6 +22,7 @@ function Toaster({ dir = 'rtl', ...props }: ToasterProps) {
       visibleToasts={4}
       offset={16}
       mobileOffset={12}
+      containerAriaLabel={t('region')}
       icons={{
         success: <CheckCircle2Icon className="size-4.5 text-success" />,
         info: <InfoIcon className="size-4.5 text-info" />,
@@ -28,6 +31,7 @@ function Toaster({ dir = 'rtl', ...props }: ToasterProps) {
         loading: <Loader2Icon className="size-4.5 animate-spin text-muted-foreground" />,
       }}
       toastOptions={{
+        closeButtonAriaLabel: t('close'),
         classNames: {
           toast:
             'group toast !rounded-lg !border !border-border !bg-popover !text-popover-foreground !shadow-overlay !font-sans !gap-2.5 !py-3 !px-3.5',

@@ -39,7 +39,10 @@ export type WidgetProps = {
   children: ReactNode;
 };
 
-/** Standard dashboard card. */
+/**
+ * Standard dashboard card. Cards size to their content (dashboard rows use `items-start`), so a
+ * sparse list or an empty state stays compact instead of stretching to a taller neighbour.
+ */
 export function Widget({ title, description, icon: Icon, actions, footer, flush = true, className, bodyClassName, children }: WidgetProps) {
   return (
     <SectionCard
@@ -50,7 +53,7 @@ export function Widget({ title, description, icon: Icon, actions, footer, flush 
       footer={footer}
       flush={flush}
       dense
-      className={cn('h-full', className)}
+      className={className}
       bodyClassName={cn('flex flex-col', bodyClassName)}
     >
       {children}
@@ -85,13 +88,10 @@ export function WidgetRow({ href, children, className }: { href?: string | null;
   );
 }
 
-/**
- * Fills the rest of a stretched list card (equal-height rows) with a quiet note — "end of queue", or
- * a follow-up action on short personal lists — instead of leaving a blank region.
- */
+/** Quiet closing note under a short list — "end of queue", or a follow-up action on personal lists. */
 export function WidgetListEnd({ icon: Icon, label, action }: { icon: LucideIcon; label: ReactNode; action?: ReactNode }) {
   return (
-    <div className="flex min-h-12 flex-1 flex-col items-center justify-center gap-2 border-t border-border/60 px-4 py-3 text-center text-xs text-faint-foreground">
+    <div className="flex min-h-12 flex-col items-center justify-center gap-2 border-t border-border/60 px-4 py-3 text-center text-xs text-faint-foreground">
       <span className="inline-flex items-center gap-1.5">
         <Icon className="size-3.5" aria-hidden />
         {label}
@@ -144,7 +144,7 @@ export function WidgetStrip({
   );
 }
 
-/** Compact empty state for a widget body (~150px). */
+/** Compact empty state for a widget body (fixed ~176px, never stretched). */
 export function WidgetEmpty({
   icon: Icon,
   title,
@@ -161,7 +161,7 @@ export function WidgetEmpty({
   className?: string;
 }) {
   return (
-    <div className={cn('flex flex-1 flex-col items-center justify-center px-6 py-7 text-center', className)}>
+    <div className={cn('flex min-h-44 flex-col items-center justify-center px-6 py-6 text-center', className)}>
       <span
         className={cn(
           'mb-2.5 flex size-9 items-center justify-center rounded-lg',
@@ -193,7 +193,7 @@ export function WidgetError({ className }: { className?: string }) {
 /** Suspense fallback: a card with a header and N skeleton rows. */
 export function WidgetSkeleton({ rows = 4, className, chart = false }: { rows?: number; className?: string; chart?: boolean }) {
   return (
-    <div className={cn('flex h-full min-h-48 flex-col rounded-lg border border-border bg-card shadow-card', className)} aria-hidden>
+    <div className={cn('flex min-h-48 flex-col rounded-lg border border-border bg-card shadow-card', className)} aria-hidden>
       <div className="flex items-center gap-2.5 border-b border-border px-4 py-3.5">
         <Skeleton className="size-7 rounded-md" />
         <Skeleton className="h-4 w-36" />

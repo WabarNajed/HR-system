@@ -10,7 +10,8 @@ import { getBankAccount, getCompensation } from '../../queries';
 import type { EmployeeRecord } from '../../types';
 import { ExpiryBadge } from '../expiry-badge';
 import { IbanReveal } from './iban-reveal';
-import { ageFrom } from './profile-parts';
+import { nationalityKey } from '../../nationality';
+import { ageFrom, iqamaExpiryHijri } from './profile-parts';
 
 export async function PersonalTab({
   employee,
@@ -32,6 +33,9 @@ export async function PersonalTab({
   ]);
   const today = todayIso();
   const d = (v: string | null) => (v ? formatDate(v, locale) : null);
+  const nationalityCode = nationalityKey(employee.nationality);
+  const nationality = nationalityCode ? t(`nationalityValues.${nationalityCode}`) : employee.nationality;
+  const iqamaHijri = iqamaExpiryHijri(employee, locale);
   const en = (group: string, v: string | null) => (v && tt.has(`${group}.${v}`) ? tt(`${group}.${v}`) : v);
   const withBadge = (date: string | null) =>
     date ? (
@@ -51,7 +55,7 @@ export async function PersonalTab({
           className="max-sm:grid-cols-2"
           items={[
             { label: t('fields.gender'), value: en('gender', employee.gender) },
-            { label: t('fields.nationality'), value: employee.nationality },
+            { label: t('fields.nationality'), value: nationality },
             {
               label: t('fields.dateOfBirth'),
               value: d(employee.date_of_birth),
@@ -79,7 +83,7 @@ export async function PersonalTab({
             {
               label: t('fields.iqamaExpiryDate'),
               value: withBadge(employee.iqama_expiry_date),
-              hint: employee.iqama_expiry_hijri ? t('profile.personal.hijri', { date: employee.iqama_expiry_hijri }) : undefined,
+              hint: iqamaHijri ? t('profile.personal.hijri', { date: iqamaHijri }) : undefined,
             },
             {
               label: t('fields.outsideKingdom'),

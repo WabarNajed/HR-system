@@ -60,7 +60,7 @@ export async function ComplianceRow() {
                   className="group/cell flex min-w-0 flex-col px-2 py-2.5 outline-none sm:px-3 transition-colors hover:bg-accent/60 focus-visible:bg-accent"
                 >
                   <span className={cn('numeric text-lg leading-6 font-semibold', cell.tone)}>{n(cell.value)}</span>
-                  <span className="truncate text-[0.6875rem] text-muted-foreground group-hover/cell:text-foreground">{cell.label}</span>
+                  <span className="text-2xs break-words text-muted-foreground group-hover/cell:text-foreground">{cell.label}</span>
                 </Link>
               ))}
             </div>

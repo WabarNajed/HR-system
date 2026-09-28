@@ -63,7 +63,10 @@ export function StatCard({ label, value, icon: Icon, tone = 'primary', delta, hi
       <span aria-hidden className={cn('absolute inset-y-3 start-0 w-[3px] rounded-e-full opacity-80', toneBar[tone])} />
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <div className="truncate text-meta font-medium text-muted-foreground">{label}</div>
+          {/* Two lines before clamping: at 390px a single-line truncate hid what the number means. */}
+          <div className="line-clamp-2 text-meta font-medium break-words text-muted-foreground" title={typeof label === 'string' ? label : undefined}>
+            {label}
+          </div>
           <div className="mt-1.5 flex flex-wrap items-baseline gap-x-2 gap-y-1">
             <span className="text-[1.5rem] leading-8 font-semibold numeric tracking-tight text-foreground sm:text-stat">{value}</span>
             {delta ? (
@@ -92,7 +95,12 @@ export function StatCard({ label, value, icon: Icon, tone = 'primary', delta, hi
       </div>
       {hint || delta?.label ? (
         <div className="mt-2 flex items-center gap-1 text-xs text-muted-foreground">
-          <span className="truncate">{hint ?? delta?.label}</span>
+          <span
+            className="line-clamp-2 min-w-0 break-words"
+            title={typeof (hint ?? delta?.label) === 'string' ? (hint ?? delta?.label) as string : undefined}
+          >
+            {hint ?? delta?.label}
+          </span>
           {href ? (
             <ChevronRightIcon className="ms-auto size-3.5 shrink-0 text-faint-foreground transition-transform group-hover/stat:translate-x-0.5 rtl:rotate-180 rtl:group-hover/stat:-translate-x-0.5" />
           ) : null}

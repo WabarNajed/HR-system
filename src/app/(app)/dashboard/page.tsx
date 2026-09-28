@@ -73,13 +73,13 @@ export default async function DashboardPage() {
 
       {view.admin ? (
         <DashboardSection title={t('sections.administration.title')} description={t('sections.administration.description')} icon={ShieldCheckIcon}>
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+          <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-3">
             <div className="lg:col-span-2">
               <Suspense fallback={<WidgetSkeleton rows={6} />}>
                 <OrgHealthWidget year={year} canSetup={checkAccess(ctx, ROUTE_ACCESS['/setup'])} />
               </Suspense>
             </div>
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-1">
+            <div className="grid grid-cols-1 items-start gap-4 md:grid-cols-2 lg:grid-cols-1">
               <Suspense fallback={<WidgetSkeleton rows={3} chart />}>
                 <UsersSummaryWidget />
               </Suspense>
@@ -88,7 +88,7 @@ export default async function DashboardPage() {
               </Suspense>
             </div>
           </div>
-          <div className={canAudit ? 'grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3' : 'grid grid-cols-1 gap-4 md:grid-cols-2'}>
+          <div className={canAudit ? 'grid grid-cols-1 items-start gap-4 md:grid-cols-2 xl:grid-cols-3' : 'grid grid-cols-1 items-start gap-4 md:grid-cols-2'}>
             <Suspense fallback={<WidgetSkeleton rows={4} />}>
               <RolesSummaryWidget />
             </Suspense>
@@ -121,7 +121,7 @@ export default async function DashboardPage() {
             </Suspense>
           ) : null}
           {canDocuments ? (
-            <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+            <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-3">
               <div className="lg:col-span-2">
                 <Suspense fallback={<WidgetSkeleton rows={6} />}>
                   <RequestQueueWidget />
@@ -137,7 +137,7 @@ export default async function DashboardPage() {
             </Suspense>
           )}
           {canAudit ? (
-            <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+            <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-3">
               <Suspense fallback={<WidgetSkeleton rows={5} chart />}>
                 <WorkforceOverviewWidget />
               </Suspense>
@@ -158,9 +158,9 @@ export default async function DashboardPage() {
       {view.manager && ctx.employee ? (
         <DashboardSection title={t('sections.team.title')} description={multi ? t('sections.team.description') : undefined} icon={UsersIcon}>
           <Suspense fallback={<KpiRowSkeleton />}>
-            <ManagerKpis />
+            <ManagerKpis employeeId={ctx.employee.id} alongsideHr={view.hr} />
           </Suspense>
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+          <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-3">
             <div className="lg:col-span-2">
               <Suspense fallback={<WidgetSkeleton rows={5} />}>
                 <ApprovalQueueWidget userId={ctx.user.id} />
@@ -185,7 +185,7 @@ export default async function DashboardPage() {
           <Suspense fallback={<KpiRowSkeleton />}>
             <EmployeeKpis employeeId={ctx.employee.id} />
           </Suspense>
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <div className="grid grid-cols-1 items-start gap-4 md:grid-cols-2 xl:grid-cols-3">
             <Suspense fallback={<WidgetSkeleton rows={5} />}>
               <RecentRequestsWidget employeeId={ctx.employee.id} userId={ctx.user.id} />
             </Suspense>
@@ -203,7 +203,7 @@ export default async function DashboardPage() {
 
       {!view.employee && !view.admin && !view.hr ? (
         <DashboardSection title={t('sections.workspace.titleSingle')} icon={BriefcaseBusinessIcon}>
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
             <Widget title={t('sections.workspace.title')} icon={UserRoundIcon}>
               <WidgetEmpty icon={UserRoundIcon} title={t('sections.workspace.notLinkedTitle')} description={t('sections.workspace.notLinkedDescription')} />
             </Widget>

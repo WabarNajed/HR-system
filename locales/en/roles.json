@@ -44,7 +44,11 @@
     "unsaved": "{count, plural, one {# unsaved change} other {# unsaved changes}}",
     "module": "Module",
     "toggleColumn": "Toggle {action} for all modules",
-    "toggleRow": "Toggle all permissions for {module}"
+    "toggleRow": "Toggle all permissions for {module}",
+    "allModules": "All modules",
+    "moduleSummary": "{granted} of {total} granted",
+    "changedCount": "{count, plural, one {# change} other {# changes}}",
+    "allActions": "All permissions for this module"
   },
   "members": {
     "title": "Members",

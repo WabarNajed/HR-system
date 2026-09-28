@@ -282,7 +282,7 @@ export function RolesConsole({ roles, selectedKey, members, canAdminister, isSup
           )}
         >
           <div className="flex flex-wrap items-center gap-3 rounded-lg border border-border bg-card/95 px-4 py-2.5 shadow-raised backdrop-blur-md">
-            <span className="flex min-w-0 flex-1 items-center gap-2 text-meta font-medium text-warning">
+            <span className="flex min-w-40 flex-1 items-center gap-2 text-meta font-medium text-warning">
               <CircleDotIcon className="size-4 shrink-0" aria-hidden />
               {t('matrix.unsaved', { count: changes })}
             </span>

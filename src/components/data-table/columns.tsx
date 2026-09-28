@@ -103,6 +103,6 @@ export function actionsColumn<TData>(actions: (row: TData) => RowAction<TData>[]
     ),
     enableSorting: false,
     enableHiding: false,
-    meta: { width: '3.5rem', align: 'end' },
+    meta: { width: '3.5rem', align: 'end', stickyEnd: true },
   };
 }

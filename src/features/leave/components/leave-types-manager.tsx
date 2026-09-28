@@ -11,6 +11,7 @@ import {
   PlusIcon,
   TagsIcon,
   Trash2Icon,
+  UploadIcon,
   WalletCardsIcon,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -20,6 +21,7 @@ import { toast } from 'sonner';
 import { actionsColumn, DataTable, type FilterDef } from '@/components/data-table';
 import { ColorPicker } from '@/components/shared/color-picker';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog';
+import { PageHeader } from '@/components/shared/page-header';
 import { StatusBadge } from '@/components/shared/status-badge';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -30,6 +32,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Sheet, SheetBody, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
+import { SimpleTooltip } from '@/components/ui/tooltip';
 import type { Locale } from '@/lib/i18n/config';
 import { localized } from '@/lib/i18n/localized';
 import { formatDays } from '@/lib/format';
@@ -337,8 +340,21 @@ export function LeaveTypeSheet({
 /**
  * Leave types master data (settings pattern): used by /settings/leave-types and the Leave Types tab
  * of /leave. Read-only unless `canEdit` (settings.edit or leave.administer, organization-scoped).
+ * With `page` (the settings route) it renders the master-data page header — Import + Add in the
+ * header, KPIs below it, Export in the table toolbar — like departments / job titles; inside the
+ * /leave tab the Add button stays in the table toolbar.
  */
-export function LeaveTypesManager({ rows, canEdit, canExport = false }: { rows: LeaveTypeRow[]; canEdit: boolean; canExport?: boolean }) {
+export function LeaveTypesManager({
+  rows,
+  canEdit,
+  canExport = false,
+  page,
+}: {
+  rows: LeaveTypeRow[];
+  canEdit: boolean;
+  canExport?: boolean;
+  page?: { title: string; description: string; kpis?: ReactNode };
+}) {
   const t = useTranslations('leave');
   const tc = useTranslations('common');
   const te = useTranslations('enums');
@@ -511,8 +527,47 @@ export function LeaveTypesManager({ rows, canEdit, canExport = false }: { rows: 
     </Button>
   ) : null;
 
+  // Settings page header (master-data pattern). Leave types have no import template (each type
+  // carries balance and request rules), so Import is shown disabled with the reason.
+  const header = page ? (
+    <PageHeader
+      compact
+      title={page.title}
+      description={page.description}
+      actions={
+        <>
+          <SimpleTooltip content={t('types.importUnavailable')}>
+            <span tabIndex={0}>
+              <Button variant="outline" disabled>
+                <UploadIcon />
+                {tc('import')}
+              </Button>
+            </span>
+          </SimpleTooltip>
+          {canEdit ? (
+            <Button onClick={() => setSheet({ open: true, row: null })}>
+              <PlusIcon />
+              {t('types.add')}
+            </Button>
+          ) : (
+            <SimpleTooltip content={t('types.readOnly')}>
+              <span tabIndex={0}>
+                <Button disabled>
+                  <PlusIcon />
+                  {t('types.add')}
+                </Button>
+              </span>
+            </SimpleTooltip>
+          )}
+        </>
+      }
+    />
+  ) : null;
+
   return (
     <>
+      {header}
+      {page?.kpis}
       <DataTable
         tableId="leave-types"
         mode="client"
@@ -523,7 +578,7 @@ export function LeaveTypesManager({ rows, canEdit, canExport = false }: { rows: 
         filters={filters}
         searchPlaceholder={t('types.searchPlaceholder')}
         searchText={(r) => `${r.name_ar} ${r.name_en} ${r.code}`}
-        toolbarActions={addButton}
+        toolbarActions={page ? undefined : addButton}
         exportDataset={canExport ? 'leave_types' : undefined}
         defaultSort={{ id: 'sort_order', desc: false }}
         defaultPageSize={25}

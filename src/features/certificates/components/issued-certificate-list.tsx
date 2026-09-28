@@ -74,7 +74,7 @@ export function IssuedCertificateList({
                 ) : null}
                 <SimpleTooltip content={t('actions.openVerification')}>
                   <Button asChild size="icon-sm" variant="ghost" aria-label={t('actions.openVerification')}>
-                    <a href={certificateVerifyPath(c.certificate_number)} target="_blank" rel="noopener noreferrer">
+                    <a href={certificateVerifyPath(c.certificate_number, c.verification_code)} target="_blank" rel="noopener noreferrer">
                       <ExternalLinkIcon />
                     </a>
                   </Button>
@@ -86,7 +86,7 @@ export function IssuedCertificateList({
                     aria-label={t('actions.copyVerifyLink')}
                     onClick={async () => {
                       try {
-                        await navigator.clipboard.writeText(certificateVerifyUrl(c.certificate_number));
+                        await navigator.clipboard.writeText(certificateVerifyUrl(c.certificate_number, c.verification_code));
                         toast.success(t('toast.linkCopied'));
                       } catch {
                         toast.error(tc('copyToClipboard'));

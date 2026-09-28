@@ -87,6 +87,7 @@
     "mineIntro": "Your leave balances for {year}. Available = remaining − pending requests.",
     "availableOf": "available of {total}",
     "actions": "Balance actions",
+    "selfLocked": "Your own balance can only be changed by another HR user.",
     "searchPlaceholder": "Search employees…",
     "tableEmptyTitle": "No balances for this year",
     "tableEmptyDescription": "Initialize balances to create each employee’s entitlement for the year.",
@@ -157,6 +158,8 @@
   "types": {
     "pageDescription": "Leave types, entitlements and counting rules used by leave requests and balances.",
     "add": "Add leave type",
+    "readOnly": "You have view-only access to leave types.",
+    "importUnavailable": "Leave types can’t be imported — each type carries its own balance and request rules, so add them here.",
     "searchPlaceholder": "Search leave types…",
     "deducts": "Deducts balance",
     "noDeduct": "Not deducted",
@@ -223,6 +226,7 @@
   "holidays": {
     "pageDescription": "Official holidays excluded from working-day leave counts and request SLA due dates.",
     "add": "Add holiday",
+    "readOnly": "You have view-only access to public holidays.",
     "year": "Year",
     "yearSummary": "{count, plural, =0 {No active holidays} one {# active holiday} other {# active holidays}} · {days, plural, =0 {no working days off} one {# working day off} other {# working days off}}",
     "searchPlaceholder": "Search holidays…",

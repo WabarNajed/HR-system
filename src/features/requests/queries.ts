@@ -1,5 +1,6 @@
 import 'server-only';
 
+import { normalizeSearch } from '@/features/employees/directory-params';
 import { DEFAULT_TIME_ZONE, type Locale } from '@/lib/i18n/config';
 import { employeeDisplayName } from '@/lib/i18n/localized';
 import { toIlikePattern, type ListParams } from '@/lib/list-params';
@@ -257,8 +258,8 @@ function listSelect(innerEmployee: boolean): string {
   return `${LIST_COLUMNS},
     request_type:request_types(id, key, name_ar, name_en, icon, color, category),
     employee:employees${innerEmployee ? '!inner' : ''}(id, employee_number, name_ar, name_en, avatar_path, department_id, department:departments!department_id(name_ar, name_en)),
-    assignee:profiles!assigned_to(full_name, employee:employees!profiles_employee_id_fkey(name_ar, name_en)),
-    approver:profiles!current_approver_id(full_name, employee:employees!profiles_employee_id_fkey(name_ar, name_en)),
+    assignee:profile_cards!assigned_to(full_name, employee:employees!profiles_employee_id_fkey(name_ar, name_en)),
+    approver:profile_cards!current_approver_id(full_name, employee:employees!profiles_employee_id_fkey(name_ar, name_en)),
     step:request_workflow_steps!current_step_id(name_ar, name_en, can_return, can_reassign)`;
 }
 
@@ -372,7 +373,8 @@ function isIsoDate(value: string | undefined): value is string {
 }
 
 async function searchEmployeeIds(supabase: ServerSupabaseClient, q: string): Promise<string[]> {
-  const { data } = await supabase.from('employees').select('id').ilike('search_text', toIlikePattern(q.toLowerCase())).limit(200);
+  // `search_norm` folds Arabic letter variants (أ/إ/آ→ا, ة→ه, …) — "احمد" finds "أحمد".
+  const { data } = await supabase.from('employees').select('id').ilike('search_norm', toIlikePattern(normalizeSearch(q))).limit(200);
   return (data ?? []).map((r) => r.id);
 }
 
@@ -521,26 +523,6 @@ export async function listRequestsForExport(
 
 /* ─── Counts & KPIs ───────────────────────────────────────────────────────── */
 
-async function headCount(build: (q: AnyQuery) => AnyQuery, supabase: ServerSupabaseClient): Promise<number> {
-  const { count, error } = await build(supabase.from('hr_requests').select('id', { count: 'exact', head: true }));
-  if (error) {
-    console.error('[requests] count failed:', error.code, error.message);
-    return 0;
-  }
-  return count ?? 0;
-}
-
-export async function countRequestTabs(supabase: ServerSupabaseClient): Promise<Record<RequestTab, number>> {
-  const entries = await Promise.all(
-    (Object.keys(TAB_STATUSES) as RequestTab[]).map(async (tab) => {
-      const statuses = TAB_STATUSES[tab];
-      const n = await headCount((q) => (statuses ? q.in('status', statuses as string[]) : q.neq('status', 'draft')), supabase);
-      return [tab, n] as const;
-    }),
-  );
-  return Object.fromEntries(entries) as Record<RequestTab, number>;
-}
-
 export type RequestKpis = {
   open: number;
   awaitingApprovals: number;
@@ -550,18 +532,35 @@ export type RequestKpis = {
   completedThisMonth: number;
 };
 
-export async function requestKpis(supabase: ServerSupabaseClient, access: RequestAccess, now = new Date()): Promise<RequestKpis> {
-  const nowIso = now.toISOString();
-  const soonIso = new Date(now.getTime() + 24 * 3600 * 1000).toISOString();
-  const [open, awaitingApprovals, awaitingReturned, overdue, dueSoon, completedThisMonth] = await Promise.all([
-    headCount((q) => q.in('status', [...OPEN_STATUSES, 'returned']), supabase),
-    headCount((q) => q.or(pendingForMeOr(access)), supabase),
-    headCount((q) => q.eq('status', 'returned').eq('requester_id', access.userId), supabase),
-    headCount((q) => q.in('status', OPEN_STATUSES as string[]).lt('due_at', nowIso), supabase),
-    headCount((q) => q.in('status', OPEN_STATUSES as string[]).gte('due_at', nowIso).lte('due_at', soonIso), supabase),
-    headCount((q) => q.eq('status', 'completed').gte('completed_at', monthStartIso(now)), supabase),
-  ]);
-  return { open, awaitingApprovals, awaitingReturned, overdue, dueSoon, completedThisMonth };
+export type RequestCenterCounts = {
+  tabs: Record<RequestTab, number>;
+  kpis: RequestKpis;
+  /** Approvals queue (requests awaiting the viewer's decision). */
+  queue: { pending: number; overdue: number; dueSoon: number };
+};
+
+/**
+ * Tab counts, KPIs and approvals-queue counters from ONE RLS-scoped scan
+ * (`request_center_counts`, security invoker — same rows as the list queries).
+ */
+export async function requestCenterCounts(supabase: ServerSupabaseClient, now = new Date()): Promise<RequestCenterCounts> {
+  const { data, error } = await supabase.rpc('request_center_counts', { p_now: now.toISOString(), p_month_start: monthStartIso(now) });
+  if (error) console.error('[requests] request_center_counts failed:', error.code, error.message);
+  const d = (data ?? {}) as Record<string, unknown>;
+  const n = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : 0);
+  const tabs = (d.tabs ?? {}) as Record<string, unknown>;
+  return {
+    tabs: Object.fromEntries((Object.keys(TAB_STATUSES) as RequestTab[]).map((tab) => [tab, n(tabs[tab])])) as Record<RequestTab, number>,
+    kpis: {
+      open: n(d.open),
+      awaitingApprovals: n(d.awaiting_approvals),
+      awaitingReturned: n(d.awaiting_returned),
+      overdue: n(d.overdue),
+      dueSoon: n(d.due_soon),
+      completedThisMonth: n(d.completed_month),
+    },
+    queue: { pending: n(d.awaiting_approvals), overdue: n(d.queue_overdue), dueSoon: n(d.queue_due_soon) },
+  };
 }
 
 /* ─── Filter options ──────────────────────────────────────────────────────── */
@@ -573,20 +572,48 @@ export async function loadDepartments(supabase: ServerSupabaseClient): Promise<N
   return (data ?? []) as NamedOption[];
 }
 
-/** Employees the viewer can filter by (RLS: team for managers, organization for HR). */
-export async function loadEmployeeOptions(supabase: ServerSupabaseClient, limit = 1000): Promise<NamedOption[]> {
-  const { data } = await supabase
+/** Largest employee set offered as a pick list; beyond it the table search (all employees, server-side) is used. */
+export const EMPLOYEE_PICKLIST_MAX = 100;
+
+type EmployeeOptionRow = { id: string; name_ar: string | null; name_en: string | null; employee_number: string | null };
+
+function toEmployeeOptions(rows: EmployeeOptionRow[], locale: Locale): NamedOption[] {
+  return rows
+    .map((e) => ({ id: e.id, name_ar: e.name_ar, name_en: e.name_en, hint: e.employee_number }))
+    .sort((a, b) => employeeDisplayName(a, locale).localeCompare(employeeDisplayName(b, locale), locale));
+}
+
+/**
+ * Employee filter options (RLS: the team for managers, the organization for HR).
+ * - Up to EMPLOYEE_PICKLIST_MAX visible employees: the complete list (a manager's team).
+ * - More: only the currently selected ids (their chip labels); other employees are found through the
+ *   table search, which matches every visible employee server-side. Nothing is silently truncated.
+ */
+export async function loadEmployeeFilterOptions(
+  supabase: ServerSupabaseClient,
+  selectedIds: readonly string[],
+  locale: Locale,
+): Promise<{ options: NamedOption[]; complete: boolean }> {
+  const { data, error } = await supabase
     .from('employees')
     .select('id, name_ar, name_en, employee_number')
     .is('archived_at', null)
-    .order('name_en')
-    .limit(limit);
-  return ((data ?? []) as { id: string; name_ar: string | null; name_en: string | null; employee_number: string | null }[]).map((e) => ({
-    id: e.id,
-    name_ar: e.name_ar,
-    name_en: e.name_en,
-    hint: e.employee_number,
-  }));
+    .order('id')
+    .limit(EMPLOYEE_PICKLIST_MAX + 1);
+  if (error) console.error('[requests] employee options failed:', error.code, error.message);
+  const rows = (data ?? []) as EmployeeOptionRow[];
+  if (rows.length <= EMPLOYEE_PICKLIST_MAX) {
+    const missing = uuids([...selectedIds]).filter((id) => !rows.some((r) => r.id === id));
+    const extra = missing.length ? await employeesByIds(supabase, missing) : [];
+    return { options: toEmployeeOptions([...rows, ...extra], locale), complete: true };
+  }
+  const ids = uuids([...selectedIds]);
+  return { options: toEmployeeOptions(ids.length ? await employeesByIds(supabase, ids) : [], locale), complete: false };
+}
+
+async function employeesByIds(supabase: ServerSupabaseClient, ids: string[]): Promise<EmployeeOptionRow[]> {
+  const { data } = await supabase.from('employees').select('id, name_ar, name_en, employee_number').in('id', ids.slice(0, 50));
+  return (data ?? []) as EmployeeOptionRow[];
 }
 
 export async function loadRequestHandlers(supabase: ServerSupabaseClient): Promise<{ id: string; label_ar: string; label_en: string }[]> {
@@ -743,7 +770,7 @@ export async function getRequestDetail(supabase: ServerSupabaseClient, id: strin
   const [reqRes, capsRes] = await Promise.all([
     supabase
       .from('hr_requests')
-      .select(`${listSelect(false)}, priority, requester:profiles!requester_id(full_name, employee_id, employee:employees!profiles_employee_id_fkey(name_ar, name_en))`)
+      .select(`${listSelect(false)}, priority, requester:profile_cards!requester_id(full_name, employee_id, employee:employees!profiles_employee_id_fkey(name_ar, name_en))`)
       .eq('id', id)
       .maybeSingle(),
     supabase.rpc('get_request_capabilities', { p_request_id: id }),
@@ -763,7 +790,7 @@ export async function getRequestDetail(supabase: ServerSupabaseClient, id: strin
     supabase.from('hr_request_values').select('field_key, value').eq('request_id', id),
     supabase
       .from('request_attachments')
-      .select('id, field_key, storage_path, file_name, file_size, mime_type, uploaded_by, created_at, uploader:profiles!uploaded_by(full_name)')
+      .select('id, field_key, storage_path, file_name, file_size, mime_type, uploaded_by, created_at, uploader:profile_cards!uploaded_by(full_name)')
       .eq('request_id', id)
       .order('created_at'),
     supabase.from('request_comments').select('id, author_id, author_name, body, is_internal, created_at').eq('request_id', id).order('created_at'),
@@ -787,7 +814,7 @@ export async function getRequestDetail(supabase: ServerSupabaseClient, id: strin
   for (const v of (valuesRes.data ?? []) as { field_key: string; value: unknown }[]) values[v.field_key] = v.value;
   if (raw.subtype) values.subtype = raw.subtype;
 
-  const attachments = ((attRes.data ?? []) as {
+  const attachments = ((attRes.data ?? []) as unknown as {
     id: string;
     field_key: string | null;
     storage_path: string;

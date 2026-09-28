@@ -173,10 +173,11 @@ begin
   select id, 'تابع', 'son' from public.employees where employee_number like 'T-%';
   insert into public.employee_insurance (employee_id, provider, policy_number, expiry_date)
   select id, 'Insurer', 'POL-1', current_date + 45 from public.employees where employee_number like 'T-%';
+  -- one fresh id per row (an uncorrelated LATERAL gen_random_uuid() can be evaluated once → duplicate key)
   insert into public.employee_documents (id, employee_id, document_type, document_number, status, is_confidential, storage_path)
-  select d.doc_id, e.id, 'passport', 'P-' || e.employee_number, 'valid', false, e.id::text || '/' || d.doc_id::text || '/passport.pdf'
-  from public.employees e cross join lateral (select gen_random_uuid() as doc_id) d
-  where e.employee_number like 'T-%';
+  select d.doc_id, d.id, 'passport', 'P-' || d.employee_number, 'valid', false, d.id::text || '/' || d.doc_id::text || '/passport.pdf'
+  from (select e.id, e.employee_number, gen_random_uuid() as doc_id
+        from public.employees e where e.employee_number like 'T-%') d;
   insert into public.employee_documents (employee_id, document_type, status)
   select id, 'medical_report', 'valid' from public.employees where employee_number like 'T-%';
 end;

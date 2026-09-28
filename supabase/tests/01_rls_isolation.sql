@@ -80,10 +80,17 @@ begin
     pg_temp.cnt('select 1 from public.email_templates') = 0 and pg_temp.cnt('select 1 from public.email_logs') = 0);
   perform pg_temp.check('employee sees own roles only',
     pg_temp.cnt(format('select 1 from public.user_roles where user_id <> %L', pg_temp.id('emp1'))) = 0);
-  perform pg_temp.check('employee can see manager and HR profiles but not peers',
-    pg_temp.cnt(format('select 1 from public.profiles where id = %L', pg_temp.id('mgr'))) = 1
-    and pg_temp.cnt(format('select 1 from public.profiles where id = %L', pg_temp.id('hro'))) = 1
-    and pg_temp.cnt(format('select 1 from public.profiles where id in (%L, %L)', pg_temp.id('emp2'), pg_temp.id('emp3'))) = 0);
+  perform pg_temp.check('employee reads only its own full profile row (no HR / manager e-mail, mobile, notes)',
+    pg_temp.cnt('select 1 from public.profiles') = 1 and (select id from public.profiles) = pg_temp.id('emp1'));
+  perform pg_temp.check('employee sees manager and HR name cards but not peers',
+    pg_temp.cnt(format('select 1 from public.profile_cards where id = %L', pg_temp.id('mgr'))) = 1
+    and pg_temp.cnt(format('select 1 from public.profile_cards where id = %L', pg_temp.id('hro'))) = 1
+    and pg_temp.cnt(format('select 1 from public.profile_cards where id in (%L, %L)', pg_temp.id('emp2'), pg_temp.id('emp3'))) = 0);
+  perform pg_temp.check('profile_cards exposes only id, full_name, employee_id, status',
+    (select array_agg(column_name::text order by column_name) from information_schema.columns
+      where table_schema = 'public' and table_name = 'profile_cards') = array['employee_id', 'full_name', 'id', 'status']);
+  perform pg_temp.throws('profile_cards is read-only',
+    format('update public.profile_cards set full_name = ''x'' where id = %L', pg_temp.id('hro')), 'permission denied');
   perform pg_temp.check('employee reads active configuration (request types, leave types, org settings)',
     pg_temp.cnt('select 1 from public.request_types') = v_types and pg_temp.cnt('select 1 from public.leave_types') = v_leave
     and pg_temp.cnt('select 1 from public.organization_settings') = 1);
@@ -106,6 +113,10 @@ begin
   perform pg_temp.check('manager sees self + 2 direct reports (3 employee rows)',
     pg_temp.cnt('select 1 from public.employees') = 3
     and pg_temp.cnt(format('select 1 from public.employees where id = %L', pg_temp.id('e_emp3'))) = 0);
+  perform pg_temp.check('manager sees direct reports'' name cards (not full profile rows), not other teams',
+    pg_temp.cnt(format('select 1 from public.profile_cards where id in (%L, %L)', pg_temp.id('emp1'), pg_temp.id('emp2'))) = 2
+    and pg_temp.cnt(format('select 1 from public.profile_cards where id = %L', pg_temp.id('emp3'))) = 0
+    and pg_temp.cnt('select 1 from public.profiles') = 1);
   perform pg_temp.check('manager cannot see reports'' compensation',
     pg_temp.cnt(format('select 1 from public.employee_compensation where employee_id = %L', e1)) = 0);
   perform pg_temp.check('manager cannot see reports'' bank accounts',
@@ -146,6 +157,8 @@ declare
 begin
   perform pg_temp.as_user('hro');
   perform pg_temp.check('HR officer sees all employees', pg_temp.cnt('select 1 from public.employees') = v_employees);
+  perform pg_temp.check('HR reads full profile rows of peers (portal accounts)',
+    pg_temp.cnt(format('select 1 from public.profiles where id in (%L, %L, %L)', pg_temp.id('emp1'), pg_temp.id('emp3'), pg_temp.id('pend'))) = 3);
   perform pg_temp.check('HR officer sees internal comments',
     pg_temp.cnt('select 1 from public.request_comments where is_internal') = v_internal and v_internal >= 1);
   perform pg_temp.check('HR officer sees all submitted requests',
@@ -166,7 +179,8 @@ begin
   foreach k in array array['pend', 'dis'] loop
     perform pg_temp.as_user(k);
     perform pg_temp.check(k || ': sees only own profile',
-      pg_temp.cnt('select 1 from public.profiles') = 1 and (select id from public.profiles) = pg_temp.id(k));
+      pg_temp.cnt('select 1 from public.profiles') = 1 and (select id from public.profiles) = pg_temp.id(k)
+      and pg_temp.cnt('select 1 from public.profile_cards') = 1);
     perform pg_temp.check(k || ': sees no business data',
       pg_temp.cnt('select 1 from public.employees') = 0 and pg_temp.cnt('select 1 from public.hr_requests') = 0
       and pg_temp.cnt('select 1 from public.leave_balances') = 0 and pg_temp.cnt('select 1 from public.notifications') = 0
@@ -199,6 +213,7 @@ begin
   perform pg_temp.as_anon();
   perform pg_temp.throws('anon cannot select employees', 'select 1 from public.employees', 'permission denied');
   perform pg_temp.throws('anon cannot select profiles', 'select 1 from public.profiles', 'permission denied');
+  perform pg_temp.throws('anon cannot select profile cards', 'select 1 from public.profile_cards', 'permission denied');
   perform pg_temp.throws('anon cannot call dashboard_stats', 'select public.dashboard_stats()', 'permission denied');
   perform pg_temp.throws('anon cannot call global_search', 'select * from public.global_search(''x'')', 'permission denied');
   perform pg_temp.throws('anon cannot call next_document_number', 'select public.next_document_number(''CERT'')', 'permission denied');

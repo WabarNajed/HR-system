@@ -178,6 +178,7 @@
     "vat": "VAT No.",
     "phone": "Tel.",
     "verifyCaption": "Scan to verify this certificate",
+    "verificationCode": "Verification code",
     "authorizedSignatory": "Authorized signatory",
     "watermark": "PREVIEW"
   }

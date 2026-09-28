@@ -69,7 +69,7 @@ export function LinkTabs({ items, param = 'tab', value, variant = 'line', preser
             {typeof item.count === 'number' ? (
               <span
                 className={cn(
-                  'min-w-5 rounded-full px-1.5 text-center text-[0.6875rem] leading-5 font-semibold numeric',
+                  'min-w-5 rounded-full px-1.5 text-center text-2xs leading-5 font-semibold numeric',
                   active ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground',
                   variant === 'segmented' && !active && 'bg-card',
                 )}
@@ -149,7 +149,7 @@ export function SegmentedTabs({ items, value, onValueChange, size = 'md', classN
             {item.icon}
             {item.label}
             {typeof item.count === 'number' ? (
-              <span className="rounded-full bg-background px-1.5 text-[0.6875rem] leading-4 font-semibold numeric">{item.count}</span>
+              <span className="rounded-full bg-background px-1.5 text-2xs leading-4 font-semibold numeric">{item.count}</span>
             ) : null}
           </button>
         );

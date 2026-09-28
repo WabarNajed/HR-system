@@ -220,7 +220,8 @@
     "selectedFilters": "تم تحديد {count}",
     "noFilterOptions": "لا توجد خيارات",
     "updating": "جارٍ التحديث…",
-    "total": "{count, plural, =0 {لا توجد سجلات} one {سجل واحد} two {سجلان} few {# سجلات} many {# سجلًا} other {# سجل}}"
+    "total": "{count, plural, =0 {لا توجد سجلات} one {سجل واحد} two {سجلان} few {# سجلات} many {# سجلًا} other {# سجل}}",
+    "exportReady": "تم تجهيز ملف التصدير."
   },
   "pagination": {
     "label": "التنقل بين الصفحات",
@@ -319,7 +320,8 @@
     "nextSlide": "التالي",
     "sortedAscending": "مرتب تصاعديًا",
     "sortedDescending": "مرتب تنازليًا",
-    "required": "مطلوب"
+    "required": "مطلوب",
+    "suggestions": "الخيارات المقترحة"
   },
   "dev": {
     "galleryTitle": "معرض الواجهة",
@@ -343,5 +345,20 @@
     "generatedBy": "بواسطة {name}",
     "search": "بحث: {query}",
     "rowLimit": "يتم عرض أول {count} سجل"
+  },
+  "calendar": {
+    "navigation": "التنقل بين الأشهر",
+    "previousMonth": "الانتقال إلى الشهر السابق",
+    "nextMonth": "الانتقال إلى الشهر التالي",
+    "chooseMonth": "اختر الشهر",
+    "chooseYear": "اختر السنة",
+    "weekNumber": "الأسبوع {week}",
+    "weekNumberHeader": "رقم الأسبوع",
+    "todayDay": "اليوم، {date}",
+    "selectedDay": "{date}، محدد"
+  },
+  "toast": {
+    "region": "الإشعارات المنبثقة",
+    "close": "إغلاق الإشعار"
   }
 }

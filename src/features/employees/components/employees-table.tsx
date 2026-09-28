@@ -24,7 +24,7 @@ import {
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { actionsColumn, DataTable, DataTableColumnHeader, exportHref, type FilterDef, type RowAction } from '@/components/data-table';
 import { EmployeeCell } from '@/components/shared/employee-cell';
 import { StatusBadge } from '@/components/shared/status-badge';
@@ -41,6 +41,7 @@ import {
 import { useDateFormat } from '@/lib/i18n/use-date-format';
 import { employeeAlternateName, employeeDisplayName, localized } from '@/lib/i18n/localized';
 import { fileRouteUrl } from '@/lib/storage';
+import { nationalityKey } from '../nationality';
 import { EMPLOYMENT_STATUSES, EMPLOYMENT_TYPES, GENDERS, IQAMA_FILTER_BUCKETS, type DirectoryRow, type Option } from '../types';
 import { ArchiveEmployeeDialog, type ArchiveTarget } from './archive-employee-dialog';
 import { ExpiryBadge } from './expiry-badge';
@@ -82,6 +83,13 @@ export function EmployeesTable({
   const locale = useLocale();
   const fmt = useDateFormat();
   const [archiveTarget, setArchiveTarget] = useState<ArchiveTarget | null>(null);
+  const nationalityLabel = useCallback(
+    (value: string | null) => {
+      const key = nationalityKey(value);
+      return key ? t(`nationalityValues.${key}`) : value;
+    },
+    [t],
+  );
 
   const columns = useMemo<ColumnDef<DirectoryRow>[]>(() => {
     const name = (r: { name_ar: string | null; name_en: string | null } | null) => (r ? localized(r, 'name', locale) : '');
@@ -197,7 +205,7 @@ export function EmployeesTable({
         enableSorting: false,
         header: () => t('columns.nationality'),
         meta: { label: t('columns.nationality'), defaultHidden: true },
-        cell: ({ row }) => row.original.nationality || dash,
+        cell: ({ row }) => nationalityLabel(row.original.nationality) || dash,
       },
       {
         id: 'employment_type',
@@ -275,7 +283,7 @@ export function EmployeesTable({
       }),
     );
     return cols;
-  }, [t, te, locale, fmt, orgView, canEdit, canRequestFor, today]);
+  }, [t, te, locale, fmt, orgView, canEdit, canRequestFor, today, nationalityLabel]);
 
   const filters = useMemo<FilterDef<DirectoryRow>[]>(
     () => [
@@ -295,7 +303,11 @@ export function EmployeesTable({
   const moreFilters = useMemo<FilterDef<DirectoryRow>[]>(() => {
     const defs: FilterDef<DirectoryRow>[] = [
       { key: 'jobTitle', title: t('filters.jobTitle'), options: options.jobTitles, icon: BriefcaseIcon },
-      { key: 'nationality', title: t('filters.nationality'), options: options.nationalities },
+      {
+        key: 'nationality',
+        title: t('filters.nationality'),
+        options: options.nationalities.map((o) => ({ ...o, label: nationalityLabel(o.value) || o.label })),
+      },
       {
         key: 'employmentType',
         title: t('filters.employmentType'),
@@ -332,7 +344,7 @@ export function EmployeesTable({
       ],
     });
     return defs;
-  }, [t, te, options, orgView]);
+  }, [t, te, options, orgView, nationalityLabel]);
 
   return (
     <>

@@ -7,6 +7,10 @@
   "revokedDescription": "This certificate was issued by {company} but has since been revoked and is no longer valid.",
   "notFoundTitle": "Certificate not found",
   "notFoundDescription": "No certificate matches this number. Check the number printed on the certificate and try again.",
+  "codeRequiredTitle": "Enter the verification code",
+  "codeRequiredDescription": "This certificate is on record with {company}. To see the holder's name, certificate type and issue date, enter the verification code printed next to the QR code on the certificate.",
+  "codeMismatchTitle": "Verification code does not match",
+  "codeMismatchDescription": "The code you entered does not match this certificate. Check the verification code printed next to the QR code and try again.",
   "theOrganization": "the organization",
   "fields": {
     "number": "Certificate number",
@@ -17,8 +21,12 @@
   },
   "lookup": {
     "title": "Verify another certificate",
+    "unlockTitle": "Show certificate details",
     "label": "Certificate number",
     "placeholder": "CERT-2026-000001",
+    "codeLabel": "Verification code",
+    "codePlaceholder": "XXXX-XXXX-XXXX",
+    "codeHint": "Printed next to the QR code on the certificate.",
     "submit": "Verify"
   },
   "privacyNote": "For privacy, this page shows only the details needed to confirm authenticity.",

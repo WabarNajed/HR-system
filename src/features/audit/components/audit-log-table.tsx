@@ -120,7 +120,7 @@ export function AuditLogTable({ rows, total, options, initialEvent, canExport, n
               <span className={cn('flex size-6 shrink-0 items-center justify-center rounded-md', auditToneClass(row.original.action))}>
                 <Icon className="size-3.5" aria-hidden />
               </span>
-              <Badge variant={TONE_BADGE[row.original.tone]} size="sm" className="max-w-full truncate" title={row.original.action}>
+              <Badge variant={TONE_BADGE[row.original.tone]} size="sm" className="max-w-full truncate" title={row.original.actionLabel}>
                 <span className="truncate">{row.original.actionLabel}</span>
               </Badge>
             </div>

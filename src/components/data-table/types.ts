@@ -17,6 +17,18 @@ declare module '@tanstack/react-table' {
     sticky?: boolean;
     /** Fixed width (CSS length), e.g. '12rem'. */
     width?: string;
+    /**
+     * Upper bound for the cell content (CSS length). Table cells ignore `max-width` in auto layout, so the
+     * content is wrapped in a bounded box — use it on long-text columns whose content uses `truncate`.
+     */
+    maxWidth?: string;
+    /**
+     * Pin the column at the inline end on horizontal scroll. Defaults to true for the trailing row-actions
+     * column (`actionsColumn()` or any last display column that cannot be hidden).
+     */
+    stickyEnd?: boolean;
+    /** Hidden by default when the viewport is narrower than this many px (user can re-enable it in "Columns"). */
+    defaultHiddenBelow?: number;
   }
 }
 

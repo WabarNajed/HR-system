@@ -1,9 +1,11 @@
 import type { Metadata, Viewport } from 'next';
-import { getLocale, getMessages, getTimeZone } from 'next-intl/server';
+import { getLocale, getTimeZone } from 'next-intl/server';
 import type { ReactNode } from 'react';
 import { Providers } from '@/components/providers';
 import { brandingPortalName, getPublicBranding } from '@/lib/branding';
+import { ROOT_CLIENT_NAMESPACES } from '@/lib/i18n/client-namespaces';
 import { dir, resolveLocale } from '@/lib/i18n/config';
+import { pickNamespaces } from '@/lib/i18n/messages';
 import { getTranslator } from '@/lib/i18n/translator';
 import { brandCssText } from '@/lib/utils';
 import { fontVariables } from './fonts';
@@ -30,7 +32,9 @@ export const viewport: Viewport = {
 };
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
-  const [locale, messages, timeZone, branding] = await Promise.all([getLocale(), getMessages(), getTimeZone(), getPublicBranding()]);
+  const [locale, timeZone, branding] = await Promise.all([getLocale(), getTimeZone(), getPublicBranding()]);
+  // Only the shared namespaces go to the browser here; route layouts add theirs (<ClientMessages>).
+  const messages = pickNamespaces(resolveLocale(locale), ROOT_CLIENT_NAMESPACES);
   // Runtime branding (Settings › Branding): validated hex colors only → safe to inline.
   const brandCss = brandCssText({ primary: branding.primaryColor, secondary: branding.secondaryColor });
 

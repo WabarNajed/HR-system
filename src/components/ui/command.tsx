@@ -2,6 +2,7 @@
 
 import { Command as CommandPrimitive } from 'cmdk';
 import { SearchIcon } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import type { ComponentProps } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
@@ -69,10 +70,13 @@ function CommandInput({ className, ...props }: ComponentProps<typeof CommandPrim
   );
 }
 
-function CommandList({ className, ...props }: ComponentProps<typeof CommandPrimitive.List>) {
+function CommandList({ className, label, ...props }: ComponentProps<typeof CommandPrimitive.List>) {
+  const t = useTranslations('common.a11y');
   return (
     <CommandPrimitive.List
       data-slot="command-list"
+      // cmdk's built-in accessible name is the English "Suggestions".
+      label={label ?? t('suggestions')}
       className={cn('max-h-80 scroll-py-1 overflow-x-hidden overflow-y-auto p-1', className)}
       {...props}
     />
@@ -89,10 +93,12 @@ function CommandEmpty({ className, ...props }: ComponentProps<typeof CommandPrim
   );
 }
 
-function CommandLoading({ className, ...props }: ComponentProps<typeof CommandPrimitive.Loading>) {
+function CommandLoading({ className, label, ...props }: ComponentProps<typeof CommandPrimitive.Loading>) {
+  const t = useTranslations('common.a11y');
   return (
     <CommandPrimitive.Loading
       data-slot="command-loading"
+      label={label ?? t('loading')}
       className={cn('py-6 text-center text-sm text-muted-foreground', className)}
       {...props}
     />

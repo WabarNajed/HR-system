@@ -2,6 +2,8 @@ import 'server-only';
 
 import { unstable_rethrow } from 'next/navigation';
 import { cache } from 'react';
+import { getActorProfiles, type ActorProfile } from '@/features/audit/queries';
+import { getAuditSummaryLookups, type AuditSummaryLookups } from '@/features/audit/summary';
 import { emailProvider } from '@/lib/email/send';
 import { createClient } from '@/lib/supabase/server';
 import type {
@@ -26,6 +28,7 @@ export const HR_QUEUE_LIMIT = 6;
 export const APPROVAL_QUEUE_LIMIT = 6;
 export const RECENT_REQUESTS_LIMIT = 6;
 export const MY_LEAVE_LIMIT = 5;
+export const RECENT_AUDIT_LIMIT = 6;
 
 export const OPEN_REQUEST_STATUSES = ['submitted', 'pending_manager_approval', 'pending_hr_review'] as const;
 const APPROVED_LEAVE_STATUSES = ['approved', 'in_progress', 'completed'] as const;
@@ -283,20 +286,37 @@ export type AuditFeedRow = {
   entity_id: string | null;
   employee_id: string | null;
   summary: string | null;
+  changes: unknown;
   actor_id: string | null;
   actor_email: string | null;
 };
 
-export const getRecentAudit = cache(async (): Promise<Loaded<AuditFeedRow[]>> =>
+export type AuditFeed = { rows: AuditFeedRow[]; actors: Map<string, ActorProfile>; lookups: AuditSummaryLookups };
+
+/**
+ * Latest business events for the HR dashboard. Sign-in / sign-out events are left out (they would
+ * crowd out everything else; the audit log keeps them); actors resolve to display names.
+ */
+export const getRecentAudit = cache(async (): Promise<Loaded<AuditFeed>> =>
   load('recent audit', async () => {
     const supabase = await createClient({ timeoutMs: TIMEOUT_MS });
     const { data, error } = await supabase
       .from('audit_logs')
-      .select('id, created_at, action, entity_type, entity_id, employee_id, summary, actor_id, actor_email')
+      .select('id, created_at, action, entity_type, entity_id, employee_id, summary, changes, actor_id, actor_email')
+      .not('action', 'like', 'auth.*')
       .order('created_at', { ascending: false })
-      .limit(6);
+      .order('id', { ascending: false })
+      .limit(RECENT_AUDIT_LIMIT);
     if (error) throw error;
-    return (data ?? []) as AuditFeedRow[];
+    const rows = (data ?? []) as AuditFeedRow[];
+    const [actors, lookups] = await Promise.all([
+      getActorProfiles(
+        supabase,
+        rows.map((r) => r.actor_id).filter((v): v is string => Boolean(v)),
+      ),
+      getAuditSummaryLookups(supabase, rows),
+    ]);
+    return { rows, actors, lookups };
   }),
 );
 

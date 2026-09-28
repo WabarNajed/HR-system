@@ -23,7 +23,8 @@ import { getBankAccount, getDependents, getEmployeeRecord, getManagerCard, getVi
 import type { RELATIONSHIPS } from '../types';
 import { ExpiryBadge } from './expiry-badge';
 import { IbanReveal } from './profile/iban-reveal';
-import { serviceLength } from './profile/profile-parts';
+import { nationalityKey } from '../nationality';
+import { iqamaExpiryHijri, serviceLength } from './profile/profile-parts';
 
 /**
  * The signed-in employee's own information (cross-module contract — owned by the employees module,
@@ -81,6 +82,9 @@ export async function SelfProfilePanel({ employeeId }: { employeeId: string | nu
         <ExpiryBadge date={date} today={today} />
       </span>
     ) : null;
+  const nationalityCode = nationalityKey(employee.nationality);
+  const nationality = nationalityCode ? t(`nationalityValues.${nationalityCode}`) : employee.nationality;
+  const iqamaHijri = iqamaExpiryHijri(employee, locale);
   const service = serviceLength(employee.joining_date, today);
   const serviceText = service
     ? [
@@ -142,11 +146,11 @@ export async function SelfProfilePanel({ employeeId }: { employeeId: string | nu
               { label: t('fields.nameAr'), value: employee.name_ar },
               { label: t('fields.nameEn'), value: employee.name_en },
               { label: t('fields.nationalId'), value: employee.national_id, ltr: true },
-              { label: t('fields.nationality'), value: employee.nationality },
+              { label: t('fields.nationality'), value: nationality },
               {
                 label: t('fields.iqamaExpiryDate'),
                 value: withBadge(employee.iqama_expiry_date),
-                hint: employee.iqama_expiry_hijri ? t('profile.personal.hijri', { date: employee.iqama_expiry_hijri }) : undefined,
+                hint: iqamaHijri ? t('profile.personal.hijri', { date: iqamaHijri }) : undefined,
               },
               { label: t('fields.passportNumber'), value: employee.passport_number, ltr: true },
               { label: t('fields.passportExpiryDate'), value: withBadge(employee.passport_expiry_date) },

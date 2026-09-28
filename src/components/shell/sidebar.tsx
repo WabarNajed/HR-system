@@ -70,7 +70,7 @@ export function SidebarContent({
             {collapsed ? (
               gi > 0 ? <div aria-hidden className="mx-2 my-2.5 h-px bg-sidebar-border" /> : null
             ) : (
-              <div className={cn('px-2.5 pb-1.5 text-[0.6875rem] font-semibold tracking-wide text-sidebar-muted-foreground uppercase', gi > 0 && 'pt-4')}>
+              <div className={cn('px-2.5 pb-1.5 text-2xs font-semibold tracking-wide text-sidebar-muted-foreground uppercase', gi > 0 && 'pt-4')}>
                 {t(group.labelKey)}
               </div>
             )}

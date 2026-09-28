@@ -64,8 +64,9 @@
     "certificates": "الشهادات",
     "certificatesHint": "الشهادات السارية الصادرة لك",
     "pendingApprovals": "الموافقات المعلقة",
+    "teamApprovals": "موافقات الفريق",
     "pendingApprovalsHint": "بانتظار قرارك",
-    "pendingApprovalsClear": "لا شيء بانتظارك",
+    "pendingApprovalsClear": "لا طلبات من فريقك بانتظارك",
     "directReports": "الموظفون التابعون",
     "teamOpenRequests": "{count, plural, =0 {لا توجد طلبات مفتوحة للفريق} one {طلب مفتوح واحد للفريق} two {طلبان مفتوحان للفريق} few {# طلبات مفتوحة للفريق} many {# طلبًا مفتوحًا للفريق} other {# طلب مفتوح للفريق}}",
     "teamOnLeave": "في إجازة اليوم من الفريق",
@@ -112,8 +113,8 @@
       "title": "قائمة الموافقات",
       "description": "{count, plural, one {طلب واحد بانتظارك} two {طلبان بانتظارك} few {# طلبات بانتظارك} many {# طلبًا بانتظارك} other {# طلب بانتظارك}}",
       "open": "فتح الموافقات",
-      "emptyTitle": "لا توجد موافقات معلقة",
-      "emptyDescription": "ستظهر هنا الطلبات التي تحتاج إلى قرارك.",
+      "emptyTitle": "لا موافقات معلقة لفريقك",
+      "emptyDescription": "ستظهر هنا طلبات فريقك التي تحتاج إلى قرارك.",
       "endOfQueue": "لا شيء آخر بانتظارك"
     },
     "teamRequests": {

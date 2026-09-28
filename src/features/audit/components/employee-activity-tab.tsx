@@ -15,6 +15,7 @@ import { createClient } from '@/lib/supabase/server';
 import { auditCategory, auditCategoryLabel, type AuditCategory, type AuditTranslator } from '../labels';
 import type { AuditEventView } from '../types';
 import { AUDIT_COLUMNS, getActorProfiles, type AuditRow } from '../queries';
+import { getAuditSummaryLookups } from '../summary';
 import { toAuditView } from '../view';
 import { AuditActivityTimeline, SelfActivityTimeline, type SelfActivityItem } from './activity-timeline';
 
@@ -82,10 +83,13 @@ async function loadActivity(
       if (list.error) throw list.error;
       if (recent.error) throw recent.error;
       const rows = (list.data ?? []) as AuditRow[];
-      const actors = await getActorProfiles(
-        supabase,
-        rows.map((r) => r.actor_id).filter((v): v is string => Boolean(v)),
-      );
+      const [actors, lookups] = await Promise.all([
+        getActorProfiles(
+          supabase,
+          rows.map((r) => r.actor_id).filter((v): v is string => Boolean(v)),
+        ),
+        getAuditSummaryLookups(supabase, rows),
+      ]);
       const byCategory = new Map<AuditCategory | 'other', number>();
       for (const r of recent.data ?? []) {
         const c = auditCategory(r.action) ?? 'other';
@@ -93,7 +97,7 @@ async function loadActivity(
       }
       return {
         kind: 'audit',
-        events: rows.map((r) => toAuditView(r, ctx, tr, actors)),
+        events: rows.map((r) => toAuditView(r, ctx, tr, actors, lookups)),
         total: list.count ?? rows.length,
         breakdown: [...byCategory.entries()].sort((a, b) => b[1] - a[1]).map(([category, count]) => ({ category, count })),
       };

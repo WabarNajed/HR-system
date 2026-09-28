@@ -40,7 +40,7 @@
     "requestNumber": "رقم الطلب",
     "submitted": "تاريخ التقديم",
     "requestStatus": "حالة الطلب",
-    "sla": "مستوى الخدمة",
+    "sla": "المهلة",
     "certificate": "الشهادة",
     "includeSalary": "إظهار الراتب",
     "includeAllowances": "تفاصيل البدلات",
@@ -178,6 +178,7 @@
     "vat": "الرقم الضريبي",
     "phone": "هاتف",
     "verifyCaption": "امسح الرمز للتحقق من صحة الشهادة",
+    "verificationCode": "رمز التحقق",
     "authorizedSignatory": "المفوّض بالتوقيع",
     "watermark": "معاينة"
   }

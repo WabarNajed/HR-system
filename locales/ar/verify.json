@@ -7,6 +7,10 @@
   "revokedDescription": "صدرت هذه الشهادة من {company} ثم أُلغيت، ولم تعد سارية.",
   "notFoundTitle": "لم يُعثر على الشهادة",
   "notFoundDescription": "لا توجد شهادة بهذا الرقم. تأكد من الرقم المطبوع على الشهادة وحاول مرة أخرى.",
+  "codeRequiredTitle": "أدخل رمز التحقق",
+  "codeRequiredDescription": "هذه الشهادة مسجّلة لدى {company}. لعرض اسم صاحبها ونوعها وتاريخ إصدارها، أدخل رمز التحقق المطبوع بجانب رمز QR على الشهادة.",
+  "codeMismatchTitle": "رمز التحقق غير مطابق",
+  "codeMismatchDescription": "الرمز المُدخل لا يطابق هذه الشهادة. تأكد من رمز التحقق المطبوع بجانب رمز QR وحاول مرة أخرى.",
   "theOrganization": "الجهة",
   "fields": {
     "number": "رقم الشهادة",
@@ -17,8 +21,12 @@
   },
   "lookup": {
     "title": "التحقق من شهادة أخرى",
+    "unlockTitle": "عرض تفاصيل الشهادة",
     "label": "رقم الشهادة",
     "placeholder": "CERT-2026-000001",
+    "codeLabel": "رمز التحقق",
+    "codePlaceholder": "XXXX-XXXX-XXXX",
+    "codeHint": "مطبوع بجانب رمز QR على الشهادة.",
     "submit": "تحقق"
   },
   "privacyNote": "حرصًا على الخصوصية، تعرض هذه الصفحة البيانات اللازمة للتحقق فقط.",
