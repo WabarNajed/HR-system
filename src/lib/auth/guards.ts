@@ -15,6 +15,7 @@ import {
 } from '@/lib/permissions';
 import { PATHNAME_HEADER } from '@/lib/supabase/proxy';
 import { getSessionState, type SessionContext } from './session';
+import { strictNextPath } from './next-path';
 
 /**
  * Page guards for Server Components (call at the top of a page/layout):
@@ -42,10 +43,10 @@ export class SessionUnavailableError extends Error {
 
 /** Only same-origin relative paths are allowed as redirect targets (prevents open redirects). */
 export function safeNextPath(value: string | null | undefined, fallback = '/dashboard'): string {
-  if (!value || typeof value !== 'string') return fallback;
-  if (!value.startsWith('/') || value.startsWith('//') || value.startsWith('/\\')) return fallback;
-  if (/^\/(login|register|auth\/|api\/)/.test(value)) return fallback;
-  return value;
+  // Delegates to the strict check (control characters, backslashes, other origins and normalized
+  // protocol-relative paths are rejected) so every caller — sign-in, /auth/callback, /auth/confirm —
+  // shares one open-redirect guard.
+  return strictNextPath(value, fallback);
 }
 
 async function currentPath(): Promise<string | null> {
