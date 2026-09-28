@@ -123,6 +123,11 @@ export function TemplateEditor({ template, previews, canEdit, userEmail }: Props
         toast.error(t('editor.required', { language: localeNames[l] }));
         return;
       }
+      if (content[l].body.length > BODY_MAX || content[l].subject.length > SUBJECT_MAX) {
+        setLang(l);
+        toast.error(resolve(`validation.maxLength|${JSON.stringify({ max: content[l].body.length > BODY_MAX ? BODY_MAX : SUBJECT_MAX })}`));
+        return;
+      }
     }
     startSaving(async () => {
       const result = await saveEmailTemplate({
@@ -157,6 +162,10 @@ export function TemplateEditor({ template, previews, canEdit, userEmail }: Props
     startTesting(async () => {
       if (!content[l].subject.trim() || !content[l].body.trim()) {
         toast.error(t('editor.required', { language: localeNames[l] }));
+        return;
+      }
+      if (content[l].body.length > BODY_MAX) {
+        toast.error(resolve(`validation.maxLength|${JSON.stringify({ max: BODY_MAX })}`));
         return;
       }
       const result = await sendTestEmail({ key: template.key, locale: l, subject: content[l].subject, body: content[l].body });
@@ -318,7 +327,7 @@ export function TemplateEditor({ template, previews, canEdit, userEmail }: Props
             <div className="flex flex-col gap-1.5">
               <div className="flex items-center justify-between">
                 <Label htmlFor={`body-${lang}`}>{t('editor.body')}</Label>
-                <span className="numeric text-xs text-faint-foreground">
+                <span className={cn('numeric text-xs', content[lang].body.length > BODY_MAX ? 'font-medium text-danger' : 'text-faint-foreground')}>
                   {content[lang].body.length}/{BODY_MAX}
                 </span>
               </div>

@@ -170,8 +170,8 @@
   "notifications": {
     "title": "Notifications",
     "description": "Choose which events notify people in the portal and by email.",
-    "summaryInApp": "{count} of {total} events in-app",
-    "summaryEmail": "{count} of {total} events by email",
+    "summaryInApp": "In-app: {count} of {total} events",
+    "summaryEmail": "Email: {count} of {total} events",
     "rule": "In-app off with email on delivers the email and files the notification as read; both off suppresses the event.",
     "groups": {
       "requests": "Requests & approvals",

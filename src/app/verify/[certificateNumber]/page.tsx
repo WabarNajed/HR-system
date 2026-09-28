@@ -134,7 +134,7 @@ export default async function VerifyCertificatePage({ params }: { params: Promis
               <DetailRow label={t('fields.type')}>{typeLabel}</DetailRow>
               <DetailRow label={t('fields.issueDate')}>
                 <span className="numeric">{formatDate(row.issue_date, locale, 'long')}</span>
-                <span className="block text-meta text-muted-foreground">{formatHijri(row.issue_date, locale)}</span>
+                <span className="block text-meta text-muted-foreground">{hijriLabel(row.issue_date, locale)}</span>
               </DetailRow>
               <DetailRow label={t('fields.status')}>
                 <StatusBadge domain="certificate" status={row.status} />
@@ -172,6 +172,13 @@ export default async function VerifyCertificatePage({ params }: { params: Promis
       </main>
     </div>
   );
+}
+
+/** Hijri date with its era marker: `17 ربيع الآخر 1448هـ` · `17 Rabiʻ II 1448 AH`. */
+function hijriLabel(date: string, locale: 'ar' | 'en'): string {
+  const text = formatHijri(date, locale);
+  if (!text) return '';
+  return locale === 'ar' ? `${text}هـ` : `${text} AH`;
 }
 
 function DetailRow({ label, children }: { label: string; children: React.ReactNode }) {

@@ -579,10 +579,21 @@ export async function getEmployeeBalances(employeeId: string, year: number): Pro
 /** Years that have balance rows (for the year picker), always including the current year ± 1. */
 export async function getBalanceYears(currentYear: number): Promise<number[]> {
   const supabase = await createClient();
-  const { data } = await supabase.from('leave_balances').select('year').order('year', { ascending: false }).limit(1000);
-  const years = new Set<number>([currentYear - 1, currentYear, currentYear + 1]);
-  for (const r of data ?? []) years.add(r.year);
-  return Array.from(years).sort((a, b) => b - a);
+  // Two single-row lookups (oldest / newest year) instead of scanning the balances table.
+  const [oldest, newest] = await Promise.all([
+    supabase.from('leave_balances').select('year').order('year', { ascending: true }).limit(1).maybeSingle(),
+    supabase.from('leave_balances').select('year').order('year', { ascending: false }).limit(1).maybeSingle(),
+  ]);
+  return yearSpan(currentYear, oldest.data?.year, newest.data?.year);
+}
+
+/** Current year ± 1 widened to [min, max] of the stored years (capped at 30 years), newest first. */
+function yearSpan(currentYear: number, min?: number | null, max?: number | null): number[] {
+  const from = Math.max(Math.min(currentYear - 1, min ?? currentYear), currentYear - 30);
+  const to = Math.min(Math.max(currentYear + 1, max ?? currentYear), currentYear + 30);
+  const years: number[] = [];
+  for (let y = to; y >= from; y--) years.push(y);
+  return years;
 }
 
 /** Adjustments + leave requests that moved one balance. RLS: own balance, direct reports' requests, HR. */
@@ -739,10 +750,12 @@ export async function listHolidaysForYear(year: number, settings: LeaveOrgSettin
 /** Years offered by the holidays year filter: the current year ± 1 plus any year that has holidays. */
 export async function getHolidayYears(currentYear: number): Promise<number[]> {
   const supabase = await createClient();
-  const { data } = await supabase.from('public_holidays').select('start_date').order('start_date', { ascending: false }).limit(500);
-  const years = new Set<number>([currentYear - 1, currentYear, currentYear + 1]);
-  for (const r of data ?? []) years.add(Number(r.start_date.slice(0, 4)));
-  return Array.from(years).sort((a, b) => b - a);
+  const [oldest, newest] = await Promise.all([
+    supabase.from('public_holidays').select('start_date').order('start_date', { ascending: true }).limit(1).maybeSingle(),
+    supabase.from('public_holidays').select('start_date').order('start_date', { ascending: false }).limit(1).maybeSingle(),
+  ]);
+  const year = (iso: string | undefined) => (iso ? Number(iso.slice(0, 4)) : null);
+  return yearSpan(currentYear, year(oldest.data?.start_date), year(newest.data?.start_date));
 }
 
 /* ─── Request panel ──────────────────────────────────────────────────────── */
@@ -826,11 +839,15 @@ export async function getLeavePanelData(requestId: string, ctx: SessionContext):
       .eq('leave_type_id', leaveType.id)
       .eq('year', year)
       .maybeSingle();
-    const remaining = b ? Number(b.remaining) : leaveType.default_entitlement;
-    const pending = b ? Number(b.pending) : 0;
-    const otherPending = pending - (effect === 'pending' ? days : 0);
-    const before = remaining + (effect === 'used' ? days : 0) - otherPending;
-    balance = { before, after: before - days, remaining, pending, year };
+    // Submission always creates the balance row, so a missing row on a submitted request means the
+    // viewer may not read it (e.g. a workflow approver outside HR): show no figures rather than a guess.
+    if (b || !lr) {
+      const remaining = b ? Number(b.remaining) : leaveType.default_entitlement;
+      const pending = b ? Number(b.pending) : 0;
+      const otherPending = pending - (effect === 'pending' ? days : 0);
+      const before = remaining + (effect === 'used' ? days : 0) - otherPending;
+      balance = { before, after: before - days, remaining, pending, year };
+    }
   }
 
   // Overlapping colleagues: HR (organization) or the requester's manager only.

@@ -20,6 +20,7 @@
     "optionValue": "Use letters, numbers, dots, dashes or underscores.",
     "roleRequired": "Choose the role that approves this step.",
     "userRequired": "Choose the user who approves this step.",
+    "userInactive": "The user chosen for a “Specific user” step is no longer active in the portal. Choose someone else.",
     "approvalRequired": "Turn on manager or HR approval — every request needs at least one approver."
   },
   "types": {
@@ -53,10 +54,10 @@
     "kpi": {
       "active": "Active types",
       "activeHint": "of {total} configured",
-      "managerApproval": "Need manager approval",
+      "managerApproval": "Manager approval",
       "customWorkflows": "{count, plural, =0 {All workflows standard} one {# custom workflow} other {# custom workflows}}",
       "avgSla": "Average SLA",
-      "avgSlaHint": "Business days · active types",
+      "avgSlaHint": "Business days, active",
       "open": "Open requests",
       "overdue": "{count} past their due date",
       "noOverdue": "None overdue"
@@ -266,7 +267,7 @@
     },
     "summary": "{steps, plural, one {# approval step} other {# approval steps}}",
     "typeSla": "SLA {count, plural, one {# business day} other {# business days}}",
-    "stepSlaTotal": "steps add up to {count} days",
+    "stepSlaTotal": "{count, plural, one {steps add up to # day} other {steps add up to # days}}",
     "canvasLabel": "Workflow canvas",
     "flowLabel": "Approval steps",
     "inFlight": "{count, plural, one {# open request} other {# open requests}} of this type will follow the updated workflow from their next step.",
@@ -365,15 +366,15 @@
       "onTime": "On time"
     },
     "kpi": {
-      "coverage": "Types with an SLA",
+      "coverage": "SLA coverage",
       "coverageHint": "Active request types",
       "average": "Average target",
       "averageHint": "Target business days per type",
-      "onTime": "Decided on time",
-      "onTimeHint": "Across {count} decided requests",
+      "onTime": "On-time decisions",
+      "onTimeHint": "{count, plural, one {Of # decided request} other {Of # decided}}",
       "onTimeEmpty": "No decided requests yet",
       "overdue": "Overdue now",
-      "overdueHint": "Of {count} open requests"
+      "overdueHint": "{count, plural, =0 {No open requests} one {Of # open request} other {Of # open requests}}"
     },
     "howTitle": "How due dates are calculated",
     "howDescription": "Due date = submission time + the SLA in business days, at the end of that working day ({time}). Weekends and public holidays are skipped.",

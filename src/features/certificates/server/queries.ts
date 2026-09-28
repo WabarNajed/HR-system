@@ -80,40 +80,24 @@ function changerName(v: VersionRow | undefined): string | null {
   return v.changer.full_name?.trim() || v.changer.email || null;
 }
 
+/**
+ * All templates with their latest editor and usage count — one round trip (embedded per-template
+ * `limit 1` on versions + aggregate count on certificates; RLS applies to both).
+ */
 export async function listTemplates(supabase: ServerSupabaseClient): Promise<TemplateListItem[]> {
   const { data, error } = await supabase
     .from('certificate_templates')
-    .select(TEMPLATE_LIST_COLUMNS)
+    .select(`${TEMPLATE_LIST_COLUMNS}, issued:certificates(count), latest:certificate_template_versions(template_id, version, change_notes, changed_at, changer:profiles(full_name, email))`)
+    .order('version', { referencedTable: 'latest', ascending: false })
+    .limit(1, { referencedTable: 'latest' })
     .order('certificate_type')
     .order('is_default', { ascending: false })
     .order('name_en');
   if (error) throw error;
-  const rows = (data ?? []) as TemplateRow[];
-  if (!rows.length) return [];
-
-  const [versions, counts] = await Promise.all([
-    supabase
-      .from('certificate_template_versions')
-      .select('template_id, version, change_notes, changed_at, changer:profiles(full_name, email)')
-      .in('template_id', rows.map((r) => r.id))
-      .order('version', { ascending: false })
-      .limit(2000),
-    Promise.all(
-      rows.map((r) =>
-        supabase
-          .from('certificates')
-          .select('id', { count: 'exact', head: true })
-          .eq('template_id', r.id)
-          .then((res) => [r.id, res.count ?? 0] as const),
-      ),
-    ),
-  ]);
-  const latest = new Map<string, VersionRow>();
-  for (const v of (versions.data ?? []) as unknown as VersionRow[]) {
-    if (!latest.has(v.template_id)) latest.set(v.template_id, v);
-  }
-  const issued = new Map(counts);
-  return rows.map((r) => toListItem(r, changerName(latest.get(r.id)), issued.get(r.id) ?? 0));
+  type Row = TemplateRow & { issued: { count: number }[] | null; latest: VersionRow[] | null };
+  return ((data ?? []) as unknown as Row[]).map(({ issued, latest, ...row }) =>
+    toListItem(row, changerName(latest?.[0]), issued?.[0]?.count ?? 0),
+  );
 }
 
 export async function getTemplateDetail(supabase: ServerSupabaseClient, id: string): Promise<TemplateDetail | null> {

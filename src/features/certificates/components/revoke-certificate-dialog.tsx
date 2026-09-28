@@ -38,8 +38,9 @@ export function RevokeCertificateDialog({ certificate, onOpenChange }: Props) {
       confirmLabel={t('confirm')}
       onConfirm={async () => {
         if (!certificate) return false;
-        if (reason.trim().length < 3) {
-          setError(tv('required'));
+        const trimmed = reason.trim();
+        if (trimmed.length < 3) {
+          setError(trimmed ? tv('minLength', { min: 3 }) : tv('required'));
           return false;
         }
         const result = await run(revokeCertificate({ id: certificate.id, reason: reason.trim() }));

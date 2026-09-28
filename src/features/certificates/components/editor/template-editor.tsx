@@ -195,6 +195,17 @@ export function TemplateEditor({ template, canEdit }: { template: TemplateDetail
     };
   }, [dirty]);
 
+  // The workspace is a fixed overlay over the settings page: keep the page underneath from scrolling
+  // (and from showing a second, useless scrollbar next to the editor panes).
+  useEffect(() => {
+    const root = document.documentElement;
+    const previous = root.style.overflow;
+    root.style.overflow = 'hidden';
+    return () => {
+      root.style.overflow = previous;
+    };
+  }, []);
+
   const contentTabs: EditorKey[] = meta.language === 'ar' ? ['ar'] : meta.language === 'en' ? ['en'] : ['ar', 'en'];
   const allTabs: EditorKey[] = [...contentTabs, 'header', 'footer'];
   const activeKey: EditorKey = allTabs.includes(active) ? active : contentTabs[0];

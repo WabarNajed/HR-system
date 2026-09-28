@@ -354,7 +354,7 @@ export function FormBuilder({ types, type, initialFields, leaveTypes, canEdit, o
               ]}
             />
             {canEdit ? (
-              <>
+              <div className="flex items-center gap-2">
                 <Button variant="outline" onClick={() => setConfirmDiscard(true)} disabled={!dirty || saving}>
                   <RotateCcwIcon />
                   {tc('discard')}
@@ -363,7 +363,7 @@ export function FormBuilder({ types, type, initialFields, leaveTypes, canEdit, o
                   <SaveIcon />
                   {saving ? tc('saving') : tc('saveChanges')}
                 </Button>
-              </>
+              </div>
             ) : null}
           </>
         }

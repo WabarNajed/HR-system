@@ -161,7 +161,11 @@ export const saveRequestWorkflow = withAction(
       can_reassign: s.can_reassign,
     }));
     const { error } = await supabase.rpc('save_request_workflow', { p_request_type_id: typeId, p_steps: payload as unknown as Json });
-    if (error) throw error;
+    if (error) {
+      // A "specific user" step whose user is no longer an active portal user.
+      if (error.message?.includes('errors.invalidAssignee')) throw new ActionError('requestConfig.validation.userInactive');
+      throw error;
+    }
     revalidateRequestConfig();
     return ok(undefined, 'requestConfig.workflows.toast.saved');
   },

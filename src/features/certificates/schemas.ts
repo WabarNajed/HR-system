@@ -80,6 +80,6 @@ export const requestIdSchema = z.object({ requestId: uuid });
 
 export const revokeCertificateSchema = z.object({
   id: uuid,
-  reason: z.string().trim().min(3, 'validation.required').max(500, 'validation.maxLength|{"max":500}'),
+  reason: z.string().trim().min(1, 'validation.required').min(3, 'validation.minLength|{"min":3}').max(500, 'validation.maxLength|{"max":500}'),
 });
 export type RevokeCertificateInput = z.infer<typeof revokeCertificateSchema>;

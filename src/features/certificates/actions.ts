@@ -264,7 +264,8 @@ export type EmployeeOption = { value: string; label: string; description?: strin
 export const searchPreviewEmployees = withAction(
   employeeSearchSchema,
   async (input, { ctx }) => {
-    requirePermissionIn(ctx, 'settings.view', 'certificates.administer', 'certificates.create', 'employees.view');
+    // Only the template editor's preview uses this (same access as `previewTemplate`).
+    requirePermissionIn(ctx, 'settings.view', 'certificates.administer', 'settings.edit');
     const supabase = await createClient();
     let query = supabase.from('employees').select('id, employee_number, name_ar, name_en').is('archived_at', null).order('name_ar').limit(20);
     if (input.q) query = query.ilike('search_text', `%${input.q.toLowerCase().replace(/[\\%_,()]/g, ' ')}%`);

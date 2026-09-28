@@ -401,7 +401,7 @@ function TerminalNode({ kind }: { kind: 'start' | 'end' }) {
       </span>
       <span className="min-w-0 leading-tight">
         <span className="block text-sm font-semibold text-foreground">{t(`${kind}.title`)}</span>
-        <span className="block truncate text-xs text-muted-foreground">{t(`${kind}.description`)}</span>
+        <span className="line-clamp-2 block text-xs text-muted-foreground">{t(`${kind}.description`)}</span>
       </span>
     </div>
   );

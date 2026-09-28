@@ -61,7 +61,13 @@ export async function LeaveSummaryCards({ summary, year }: { summary: LeaveSumma
   ) : summary.coverage ? (
     <StatCard
       label={<Label full={t('coverage', { year })} short={t('short.coverage', { year })} />}
-      value={`${n(summary.coverage.withBalances)} / ${n(summary.coverage.activeEmployees)}`}
+      value={
+        // "with / total" must read left-to-right in Arabic too (bidi would flip it to "13 / 6").
+        <bdi dir="ltr">
+          {n(summary.coverage.withBalances)}
+          <span className="text-muted-foreground"> / {n(summary.coverage.activeEmployees)}</span>
+        </bdi>
+      }
       icon={UsersRoundIcon}
       tone={summary.coverage.withBalances < summary.coverage.activeEmployees ? 'warning' : 'success'}
       hint={t('coverageHint')}

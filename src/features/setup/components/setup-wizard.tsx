@@ -23,7 +23,7 @@ import {
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
-import { useState, useTransition } from 'react';
+import { useEffect, useRef, useState, useTransition } from 'react';
 import { toast } from 'sonner';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog';
 import { PageHeader } from '@/components/shared/page-header';
@@ -66,6 +66,14 @@ export function SetupWizard({ step, data, perms }: Props) {
   const resolve = useErrorMessage();
   const [finishing, startFinishing] = useTransition();
   const [confirmFinish, setConfirmFinish] = useState(false);
+  const railRef = useRef<HTMLOListElement>(null);
+
+  // Phones show the steps as a horizontal rail: keep the current step in view.
+  useEffect(() => {
+    const rail = railRef.current;
+    if (!rail || rail.scrollWidth <= rail.clientWidth) return;
+    rail.querySelector('[aria-current="step"]')?.scrollIntoView({ block: 'nearest', inline: 'center' });
+  }, [step]);
 
   const index = SETUP_STEPS.indexOf(step);
   const done = SETUP_STEPS.filter((s) => data.completion[s]).length;
@@ -124,7 +132,7 @@ export function SetupWizard({ step, data, perms }: Props) {
             </div>
             <Progress value={(done / SETUP_STEPS.length) * 100} tone="success" className="mt-2 h-1.5" aria-label={t('progress', { done, total: SETUP_STEPS.length })} />
           </div>
-          <ol className="scrollbar-none -mx-1 flex gap-1 overflow-x-auto px-1 pb-1 lg:mx-0 lg:flex-col lg:overflow-visible lg:px-0 lg:pb-0">
+          <ol ref={railRef} className="scrollbar-none -mx-1 flex gap-1 overflow-x-auto px-1 pb-1 lg:mx-0 lg:flex-col lg:overflow-visible lg:px-0 lg:pb-0">
             {SETUP_STEPS.map((s, i) => {
               const current = s === step;
               const ok = data.completion[s];

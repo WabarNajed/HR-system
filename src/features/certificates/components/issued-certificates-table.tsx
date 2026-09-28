@@ -107,11 +107,15 @@ export function IssuedCertificatesTable({ rows, total, hrView, canRevoke, canExp
         id: 'type',
         header: () => t('fields.type'),
         cell: ({ row }) => {
+          const type = labels.type(row.original.certificate_type);
           const template = localized({ name_ar: row.original.template_name_ar, name_en: row.original.template_name_en }, 'name', locale);
           return (
             <div className="min-w-0 leading-tight">
-              <div className="truncate font-medium">{labels.type(row.original.certificate_type)}</div>
-              {template ? <div className="mt-0.5 truncate text-meta text-muted-foreground">{template}</div> : null}
+              <div className="truncate font-medium">{type}</div>
+              {/* the template name only adds information when it differs from the type label */}
+              {template && template.trim().toLowerCase() !== type.trim().toLowerCase() ? (
+                <div className="mt-0.5 truncate text-meta text-muted-foreground">{template}</div>
+              ) : null}
             </div>
           );
         },
