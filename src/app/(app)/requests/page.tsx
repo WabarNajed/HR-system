@@ -1,6 +1,7 @@
 import { AlarmClockIcon, CheckCheckIcon, FolderOpenIcon, InboxIcon, PlusIcon } from 'lucide-react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { LinkTabs } from '@/components/shared/link-tabs';
 import { PageHeader } from '@/components/shared/page-header';
@@ -23,10 +24,13 @@ import {
 } from '@/features/requests/queries';
 import { requireAccess } from '@/lib/auth/guards';
 import { formatInteger } from '@/lib/format';
-import { parseListParams } from '@/lib/list-params';
+import { mergeSearchParams, parseListParams } from '@/lib/list-params';
 import { pageMetadata } from '@/lib/metadata';
 import { can, checkAccess } from '@/lib/permissions';
 import { createClient } from '@/lib/supabase/server';
+
+/** Same set as the "Open requests" KPI (requestKpis: open statuses + returned), as status filter values. */
+const OPEN_FILTER = ['pending_manager_approval', 'pending_hr_review', 'returned', 'approved', 'in_progress'] as const;
 
 export const generateMetadata = (): Promise<Metadata> => pageMetadata('requests.title');
 
@@ -57,6 +61,12 @@ export default async function RequestsPage({ searchParams }: { searchParams: Pro
     seesOthers ? loadEmployeeOptions(supabase) : Promise.resolve(null),
     access.orgView ? loadRequestHandlers(supabase) : Promise.resolve(null),
   ]);
+
+  // Stale `?page=` past the last page (bookmark, rows moved to another tab): go to the last page.
+  const lastPage = Math.max(1, Math.ceil(list.total / params.pageSize));
+  if (!list.rows.length && list.total > 0 && params.page > lastPage) {
+    redirect(`/requests?${mergeSearchParams(sp, { page: lastPage > 1 ? lastPage : null }).toString()}`);
+  }
 
   const locale = ctx.locale;
   const approvalsHref = checkAccess(ctx, ROUTE_ACCESS['/approvals']) ? '/approvals' : undefined;
@@ -100,7 +110,7 @@ export default async function RequestsPage({ searchParams }: { searchParams: Pro
           icon={FolderOpenIcon}
           tone="primary"
           hint={t('kpi.openHint', { count: kpis.dueSoon })}
-          href="/requests?tab=pending"
+          href={`/requests?status=${OPEN_FILTER.join(',')}`}
         />
         <StatCard
           label={t('kpi.awaiting')}

@@ -50,7 +50,7 @@ function OptionCard({
         <span lang={lang} className="block text-sm font-medium text-foreground">
           {title}
         </span>
-        {hint ? <span className="block text-xs text-muted-foreground">{hint}</span> : null}
+        {hint && hint !== title ? <span className="block text-xs text-muted-foreground">{hint}</span> : null}
       </span>
       {selected ? <CheckIcon className="size-4 shrink-0 text-primary" aria-hidden /> : null}
     </button>
@@ -99,7 +99,7 @@ export function PreferencesForm({ language, theme }: { language: Language; theme
         </div>
       }
     >
-      <div className="flex flex-col gap-6">
+      <div className="grid gap-6 lg:grid-cols-2 lg:gap-8">
         <fieldset>
           <legend className="mb-1 flex items-center gap-2 text-sm font-medium text-foreground">
             <LanguagesIcon className="size-4 text-muted-foreground" aria-hidden />

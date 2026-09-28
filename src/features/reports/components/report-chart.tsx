@@ -19,6 +19,9 @@ import {
   type TooltipContentProps,
 } from 'recharts';
 import { EmptyState } from '@/components/shared/empty-state';
+import { statusTone } from '@/components/shared/status-badge';
+import type { BadgeVariant } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import { chartAxisProps, CHART_CHROME, CHART_STATUS, seriesColor } from '@/lib/chart-colors';
 import { dir, type Locale } from '@/lib/i18n/config';
 import { formatDayMonth, formatMonthYear } from '@/lib/i18n/date-format';
@@ -46,6 +49,22 @@ const BUCKET_COLORS: Record<string, string> = {
   valid: CHART_STATUS.success,
   missing: CHART_STATUS.neutral,
 };
+
+const TONE_COLORS: Partial<Record<BadgeVariant, string>> = {
+  success: CHART_STATUS.success,
+  warning: CHART_STATUS.warning,
+  danger: CHART_STATUS.danger,
+  info: CHART_STATUS.info,
+  neutral: CHART_STATUS.neutral,
+  secondary: 'var(--chart-2)',
+};
+
+/** Per-bar color when the category carries meaning (expiry buckets, statuses); null = series color. */
+function categoryColor(def: ChartDef, key: string): string | null {
+  if (def.colorByCategory) return BUCKET_COLORS[key] ?? seriesColor(0);
+  if (def.category === 'status' && def.statusDomain) return TONE_COLORS[statusTone(def.statusDomain, key)] ?? seriesColor(0);
+  return null;
+}
 
 const noop = () => () => {};
 function useMounted() {
@@ -84,9 +103,45 @@ function categoryLabel(def: ChartDef, point: Point, locale: Locale, t: LooseT): 
   }
 }
 
+const ISO_DAY = /^\d{4}-\d{2}-\d{2}$/;
+const MAX_TIME_BUCKETS = { month: 60, day: 400 } as const;
+
+function isoAdd(iso: string, unit: 'month' | 'day'): string {
+  const [y, m, d] = iso.split('-').map(Number) as [number, number, number];
+  const next = unit === 'month' ? new Date(Date.UTC(y, m, 1)) : new Date(Date.UTC(y, m - 1, d + 1));
+  return next.toISOString().slice(0, 10);
+}
+
+/**
+ * Time series come back sparse (only buckets with data). Fill every month/day between the selected
+ * range (or the first and last bucket) with zeros so gaps read as "none", not as adjacent bars.
+ */
+function fillTimeBuckets(def: ChartDef, points: Point[], range?: { from: string | null; to: string | null }): Point[] {
+  if (def.category !== 'month' && def.category !== 'day') return points;
+  const unit = def.category;
+  const keys = points.map((p) => String(p.key)).filter((k) => ISO_DAY.test(k)).sort();
+  const norm = (iso: string) => (unit === 'month' ? `${iso.slice(0, 7)}-01` : iso);
+  const from = range?.from && ISO_DAY.test(range.from) ? norm(range.from) : keys[0];
+  const to = range?.to && ISO_DAY.test(range.to) ? norm(range.to) : keys[keys.length - 1];
+  if (!from || !to) return points;
+  const start = keys[0] && keys[0] < from ? keys[0] : from;
+  const end = keys.length && keys[keys.length - 1]! > to ? keys[keys.length - 1]! : to;
+  const byKey = new Map(points.map((p) => [String(p.key), p]));
+  const out: Point[] = [];
+  for (let k = start; k <= end; k = isoAdd(k, unit)) {
+    if (out.length >= MAX_TIME_BUCKETS[unit]) return points;
+    const zero: Point = { key: k };
+    for (const s of def.series) zero[s.key] = 0;
+    out.push(byKey.get(k) ?? zero);
+  }
+  return out;
+}
+
 /** Builds chart rows; folds categories beyond `top` into "Other" (sums; percentages are just cut). */
 function toData(def: ChartDef, points: Point[], locale: Locale, t: LooseT): Datum[] {
-  const rows: Datum[] = points.map((p) => {
+  // "Not set" (empty key) is not a real group: keep it after the named categories.
+  const ordered = def.category === 'localized' ? [...points.filter((p) => p.key), ...points.filter((p) => !p.key)] : points;
+  const rows: Datum[] = ordered.map((p) => {
     const d: Datum = {
       __key: String(p.key ?? ''),
       __label: categoryLabel(def, p, locale, t),
@@ -134,7 +189,10 @@ function ChartTooltip({
                 aria-hidden
                 className="size-2.5 shrink-0 rounded-[3px]"
                 style={{
-                  background: item.color ?? (item.payload as { fill?: string })?.fill,
+                  background:
+                    (def.series.length === 1 ? categoryColor(def, String((item.payload as Datum | undefined)?.__key ?? '')) : null) ??
+                    item.color ??
+                    (item.payload as { fill?: string })?.fill,
                 }}
               />
               <span className="text-muted-foreground">{series ? t(series.labelKey) : String(item.name)}</span>
@@ -171,16 +229,23 @@ export type ReportChartProps = {
   className?: string;
   /** Extra header content (e.g. chart view switcher) rendered next to the legend. */
   toolbar?: ReactNode;
+  /** Selected date range: month/day series are filled across it. */
+  range?: { from: string | null; to: string | null };
 };
 
-export function ReportChart({ def, points, className }: ReportChartProps) {
+export function ReportChart({ def, points, className, range }: ReportChartProps) {
   const t = useReportT();
   const locale = useLocale() as Locale;
   const nf = useNumberFormat();
   const mounted = useMounted();
   const rtl = dir(locale) === 'rtl';
 
-  const data = useMemo(() => toData(def, points, locale, t), [def, points, locale, t]);
+  const rangeFrom = range?.from ?? null;
+  const rangeTo = range?.to ?? null;
+  const data = useMemo(
+    () => toData(def, fillTimeBuckets(def, points, { from: rangeFrom, to: rangeTo }), locale, t),
+    [def, points, rangeFrom, rangeTo, locale, t],
+  );
   const hasValues = data.some((d) => def.series.some((s) => Number(d[s.key]) > 0));
 
   if (!data.length || !hasValues) {
@@ -189,7 +254,7 @@ export function ReportChart({ def, points, className }: ReportChartProps) {
         icon={BarChart3Icon}
         tone="neutral"
         title={t('reports.charts.empty')}
-        className={cn('min-h-40 py-6 [&_h3]:text-sm [&_h3]:font-medium', className)}
+        className={cn('min-h-32 py-4 [&_h3]:text-sm [&_h3]:font-medium', className)}
       />
     );
   }
@@ -246,7 +311,9 @@ export function ReportChart({ def, points, className }: ReportChartProps) {
             stroke={stacked ? 'var(--card)' : undefined}
             strokeWidth={stacked ? 1 : 0}
           >
-            {def.colorByCategory ? data.map((d) => <Cell key={d.__key} fill={BUCKET_COLORS[d.__key] ?? seriesColor(0)} />) : null}
+            {def.series.length === 1 && categoryColor(def, '') !== null
+              ? data.map((d) => <Cell key={d.__key} fill={categoryColor(def, d.__key) ?? seriesColor(0)} />)
+              : null}
           </Bar>
         ))}
       </BarChart>
@@ -323,7 +390,9 @@ export function ReportChart({ def, points, className }: ReportChartProps) {
             stroke={stacked ? 'var(--card)' : undefined}
             strokeWidth={stacked ? 1 : 0}
           >
-            {def.colorByCategory ? data.map((d) => <Cell key={d.__key} fill={BUCKET_COLORS[d.__key] ?? seriesColor(0)} />) : null}
+            {def.series.length === 1 && categoryColor(def, '') !== null
+              ? data.map((d) => <Cell key={d.__key} fill={categoryColor(def, d.__key) ?? seriesColor(0)} />)
+              : null}
           </Bar>
         ))}
       </BarChart>
@@ -338,7 +407,9 @@ export function ReportChart({ def, points, className }: ReportChartProps) {
           <ResponsiveContainer width="100%" height={height} initialDimension={{ width: 640, height }}>
             {chart as ReactElement}
           </ResponsiveContainer>
-        ) : null}
+        ) : (
+          <Skeleton className="size-full rounded-md opacity-60" />
+        )}
       </div>
     </div>
   );

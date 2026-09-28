@@ -27,15 +27,32 @@ export async function RequestQueueWidget() {
           : undefined
       }
       icon={InboxIcon}
-      actions={<ViewAllLink href="/requests" />}
+      actions={<ViewAllLink href="/requests?tab=pending" />}
     >
       {hr ? (
         <WidgetStrip
           items={[
-            { key: 'approval', label: t('stripApproval'), value: n(Math.max(0, hr.pending_requests - hr.pending_hr_review)) },
-            { key: 'hr', label: t('stripHr'), value: n(hr.pending_hr_review) },
-            { key: 'dueSoon', label: t('stripDueSoon'), value: n(hr.due_soon_requests), tone: hr.due_soon_requests > 0 ? 'warning' : 'default' },
-            { key: 'overdue', label: t('stripOverdue'), value: n(hr.overdue_requests), tone: hr.overdue_requests > 0 ? 'danger' : 'default' },
+            {
+              key: 'approval',
+              label: t('stripApproval'),
+              value: n(Math.max(0, hr.pending_requests - hr.pending_hr_review)),
+              href: '/requests?tab=pending&status=pending_manager_approval',
+            },
+            { key: 'hr', label: t('stripHr'), value: n(hr.pending_hr_review), href: '/requests?tab=pending&status=pending_hr_review' },
+            {
+              key: 'dueSoon',
+              label: t('stripDueSoon'),
+              value: n(hr.due_soon_requests),
+              tone: hr.due_soon_requests > 0 ? 'warning' : 'default',
+              href: '/requests?tab=pending&sla=due_soon',
+            },
+            {
+              key: 'overdue',
+              label: t('stripOverdue'),
+              value: n(hr.overdue_requests),
+              tone: hr.overdue_requests > 0 ? 'danger' : 'default',
+              href: '/requests?tab=pending&sla=overdue',
+            },
           ]}
         />
       ) : null}

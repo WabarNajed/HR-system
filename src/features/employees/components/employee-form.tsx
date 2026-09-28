@@ -41,6 +41,7 @@ import {
 } from '../schemas';
 import { EMPLOYMENT_STATUSES, EMPLOYMENT_TYPES, GENDERS, ID_TYPES, MARITAL_STATUSES, type MasterDataOptions } from '../types';
 import { ManagerPicker, type ManagerOption } from './manager-picker';
+import { LiftToasts } from './lift-toasts';
 import { useLeaveGuard } from './use-leave-guard';
 
 type FieldName = FieldPath<EmployeeFormValues>;
@@ -192,7 +193,8 @@ export function EmployeeForm({ mode, employeeId, defaultValues, options, current
       }));
       if (!result.ok) {
         submitting.current = false;
-        const fieldErrors = result.fieldErrors ?? {};
+        // Server zod paths are `values.<field>`; DB-level ones (duplicates, manager cycle) are bare.
+        const fieldErrors = Object.fromEntries(Object.entries(result.fieldErrors ?? {}).map(([k, v]) => [k.replace(/^values\./, ''), v]));
         for (const [name, message] of Object.entries(fieldErrors)) {
           form.setError(name as FieldName, { type: 'server', message });
         }
@@ -226,6 +228,7 @@ export function EmployeeForm({ mode, employeeId, defaultValues, options, current
       <form id="employee-form" onSubmit={onSubmit} noValidate className="mx-auto flex w-full max-w-form flex-col">
         <div className="grid grid-cols-1 gap-5 lg:grid-cols-[11.5rem_minmax(0,1fr)] lg:gap-6">
           <SectionIndex sections={sections} errors={errors as Record<string, unknown>} />
+          <MobileSectionNav sections={sections} errors={errors as Record<string, unknown>} />
 
           <div className="flex min-w-0 flex-col gap-5">
             <FormSection
@@ -233,10 +236,17 @@ export function EmployeeForm({ mode, employeeId, defaultValues, options, current
               title={sections[0]!.title}
               description={sections[0]!.description}
               icon={<UserRoundIcon />}
-              className="scroll-mt-20"
+              className="scroll-mt-32 lg:scroll-mt-20"
             >
               <FormGrid>
-                <TextField name="name_ar" label={t('fields.nameAr')} placeholder={t('form.placeholders.nameAr')} required disabled={pending} dir="rtl" />
+                <TextField
+                  name="name_ar"
+                  label={t('fields.nameAr')}
+                  placeholder={t('form.placeholders.nameAr')}
+                  description={t('form.hints.nameEither')}
+                  disabled={pending}
+                  dir="rtl"
+                />
                 <TextField
                   name="name_en"
                   label={t('fields.nameEn')}
@@ -290,7 +300,7 @@ export function EmployeeForm({ mode, employeeId, defaultValues, options, current
               title={t('form.sections.employment')}
               description={t('form.sections.employmentDescription')}
               icon={<BriefcaseIcon />}
-              className="scroll-mt-20"
+              className="scroll-mt-32 lg:scroll-mt-20"
             >
               <FormGrid>
                 <ComboField name="job_title_id" label={t('fields.jobTitle')} options={options.jobTitles} placeholder={t('form.placeholders.jobTitle')} disabled={pending} />
@@ -349,7 +359,7 @@ export function EmployeeForm({ mode, employeeId, defaultValues, options, current
                   description={t('form.sections.governmentDescription')}
                   icon={<IdCardIcon />}
                   actions={personalDisabled ? <ReadOnlyNote /> : undefined}
-                  className="scroll-mt-20"
+                  className="scroll-mt-32 lg:scroll-mt-20"
                 >
                   <FormGrid>
                     <EnumField name="id_type" label={t('fields.idType')} values={ID_TYPES} labelKey="idType" disabled={fieldDisabled('id_type')} />
@@ -383,7 +393,7 @@ export function EmployeeForm({ mode, employeeId, defaultValues, options, current
                   description={t('form.sections.emergencyDescription')}
                   icon={<PhoneCallIcon />}
                   actions={personalDisabled ? <ReadOnlyNote /> : undefined}
-                  className="scroll-mt-20"
+                  className="scroll-mt-32 lg:scroll-mt-20"
                 >
                   <FormGrid columns={3}>
                     <TextField name="emergency_contact_name" label={t('fields.emergencyName')} disabled={fieldDisabled('emergency_contact_name')} />
@@ -412,7 +422,7 @@ export function EmployeeForm({ mode, employeeId, defaultValues, options, current
                   title={t('form.sections.compensation')}
                   description={t('form.sections.compensationDescription')}
                   icon={<WalletIcon />}
-                  className="scroll-mt-20"
+                  className="scroll-mt-32 lg:scroll-mt-20"
                 >
                   <FormGrid>
                     <MoneyField name="basic_salary" label={t('fields.basicSalary')} currency={currency} disabled={pending} />
@@ -429,7 +439,7 @@ export function EmployeeForm({ mode, employeeId, defaultValues, options, current
                   title={t('form.sections.bank')}
                   description={t('form.sections.bankDescription')}
                   icon={<LandmarkIcon />}
-                  className="scroll-mt-20"
+                  className="scroll-mt-32 lg:scroll-mt-20"
                 >
                   <FormGrid>
                     <TextField name="bank_name" label={t('fields.bankName')} disabled={pending} />
@@ -461,6 +471,7 @@ export function EmployeeForm({ mode, employeeId, defaultValues, options, current
         />
       </form>
       {leaveGuard}
+      <LiftToasts />
     </Form>
   );
 }
@@ -522,6 +533,44 @@ function SectionIndex({ sections, errors }: { sections: SectionDef[]; errors: Re
           })}
         </ul>
       </div>
+    </nav>
+  );
+}
+
+/** Phones/tablets: sticky, horizontally scrolling section chips (the side index needs `lg`). */
+function MobileSectionNav({ sections, errors }: { sections: SectionDef[]; errors: Record<string, unknown> }) {
+  const t = useTranslations('employees.form');
+  return (
+    <nav
+      aria-label={t('onThisPage')}
+      className="scrollbar-none sticky top-(--spacing-header) z-10 -mx-4 -my-2 flex gap-1.5 overflow-x-auto bg-background/90 px-4 py-2 backdrop-blur-md md:-mx-6 md:px-6 lg:hidden"
+    >
+      {sections.map((s) => {
+        const count = s.fields.filter((f) => f in errors).length;
+        const Icon = s.icon;
+        return (
+          <a
+            key={s.id}
+            href={`#section-${s.id}`}
+            onClick={(e) => {
+              e.preventDefault();
+              document.getElementById(`section-${s.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }}
+            className={cn(
+              'inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full border bg-card px-3 text-xs font-medium whitespace-nowrap text-foreground shadow-xs',
+              count > 0 ? 'border-danger/40 text-danger' : 'border-border',
+            )}
+          >
+            <Icon className="size-3.5 shrink-0 opacity-70" aria-hidden />
+            {s.title}
+            {count > 0 ? (
+              <span className="min-w-4.5 rounded-full bg-danger px-1 text-center text-[0.6875rem] leading-4.5 font-semibold text-danger-foreground tabular-nums">
+                {count}
+              </span>
+            ) : null}
+          </a>
+        );
+      })}
     </nav>
   );
 }

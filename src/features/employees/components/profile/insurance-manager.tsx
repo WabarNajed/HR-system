@@ -26,6 +26,8 @@ import { deleteInsurance, saveInsurance } from '../../actions';
 import { EMPTY_INSURANCE_FORM, insuranceFormSchema, type InsuranceFormValues } from '../../schemas';
 import { INSURANCE_STATUSES, type DependentRecord, type InsuranceRecord, type RELATIONSHIPS } from '../../types';
 import { ExpiryBadge } from '../expiry-badge';
+import { MobileCardShell } from './profile-parts';
+import { LiftToasts } from '../lift-toasts';
 
 type Relationship = (typeof RELATIONSHIPS)[number];
 
@@ -79,8 +81,8 @@ export function InsuranceManager({
         cell: ({ row }) => {
           const dep = row.original.dependent_id ? byId.get(row.original.dependent_id) : null;
           return (
-            <div className="min-w-0 leading-tight">
-              <div className="truncate font-medium text-foreground">
+            <div className="max-w-[16rem] min-w-0 leading-tight">
+              <div className="truncate font-medium text-foreground" title={dep ? employeeDisplayName(dep, locale) : employeeName}>
                 {dep ? employeeDisplayName(dep, locale) : row.original.dependent_id ? t('dependentsGroup') : employeeName}
               </div>
               <div className="mt-0.5 text-xs text-muted-foreground">
@@ -194,7 +196,7 @@ export function InsuranceManager({
         renderMobileCard={(p) => {
           const dep = p.dependent_id ? byId.get(p.dependent_id) : null;
           return (
-            <button type="button" className="w-full text-start" onClick={canEdit ? () => setEditing(p) : undefined} disabled={!canEdit}>
+            <MobileCardShell onOpen={canEdit ? () => setEditing(p) : undefined}>
               <div className="flex items-center justify-between gap-2">
                 <span className="truncate font-medium text-foreground">{dep ? employeeDisplayName(dep, locale) : employeeName}</span>
                 <StatusBadge domain="insurance" status={p.status} size="sm" />
@@ -204,7 +206,7 @@ export function InsuranceManager({
                 {p.expiry_date ? <span className="tabular-nums">{fmt.date(p.expiry_date)}</span> : null}
                 {p.status === 'active' ? <ExpiryBadge date={p.expiry_date} today={today} hideValid /> : null}
               </div>
-            </button>
+            </MobileCardShell>
           );
         }}
       />
@@ -212,6 +214,7 @@ export function InsuranceManager({
       {canEdit ? (
         <Sheet open={Boolean(editing)} onOpenChange={(open) => !open && setEditing(null)}>
           <SheetContent side="end" className="sm:max-w-xl">
+          <LiftToasts />
             <SheetHeader>
               <SheetTitle>{editing === 'new' ? t('addTitle') : t('editTitle')}</SheetTitle>
               <SheetDescription>{t('sheetDescription')}</SheetDescription>
@@ -225,6 +228,14 @@ export function InsuranceManager({
                 defaults={editing === 'new' ? EMPTY_INSURANCE_FORM : toFormValues(editing)}
                 dependents={dependents}
                 onCancel={() => setEditing(null)}
+                onDelete={
+                  editing === 'new'
+                    ? undefined
+                    : () => {
+                        setDeleting(editing);
+                        setEditing(null);
+                      }
+                }
                 onSaved={() => {
                   setEditing(null);
                   router.refresh();
@@ -264,6 +275,7 @@ function InsuranceForm({
   defaults,
   dependents,
   onCancel,
+  onDelete,
   onSaved,
 }: {
   employeeId: string;
@@ -272,6 +284,8 @@ function InsuranceForm({
   defaults: InsuranceFormValues;
   dependents: DependentRecord[];
   onCancel: () => void;
+  /** Delete from the sheet (the only way on phones, where the row menu isn't shown). */
+  onDelete?: () => void;
   onSaved: () => void;
 }) {
   const t = useTranslations('employees.insurance');
@@ -388,6 +402,12 @@ function InsuranceForm({
           </FormGrid>
         </SheetBody>
         <SheetFooter>
+          {onDelete ? (
+            <Button type="button" variant="ghost" onClick={onDelete} disabled={pending} className="me-auto text-danger hover:bg-danger-soft hover:text-danger">
+              <Trash2Icon />
+              {t('deleteConfirm')}
+            </Button>
+          ) : null}
           <Button type="button" variant="outline" onClick={onCancel} disabled={pending}>
             {tc('cancel')}
           </Button>

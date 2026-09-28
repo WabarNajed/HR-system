@@ -3151,6 +3151,10 @@ export type Database = {
         Args: { p_employee_id?: string; p_request_type_id: string; p_subtype?: string; p_values: Json }
         Returns: string
       }
+      dashboard_compliance_counts: {
+        Args: never
+        Returns: Json
+      }
       dashboard_employee_breakdown: {
         Args: never
         Returns: Json
@@ -3159,6 +3163,8 @@ export type Database = {
         Args: { p_days?: number; p_employee_id?: string; p_limit?: number }
         Returns: {
             days_left: number
+            dependent_name_ar: string
+            dependent_name_en: string
             document_type: string
             employee_id: string
             employee_name_ar: string
@@ -3167,6 +3173,7 @@ export type Database = {
             entity_id: string
             expiry_date: string
             kind: string
+            subject: string
           }[]
       }
       dashboard_stats: {
@@ -3288,6 +3295,14 @@ export type Database = {
       next_document_number: {
         Args: { p_prefix: string }
         Returns: string
+      }
+      notification_counts: {
+        Args: never
+        Returns: {
+            total: number
+            type: string
+            unread: number
+          }[]
       }
       publish_certificate_template: {
         Args: { p_change_notes?: string; p_template_id: string }

@@ -73,7 +73,7 @@ function ReportRow({ def, stats }: { def: ReportDefinition; stats: Record<string
                 alert ? (def.preview.tone === 'danger' ? 'text-danger' : 'text-warning') : 'text-foreground',
               )}
             >
-              {hasValue ? formatNumber(value, locale, { maximumFractionDigits: 0 }) : t('reports.catalog.metricUnavailable')}
+              {hasValue ? formatNumber(value, locale, { maximumFractionDigits: 1 }) : t('reports.catalog.metricUnavailable')}
             </span>
             <span className="w-full truncate text-xs text-muted-foreground">{t(def.preview.labelKey)}</span>
           </span>
@@ -85,7 +85,7 @@ function ReportRow({ def, stats }: { def: ReportDefinition; stats: Record<string
               alert ? (def.preview.tone === 'danger' ? 'text-danger' : 'text-warning') : 'text-foreground',
             )}
           >
-            {formatNumber(value, locale, { maximumFractionDigits: 0 })}
+            {formatNumber(value, locale, { maximumFractionDigits: 1 })}
           </span>
         ) : null}
         <ChevronRightIcon

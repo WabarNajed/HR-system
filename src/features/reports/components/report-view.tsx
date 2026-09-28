@@ -16,7 +16,7 @@ import { formatNumber } from '@/lib/format';
 import { mergeSearchParams } from '@/lib/list-params';
 import { cn } from '@/lib/utils';
 import { getReportDefinition, reportDatasetKey, type KpiDef, type ReportDefinition } from '../definitions';
-import { activeFilterCount, type ReportFilterState } from '../filters';
+import { activeFilterCount, EXPORT_COLUMNS_KEY, type ReportFilterState } from '../filters';
 import type { FilterOption } from '../queries';
 import type { ReportSummary } from '../registry';
 import type { FacetOption } from './facet-filter';
@@ -49,10 +49,35 @@ function kpiHint(kpi: KpiDef, kpis: ReportSummary['kpis'], locale: Locale, t: Lo
     return label ? t(kpi.hintKey, { value: String(label) }) : undefined;
   }
   const v = kpis[kpi.hintValueKey];
-  if (v === null || v === undefined) return undefined;
+  if (v === null || v === undefined || !Number.isFinite(Number(v))) return undefined;
+  // `value` (formatted) for plain hints, `count` for ICU plurals.
   return t(kpi.hintKey, {
     value: formatNumber(Number(v), locale, { maximumFractionDigits: 1 }),
+    count: Math.round(Number(v) * 10) / 10,
   });
+}
+
+/**
+ * Column ids currently visible in the report table: the definition's defaults overridden by the
+ * viewer's choices, which DataTable persists under `dt:<tableId>:columns` (tableId `report:<key>`).
+ * The employee number stays with the employee column (it is that cell's subtitle on screen).
+ */
+function visibleColumnIds(def: ReportDefinition): string[] {
+  const hidden = new Set(def.columns.filter((c) => c.defaultHidden).map((c) => c.id));
+  try {
+    const raw = window.localStorage.getItem(`dt:report:${def.key}:columns`);
+    const saved = raw ? (JSON.parse(raw) as Record<string, unknown>) : {};
+    for (const [id, visible] of Object.entries(saved)) {
+      if (visible === false) hidden.add(id);
+      else if (visible === true) hidden.delete(id);
+    }
+  } catch {
+    /* storage unavailable — defaults */
+  }
+  const ids = def.columns.filter((c, i) => i === 0 || !hidden.has(c.id)).map((c) => c.id);
+  const hasNumber = def.columns.some((c) => c.id === 'employeeNumber');
+  if (hasNumber && ids.includes('employee') && !ids.includes('employeeNumber')) ids.splice(ids.indexOf('employee') + 1, 0, 'employeeNumber');
+  return ids;
 }
 
 function ExportMenu({ def, disabledKey, queryString }: { def: ReportDefinition; disabledKey: string | null; queryString: string }) {
@@ -62,11 +87,10 @@ function ExportMenu({ def, disabledKey, queryString }: { def: ReportDefinition; 
     params.delete('page');
     params.delete('pageSize');
     params.set('format', format);
+    params.set(EXPORT_COLUMNS_KEY, visibleColumnIds(def).join(','));
     return `/api/export/${reportDatasetKey(def.key)}?${params.toString()}`;
   };
-  return (
-    <ReportExportMenu href={href} disabledReason={disabledKey ? t(disabledKey) : null} hint={t('common.table.exportHint')} />
-  );
+  return <ReportExportMenu href={href} disabledReason={disabledKey ? t(disabledKey) : null} hint={t('reports.view.exportHint')} />;
 }
 
 /** Report page body: header, filters, KPIs, chart(s) and the detail table. */
@@ -109,7 +133,14 @@ export function ReportView({
     [searchParams],
   );
   const chart = def.charts[chartIndex] ?? def.charts[0];
-  const filtered = activeFilterCount(state) > 0 || Boolean(searchParams.get('q'));
+  // A date window (even the report's default one) is a filter: an empty result then means
+  // "nothing in this period", not "no records yet".
+  const filtered = activeFilterCount(state) > 0 || Boolean(state.dateFrom || state.dateTo) || Boolean(searchParams.get('q'));
+  // Nothing to chart and no rows: skip the chart card (the table's empty state explains why).
+  const chartHasData = def.charts.some((c) =>
+    (summary.charts[c.key] ?? []).some((p) => c.series.some((s) => Number((p as Record<string, unknown>)[s.key]) > 0)),
+  );
+  const showChart = Boolean(chart) && (chartHasData || total > 0);
   const GroupIcon = def.icon;
   const kpiCount = Math.min(Math.max(def.kpis.length, 3), 5) as 3 | 4 | 5;
 
@@ -170,7 +201,7 @@ export function ReportView({
               key={kpi.key}
               className={cn(def.kpis.length % 2 === 1 && i === def.kpis.length - 1 && 'max-lg:col-span-2')}
               label={t(kpi.labelKey)}
-              value={formatValue(summary.kpis[kpi.key] ?? (kpi.format === 'percent' ? null : 0), kpi.format, locale, t)}
+              value={formatValue(summary.kpis[kpi.key] ?? (kpi.format === 'integer' ? 0 : null), kpi.format, locale, t)}
               icon={kpi.icon}
               tone={kpi.tone}
               hint={kpiHint(kpi, summary.kpis, locale, t)}
@@ -178,7 +209,7 @@ export function ReportView({
           ))}
         </KpiGrid>
 
-        {chart ? (
+        {chart && showChart ? (
           <section
             data-slot="section-card"
             className="flex min-w-0 break-inside-avoid flex-col rounded-lg border border-border bg-card shadow-card"
@@ -200,7 +231,11 @@ export function ReportView({
               ) : null}
             </div>
             <div className="px-5 pt-3 pb-5">
-              <ReportChart def={chart} points={(summary.charts[chart.key] ?? []) as Array<Record<string, unknown> & { key: string }>} />
+              <ReportChart
+                def={chart}
+                points={(summary.charts[chart.key] ?? []) as Array<Record<string, unknown> & { key: string }>}
+                range={{ from: state.dateFrom, to: state.dateTo }}
+              />
             </div>
           </section>
         ) : null}

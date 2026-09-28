@@ -236,18 +236,18 @@
     "inPeriod": "خلال الفترة المحددة",
     "turnover": "المغادرون ÷ متوسط عدد الموظفين",
     "atExit": "مدة الخدمة عند المغادرة",
-    "employeesCovered": "{value} موظف",
-    "pendingDays": "{value} يوم بانتظار الاعتماد",
+    "employeesCovered": "{count, plural, zero {لا يوجد موظفون} one {موظف واحد} two {موظفان} few {# موظفين} many {# موظفًا} other {# موظف}}",
+    "pendingDays": "{count, plural, zero {لا أيام بانتظار الاعتماد} one {يوم واحد بانتظار الاعتماد} two {يومان بانتظار الاعتماد} few {# أيام بانتظار الاعتماد} many {# يومًا بانتظار الاعتماد} other {# يوم بانتظار الاعتماد}}",
     "perRequest": "لكل طلب معتمد",
     "dueSoon": "{value} تستحق خلال 24 ساعة",
     "sinceSubmission": "أيام منذ التقديم",
     "businessDays": "أيام عمل حتى الإغلاق",
-    "closedRequests": "من أصل {value} طلبًا مغلقًا",
+    "closedRequests": "{count, plural, zero {لا توجد طلبات مغلقة} one {من أصل طلب مغلق واحد} two {من أصل طلبين مغلقين} few {من أصل # طلبات مغلقة} many {من أصل # طلبًا مغلقًا} other {من أصل # طلب مغلق}}",
     "openNow": "مفتوحة وتجاوزت موعدها الآن"
   },
   "units": {
-    "days": "{value} يوم",
-    "years": "{value} سنة"
+    "days": "{count, plural, zero {# يوم} one {# يوم} two {# يوم} few {# أيام} many {# يومًا} other {# يوم}}",
+    "years": "{count, plural, zero {# سنة} one {# سنة} two {# سنة} few {# سنوات} many {# سنة} other {# سنة}}"
   },
   "series": {
     "employees": "الموظفون",
@@ -417,6 +417,7 @@
     "export": "تصدير",
     "exportDisabled": "يتطلب تصدير التقارير صلاحية «التقارير › تصدير».",
     "exportRestricted": "لا تملك صلاحية تصدير هذا التقرير.",
+    "exportHint": "يطبّق التصدير عوامل تصفية التقرير والأعمدة الظاهرة.",
     "exportReady": "تم تجهيز ملف التصدير",
     "details": "التفاصيل",
     "breakdownTable": "التوزيع",
@@ -443,6 +444,7 @@
     "openRecord": "فتح"
   },
   "builder": {
+    "sharedLinkRejected": "تعذر فتح إعدادات الرابط المشترك لأنها غير صالحة أو تتضمن بيانات لا تملك صلاحية عرضها، لذا عُرضت الإعدادات الافتراضية.",
     "title": "منشئ التقارير",
     "description": "أنشئ تقريرًا مخصصًا من مصدر بيانات: اختر الأعمدة وعوامل التصفية والترتيب، واستعرضه ثم صدّره.",
     "breadcrumb": "المنشئ",

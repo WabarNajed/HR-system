@@ -225,7 +225,8 @@
       "updated": "Last updated",
       "suggested": "Suggested employee record",
       "matchLinked": "This employee is already linked to another portal account. Pick a different employee when approving.",
-      "noSuggestion": "No employee record matches the ID entered. You can still pick the right employee when approving."
+      "noSuggestion": "No employee record matches the ID entered. You can still pick the right employee when approving.",
+      "previousInfoNote": "Information requested earlier (answered)"
     },
     "approve": {
       "title": "Approve registration",

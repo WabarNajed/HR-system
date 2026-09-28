@@ -2,7 +2,7 @@ import 'server-only';
 
 import { cache } from 'react';
 import { getSessionContext, type SessionContext } from '@/lib/auth/session';
-import { addDays, todayIso } from '@/lib/dates';
+import { addDays, normalizeDigits, todayIso } from '@/lib/dates';
 import { localized } from '@/lib/i18n/localized';
 import type { Locale } from '@/lib/i18n/config';
 import { toIlikePattern, type ListParams } from '@/lib/list-params';
@@ -108,7 +108,9 @@ export function applyDirectoryFilters<Q extends AnyBuilder>(
     q = viewer.employeeId ? q.eq('manager_id', viewer.employeeId) : q.eq('id', '00000000-0000-0000-0000-000000000000');
   }
 
-  const term = params.q.trim();
+  // Arabic-keyboard digits (٠-٩) match the Latin digits stored in IDs; `"` is PostgREST's quoting
+  // character inside `or=(…)` — dropped so any user text keeps the filter well-formed.
+  const term = normalizeDigits(params.q).replace(/"/g, ' ').trim();
   if (term) {
     const norm = toIlikePattern(normalizeSearch(term));
     if (viewer.isOrgViewer && viewer.orgCan('personal_data.view')) {
@@ -188,13 +190,19 @@ export async function fetchDirectoryPage(
 ): Promise<{ rows: DirectoryRow[]; total: number }> {
   let query = supabase.from('employees').select(directorySelect(viewer), { count: 'exact' });
   query = applyDirectoryFilters(query, params, viewer);
-  query = applyDirectorySort(query, params, viewer.ctx.locale);
+  // Team viewers never see Iqama data: a hand-typed `?sort=iqama_expiry_date` must not order by it.
+  const sortParams = !viewer.isOrgViewer && params.sort === 'iqama_expiry_date' ? { ...params, sort: 'name' as const } : params;
+  query = applyDirectorySort(query, sortParams, viewer.ctx.locale);
   const { data, error, count } = await query.range(params.from, params.to);
   if (error && params.from > 0) {
     // Offset past the last row (stale `?page=` after filtering/deleting): PostgREST answers 416
     // (PGRST103 — some gateways even drop the connection). Report the real total so the page can
-    // send the user to the last page instead of failing.
-    const head = applyDirectoryFilters(supabase.from('employees').select('id', { count: 'exact', head: true }), params, viewer);
+    // send the user to the last page instead of failing. (The portal embed keeps `?portal=` usable.)
+    const head = applyDirectoryFilters(
+      supabase.from('employees').select('id, portal:profiles!profiles_employee_id_fkey(id)', { count: 'exact', head: true }),
+      params,
+      viewer,
+    );
     const { count: total, error: countError } = await head;
     if (!countError && (total ?? 0) <= params.from) return { rows: [], total: total ?? 0 };
   }

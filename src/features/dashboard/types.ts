@@ -96,15 +96,22 @@ export type ExpiryItemKind = 'iqama' | 'passport' | 'contract' | 'insurance' | '
 
 export type ExpiryItem = {
   kind: ExpiryItemKind;
+  /** `employee` or `dependent` (dependents' Iqama / passport / insurance). */
+  subject: string | null;
   entity_id: string;
   employee_id: string;
   employee_name_ar: string | null;
   employee_name_en: string | null;
   employee_number: string | null;
+  dependent_name_ar: string | null;
+  dependent_name_en: string | null;
   document_type: string | null;
   expiry_date: string;
   days_left: number;
 };
+
+/** Compliance counters per kind (`dashboard_compliance_counts`): expired, ≤ 30 days, ≤ 90 days. */
+export type ComplianceCounts = Record<ExpiryItemKind, { expired: number; d30: number; d90: number }>;
 
 /** Compact request row used by the queue / recent lists. */
 export type DashboardRequest = {

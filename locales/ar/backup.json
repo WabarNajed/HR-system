@@ -12,7 +12,7 @@
     "sensitiveIncluded": "مشمولة",
     "sensitiveExcluded": "غير مشمولة",
     "sensitiveIncludedHint": "نسخة مدير النظام",
-    "sensitiveExcludedHint": "للمدير العام للنظام فقط"
+    "sensitiveExcludedHint": "لمدير النظام فقط"
   },
   "create": {
     "title": "إنشاء نسخة احتياطية",
@@ -69,7 +69,9 @@
     "email_templates": "قوالب البريد الإلكتروني",
     "notification_settings": "إعدادات الإشعارات",
     "roles": "الأدوار",
-    "role_permissions": "صلاحيات الأدوار"
+    "role_permissions": "صلاحيات الأدوار",
+    "profiles": "حسابات المستخدمين",
+    "user_roles": "أدوار المستخدمين"
   },
   "history": {
     "title": "سجل النسخ الاحتياطية",
@@ -102,7 +104,7 @@
     },
     "backupFirst": "نزّل نسخة احتياطية أولًا — فهي الطريقة الوحيدة لاستعادة البيانات.",
     "start": "إعادة تهيئة المنشأة…",
-    "onlySuperAdmin": "إعادة تهيئة المنشأة متاحة للمدير العام للنظام فقط.",
+    "onlySuperAdmin": "إعادة تهيئة المنشأة متاحة لمدير النظام فقط.",
     "lastReset": "آخر إعادة تهيئة في {date} بواسطة {name}",
     "dialogTitle": "إعادة تهيئة المنشأة؟",
     "dialogDescription": "ستُحذف كل العناصر المذكورة في «ما سيُحذف» نهائيًا. سيُسجَّل خروجك ثم تتابع من معالج الإعداد.",

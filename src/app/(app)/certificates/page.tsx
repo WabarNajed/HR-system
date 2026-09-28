@@ -58,7 +58,9 @@ export default async function CertificatesPage({ searchParams }: { searchParams:
 
   const tabs: Tab[] = canTemplates ? ['requests', 'issued', 'templates'] : ['requests', 'issued'];
   const rawTab = one(sp.tab) as Tab | undefined;
-  const tab: Tab = rawTab && tabs.includes(rawTab) ? rawTab : hrView ? 'requests' : 'issued';
+  // Global search links certificates as `/certificates?q=CERT-…` (no tab) → open the Issued tab.
+  const certificateSearch = /^\s*CERT-/i.test(one(sp.q) ?? '');
+  const tab: Tab = rawTab && tabs.includes(rawTab) ? rawTab : hrView && !certificateSearch ? 'requests' : 'issued';
   const sheetRequest = one(sp.request);
 
   const kpisPromise = certificateKpis(supabase);

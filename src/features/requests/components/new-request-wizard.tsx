@@ -27,7 +27,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { SimpleTooltip } from '@/components/ui/tooltip';
 import { useErrorMessage } from '@/components/ui/form';
-import { formatDays } from '@/lib/format';
 import type { Locale } from '@/lib/i18n/config';
 import { employeeDisplayName, localized } from '@/lib/i18n/localized';
 import { UPLOAD_LIMITS } from '@/lib/storage';
@@ -289,7 +288,7 @@ export function NewRequestWizard(props: NewRequestWizardProps) {
 
   const computedDays =
     isLeave && leave.preview?.days !== null && leave.preview?.days !== undefined && values.start_date && values.end_date
-      ? { days: `${formatDays(leave.preview.days, locale)} · ${leave.preview.basis === 'calendar' ? tr('leave.calendarDays') : tr('leave.workingDays')}` }
+      ? { days: leave.preview.basis === 'calendar' ? tr('leave.calendarDaysCount', { count: leave.preview.days }) : tr('leave.workingDaysCount', { count: leave.preview.days }) }
       : undefined;
 
   const targetReason = !target ? t('pickEmployeeFirst') : null;

@@ -69,7 +69,9 @@
     "email_templates": "Email templates",
     "notification_settings": "Notification settings",
     "roles": "Roles",
-    "role_permissions": "Role permissions"
+    "role_permissions": "Role permissions",
+    "profiles": "User accounts",
+    "user_roles": "User roles"
   },
   "history": {
     "title": "Backup history",

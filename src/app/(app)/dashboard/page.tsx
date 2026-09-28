@@ -4,6 +4,7 @@ import { getTranslations } from 'next-intl/server';
 import { Suspense } from 'react';
 import { ROUTE_ACCESS } from '@/components/shell/nav-config';
 import { DashboardHeader } from '@/features/dashboard/components/dashboard-header';
+import { getDocumentAccess } from '@/features/documents/access';
 import { DashboardSection, Widget, WidgetEmpty, WidgetSkeleton } from '@/features/dashboard/components/widget-parts';
 import { ApprovalQueueWidget } from '@/features/dashboard/widgets/approval-queue';
 import { AuditActivityWidget } from '@/features/dashboard/widgets/audit-activity';
@@ -62,6 +63,8 @@ export default async function DashboardPage() {
     employee: Boolean(ctx.employee),
   };
   const canAudit = can(ctx, 'audit.view');
+  // Compliance counters / expiry alerts are organization-wide document data (org `documents.view`).
+  const canDocuments = view.hr ? (await getDocumentAccess(ctx)).view : false;
   const multi = [view.admin, view.hr, view.manager, view.employee].filter(Boolean).length > 1;
 
   return (
@@ -112,19 +115,27 @@ export default async function DashboardPage() {
           <Suspense fallback={<KpiRowSkeleton count={5} />}>
             <HrKpis />
           </Suspense>
-          <Suspense fallback={<ComplianceSkeleton />}>
-            <ComplianceRow />
-          </Suspense>
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-            <div className="lg:col-span-2">
+          {canDocuments ? (
+            <Suspense fallback={<ComplianceSkeleton />}>
+              <ComplianceRow />
+            </Suspense>
+          ) : null}
+          {canDocuments ? (
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+              <div className="lg:col-span-2">
+                <Suspense fallback={<WidgetSkeleton rows={6} />}>
+                  <RequestQueueWidget />
+                </Suspense>
+              </div>
               <Suspense fallback={<WidgetSkeleton rows={6} />}>
-                <RequestQueueWidget />
+                <ExpiryAlertsWidget />
               </Suspense>
             </div>
+          ) : (
             <Suspense fallback={<WidgetSkeleton rows={6} />}>
-              <ExpiryAlertsWidget />
+              <RequestQueueWidget />
             </Suspense>
-          </div>
+          )}
           {canAudit ? (
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
               <Suspense fallback={<WidgetSkeleton rows={5} chart />}>

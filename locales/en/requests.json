@@ -159,7 +159,7 @@
     "requested": "Requested",
     "afterRequest": "Balance after",
     "balance": "Balance",
-    "daysUnit": "days",
+    "daysUnit": "{count, plural, one {day} other {days}}",
     "noDeduction": "Not deducted",
     "noDeductionHint": "This leave type doesn't deduct from your balance.",
     "availableNow": "{days, plural, =0 {No balance available} one {Available now: # day} other {Available now: # days}}",
@@ -171,7 +171,11 @@
     "overlap": "These dates overlap another leave request:",
     "attachmentRequired": "A supporting document is required for this leave type.",
     "calendarDays": "calendar days",
-    "workingDays": "working days"
+    "workingDays": "working days",
+    "workingDaysUnit": "{count, plural, one {working day} other {working days}}",
+    "calendarDaysUnit": "{count, plural, one {calendar day} other {calendar days}}",
+    "workingDaysCount": "{count, plural, =0 {No working days} one {# working day} other {# working days}}",
+    "calendarDaysCount": "{count, plural, =0 {No days} one {# calendar day} other {# calendar days}}"
   },
   "wizard": {
     "title": "New request",

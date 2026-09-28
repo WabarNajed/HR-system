@@ -132,7 +132,8 @@ export function TemplateEditor({ template, canEdit }: { template: TemplateDetail
   const [publishOpen, setPublishOpen] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [versionsOpen, setVersionsOpen] = useState(false);
-  const [leaveOpen, setLeaveOpen] = useState(false);
+  /** Destination held back by the unsaved-changes guard (back button or any in-app link). */
+  const [leaveHref, setLeaveHref] = useState<string | null>(null);
   const [saving, startSaving] = useTransition();
   /** Versions confirmed by actions before the refreshed props arrive (the server can lag). */
   const [savedVersion, setSavedVersion] = useState(template.current_version);
@@ -173,8 +174,25 @@ export function TemplateEditor({ template, canEdit }: { template: TemplateDetail
     const handler = (e: BeforeUnloadEvent) => {
       e.preventDefault();
     };
+    // In-app navigation (sidebar, breadcrumbs, header links) never fires beforeunload: intercept
+    // same-origin link clicks in the capture phase (before next/link) and confirm first.
+    const onClick = (e: MouseEvent) => {
+      if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      const anchor = (e.target as Element | null)?.closest?.('a[href]') as HTMLAnchorElement | null;
+      if (!anchor || (anchor.target && anchor.target !== '_self') || anchor.hasAttribute('download')) return;
+      const url = new URL(anchor.href, window.location.href);
+      if (url.origin !== window.location.origin) return;
+      if (url.pathname === window.location.pathname && url.search === window.location.search) return;
+      e.preventDefault();
+      e.stopPropagation();
+      setLeaveHref(`${url.pathname}${url.search}${url.hash}`);
+    };
     window.addEventListener('beforeunload', handler);
-    return () => window.removeEventListener('beforeunload', handler);
+    document.addEventListener('click', onClick, true);
+    return () => {
+      window.removeEventListener('beforeunload', handler);
+      document.removeEventListener('click', onClick, true);
+    };
   }, [dirty]);
 
   const contentTabs: EditorKey[] = meta.language === 'ar' ? ['ar'] : meta.language === 'en' ? ['en'] : ['ar', 'en'];
@@ -499,7 +517,7 @@ export function TemplateEditor({ template, canEdit }: { template: TemplateDetail
       {/* Top bar */}
       <div className="flex min-h-14 shrink-0 flex-wrap items-center gap-x-3 gap-y-2 border-b border-border bg-card px-3 py-2 sm:px-4">
         {dirty ? (
-          <Button variant="ghost" size="icon-sm" aria-label={te('back')} onClick={() => setLeaveOpen(true)}>
+          <Button variant="ghost" size="icon-sm" aria-label={te('back')} onClick={() => setLeaveHref(backHref)}>
             <ArrowLeftIcon className="rtl:rotate-180" />
           </Button>
         ) : (
@@ -552,10 +570,14 @@ export function TemplateEditor({ template, canEdit }: { template: TemplateDetail
           </Button>
           {canEdit ? (
             <>
-              <Button size="sm" variant="secondary" disabled={!dirty} onClick={() => setSaveOpen(true)}>
-                <SaveIcon />
-                {te('save')}
-              </Button>
+              <SimpleTooltip content={dirty ? null : te('saveDisabled')}>
+                <span className="inline-flex" tabIndex={dirty ? undefined : 0}>
+                  <Button size="sm" variant="secondary" disabled={!dirty} onClick={() => setSaveOpen(true)}>
+                    <SaveIcon />
+                    {te('save')}
+                  </Button>
+                </span>
+              </SimpleTooltip>
               <SimpleTooltip content={publishBlocked}>
                 <span className="inline-flex" tabIndex={publishBlocked ? 0 : undefined}>
                   <Button size="sm" disabled={Boolean(publishBlocked)} onClick={() => setPublishOpen(true)}>
@@ -654,14 +676,14 @@ export function TemplateEditor({ template, canEdit }: { template: TemplateDetail
       />
 
       <ConfirmDialog
-        open={leaveOpen}
-        onOpenChange={setLeaveOpen}
+        open={leaveHref !== null}
+        onOpenChange={(o) => !o && setLeaveHref(null)}
         variant="danger"
         title={te('leaveTitle')}
         description={te('leaveDescription')}
         confirmLabel={tc('discard')}
         onConfirm={() => {
-          router.push(backHref);
+          if (leaveHref) router.push(leaveHref);
         }}
       />
 

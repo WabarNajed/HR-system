@@ -11,7 +11,7 @@ import { StatusBadge } from '@/components/shared/status-badge';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { ROUTE_ACCESS } from '@/components/shell/nav-config';
-import { ExportHub, type ExportHubDataset } from '@/features/data-management/components/export-hub';
+import { ExportHub, type ExportHubGroup } from '@/features/data-management/components/export-hub';
 import { HubCards } from '@/features/data-management/components/hub-cards';
 import { ImportHistoryTable } from '@/features/data-management/components/import-history-table';
 import { TemplatesGrid } from '@/features/data-management/components/templates-grid';
@@ -30,6 +30,9 @@ import { can } from '@/lib/permissions';
 import { createClient } from '@/lib/supabase/server';
 
 export const generateMetadata = (): Promise<Metadata> => pageMetadata('dataManagement.title');
+
+/** Server Actions used on the hub (import details, cancel) inherit this limit. */
+export const maxDuration = 60;
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
@@ -56,13 +59,26 @@ export default async function AdminDataManagementPage({ searchParams }: { search
   ]);
 
   const lt = getTranslator(ctx.locale);
-  const exportDatasets: ExportHubDataset[] =
-    tab === 'export'
-      ? listExportDatasets()
-          .filter((d) => can(ctx, d.permission))
-          .map((d) => ({ key: d.key, title: lt.has(d.titleKey) ? lt(d.titleKey) : d.key, formats: d.formats ?? EXPORT_FORMATS }))
-          .sort((a, b) => a.title.localeCompare(b.title, ctx.locale))
-      : [];
+  const exportGroups: ExportHubGroup[] = [];
+  if (tab === 'export') {
+    // Grouped by owning area, in registry order. The custom report builder needs a saved configuration → not listed.
+    for (const d of listExportDatasets()) {
+      if (!can(ctx, d.permission) || d.key === 'report-builder') continue;
+      const groupKey = d.key === 'imports' ? 'dataManagement' : d.key.startsWith('report-') ? 'reports' : d.permission.split('.')[0]!;
+      let group = exportGroups.find((g) => g.key === groupKey);
+      if (!group) {
+        const label =
+          groupKey === 'dataManagement'
+            ? lt('dataManagement.title')
+            : lt.has(`enums.permissionModule.${groupKey}`)
+              ? lt(`enums.permissionModule.${groupKey}`)
+              : groupKey;
+        group = { key: groupKey, label, datasets: [] };
+        exportGroups.push(group);
+      }
+      group.datasets.push({ key: d.key, title: lt.has(d.titleKey) ? lt(d.titleKey) : d.key, formats: d.formats ?? EXPORT_FORMATS });
+    }
+  }
 
   const errorsOnly = sp.errors === '1';
 
@@ -164,9 +180,9 @@ export default async function AdminDataManagementPage({ searchParams }: { search
         </div>
         <div className={tab === 'history' ? 'p-3 sm:p-4' : 'p-4 sm:p-5'}>
           {tab === 'history' && history ? (
-            <ImportHistoryTable rows={history.rows} total={history.total} errorsOnly={errorsOnly} canStart={allowed.length > 0} />
+            <ImportHistoryTable rows={history.rows} total={history.total} errorsOnly={errorsOnly} canStart={allowed.length > 0} types={allowed} />
           ) : null}
-          {tab === 'export' ? <ExportHub datasets={exportDatasets} /> : null}
+          {tab === 'export' ? <ExportHub groups={exportGroups} /> : null}
           {tab === 'templates' ? <TemplatesGrid allowed={allowed} /> : null}
         </div>
       </section>

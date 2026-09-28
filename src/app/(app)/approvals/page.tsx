@@ -1,5 +1,6 @@
 import { AlarmClockIcon, CheckCheckIcon, HourglassIcon, InboxIcon } from 'lucide-react';
 import type { Metadata } from 'next';
+import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { LinkTabs } from '@/components/shared/link-tabs';
 import { PageHeader } from '@/components/shared/page-header';
@@ -22,7 +23,7 @@ import {
 } from '@/features/requests/queries';
 import { requireAccess } from '@/lib/auth/guards';
 import { formatInteger } from '@/lib/format';
-import { parseListParams } from '@/lib/list-params';
+import { mergeSearchParams, parseListParams } from '@/lib/list-params';
 import { pageMetadata } from '@/lib/metadata';
 import { createClient } from '@/lib/supabase/server';
 
@@ -78,6 +79,12 @@ export default async function ApprovalsPage({ searchParams }: { searchParams: Pr
     loadDepartments(supabase),
     loadEmployeeOptions(supabase),
   ]);
+
+  // Stale `?page=` past the last page (e.g. the queue shrank after decisions): go to the last page.
+  const lastPage = Math.max(1, Math.ceil(list.total / params.pageSize));
+  if (!list.rows.length && list.total > 0 && params.page > lastPage) {
+    redirect(`/approvals?${mergeSearchParams(sp, { page: lastPage > 1 ? lastPage : null }).toString()}`);
+  }
 
   const locale = ctx.locale;
   return (

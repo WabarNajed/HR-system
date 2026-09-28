@@ -12,7 +12,7 @@ import { StatusBadge } from '@/components/shared/status-badge';
 import { Button } from '@/components/ui/button';
 import { useDateFormat } from '@/lib/i18n/use-date-format';
 import { cancelImportAction } from '../actions';
-import { IMPORT_TYPES } from '../lib/types';
+import type { ImportType } from '../lib/types';
 import type { ImportView } from '../types';
 import { ImportDetailsSheet } from './import-details-sheet';
 import { errorReportHref, importHref, TYPE_ICONS } from './type-meta';
@@ -25,9 +25,11 @@ type Props = {
   total: number;
   errorsOnly: boolean;
   canStart: boolean;
+  /** Import types the viewer may work on (the only ones the database returns). */
+  types: readonly ImportType[];
 };
 
-export function ImportHistoryTable({ rows, total, errorsOnly, canStart }: Props) {
+export function ImportHistoryTable({ rows, total, errorsOnly, canStart, types: allowedTypes }: Props) {
   const t = useTranslations('dataManagement');
   const types = useLooseT('dataManagement.types');
   const statuses = useLooseT('statuses.import');
@@ -42,11 +44,13 @@ export function ImportHistoryTable({ rows, total, errorsOnly, canStart }: Props)
 
   const filters = useMemo<FilterDef<ImportView>[]>(
     () => [
-      { key: 'type', title: t('history.filters.type'), options: IMPORT_TYPES.map((v) => ({ value: v, label: types(`${v}.title`), icon: TYPE_ICONS[v] })) },
+      ...(allowedTypes.length > 1
+        ? [{ key: 'type', title: t('history.filters.type'), options: allowedTypes.map((v) => ({ value: v, label: types(`${v}.title`), icon: TYPE_ICONS[v] })) }]
+        : []),
       { key: 'status', title: t('history.filters.status'), options: STATUSES.map((v) => ({ value: v, label: statuses(v) })) },
       { key: 'errors', title: t('history.filters.errorsOnly'), multiple: false, options: [{ value: '1', label: t('history.filters.errorsOnly') }] },
     ],
-    [t, types, statuses],
+    [t, types, statuses, allowedTypes],
   );
 
   const columns = useMemo<ColumnDef<ImportView>[]>(

@@ -5,6 +5,7 @@ import { cache } from 'react';
 import { emailProvider } from '@/lib/email/send';
 import { createClient } from '@/lib/supabase/server';
 import type {
+  ComplianceCounts,
   DashboardLeave,
   DashboardRequest,
   DashboardStats,
@@ -23,6 +24,8 @@ export type Loaded<T> = { ok: true; data: T } | { ok: false };
 const TIMEOUT_MS = 8000;
 export const HR_QUEUE_LIMIT = 6;
 export const APPROVAL_QUEUE_LIMIT = 6;
+export const RECENT_REQUESTS_LIMIT = 6;
+export const MY_LEAVE_LIMIT = 5;
 
 export const OPEN_REQUEST_STATUSES = ['submitted', 'pending_manager_approval', 'pending_hr_review'] as const;
 const APPROVED_LEAVE_STATUSES = ['approved', 'in_progress', 'completed'] as const;
@@ -71,7 +74,7 @@ export const getMyRecentRequests = cache(async (employeeId: string, userId: stri
       .select(REQUEST_SELECT)
       .or(`employee_id.eq.${employeeId},requester_id.eq.${userId}`)
       .order('updated_at', { ascending: false })
-      .limit(6);
+      .limit(RECENT_REQUESTS_LIMIT);
     if (error) throw error;
     return (data ?? []) as unknown as DashboardRequest[];
   }),
@@ -116,7 +119,7 @@ export const getMyUpcomingLeave = cache(async (employeeId: string, today: string
       .gte('end_date', today)
       .in('request.status', [...APPROVED_LEAVE_STATUSES, ...PENDING_LEAVE_STATUSES])
       .order('start_date', { ascending: true })
-      .limit(5);
+      .limit(MY_LEAVE_LIMIT);
     if (error) throw error;
     return toLeave((data ?? []) as unknown as LeaveRow[]);
   }),
@@ -240,6 +243,21 @@ export const getExpiryItems = cache(async (limit: number, employeeId?: string): 
     });
     if (error) throw error;
     return ((data ?? []) as ExpiryItem[]).map((r) => ({ ...r, days_left: num(r.days_left) }));
+  }),
+);
+
+const EXPIRY_ITEM_KINDS = ['iqama', 'passport', 'contract', 'insurance', 'document'] as const;
+
+/** Expired / ≤30 / ≤90-day counts per kind — same source (`expiry_items`) as the documents expiry view. */
+export const getComplianceCounts = cache(async (): Promise<Loaded<ComplianceCounts>> =>
+  load('compliance counts', async () => {
+    const supabase = await createClient({ timeoutMs: TIMEOUT_MS });
+    const { data, error } = await supabase.rpc('dashboard_compliance_counts');
+    if (error) throw error;
+    const raw = (data ?? {}) as Partial<Record<string, { expired?: unknown; d30?: unknown; d90?: unknown }>>;
+    return Object.fromEntries(
+      EXPIRY_ITEM_KINDS.map((k) => [k, { expired: num(raw[k]?.expired), d30: num(raw[k]?.d30), d90: num(raw[k]?.d90) }]),
+    ) as ComplianceCounts;
   }),
 );
 

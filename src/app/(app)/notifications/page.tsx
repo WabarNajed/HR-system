@@ -1,6 +1,7 @@
 import { BellIcon, InfoIcon } from 'lucide-react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { ErrorState } from '@/components/shared/error-state';
 import { PageHeader } from '@/components/shared/page-header';
@@ -52,6 +53,16 @@ export default async function NotificationsPage({ searchParams }: { searchParams
         <ErrorState variant="page" />
       </div>
     );
+  }
+
+  // Stale `?page=` (e.g. the unread tab after "mark all read"): go to the last page that exists.
+  if (page > 1 && data.items.length === 0 && data.total <= (page - 1) * pageSize) {
+    const last = Math.max(1, Math.ceil(data.total / pageSize));
+    const next = new URLSearchParams();
+    for (const [key, value] of Object.entries(sp)) if (typeof value === 'string' && key !== 'page') next.set(key, value);
+    if (last > 1) next.set('page', String(last));
+    const qs = next.toString();
+    redirect(qs ? `/notifications?${qs}` : '/notifications');
   }
 
   const n = (v: number) => formatInteger(v, ctx.locale);

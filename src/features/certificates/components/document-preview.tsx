@@ -11,6 +11,24 @@ import { cn } from '@/lib/utils';
 import type { PreviewResult } from '../actions';
 
 const PAPER_WIDTH = 860;
+/** Client-side ceiling for a preview round-trip (the server's PDF render gives up at 45 s). */
+const LOAD_TIMEOUT_MS = 90_000;
+
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error('timeout')), ms);
+    promise.then(
+      (v) => {
+        clearTimeout(timer);
+        resolve(v);
+      },
+      (e: unknown) => {
+        clearTimeout(timer);
+        reject(e);
+      },
+    );
+  });
+}
 
 /** Renders an HTML document in a sandboxed iframe scaled to the container width (A4 paper look). */
 export function ScaledDocumentFrame({ html, title, className }: { html: string; title: string; className?: string }) {
@@ -79,6 +97,17 @@ export function DocumentPreview({
   useLayoutEffect(() => {
     loadRef.current = load;
   });
+  // Release the PDF blob when the preview closes.
+  const pdfUrlRef = useRef<string | undefined>(undefined);
+  useEffect(() => {
+    pdfUrlRef.current = pdf?.pdfUrl;
+  }, [pdf]);
+  useEffect(
+    () => () => {
+      if (pdfUrlRef.current) URL.revokeObjectURL(pdfUrlRef.current);
+    },
+    [],
+  );
 
   const key = `${version}:${attempt}`;
 
@@ -90,13 +119,13 @@ export function DocumentPreview({
     (async () => {
       let next: Loaded;
       try {
-        const result = await loadRef.current(view === 'page' ? 'html' : 'pdf');
+        const result = await withTimeout(loadRef.current(view === 'page' ? 'html' : 'pdf'), LOAD_TIMEOUT_MS);
         if (!result.ok) next = { key, error: result.error };
         else if (view === 'page' && result.data?.html) next = { key, html: result.data.html };
         else if (view === 'pdf' && result.data?.pdfBase64) next = { key, pdfUrl: base64ToBlobUrl(result.data.pdfBase64), fileName: result.data.fileName };
         else next = { key, error: 'errors.generic' };
-      } catch {
-        next = { key, error: 'errors.network' };
+      } catch (error) {
+        next = { key, error: error instanceof Error && error.message === 'timeout' ? 'errors.timeout' : 'errors.network' };
       }
       if (cancelled) {
         if (next.pdfUrl) URL.revokeObjectURL(next.pdfUrl);

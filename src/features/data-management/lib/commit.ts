@@ -68,10 +68,21 @@ async function pool<T, R>(items: readonly T[], size: number, fn: (item: T) => Pr
 
 /* ─── Master data creation (auto-create referenced departments / job titles …) ── */
 
+/** Reads every row of a query in pages of 1,000 (PostgREST caps a response at `max_rows`). */
+async function readAll<T>(query: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: unknown }>): Promise<T[]> {
+  const out: T[] = [];
+  for (let from = 0; from < 200_000; from += 1000) {
+    const { data, error } = await query(from, from + 999);
+    if (error) throw error;
+    out.push(...(data ?? []));
+    if (!data || data.length < 1000) break;
+  }
+  return out;
+}
+
 async function loadIndex(client: DbClient, table: MasterTable): Promise<RefIndex> {
-  const { data, error } = await client.from(table).select('id, code, name_ar, name_en').limit(5000);
-  if (error) throw error;
-  return indexRefs((data ?? []) as RefRow[]);
+  const rows = await readAll<RefRow>((from, to) => client.from(table).select('id, code, name_ar, name_en').order('id').range(from, to));
+  return indexRefs(rows);
 }
 
 /** Resolves `create` references: reuses rows created meanwhile, inserts the rest. */
@@ -377,16 +388,26 @@ export async function finalizeReferences(env: CommitEnv, rows: readonly Finalize
   if (env.type === 'employees') {
     const pending = rows.filter((r) => r.entity_id && r.mapped.refs?.manager?.kind === 'file');
     if (!pending.length) return { linked, unresolved };
-    const { data } = await env.client.from('employees').select('id, employee_number, national_id, name_ar, name_en').eq('import_id', env.importId);
-    const list = data ?? [];
+    // Every employee written by this import (paged: PostgREST returns at most 1,000 rows per request).
+    const list = await readAll<{ id: string; employee_number: string | null; national_id: string | null; name_ar: string | null; name_en: string | null }>(
+      (from, to) => env.client.from('employees').select('id, employee_number, national_id, name_ar, name_en').eq('import_id', env.importId).order('id').range(from, to),
+    );
+    const numberKey = (v: string) => v.replace(/\s+/g, '').toUpperCase();
+    const byNumber = new Map<string, string>();
+    const byNationalId = new Map<string, string>();
+    const byName = new Map<string, string>();
+    for (const e of list) {
+      if (e.employee_number && !byNumber.has(numberKey(e.employee_number))) byNumber.set(numberKey(e.employee_number), e.id);
+      if (e.national_id && !byNationalId.has(e.national_id)) byNationalId.set(e.national_id, e.id);
+      for (const n of [e.name_ar, e.name_en]) if (n && !byName.has(matchKey(n))) byName.set(matchKey(n), e.id);
+    }
     await pool(pending, 6, async (r) => {
       const ref = r.mapped.refs.manager as Extract<RefResolution, { kind: 'file' }>;
-      const hit = list.find(
-        (e) =>
-          (ref.number && e.employee_number && e.employee_number.replace(/\s+/g, '').toUpperCase() === ref.number.replace(/\s+/g, '').toUpperCase()) ||
-          (ref.nationalId && e.national_id === ref.nationalId) ||
-          (ref.name && [e.name_ar, e.name_en].some((n) => n && matchKey(n) === matchKey(ref.name))),
-      );
+      const hitId =
+        (ref.number ? byNumber.get(numberKey(ref.number)) : undefined) ??
+        (ref.nationalId ? byNationalId.get(ref.nationalId) : undefined) ??
+        (ref.name ? byName.get(matchKey(ref.name)) : undefined);
+      const hit = hitId ? { id: hitId } : null;
       if (!hit || hit.id === r.entity_id) {
         unresolved++;
         return;

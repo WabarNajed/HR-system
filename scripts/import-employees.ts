@@ -220,9 +220,23 @@ async function main() {
     p_changes: { file: fileName, created: stats.created, updated: stats.updated, skipped: stats.skipped, failed: stats.failed, source: 'cli' },
   });
 
-  const { data: finalRows } = await client.from('import_rows').select('row_number, status, raw, errors, warnings').eq('import_id', importId).order('row_number');
+  // Final row results for the report (paged: PostgREST returns at most 1,000 rows per request).
+  const finalRows: Array<{ row_number: number; status: string; raw: unknown; errors: unknown; warnings: unknown }> = [];
+  if (typeof flags.report === 'string') {
+    for (let from = 0; ; from += 1000) {
+      const { data, error } = await client
+        .from('import_rows')
+        .select('row_number, status, raw, errors, warnings')
+        .eq('import_id', importId)
+        .order('row_number')
+        .range(from, from + 999);
+      if (error) throw error;
+      finalRows.push(...(data ?? []));
+      if (!data || data.length < 1000) break;
+    }
+  }
   await writeReport(
-    (finalRows ?? []).map((r) => ({
+    finalRows.map((r) => ({
       rowNumber: r.row_number,
       status: r.status as never,
       action: 'skip',
@@ -236,7 +250,7 @@ async function main() {
 
   console.log('');
   console.log(color.bold(finalStatus === 'completed' ? color.green('Import complete') : color.red('Import failed')) + color.dim(`  (import ${importId})`));
-  console.log(`  created ${stats.created} · updated ${stats.updated} · skipped ${stats.skipped + t.skip} · not imported ${counts.error}`);
+  console.log(`  created ${stats.created} · updated ${stats.updated} · skipped ${counts.skipped} · not imported ${counts.error}`);
   const master = Object.entries(stats.masterCreated);
   if (master.length) console.log(`  master data created: ${master.map(([k, v]) => `${v} ${k}`).join(', ')}`);
   if (refs.linked || refs.unresolved) console.log(`  managers linked ${refs.linked}${refs.unresolved ? `, unresolved ${refs.unresolved}` : ''}`);

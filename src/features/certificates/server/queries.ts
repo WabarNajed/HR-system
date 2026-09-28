@@ -379,7 +379,8 @@ export async function listCertificateRequests(
   const ids = raw.map((r) => r.id);
   const [{ data: values }, { data: certs }] = await Promise.all([
     supabase.from('hr_request_values').select('request_id, field_key, value').in('request_id', ids).in('field_key', ['language', 'addressed_to']),
-    supabase.from('certificates').select('request_id').in('request_id', ids),
+    // valid only: a revoked certificate does not fulfil the request
+    supabase.from('certificates').select('request_id').in('request_id', ids).eq('status', 'valid'),
   ]);
   const byRequest = new Map<string, Record<string, unknown>>();
   for (const v of values ?? []) {

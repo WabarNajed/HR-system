@@ -226,7 +226,7 @@ export function LeaveTypeSheet({
                     onChange={(e) => set('code', e.target.value)}
                     disabled={Boolean(row)}
                     maxLength={63}
-                    className="font-mono text-meta"
+                    className="font-mono text-meta leading-6"
                     placeholder="annual" // i18n-ignore
                     aria-invalid={Boolean(errors.code) || undefined}
                   />

@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { ActionError, fail, ok, withAction, requireActionSession } from '@/lib/action';
 import { logAuditEvent } from '@/lib/audit';
+import { normalizeDigits } from '@/lib/dates';
 import { formatIban } from '@/lib/format';
 import { createClient } from '@/lib/supabase/server';
 import { BUCKETS, removeFiles, fileRouteUrl } from '@/lib/storage';
@@ -203,9 +204,10 @@ export const removeEmployeeAvatar = withAction(
     const viewer = await getViewer(ctx);
     if (!viewer.orgCan('employees.edit')) throw new ActionError('errors.forbidden');
     const supabase = await createClient();
-    const { data: current, error: readError } = await supabase.from('employees').select('avatar_path').eq('id', id).maybeSingle();
+    const { data: current, error: readError } = await supabase.from('employees').select('avatar_path, archived_at').eq('id', id).maybeSingle();
     if (readError) throw readError;
     if (!current) throw new ActionError('errors.notFound');
+    if (current.archived_at) throw new ActionError('employees.actions.editDisabledArchived');
     const { error } = await supabase.from('employees').update({ avatar_path: null }).eq('id', id);
     if (error) throw error;
     if (current.avatar_path) await removeFiles(supabase, BUCKETS.employeeDocuments, [current.avatar_path]);
@@ -255,7 +257,7 @@ export const searchManagerCandidates = withAction(
     const supabase = await createClient();
     const { data, error } = await supabase.rpc('employee_manager_candidates', {
       p_employee_id: employeeId ?? undefined,
-      p_query: query || undefined,
+      p_query: normalizeDigits(query).trim() || undefined,
       p_limit: 25,
     });
     if (error) throw error;

@@ -33,7 +33,8 @@
     "approve": "Approve",
     "return": "Return for information",
     "returnDisabled": "This step doesn't allow returning",
-    "reject": "Reject"
+    "reject": "Reject",
+    "notYourStep": "Only the current approver can decide this step"
   },
   "empty": {
     "pending": {

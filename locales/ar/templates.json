@@ -102,6 +102,7 @@
     "notUsed": "غير مستخدم في قالب {language}",
     "placeholder": "اكتب نص الشهادة…",
     "save": "حفظ",
+    "saveDisabled": "لا توجد تغييرات لحفظها.",
     "saving": "جارٍ الحفظ…",
     "publish": "نشر",
     "publishing": "جارٍ النشر…",

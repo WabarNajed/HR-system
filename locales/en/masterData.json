@@ -86,7 +86,7 @@
     "countrySearch": "Search countries…"
   },
   "columns": {
-    "parent": "Parent department",
+    "parent": "Parent",
     "topLevel": "Top level",
     "head": "Department head",
     "noHead": "Not assigned",

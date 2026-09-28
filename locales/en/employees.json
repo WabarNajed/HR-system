@@ -26,9 +26,10 @@
     "archived": "Archived",
     "archivedHint": "Hidden from the directory",
     "teamSize": "Direct reports",
-    "teamSizeHint": "Active members of your team",
+    "teamSizeHint": "Reporting directly to you",
     "onLeave": "On leave",
-    "onLeaveHint": "Currently marked as on leave"
+    "onLeaveHint": "Currently marked as on leave",
+    "iqamaExpiredShort": "{count, plural, =0 {None expired} other {# expired}}"
   },
   "filters": {
     "department": "Department",
@@ -215,7 +216,8 @@
       "iqamaHijri": "Kept exactly as written on the Iqama.",
       "totalSalary": "Calculated automatically from the components.",
       "iban": "Saudi IBAN: SA followed by 22 digits.",
-      "noManagerMatches": "No matching employees"
+      "noManagerMatches": "No matching employees",
+      "nameEither": "Enter the name in Arabic, English or both."
     },
     "warnings": {
       "nationalId": "Saudi national ID numbers are 10 digits starting with 1 — please double-check.",

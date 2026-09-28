@@ -283,10 +283,10 @@ function RegistrationSheet({
               </div>
             </SheetHeader>
             <SheetBody className="flex flex-col gap-5">
-              {r.reviewNote && r.status !== 'pending' ? (
-                <Alert variant={r.status === 'rejected' ? 'danger' : 'warning'}>
+              {r.reviewNote ? (
+                <Alert variant={r.status === 'rejected' ? 'danger' : r.status === 'pending' ? 'info' : 'warning'}>
                   {r.status === 'rejected' ? <XCircleIcon /> : <MessageCircleQuestionIcon />}
-                  <AlertTitle>{r.status === 'rejected' ? t('sheet.rejectionReason') : t('sheet.infoNote')}</AlertTitle>
+                  <AlertTitle>{r.status === 'rejected' ? t('sheet.rejectionReason') : r.status === 'pending' ? t('sheet.previousInfoNote') : t('sheet.infoNote')}</AlertTitle>
                   <AlertDescription>
                     <p dir="auto" className="whitespace-pre-line text-start">{r.reviewNote}</p>
                     {r.reviewedAt ? <p className="mt-1 text-xs opacity-80 numeric">{fmt.dateTime(r.reviewedAt)}</p> : null}

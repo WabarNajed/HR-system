@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { isValidIsoDate } from '@/lib/dates';
+import { isValidIsoDate, normalizeDigits } from '@/lib/dates';
 import {
   DEPENDENT_INSURANCE_STATUSES,
   EMPLOYMENT_STATUSES,
@@ -20,6 +20,16 @@ const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const text = (max: number) => z.string().trim().max(max);
+/**
+ * Numbers typed on an Arabic keyboard (٠-٩ / ۰-۹) are stored with Latin digits, so IDs, IBANs and
+ * phone numbers stay searchable, unique and valid. Applied to identifiers, never to names/free text.
+ */
+const code = (max: number) => text(max).transform(normalizeDigits);
+
+/** Amount as typed → plain decimal: Latin digits, `٫` → `.`, thousands separators dropped. */
+export function normalizeAmount(value: string): string {
+  return normalizeDigits(value).replace(/٫/g, '.').replace(/[٬,\s]/g, '');
+}
 const isoDate = () => z.string().trim().refine((v) => v === '' || isValidIsoDate(v), { message: 'validation.invalidDate' });
 const uuidOrEmpty = () => z.string().trim().refine((v) => v === '' || UUID_RE.test(v), { message: 'validation.invalidValue' });
 const optionalEnum = <T extends readonly [string, ...string[]]>(values: T) => z.enum(['', ...values] as unknown as readonly [string, ...string[]]);
@@ -27,11 +37,12 @@ const money = () =>
   z
     .string()
     .trim()
+    .transform(normalizeAmount)
     .refine((v) => v === '' || /^\d{1,10}(\.\d{1,2})?$/.test(v), { message: 'employees.validation.amount' });
 
 /** Upper-case, no spaces (as stored by the DB trigger). */
 export function normalizeIban(value: string): string {
-  return value.replace(/\s+/g, '').toUpperCase();
+  return normalizeDigits(value).replace(/\s+/g, '').toUpperCase();
 }
 
 /** Hard format rule: `SA` + 22 digits/letters (Saudi IBANs are 24 characters). */
@@ -57,7 +68,7 @@ export function hasValidIbanChecksum(value: string): boolean {
  * records may carry legacy formats). National ID: 10 digits starting with 1; Iqama: starting with 2.
  */
 export function identityNumberWarning(idType: string, value: string): string | null {
-  const v = value.trim();
+  const v = normalizeDigits(value.trim());
   if (!v) return null;
   const type = idType || (v.startsWith('1') ? 'national_id' : v.startsWith('2') ? 'iqama' : '');
   if (type === 'national_id' && !/^1\d{9}$/.test(v)) return 'employees.form.warnings.nationalId';
@@ -69,13 +80,13 @@ export function identityNumberWarning(idType: string, value: string): string | n
 export const employeeFormSchema = z
   .object({
     // Identity & contact
-    employee_number: text(50),
+    employee_number: code(50),
     name_ar: text(200),
     name_en: text(200),
     company_email: text(254),
     personal_email: text(254),
-    mobile: text(30),
-    alt_mobile: text(30),
+    mobile: code(30),
+    alt_mobile: code(30),
     gender: optionalEnum(GENDERS),
     nationality: text(100),
     date_of_birth: isoDate(),
@@ -99,19 +110,19 @@ export const employeeFormSchema = z
     cost_center_id: uuidOrEmpty(),
     // Government documents
     id_type: optionalEnum(ID_TYPES),
-    national_id: text(30),
+    national_id: code(30),
     iqama_issue_date: isoDate(),
     iqama_expiry_date: isoDate(),
     iqama_expiry_hijri: text(30),
     iqama_profession: text(100),
-    passport_number: text(30),
+    passport_number: code(30),
     passport_expiry_date: isoDate(),
-    employer_number: text(30),
+    employer_number: code(30),
     is_outside_kingdom: z.enum(['', 'inside', 'outside']),
     // Emergency contact
     emergency_contact_name: text(200),
     emergency_contact_relationship: text(100),
-    emergency_contact_mobile: text(30),
+    emergency_contact_mobile: code(30),
     // Compensation (bank.edit)
     basic_salary: money(),
     housing_allowance: money(),
@@ -120,7 +131,7 @@ export const employeeFormSchema = z
     compensation_effective_date: isoDate(),
     // Bank (bank.edit)
     bank_name: text(100),
-    iban: text(40),
+    iban: code(40),
     account_holder: text(200),
   })
   .superRefine((v, ctx) => {
@@ -246,12 +257,12 @@ export const dependentFormSchema = z
     relationship: z.enum(RELATIONSHIPS, { message: 'validation.selectOne' }),
     date_of_birth: isoDate(),
     nationality: text(100),
-    national_id: text(30),
+    national_id: code(30),
     iqama_expiry_date: isoDate(),
-    passport_number: text(30),
+    passport_number: code(30),
     passport_expiry_date: isoDate(),
     insurance_status: optionalEnum(DEPENDENT_INSURANCE_STATUSES),
-    insurance_member_number: text(50),
+    insurance_member_number: code(50),
     notes: text(1000),
   })
   .superRefine((v, ctx) => {
@@ -290,9 +301,9 @@ export const insuranceFormSchema = z
   .object({
     dependent_id: uuidOrEmpty(),
     provider: text(150),
-    policy_number: text(60),
+    policy_number: code(60),
     class: text(30),
-    member_number: text(60),
+    member_number: code(60),
     start_date: isoDate(),
     expiry_date: isoDate(),
     status: z.enum(INSURANCE_STATUSES),

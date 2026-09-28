@@ -15,7 +15,7 @@ import { FormFullRow, FormGrid } from '@/components/shared/form-section';
 import { SectionCard } from '@/components/shared/section-card';
 import { Badge, type BadgeVariant } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, useErrorMessage } from '@/components/ui/form';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage, useErrorMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Sheet, SheetBody, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from '@/components/ui/sheet';
@@ -27,7 +27,8 @@ import { deleteDependent, saveDependent } from '../../actions';
 import { dependentFormSchema, EMPTY_DEPENDENT_FORM, type DependentFormValues } from '../../schemas';
 import { DEPENDENT_INSURANCE_STATUSES, RELATIONSHIPS, type DependentRecord } from '../../types';
 import { ExpiryBadge } from '../expiry-badge';
-import { ageFrom } from './profile-parts';
+import { LiftToasts } from '../lift-toasts';
+import { ageFrom, MobileCardShell } from './profile-parts';
 
 const INSURANCE_TONE: Record<string, BadgeVariant> = { insured: 'success', not_insured: 'neutral', pending: 'warning' };
 
@@ -85,9 +86,11 @@ export function DependentsManager({
           const d = row.original;
           const alt = employeeAlternateName(d, locale);
           return (
-            <div className="min-w-0 leading-tight">
-              <div className="flex items-center gap-2">
-                <span className="truncate font-medium text-foreground">{employeeDisplayName(d, locale)}</span>
+            <div className="max-w-[18rem] min-w-0 leading-tight">
+              <div className="flex min-w-0 items-center gap-2">
+                <span className="truncate font-medium text-foreground" title={employeeDisplayName(d, locale)}>
+                  {employeeDisplayName(d, locale)}
+                </span>
                 <Badge variant="secondary" size="sm">
                   {te(`relationship.${d.relationship as (typeof RELATIONSHIPS)[number]}`)}
                 </Badge>
@@ -228,7 +231,7 @@ export function DependentsManager({
           ) : undefined,
         }}
         renderMobileCard={(d) => (
-          <button type="button" className="w-full text-start" onClick={canEdit ? () => setEditing(d) : undefined} disabled={!canEdit}>
+          <MobileCardShell onOpen={canEdit ? () => setEditing(d) : undefined}>
             <div className="flex items-center justify-between gap-2">
               <span className="truncate font-medium text-foreground">{employeeDisplayName(d, locale)}</span>
               <Badge variant="secondary" size="sm">
@@ -244,7 +247,7 @@ export function DependentsManager({
                 </Badge>
               ) : null}
             </div>
-          </button>
+          </MobileCardShell>
         )}
       />
 
@@ -253,6 +256,10 @@ export function DependentsManager({
           employeeId={employeeId}
           target={editing}
           onClose={() => setEditing(null)}
+          onDelete={(d) => {
+            setEditing(null);
+            setDeleting(d);
+          }}
           onSaved={() => {
             setEditing(null);
             router.refresh();
@@ -286,17 +293,21 @@ function DependentSheet({
   employeeId,
   target,
   onClose,
+  onDelete,
   onSaved,
 }: {
   employeeId: string;
   target: DependentRecord | 'new' | null;
   onClose: () => void;
+  /** Delete from the sheet (the only way on phones, where the row menu isn't shown). */
+  onDelete: (dependent: DependentRecord) => void;
   onSaved: () => void;
 }) {
   const t = useTranslations('employees.dependents');
   return (
     <Sheet open={Boolean(target)} onOpenChange={(open) => !open && onClose()}>
       <SheetContent side="end" className="sm:max-w-xl">
+          <LiftToasts />
         <SheetHeader>
           <SheetTitle>{target === 'new' ? t('addTitle') : t('editTitle')}</SheetTitle>
           <SheetDescription>{t('sheetDescription')}</SheetDescription>
@@ -308,6 +319,7 @@ function DependentSheet({
             dependentId={target === 'new' ? null : target.id}
             defaults={target === 'new' ? EMPTY_DEPENDENT_FORM : toFormValues(target)}
             onCancel={onClose}
+            onDelete={target === 'new' ? undefined : () => onDelete(target)}
             onSaved={onSaved}
           />
         ) : null}
@@ -321,12 +333,14 @@ function DependentForm({
   dependentId,
   defaults,
   onCancel,
+  onDelete,
   onSaved,
 }: {
   employeeId: string;
   dependentId: string | null;
   defaults: DependentFormValues;
   onCancel: () => void;
+  onDelete?: () => void;
   onSaved: () => void;
 }) {
   const t = useTranslations('employees');
@@ -372,7 +386,7 @@ function DependentForm({
         <SheetBody className="flex flex-col gap-6">
           <Group title={t('dependents.sections.personal')}>
             <FormGrid>
-              <Text name="name_ar" label={t('fields.nameAr')} dir="rtl" disabled={pending} required />
+              <Text name="name_ar" label={t('fields.nameAr')} dir="rtl" disabled={pending} description={t('form.hints.nameEither')} />
               <Text name="name_en" label={t('fields.nameEn')} dir="ltr" disabled={pending} />
               <FormField
                 control={form.control}
@@ -459,6 +473,12 @@ function DependentForm({
           </Group>
         </SheetBody>
         <SheetFooter>
+          {onDelete ? (
+            <Button type="button" variant="ghost" onClick={onDelete} disabled={pending} className="me-auto text-danger hover:bg-danger-soft hover:text-danger">
+              <Trash2Icon />
+              {t('dependents.deleteConfirm')}
+            </Button>
+          ) : null}
           <Button type="button" variant="outline" onClick={onCancel} disabled={pending}>
             {tc('cancel')}
           </Button>
@@ -486,12 +506,14 @@ function Text({
   dir,
   disabled,
   required,
+  description,
 }: {
   name: FieldPath<DependentFormValues>;
   label: string;
   dir?: 'ltr' | 'rtl';
   disabled?: boolean;
   required?: boolean;
+  description?: string;
 }) {
   const { control } = useFormContext<DependentFormValues>();
   return (
@@ -504,6 +526,7 @@ function Text({
           <FormControl>
             <Input {...field} value={field.value ?? ''} dir={dir} disabled={disabled} autoComplete="off" className="text-start" />
           </FormControl>
+          {description ? <FormDescription>{description}</FormDescription> : null}
           <FormMessage />
         </FormItem>
       )}
@@ -539,3 +562,4 @@ function DateInput({ name, label, disabled }: { name: FieldPath<DependentFormVal
     />
   );
 }
+

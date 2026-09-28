@@ -15,6 +15,9 @@ import { createClient } from '@/lib/supabase/server';
 
 export const generateMetadata = (): Promise<Metadata> => pageMetadata('dataManagement.wizard.title');
 
+/** Server Actions of the wizard (validation of large files, import batches) inherit this limit. */
+export const maxDuration = 300;
+
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
 /** Import wizard: type → upload → sheet & header → mapping → review & options → batched import. */

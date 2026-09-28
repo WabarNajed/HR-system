@@ -4,8 +4,7 @@ import { getLocale, getTranslations } from 'next-intl/server';
 import { formatInteger } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { WidgetError } from '../components/widget-parts';
-import { getDashboardStats } from '../queries';
-import type { ExpiryCounts } from '../types';
+import { getComplianceCounts } from '../queries';
 
 const KINDS: { key: 'iqama' | 'passport' | 'contract' | 'insurance'; icon: LucideIcon }[] = [
   { key: 'iqama', icon: IdCardIcon },
@@ -14,37 +13,30 @@ const KINDS: { key: 'iqama' | 'passport' | 'contract' | 'insurance'; icon: Lucid
   { key: 'insurance', icon: HeartPulseIcon },
 ];
 
-function sum30(c: ExpiryCounts) {
-  return c.within7 + c.within14 + c.within30;
-}
-function sum90(c: ExpiryCounts) {
-  return sum30(c) + c.within60 + c.within90;
-}
+/** Expiry bands of the documents expiry view (`/documents?tab=expiry&bucket=`), cumulative windows. */
+const BUCKETS_30 = 'd7,d14,d30';
+const BUCKETS_90 = 'd7,d14,d30,d60,d90';
 
 /**
- * Compliance row: for Iqama, passport, contract and medical insurance — expired, expiring within
- * 30 days and within 90 days (cumulative), each linking to the documents expiry view.
+ * Compliance row: for Iqama, passport, contract and medical insurance (employees and dependents) —
+ * expired, expiring within 30 days and within 90 days (cumulative). Counts come from the documents
+ * expiry monitor (`expiry_items`), so each cell opens a list with exactly that many rows.
  */
 export async function ComplianceRow() {
-  const [stats, t, locale] = await Promise.all([getDashboardStats(), getTranslations('dashboard.widgets.compliance'), getLocale()]);
-  if (!stats.ok) return <WidgetError className="rounded-lg border border-border bg-card" />;
-  const expiring = stats.data.hr?.expiring;
-  if (!expiring) return null;
+  const [res, t, locale] = await Promise.all([getComplianceCounts(), getTranslations('dashboard.widgets.compliance'), getLocale()]);
+  if (!res.ok) return <WidgetError className="rounded-lg border border-border bg-card" />;
   const n = (v: number) => formatInteger(v, locale);
 
   return (
     <div className="grid grid-cols-2 gap-3 md:gap-4 xl:grid-cols-4">
       {KINDS.map(({ key, icon: Icon }) => {
-        const c = expiring[key];
-        const expired = c?.expired ?? 0;
-        const d30 = c ? sum30(c) : 0;
-        const d90 = c ? sum90(c) : 0;
+        const { expired, d30, d90 } = res.data[key];
         const clear = expired === 0 && d90 === 0;
         const base = `/documents?tab=expiry&kind=${key}`;
         const cells = [
-          { label: t('expired'), value: expired, href: `${base}&window=expired`, tone: expired > 0 ? 'text-danger' : 'text-foreground' },
-          { label: t('within30'), value: d30, href: `${base}&window=30`, tone: d30 > 0 ? 'text-warning' : 'text-foreground' },
-          { label: t('within90'), value: d90, href: `${base}&window=90`, tone: 'text-foreground' },
+          { label: t('expired'), value: expired, href: `${base}&bucket=expired`, tone: expired > 0 ? 'text-danger' : 'text-foreground' },
+          { label: t('within30'), value: d30, href: `${base}&bucket=${BUCKETS_30}`, tone: d30 > 0 ? 'text-warning' : 'text-foreground' },
+          { label: t('within90'), value: d90, href: `${base}&bucket=${BUCKETS_90}`, tone: 'text-foreground' },
         ];
         return (
           <section key={key} className="flex min-w-0 flex-col rounded-lg border border-border bg-card shadow-card" aria-label={t(`kinds.${key}`)}>

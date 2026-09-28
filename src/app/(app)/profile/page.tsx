@@ -118,9 +118,7 @@ export default async function ProfilePage({ searchParams }: { searchParams: Prom
       ) : null}
 
       {tab === 'preferences' ? (
-        <div className="max-w-3xl">
-          <PreferencesForm language={ctx.profile.preferredLanguage ?? locale} theme={ctx.profile.theme} />
-        </div>
+        <PreferencesForm language={ctx.profile.preferredLanguage ?? locale} theme={ctx.profile.theme} />
       ) : null}
     </div>
   );

@@ -23,8 +23,10 @@ test.afterAll(async () => {
 });
 
 async function switchLanguage(page: Page, to: Locale) {
+  await page.waitForLoadState('networkidle').catch(() => {});
   await page.getByTestId('language-switch').first().click();
-  await expectDocumentLocale(page, to);
+  // Server action (cookie + profile) then a refresh; allow for a cold dev server.
+  await expectDocumentLocale(page, to, { timeout: 90_000 });
   await expect.poll(() => localeCookie(page.context())).toBe(to);
 }
 

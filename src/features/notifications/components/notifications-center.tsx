@@ -142,7 +142,8 @@ export function NotificationsCenter({ items, total, page, pageSize, tab, categor
           <Select value={category ?? 'all'} onValueChange={(v) => navigate({ type: v === 'all' ? null : v, page: null })}>
             <SelectTrigger size="sm" className="h-8 w-full min-w-44 md:w-52" aria-label={t('filters.type')}>
               <FilterIcon className="size-3.5 text-muted-foreground" aria-hidden />
-              <SelectValue />
+              {/* Explicit label: rendered on the server too (Radix fills the value only after hydration). */}
+              <SelectValue>{category ? t(`filters.categories.${category}`) : t('filters.allTypes')}</SelectValue>
             </SelectTrigger>
             <SelectContent align="end">
               <SelectItem value="all">{t('filters.allTypes')}</SelectItem>

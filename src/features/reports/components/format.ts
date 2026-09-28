@@ -20,6 +20,11 @@ export function tOr(t: LooseT, key: string, raw: unknown): string {
   return t.has(key) ? t(key) : String(raw);
 }
 
+function roundTo(n: number, digits: number): number {
+  const f = 10 ** digits;
+  return Math.round(n * f) / f;
+}
+
 export function formatValue(value: unknown, format: ValueFormat, locale: Locale, t: LooseT): string {
   if (value === null || value === undefined || value === '') return '—';
   const n = typeof value === 'number' ? value : Number(value);
@@ -28,13 +33,10 @@ export function formatValue(value: unknown, format: ValueFormat, locale: Locale,
     case 'percent':
       return formatPercent(n, locale, { fractionDigits: 1 });
     case 'days':
-      return t('reports.units.days', {
-        value: formatNumber(n, locale, { maximumFractionDigits: 1 }),
-      });
+      // ICU plural on the rounded number (Arabic: 3–10 أيام, 11–99 يومًا …).
+      return t('reports.units.days', { count: roundTo(n, 1) });
     case 'years':
-      return t('reports.units.years', {
-        value: formatNumber(n, locale, { maximumFractionDigits: 1 }),
-      });
+      return t('reports.units.years', { count: roundTo(n, 1) });
     case 'decimal':
       return formatNumber(n, locale, { maximumFractionDigits: 1 });
     default:

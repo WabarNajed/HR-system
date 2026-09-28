@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SimpleTooltip } from '@/components/ui/tooltip';
-import { NOTIFICATIONS_CHANGED_EVENT } from '@/features/notifications/categories';
+import { NOTIFICATIONS_CHANGED_EVENT, safeNotificationLink } from '@/features/notifications/categories';
 import { NotificationItem } from '@/features/notifications/components/notification-item';
 import { createClient } from '@/lib/supabase/client';
 import type { NotificationRecord } from './notification-visuals';
@@ -149,7 +149,8 @@ export function NotificationBell({ initialUnread }: { initialUnread: number | nu
         }
       }
     }
-    if (n.link && n.link.startsWith('/')) router.push(n.link);
+    const href = safeNotificationLink(n.link);
+    if (href) router.push(href);
   };
 
   const markAllRead = () =>

@@ -92,14 +92,16 @@
       "title": "My recent requests",
       "emptyTitle": "No requests yet",
       "emptyDescription": "Requests you submit to HR will appear here with their status.",
-      "emptyAction": "New request"
+      "emptyAction": "New request",
+      "endHint": "Need something from HR?"
     },
     "upcomingLeave": {
       "title": "My leave",
       "daysAvailable": "days available",
       "emptyTitle": "No upcoming leave",
       "emptyDescription": "Approved and pending leave will show here.",
-      "emptyAction": "Request leave"
+      "emptyAction": "Request leave",
+      "endHint": "Planning time off?"
     },
     "notifications": {
       "title": "Latest notifications",
@@ -160,6 +162,7 @@
       "expiredAgo": "{count, plural, one {Expired # day ago} other {Expired # days ago}}",
       "expiresToday": "Expires today",
       "expiresIn": "{count, plural, one {In # day} other {In # days}}",
+      "dependentOf": "Dependent of {name}",
       "kinds": {
         "iqama": "Iqama",
         "passport": "Passport",

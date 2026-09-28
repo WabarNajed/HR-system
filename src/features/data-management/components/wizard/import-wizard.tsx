@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useErrorMessage } from '@/components/ui/form';
 import { cn } from '@/lib/utils';
-import { cancelImportAction, inspectImportAction, runImportBatchAction, validateImportAction } from '../../actions';
+import { cancelImportAction, getImportAction, inspectImportAction, runImportBatchAction, validateImportAction } from '../../actions';
 import { missingRequired } from '../../lib/mapping';
 import { getSchema } from '../../lib/schemas';
 import { EXTRA, IGNORE, type ColumnMapping, type ImportOptions, type ImportType } from '../../lib/types';
@@ -229,6 +229,7 @@ export function ImportWizard({ initial, caps }: { initial: WizardInitial; caps: 
       running.current = true;
       setRunState((s) => ({ ...s, phase: 'running', error: null, total: total || s.total }));
       try {
+        let busyRetries = 0;
         for (;;) {
           let res;
           try {
@@ -236,11 +237,36 @@ export function ImportWizard({ initial, caps }: { initial: WizardInitial; caps: 
           } catch {
             res = { ok: false as const, error: 'errors.network' };
           }
+          // Another runner (a previous page load or another tab) still holds the batch lease: wait for
+          // it to finish its batch or for the lease to expire (90 s), then continue from where it stopped.
+          if (!res.ok && res.error === 'dataManagement.errors.importBusy' && busyRetries < 50) {
+            busyRetries++;
+            await new Promise((r) => window.setTimeout(r, 2500));
+            continue;
+          }
+          // The other runner finished the import meanwhile: show its stored result.
+          if (!res.ok && res.error === 'dataManagement.errors.importNotEditable') {
+            const info = await getImportAction({ importId: id }).catch(() => null);
+            const v = info && info.ok ? info.data : null;
+            if (v && (v.status === 'completed' || v.status === 'failed')) {
+              const r = v.summary.result ?? null;
+              const total = v.totals.valid + v.totals.warning;
+              setRunState({
+                phase: 'done',
+                done: total,
+                total,
+                error: null,
+                last: { processed: 0, pending: 0, imported: v.totals.imported, skipped: r?.skipped ?? 0, failed: v.totals.error, done: true, status: v.status, result: r },
+              });
+              return;
+            }
+          }
           if (!res.ok || !res.data) {
             const error = res.ok ? 'errors.generic' : res.error;
             setRunState((s) => ({ ...s, phase: 'paused', error }));
             return;
           }
+          busyRetries = 0;
           const batch = res.data;
           setRunState((s) => {
             const done = s.done + batch.processed;

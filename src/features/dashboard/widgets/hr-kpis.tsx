@@ -27,7 +27,7 @@ export async function HrKpis() {
         value={n(s.pending_requests)}
         icon={InboxIcon}
         tone="info"
-        href="/requests"
+        href="/requests?tab=pending"
         hint={t('pendingHrReview', { count: s.pending_hr_review })}
       />
       <StatCard
@@ -51,7 +51,7 @@ export async function HrKpis() {
         value={n(s.overdue_requests)}
         icon={AlarmClockIcon}
         tone={s.overdue_requests > 0 ? 'danger' : 'success'}
-        href="/requests"
+        href="/requests?tab=pending&sla=overdue"
         hint={s.due_soon_requests > 0 ? t('dueSoon', { count: s.due_soon_requests }) : t('overdueRequestsHint')}
       />
     </div>

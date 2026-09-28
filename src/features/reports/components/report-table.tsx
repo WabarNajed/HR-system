@@ -75,7 +75,12 @@ function useCellRenderer() {
           }
           case 'localized': {
             const value = pickLocalized(row, field, locale);
-            if (value) return <span className="block max-w-72 truncate">{value}</span>;
+            if (value)
+              return (
+                <span title={value} className="block max-w-72 truncate">
+                  {value}
+                </span>
+              );
             return col.emptyKey ? <span className="text-muted-foreground">{t(col.emptyKey)}</span> : <Muted />;
           }
           case 'code':
@@ -158,10 +163,13 @@ function useCellRenderer() {
             );
           }
           default:
+            // Free text (reasons, providers, e-mails): its own direction, truncated with the full value on hover.
             return raw === null || raw === undefined || raw === '' ? (
               <Muted />
             ) : (
-              <span className="block max-w-80 truncate">{String(raw)}</span>
+              <span dir="auto" title={String(raw)} className="block max-w-64 truncate">
+                {String(raw)}
+              </span>
             );
         }
       },

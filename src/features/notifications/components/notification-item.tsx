@@ -18,6 +18,8 @@ export type NotificationItemProps = {
   /** Reference time for relative labels (pass a stable value to avoid hydration drift). */
   now?: Date;
   density?: 'compact' | 'comfortable';
+  /** Body lines shown in the compact density (dashboard widget: 1, header bell: 2). */
+  bodyLines?: 1 | 2;
   /** Trailing controls (e.g. mark read) — rendered outside the clickable area. */
   trailing?: ReactNode;
   className?: string;
@@ -27,7 +29,7 @@ export type NotificationItemProps = {
  * One notification: tone icon, title, body, optional quoted comment, relative time and unread
  * marker. The main area is a button (keyboard accessible) that opens the linked record.
  */
-export function NotificationItem({ notification: n, onOpen, now, density = 'comfortable', trailing, className }: NotificationItemProps) {
+export function NotificationItem({ notification: n, onOpen, now, density = 'comfortable', bodyLines = 2, trailing, className }: NotificationItemProps) {
   const locale = useLocale();
   const render = useNotificationText();
   const { title, body, comment } = render(n);
@@ -58,7 +60,7 @@ export function NotificationItem({ notification: n, onOpen, now, density = 'comf
           <span className={cn('block leading-5', compact ? 'text-[0.8125rem]' : 'text-sm', unread ? 'font-semibold text-foreground' : 'font-medium text-foreground/90')}>
             {title}
           </span>
-          {body ? <span className={cn('mt-0.5 block text-muted-foreground', compact ? 'line-clamp-2 text-xs leading-5' : 'text-meta leading-5')}>{body}</span> : null}
+          {body ? <span className={cn('mt-0.5 block text-muted-foreground', compact ? cn('text-xs leading-5', bodyLines === 1 ? 'line-clamp-1' : 'line-clamp-2') : 'text-meta leading-5')}>{body}</span> : null}
           {comment && !compact ? (
             <span className="mt-1.5 block border-s-2 border-border-strong ps-2.5 text-meta leading-5 text-foreground/80 italic line-clamp-3">{comment}</span>
           ) : null}

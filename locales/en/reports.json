@@ -236,18 +236,18 @@
     "inPeriod": "In the selected period",
     "turnover": "Leavers ÷ average headcount",
     "atExit": "Service length at exit",
-    "employeesCovered": "{value} employees",
-    "pendingDays": "{value} days awaiting approval",
+    "employeesCovered": "{count, plural, one {# employee} other {# employees}}",
+    "pendingDays": "{count, plural, one {# day awaiting approval} other {# days awaiting approval}}",
     "perRequest": "Per approved request",
     "dueSoon": "{value} due within 24 hours",
     "sinceSubmission": "Days since submission",
     "businessDays": "Business days to close",
-    "closedRequests": "Across {value} closed requests",
+    "closedRequests": "{count, plural, =0 {No closed requests} one {Across # closed request} other {Across # closed requests}}",
     "openNow": "Open and past due now"
   },
   "units": {
-    "days": "{value} d",
-    "years": "{value} yrs"
+    "days": "{count, plural, one {# day} other {# days}}",
+    "years": "{count, plural, one {# yr} other {# yrs}}"
   },
   "series": {
     "employees": "Employees",
@@ -417,6 +417,7 @@
     "export": "Export",
     "exportDisabled": "Exporting reports requires the Reports › Export permission.",
     "exportRestricted": "You don't have permission to export this report.",
+    "exportHint": "Exports apply the report filters and the visible columns.",
     "exportReady": "Export ready",
     "details": "Details",
     "breakdownTable": "Breakdown",
@@ -443,6 +444,7 @@
     "openRecord": "Open"
   },
   "builder": {
+    "sharedLinkRejected": "The shared link couldn't be opened — it's invalid or uses data you can't access. Showing the defaults instead.",
     "title": "Report builder",
     "description": "Build a custom report from a data source: choose columns, filters and sorting, preview it, then export.",
     "breadcrumb": "Builder",

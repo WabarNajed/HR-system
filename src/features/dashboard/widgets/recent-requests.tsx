@@ -1,10 +1,10 @@
-import { FilePlus2Icon, FileTextIcon, InboxIcon } from 'lucide-react';
+import { FilePlus2Icon, FileTextIcon, InboxIcon, MessageSquarePlusIcon } from 'lucide-react';
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 import { Button } from '@/components/ui/button';
 import { RequestRow } from '../components/rows';
-import { ViewAllLink, Widget, WidgetEmpty, WidgetError, WidgetList } from '../components/widget-parts';
-import { getMyRecentRequests } from '../queries';
+import { ViewAllLink, Widget, WidgetEmpty, WidgetError, WidgetList, WidgetListEnd } from '../components/widget-parts';
+import { getMyRecentRequests, RECENT_REQUESTS_LIMIT } from '../queries';
 
 /** The caller's latest requests (own or filed for them), newest activity first. */
 export async function RecentRequestsWidget({ employeeId, userId }: { employeeId: string; userId: string }) {
@@ -28,11 +28,27 @@ export async function RecentRequestsWidget({ employeeId, userId }: { employeeId:
           }
         />
       ) : (
-        <WidgetList>
-          {res.data.map((r) => (
-            <RequestRow key={r.id} request={r} />
-          ))}
-        </WidgetList>
+        <>
+          <WidgetList>
+            {res.data.map((r) => (
+              <RequestRow key={r.id} request={r} />
+            ))}
+          </WidgetList>
+          {res.data.length < RECENT_REQUESTS_LIMIT ? (
+            <WidgetListEnd
+              icon={MessageSquarePlusIcon}
+              label={t('endHint')}
+              action={
+                <Button asChild size="sm" variant="outline" className="h-7">
+                  <Link href="/requests/new">
+                    <FilePlus2Icon />
+                    {t('emptyAction')}
+                  </Link>
+                </Button>
+              }
+            />
+          ) : null}
+        </>
       )}
     </Widget>
   );

@@ -97,7 +97,7 @@ export function LeaveInsight({
   }
 
   const days = preview?.days ?? null;
-  const basisLabel = preview?.basis === 'calendar' ? t('calendarDays') : t('workingDays');
+  const basisLabel = (count: number) => (preview?.basis === 'calendar' ? t('calendarDaysUnit', { count }) : t('workingDaysUnit', { count }));
   const after = preview?.balance && days !== null ? preview.balance.available - days : null;
   const pct = preview?.balance && preview.balance.entitlement > 0 ? Math.min(100, Math.max(0, ((preview.balance.used + preview.balance.pending) / preview.balance.entitlement) * 100)) : 0;
 
@@ -121,7 +121,7 @@ export function LeaveInsight({
           {days !== null && start && end ? (
             <>
               <span className="text-xl font-semibold numeric text-foreground">{formatDays(days, locale)}</span>
-              <span className="ms-1 text-xs text-muted-foreground">{basisLabel}</span>
+              <span className="ms-1 text-xs text-muted-foreground">{basisLabel(days)}</span>
             </>
           ) : (
             <span className="text-meta text-muted-foreground">{t('pickDates')}</span>
@@ -132,7 +132,7 @@ export function LeaveInsight({
             <span className={cn('text-xl font-semibold numeric', after !== null && after < 0 ? 'text-danger' : 'text-foreground')}>
               {after !== null ? formatDays(after, locale) : formatDays(preview.balance.available, locale)}
             </span>
-            <span className="ms-1 text-xs text-muted-foreground">{t('daysUnit')}</span>
+            <span className="ms-1 text-xs text-muted-foreground">{t('daysUnit', { count: Math.abs(after ?? preview.balance.available) })}</span>
           </Metric>
         ) : (
           <Metric label={t('balance')} loading={loading && !preview}>

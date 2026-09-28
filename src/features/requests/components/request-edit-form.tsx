@@ -3,7 +3,7 @@
 import { RotateCcwIcon, SaveIcon, XIcon } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useLocale, useTranslations } from 'next-intl';
+import { useTranslations } from 'next-intl';
 import { useId, useState } from 'react';
 import { toast } from 'sonner';
 import { type DropzoneFileState } from '@/components/shared/file-dropzone';
@@ -13,8 +13,6 @@ import { Dialog, DialogBody, DialogContent, DialogDescription, DialogFooter, Dia
 import { useErrorMessage } from '@/components/ui/form';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { formatDays } from '@/lib/format';
-import type { Locale } from '@/lib/i18n/config';
 import { addRequestComment, deleteAttachment, saveRequestDraft, submitRequest } from '../actions';
 import { attachmentsFor, buildRequestPayload, validateRequestValues } from '../form-logic';
 import type { AttachmentItem, FormLookups, RequestField } from '../types';
@@ -55,7 +53,6 @@ export function RequestEditForm({
   const tr = useTranslations('requests');
   const tc = useTranslations('common');
   const resolve = useErrorMessage();
-  const locale = useLocale() as Locale;
   const router = useRouter();
   const noteId = useId();
   const active = fields.filter((f) => f.is_active !== false);
@@ -158,7 +155,7 @@ export function RequestEditForm({
 
   const computed =
     isLeave && leave.preview?.days !== null && leave.preview?.days !== undefined && values.start_date && values.end_date
-      ? { days: `${formatDays(leave.preview.days, locale)} · ${leave.preview.basis === 'calendar' ? tr('leave.calendarDays') : tr('leave.workingDays')}` }
+      ? { days: leave.preview.basis === 'calendar' ? tr('leave.calendarDaysCount', { count: leave.preview.days }) : tr('leave.workingDaysCount', { count: leave.preview.days }) }
       : undefined;
 
   return (

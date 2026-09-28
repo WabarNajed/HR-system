@@ -6,7 +6,7 @@ import { getTranslations } from 'next-intl/server';
 import { Suspense, type ReactNode } from 'react';
 import { BreadcrumbLabel } from '@/components/shell/breadcrumb-context';
 import { ROUTE_ACCESS } from '@/components/shell/nav-config';
-import { LinkTabs, type LinkTabItem } from '@/components/shared/link-tabs';
+import type { LinkTabItem } from '@/components/shared/link-tabs';
 import { PageStack } from '@/components/shared/responsive-grid';
 import { Button } from '@/components/ui/button';
 import { requireAccess } from '@/lib/auth/guards';
@@ -26,6 +26,7 @@ import { InsuranceManager } from '@/features/employees/components/profile/insura
 import { OverviewTab } from '@/features/employees/components/profile/overview-tab';
 import { PersonalTab } from '@/features/employees/components/profile/personal-tab';
 import { ProfileHeader } from '@/features/employees/components/profile/profile-header';
+import { ProfileTabs } from '@/features/employees/components/profile/profile-tabs';
 import { TabSkeleton } from '@/features/employees/components/profile/tab-skeleton';
 import {
   getChildCounts,
@@ -170,6 +171,7 @@ export default async function EmployeeProfilePage({
             leave: caps.leave,
             requests: caps.requests,
             reports: org || mode === 'team' || self,
+            emptyReports: org,
             portal: caps.portal,
             linkEmployees: caps.linkEmployees,
           }}
@@ -193,7 +195,7 @@ export default async function EmployeeProfilePage({
           canUploadDocument: caps.documentsUpload && !archived,
           portalHref: caps.portal ? '?tab=overview#portal-access' : null,
         }}
-        tabs={<LinkTabs items={tabItems} value={tab} aria-label={t('profile.tabsLabel')} className="border-b-0" />}
+        tabs={<ProfileTabs items={tabItems} value={tab} label={t('profile.tabsLabel')} />}
       />
 
       {archived ? (

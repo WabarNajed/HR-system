@@ -6,7 +6,7 @@ import { useTranslations } from 'next-intl';
 import { useRef, useState, useTransition } from 'react';
 import { toast } from 'sonner';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog';
-import { EmployeeAvatar } from '@/components/shared/employee-avatar';
+import { avatarTint, EmployeeAvatar } from '@/components/shared/employee-avatar';
 import { useErrorMessage } from '@/components/ui/form';
 import {
   DropdownMenu,
@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { createClient } from '@/lib/supabase/client';
 import { BUCKETS, removeFiles, storagePaths, UPLOAD_LIMITS, uploadFile, validateFile } from '@/lib/storage';
-import { cn } from '@/lib/utils';
+import { cn, getInitials } from '@/lib/utils';
 import { removeEmployeeAvatar, setEmployeeAvatar } from '../../actions';
 
 const AVATAR_EXT: Record<string, string> = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' };
@@ -44,14 +44,21 @@ export function AvatarUploader({
   const [pending, startTransition] = useTransition();
   const [confirmRemove, setConfirmRemove] = useState(false);
 
+  // Tint + initials sit behind the avatar: the server HTML already shows them (the avatar's own
+  // fallback only appears after hydration) and they stay visible while the signed photo URL loads.
   const avatar = (
-    <EmployeeAvatar
-      name={name}
-      seed={employeeId}
-      src={src}
-      size="xl"
-      className={cn('size-20 text-2xl shadow-raised ring-4 ring-card sm:size-24', className)}
-    />
+    <span className="relative block shrink-0 self-start rounded-full" style={avatarTint(employeeId)}>
+      <span aria-hidden className="absolute inset-0 flex items-center justify-center text-2xl font-semibold tracking-wide">
+        {getInitials(name)}
+      </span>
+      <EmployeeAvatar
+        name={name}
+        seed={employeeId}
+        src={src}
+        size="xl"
+        className={cn('size-20 text-2xl shadow-raised ring-4 ring-card sm:size-24', className)}
+      />
+    </span>
   );
   if (!editable) return avatar;
 

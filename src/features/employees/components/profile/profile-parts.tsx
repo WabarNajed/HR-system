@@ -35,3 +35,14 @@ export function ageFrom(dob: string | null, today: string = todayIso()): number 
 export function daysLeft(date: string | null, today: string = todayIso()): number | null {
   return date ? daysBetween(today, date) : null;
 }
+
+/** Phone card: opens the edit sheet for editors, plain content for read-only viewers. */
+export function MobileCardShell({ onOpen, children }: { onOpen?: () => void; children: ReactNode }) {
+  return onOpen ? (
+    <button type="button" className="w-full text-start" onClick={onOpen}>
+      {children}
+    </button>
+  ) : (
+    <div>{children}</div>
+  );
+}

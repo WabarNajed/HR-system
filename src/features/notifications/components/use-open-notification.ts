@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useCallback } from 'react';
 import type { NotificationRecord } from '@/components/shell/notification-text';
 import { markNotificationsRead } from '../actions';
-import { emitNotificationsChanged } from '../categories';
+import { emitNotificationsChanged, safeNotificationLink } from '../categories';
 
 /**
  * Opening a notification: optimistic "read" (caller updates its own list via `onRead`), persist
@@ -20,7 +20,8 @@ export function useOpenNotification(onRead?: (id: string) => void) {
           .then(() => emitNotificationsChanged())
           .catch(() => emitNotificationsChanged());
       }
-      if (n.link && n.link.startsWith('/')) router.push(n.link);
+      const href = safeNotificationLink(n.link);
+      if (href) router.push(href);
     },
     [onRead, router],
   );

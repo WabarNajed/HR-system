@@ -56,6 +56,9 @@ export const BACKUP_TABLES: readonly BackupTable[] = [
   { table: 'notification_settings', group: 'configuration', order: 'id' },
   { table: 'roles', group: 'configuration', order: 'id' },
   { table: 'role_permissions', group: 'configuration', order: 'id' },
+  // Portal accounts (which user is linked to which employee, status, language) — no passwords.
+  { table: 'profiles', group: 'configuration', order: 'id' },
+  { table: 'user_roles', group: 'configuration', order: 'id' },
 ];
 
 export const BACKUP_GROUPS: readonly BackupGroup[] = ['organization', 'people', 'structure', 'leave', 'requests', 'certificates', 'configuration'];

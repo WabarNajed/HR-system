@@ -15,7 +15,7 @@ import {
   TriangleAlertIcon,
 } from 'lucide-react';
 import { useLocale } from 'next-intl';
-import { useEffect, useMemo, useRef, useState, useTransition, type ReactNode } from 'react';
+import { useEffect, useMemo, useState, useTransition, type ReactNode } from 'react';
 import { toast } from 'sonner';
 import { DataTable, DataTableColumnHeader } from '@/components/data-table';
 import { DateRangePicker } from '@/components/shared/date-picker';
@@ -57,6 +57,8 @@ export type ReportBuilderProps = {
   initialConfig: BuilderConfig | null;
   references: Partial<Record<ReferenceList, FacetOption[]>>;
   canExport: boolean;
+  /** The `?cfg=` link was malformed or uses data this viewer may not see (defaults are shown). */
+  sharedLinkRejected?: boolean;
 };
 
 const NONE = '__none__';
@@ -88,7 +90,7 @@ function StepTitle({ n, icon: Icon, children }: { n: number; icon: typeof Databa
 }
 
 /** Custom report builder: source → columns → filters → sort/date → preview → export. */
-export function ReportBuilder({ sources, fields, initialConfig, references, canExport }: ReportBuilderProps) {
+export function ReportBuilder({ sources, fields, initialConfig, references, canExport, sharedLinkRejected }: ReportBuilderProps) {
   const t = useReportT();
   const locale = useLocale() as Locale;
   const fmt = useDateFormat();
@@ -106,7 +108,6 @@ export function ReportBuilder({ sources, fields, initialConfig, references, canE
   >(null);
   const [showErrors, setShowErrors] = useState(false);
   const [isPending, startTransition] = useTransition();
-  const autoRan = useRef(false);
 
   const source = config ? getBuilderSource(config.source) : null;
   const sourceFields = useMemo(() => (source ? visibleDefs(source, fields) : []), [source, fields]);
@@ -150,11 +151,14 @@ export function ReportBuilder({ sources, fields, initialConfig, references, canE
     });
   };
 
-  // Shared links (?cfg=…) open with their preview already run.
+  // Shared links (?cfg=…) open with their preview already run; an unusable link says so.
+  // Deferred (not during the effect) and cancelled on cleanup, so StrictMode's double mount runs it once.
   useEffect(() => {
-    if (autoRan.current || !initialConfig) return;
-    autoRan.current = true;
-    run(initialConfig);
+    const timer = window.setTimeout(() => {
+      if (sharedLinkRejected) toast.warning(t('reports.builder.sharedLinkRejected'));
+      if (initialConfig) run(initialConfig);
+    }, 0);
+    return () => window.clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

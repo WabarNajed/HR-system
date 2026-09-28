@@ -12,7 +12,7 @@ import type { Locale } from '@/lib/i18n/config';
 import { decodeBuilderConfig, type BuilderField } from './builder/sources';
 import { runBuilderQueryAll, validateBuilderConfig } from './builder/server';
 import { columnField, REPORTS, reportDatasetKey, type ReportColumn, type ReportDefinition } from './definitions';
-import { canExportReport, canOpenReportCenter, readReportFilters, REPORT_URL_KEYS, type ReportFilterState } from './filters';
+import { canExportReport, canOpenReportCenter, EXPORT_COLUMNS_KEY, readReportFilters, REPORT_URL_KEYS, type ReportFilterState } from './filters';
 import { loadEmployeeOptions, loadFilterOptions } from './queries';
 import { fetchReportRows, sortableColumnIds, type ReportRow } from './registry';
 
@@ -161,6 +161,9 @@ async function describeReportFilters(
 
 /** Filter lines computed in `fetchRows` (same `params` object is later passed to `describeFilters`). */
 const FILTER_LINES = new WeakMap<object, string[]>();
+/** Report columns requested by the page (`cols=` — the table's visible columns), keyed by the request's session. */
+const REPORT_COLUMNS = new WeakMap<SessionContext, string[]>();
+
 /** Builder export columns computed in `fetchRows`, keyed by the request's session object. */
 const BUILDER_COLUMNS = new WeakMap<SessionContext, ExportColumn<Row>[]>();
 
@@ -174,15 +177,24 @@ const reportDatasets: AnyExportDataset[] = REPORTS.map((def) =>
     // Checked by the route before any query (403); `fetchRows` re-checks full report + export access.
     permission: def.exportPermission ?? 'reports.export',
     titleKey: `reports.items.${def.i18n}.title`,
-    filterKeys: REPORT_URL_KEYS,
+    filterKeys: [...REPORT_URL_KEYS, EXPORT_COLUMNS_KEY],
     allowedSorts: sortableColumnIds(def),
     defaultSort: def.defaultSort.id,
     defaultDir: def.defaultSort.desc ? 'desc' : 'asc',
     landscape: true,
-    columns: (t, ctx) => def.columns.map((col) => reportExportColumn(col, t, ctx.locale)),
+    columns: (t, ctx) => {
+      // Only the columns visible on screen (whitelisted ids); all columns when none were sent.
+      const wanted = new Set(REPORT_COLUMNS.get(ctx.session) ?? []);
+      const cols = wanted.size ? def.columns.filter((col) => wanted.has(col.id)) : def.columns;
+      return cols.map((col) => reportExportColumn(col, t, ctx.locale));
+    },
     fetchRows: async (supabase, params, ctx) => {
       // Report access + export rights on top of the dataset permission (e.g. User Activity needs audit.view).
       if (!canExportReport(ctx.session, def)) throw new ActionError('errors.forbidden');
+      REPORT_COLUMNS.set(
+        ctx.session,
+        (params.filters[EXPORT_COLUMNS_KEY] ?? []).filter((id) => def.columns.some((col) => col.id === id)),
+      );
       const state = readReportFilters(def, listGetter(params), todayIso());
       const rows = await fetchReportRows(supabase, def, state, { q: params.q, sort: params.sort, dir: params.dir }, ctx.locale, ctx.limit);
       try {

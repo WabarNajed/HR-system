@@ -56,6 +56,12 @@ export function categoryOf(type: string): NotificationCategory | null {
   return null;
 }
 
+/** Only in-app paths are followed (`/requests/…`); protocol-relative or absolute URLs are ignored. */
+export function safeNotificationLink(link: string | null | undefined): string | null {
+  if (!link || !link.startsWith('/') || link.startsWith('//') || link.startsWith('/\\')) return null;
+  return link;
+}
+
 /** Window event fired after read-state changes so the header bell refreshes its badge. */
 export const NOTIFICATIONS_CHANGED_EVENT = 'hr:notifications-changed';
 

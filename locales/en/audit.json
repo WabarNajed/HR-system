@@ -105,6 +105,7 @@
     "export": "Data export",
     "import": "Data import",
     "backup": "Backup",
+    "expiry_alert_run": "Expiry check",
     "auth": "Sign-in",
     "registration": "Registration",
     "document": "Document",
@@ -224,7 +225,8 @@
       "approve": "Document approved",
       "reject": "Document rejected",
       "replace_file": "Document file replaced",
-      "expiry_check": "Expiry check run"
+      "expiry_check": "Expiry check run",
+      "withdraw": "Document withdrawn"
     },
     "import": {
       "any": "Data imported"
@@ -235,7 +237,8 @@
     },
     "backup": {
       "export": "Backup exported",
-      "reset_denied": "Reset attempt denied"
+      "reset_denied": "Reset attempt denied",
+      "reset_files": "Stored files purged (reset)"
     },
     "role": {
       "permissions_update": "Role permissions updated"

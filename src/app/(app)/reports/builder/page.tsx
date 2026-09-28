@@ -90,6 +90,7 @@ export default async function ReportsBuilderPage({
         initialConfig={initialConfig}
         references={references}
         canExport={can(ctx, 'reports.export')}
+        sharedLinkRejected={Boolean(rawCfg) && !initialConfig}
       />
     </PageStack>
   );

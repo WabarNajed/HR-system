@@ -84,6 +84,7 @@
     "certificate": "شهادة",
     "leaveType": "الإجازة"
   },
+  "holderDependent": "{dependent} (تابع لـ {employee})",
   "expiryKinds": {
     "iqama": "الإقامة",
     "passport": "جواز السفر",
@@ -154,11 +155,11 @@
     },
     "leave_balance_adjusted": {
       "title": "تم تحديث رصيد الإجازة",
-      "body": "{leaveType} {year}: {direction, select, down {−{amount}} other {+{amount}}} يوم بواسطة {actor} · الرصيد الجديد {newRemaining} يوم."
+      "body": "{direction, select, down {خُصم {amount} يوم من} other {أُضيف {amount} يوم إلى}} رصيد {leaveType} {year} بواسطة {actor} · الرصيد الجديد {newRemaining} يوم."
     },
     "expiry_alert": {
       "title": "{state, select, expired {انتهت صلاحية {document}} today {تنتهي صلاحية {document} اليوم} other {تنتهي صلاحية {document} خلال {days, plural, one {يوم واحد} two {يومين} few {# أيام} many {# يومًا} other {# يوم}}}}",
-      "body": "{employee} · {state, select, expired {انتهت في {date}} other {تنتهي في {date}}}"
+      "body": "{holder} · {state, select, expired {انتهت في {date}} other {تنتهي في {date}}}"
     },
     "account_invited": {
       "title": "تمت دعوتك إلى بوابة الموارد البشرية",

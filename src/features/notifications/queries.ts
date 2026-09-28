@@ -29,27 +29,33 @@ export async function loadNotifications(supabase: ServerSupabaseClient, q: Notif
   if (q.tab === 'unread') list = list.is('read_at', null);
   if (q.category) list = list.in('type', [...CATEGORY_TYPES[q.category]]);
 
-  const head = { count: 'exact' as const, head: true };
-  const categoryCounts = NOTIFICATION_CATEGORIES.flatMap((c) => [
-    supabase.from('notifications').select('id', head).in('type', [...CATEGORY_TYPES[c]]),
-    supabase.from('notifications').select('id', head).in('type', [...CATEGORY_TYPES[c]]).is('read_at', null),
-  ]);
+  // One grouped read for the tab / category counts (RPC `notification_counts`, own rows only).
+  const [listRes, countsRes] = await Promise.all([list.range(from, from + q.pageSize - 1), supabase.rpc('notification_counts')]);
+  if (countsRes.error) throw countsRes.error;
 
-  const [listRes, allRes, unreadRes, ...catRes] = await Promise.all([
-    list.range(from, from + q.pageSize - 1),
-    supabase.from('notifications').select('id', head),
-    supabase.from('notifications').select('id', head).is('read_at', null),
-    ...categoryCounts,
-  ]);
-  for (const r of [listRes, allRes, unreadRes, ...catRes]) if (r.error) throw r.error;
+  const byType = new Map<string, { total: number; unread: number }>();
+  for (const r of countsRes.data ?? []) byType.set(r.type, { total: Number(r.total ?? 0), unread: Number(r.unread ?? 0) });
+  const sum = (types: readonly string[]) =>
+    types.reduce((acc, type) => {
+      const c = byType.get(type);
+      return c ? { total: acc.total + c.total, unread: acc.unread + c.unread } : acc;
+    }, { total: 0, unread: 0 });
+  const byCategory = Object.fromEntries(NOTIFICATION_CATEGORIES.map((c) => [c, sum(CATEGORY_TYPES[c])])) as NotificationsPageData['counts']['byCategory'];
+  const all = sum([...byType.keys()]);
+  const counts = { all: all.total, unread: all.unread, byCategory };
 
-  const byCategory = Object.fromEntries(
-    NOTIFICATION_CATEGORIES.map((c, i) => [c, { total: catRes[i * 2]!.count ?? 0, unread: catRes[i * 2 + 1]!.count ?? 0 }]),
-  ) as NotificationsPageData['counts']['byCategory'];
+  if (listRes.error) {
+    // Offset past the last row (stale `?page=` after marking all read / filtering): PostgREST answers
+    // 416 (PGRST103). Report the real total so the page can send the user to the last page.
+    const scope = q.category ? byCategory[q.category] : all;
+    const scopeTotal = q.tab === 'unread' ? scope.unread : scope.total;
+    if (from > 0 && scopeTotal <= from) return { items: [], total: scopeTotal, counts };
+    throw listRes.error;
+  }
 
   return {
     items: (listRes.data ?? []) as NotificationRecord[],
     total: listRes.count ?? 0,
-    counts: { all: allRes.count ?? 0, unread: unreadRes.count ?? 0, byCategory },
+    counts,
   };
 }

@@ -20,6 +20,7 @@ export function NotificationMiniList({ items, nowIso }: { items: NotificationRec
             onOpen={open}
             now={now}
             density="compact"
+            bodyLines={1}
           />
         </li>
       ))}

@@ -46,7 +46,7 @@ export async function EmployeeKpis({ employeeId: ctxEmployeeId }: { employeeId: 
         value={n(s.open_requests)}
         icon={FileTextIcon}
         tone={s.returned_requests > 0 ? 'warning' : 'info'}
-        href="/requests"
+        href={s.returned_requests > 0 ? '/requests?tab=returned' : s.draft_requests > 0 && s.open_requests === 0 ? '/requests?tab=drafts' : '/requests?tab=pending'}
         hint={
           s.returned_requests > 0
             ? t('openRequestsReturned', { count: s.returned_requests })

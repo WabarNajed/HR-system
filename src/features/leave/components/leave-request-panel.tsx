@@ -25,7 +25,7 @@ export async function LeaveRequestPanel({ requestId }: { requestId: string }) {
   const ctx = await getSessionContext();
   if (!ctx) return null;
   const locale = resolveLocale(ctx.locale);
-  const t = await getTranslations('leave');
+  const [t, tc] = await Promise.all([getTranslations('leave'), getTranslations('common')]);
   let data: LeavePanelData | null = null;
   try {
     data = await getLeavePanelData(requestId, ctx);
@@ -90,7 +90,7 @@ export async function LeaveRequestPanel({ requestId }: { requestId: string }) {
           </Item>
           <Item label={t('fields.returnDate')}>{data.returnDate ? <span className="numeric">{formatDate(data.returnDate, locale)}</span> : '—'}</Item>
           <Item label={t('panel.charged')}>
-            {data.days !== null ? <span className="text-base font-semibold numeric">{t('panel.daysValue', { days: d(data.days) })}</span> : '—'}
+            {data.days !== null ? <span className="text-base font-semibold numeric">{tc('days', { count: data.days })}</span> : '—'}
           </Item>
           <Item label={t('panel.workingDays')}>{data.workingDays !== null ? <span className="numeric">{d(data.workingDays)}</span> : '—'}</Item>
           <Item label={t('panel.calendarDays')}>{data.calendarDays !== null ? <span className="numeric">{d(data.calendarDays)}</span> : '—'}</Item>

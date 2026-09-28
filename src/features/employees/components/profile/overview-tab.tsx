@@ -34,6 +34,8 @@ export type OverviewCaps = {
   leave: boolean;
   requests: boolean;
   reports: boolean;
+  /** Show the "no direct reports" line (HR view); employees/managers only see the list when non-empty. */
+  emptyReports: boolean;
   portal: boolean;
   /** Viewer may open other employees' profiles (directory access). */
   linkEmployees: boolean;
@@ -110,11 +112,13 @@ export async function OverviewTab({
           title={t('profile.overview.leave', { year })}
           icon={<PlaneIcon />}
           actions={
-            <Button asChild variant="ghost" size="sm">
-              <Link href="?tab=leave" scroll={false}>
-                {t('profile.overview.viewAll')}
-              </Link>
-            </Button>
+            leave.length ? (
+              <Button asChild variant="ghost" size="sm">
+                <Link href="?tab=leave" scroll={false}>
+                  {t('profile.overview.viewAll')}
+                </Link>
+              </Button>
+            ) : null
           }
         >
           {leave.length ? <LeaveBars rows={leave} locale={locale} t={t} /> : <p className="py-2 text-meta text-muted-foreground">{t('profile.overview.leaveEmpty', { year })}</p>}
@@ -216,7 +220,7 @@ export async function OverviewTab({
               <p className="text-meta text-faint-foreground">{t('profile.overview.noManager')}</p>
             )}
           </div>
-          {caps.reports ? (
+          {caps.reports && (reports.total > 0 || caps.emptyReports) ? (
             <div>
               <p className="mb-2 flex items-center justify-between text-xs font-medium text-muted-foreground">
                 <span>{t('profile.overview.directReports')}</span>

@@ -101,29 +101,63 @@ const tr = (t: LooseTranslator, key: string, value: string | null | undefined) =
 
 const named = (row: NamedRef | null, t: LooseTranslator) => (row ? localized(row, 'name', t.locale) : '');
 
+type NamedFilter = 'department' | 'jobTitle' | 'location' | 'manager';
+
+/**
+ * Display names of the id-based filters, resolved while the rows load: the export route calls
+ * `fetchRows` and then `describeFilters` with the SAME params object, so the PDF header can list
+ * "Department: Operations" instead of silently dropping the filter.
+ */
+const filterNames = new WeakMap<object, Partial<Record<NamedFilter, string[]>>>();
+
+async function resolveFilterNames(supabase: ServerSupabaseClient, params: ListParams, locale: ExportContext['locale']) {
+  const out: Partial<Record<NamedFilter, string[]>> = {};
+  const load = async (key: NamedFilter, table: 'departments' | 'job_titles' | 'locations' | 'employees') => {
+    const ids = sanitizeFilter(key, params.filters[key]);
+    if (!ids.length) return;
+    const { data } = await supabase.from(table).select('id, name_ar, name_en').in('id', ids);
+    out[key] = ((data ?? []) as NamedRef[]).map((r) => localized(r, 'name', locale) || '—');
+  };
+  await Promise.all([load('department', 'departments'), load('jobTitle', 'job_titles'), load('location', 'locations'), load('manager', 'employees')]);
+  filterNames.set(params, out);
+}
+
 function describeDirectoryFilters(params: ListParams, t: LooseTranslator): string[] {
   const out: string[] = [];
   const f = (key: DirectoryFilterKey) => sanitizeFilter(key, params.filters[key]);
+  const sep = t.locale === 'ar' ? '، ' : ', ';
+  const names = filterNames.get(params) ?? {};
+  const addNamed = (key: NamedFilter, label: string) => {
+    if (names[key]?.length) out.push(t('employees.export.filter', { name: t(label), value: names[key].join(sep) }));
+  };
+  addNamed('department', 'employees.filters.department');
   const status = f('status');
   if (status.length) {
     out.push(
       t('employees.export.filter', {
         name: t('employees.filters.status'),
-        value: status.map((s) => tr(t, 'statuses.employment', s)).join(t.locale === 'ar' ? '، ' : ', '),
+        value: status.map((s) => tr(t, 'statuses.employment', s)).join(sep),
       }),
     );
   }
+  addNamed('manager', 'employees.filters.manager');
+  addNamed('location', 'employees.filters.location');
+  addNamed('jobTitle', 'employees.filters.jobTitle');
   const types = f('employmentType');
   if (types.length) {
     out.push(
       t('employees.export.filter', {
         name: t('employees.filters.employmentType'),
-        value: types.map((s) => tr(t, 'enums.employmentType', s)).join(t.locale === 'ar' ? '، ' : ', '),
+        value: types.map((s) => tr(t, 'enums.employmentType', s)).join(sep),
       }),
     );
   }
   const nationality = f('nationality');
-  if (nationality.length) out.push(t('employees.export.filter', { name: t('employees.filters.nationality'), value: nationality.join(', ') }));
+  if (nationality.length) out.push(t('employees.export.filter', { name: t('employees.filters.nationality'), value: nationality.join(sep) }));
+  const gender = f('gender');
+  if (gender.length) {
+    out.push(t('employees.export.filter', { name: t('employees.filters.gender'), value: gender.map((g) => tr(t, 'enums.gender', g)).join(sep) }));
+  }
   const [iqama] = f('iqama');
   if (iqama) out.push(t('employees.export.filter', { name: t('employees.filters.iqamaExpiry'), value: tr(t, 'enums.expiryBucket', iqama) }));
   const [portal] = f('portal');
@@ -148,6 +182,7 @@ async function fetchEmployees(
   select: string,
 ): Promise<EmployeeExportRow[]> {
   const viewer = await viewerFor(ctx);
+  await resolveFilterNames(supabase, params, ctx.locale);
   const rows: EmployeeExportRow[] = [];
   const pageSize = 1000;
   for (let from = 0; from < ctx.limit; from += pageSize) {
@@ -365,6 +400,7 @@ async function fetchChildRows<Row>(
   select: string,
 ): Promise<Row[]> {
   const viewer = await viewerFor(ctx);
+  await resolveFilterNames(supabase, params, ctx.locale);
   const ids = await fetchDirectoryIds(supabase, params, viewer, ctx.limit);
   const out: Row[] = [];
   for (let i = 0; i < ids.length && out.length < ctx.limit; i += 150) {

@@ -22,7 +22,7 @@ export default function EmployeesLoading() {
       </div>
       <KpiGrid count={5} className="xl:grid-cols-5">
         {Array.from({ length: 5 }).map((_, i) => (
-          <StatCardSkeleton key={i} className={i === 4 ? 'col-span-2 lg:col-span-1' : undefined} />
+          <StatCardSkeleton key={i} className={i === 4 ? 'max-sm:hidden sm:max-lg:col-span-2' : undefined} />
         ))}
       </KpiGrid>
       <DataTableSkeleton columns={7} rows={10} filters={4} avatar />

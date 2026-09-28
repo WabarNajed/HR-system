@@ -22,6 +22,9 @@ import { createClient } from '@/lib/supabase/server';
 
 export const generateMetadata = (): Promise<Metadata> => pageMetadata('backup.title');
 
+/** The organization reset Server Action (RPC + storage clean-up) inherits this limit. */
+export const maxDuration = 300;
+
 /** Backup package (download + history from the audit trail) and the organization reset danger zone. */
 export default async function AdminBackupPage() {
   const ctx = await requireAccess(ROUTE_ACCESS['/admin/backup']);

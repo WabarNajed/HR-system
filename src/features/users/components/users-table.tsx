@@ -63,7 +63,7 @@ export function UsersTable({ rows, total, roles, abilities }: UsersTableProps) {
               <EmployeeAvatar name={displayName(u)} seed={u.id} size="md" />
               <div className="min-w-0 leading-tight">
                 <div className="flex min-w-0 items-center gap-1.5">
-                  <span className="truncate font-medium text-foreground">{displayName(u)}</span>
+                  <span className="max-w-[11rem] truncate font-medium text-foreground" title={displayName(u)}>{displayName(u)}</span>
                   {u.isSelf ? (
                     <Badge variant="outline" size="sm">
                       {t('you')}
@@ -105,7 +105,7 @@ export function UsersTable({ rows, total, roles, abilities }: UsersTableProps) {
               onClick={(ev) => ev.stopPropagation()}
               className="group flex min-w-0 flex-col leading-tight outline-none"
             >
-              <span className="max-w-[10rem] truncate text-meta font-medium text-foreground group-hover:text-primary group-hover:underline group-focus-visible:underline">
+              <span className="max-w-[9rem] truncate text-meta font-medium text-foreground group-hover:text-primary group-hover:underline group-focus-visible:underline">
                 {employeeDisplayName(e, locale)}
               </span>
               {e.employee_number ? <bdi className="text-xs text-muted-foreground numeric">{e.employee_number}</bdi> : null}

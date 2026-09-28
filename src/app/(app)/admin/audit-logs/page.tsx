@@ -1,5 +1,6 @@
 import { ActivityIcon, KeyRoundIcon, PencilLineIcon, UserRoundSearchIcon, UsersRoundIcon } from 'lucide-react';
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 import type { Metadata } from 'next';
 import { getTranslations } from 'next-intl/server';
 import { ErrorState } from '@/components/shared/error-state';
@@ -30,7 +31,7 @@ import { toAuditView } from '@/features/audit/view';
 import { requireAccess } from '@/lib/auth/guards';
 import { formatInteger } from '@/lib/format';
 import { employeeDisplayName } from '@/lib/i18n/localized';
-import { mergeSearchParams, parseListParams } from '@/lib/list-params';
+import { mergeSearchParams, pageCount, parseListParams } from '@/lib/list-params';
 import { pageMetadata } from '@/lib/metadata';
 import { can } from '@/lib/permissions';
 import { createClient } from '@/lib/supabase/server';
@@ -99,6 +100,10 @@ export default async function AuditLogsPage({ searchParams }: { searchParams: Pr
   }
 
   const { list, facets, facets24h, event, actors, scopedEmployee } = data;
+  if (params.page > 1 && list.rows.length === 0 && list.total <= params.from) {
+    const last = pageCount(list.total, params.pageSize);
+    redirect(`/admin/audit-logs?${mergeSearchParams(sp, { page: last > 1 ? last : null }).toString()}`);
+  }
   const rows = list.rows.map((r) => toAuditView(r, ctx, ta, actors));
   const initialEvent = event ? (rows.find((r) => r.id === Number(event.id)) ?? toAuditView(event, ctx, ta, actors)) : null;
 

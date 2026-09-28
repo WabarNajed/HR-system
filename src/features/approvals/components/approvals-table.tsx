@@ -127,19 +127,21 @@ export function ApprovalsTable({
             const caps = rowCapabilities(row.original, access);
             return (
               <div className="flex items-center justify-end gap-1" data-no-row-click>
-                <SimpleTooltip content={t('quick.approve')}>
-                  <Button
-                    size="icon-sm"
-                    variant="ghost"
-                    className="text-success hover:bg-success-soft hover:text-success"
-                    aria-label={t('quick.approve')}
-                    disabled={!caps.canApprove}
-                    onClick={() => setDecision({ row: row.original, action: 'approve' })}
-                  >
-                    <CheckIcon />
-                  </Button>
+                <SimpleTooltip content={caps.canApprove ? t('quick.approve') : t('quick.notYourStep')}>
+                  <span className="inline-flex">
+                    <Button
+                      size="icon-sm"
+                      variant="ghost"
+                      className="text-success hover:bg-success-soft hover:text-success"
+                      aria-label={t('quick.approve')}
+                      disabled={!caps.canApprove}
+                      onClick={() => setDecision({ row: row.original, action: 'approve' })}
+                    >
+                      <CheckIcon />
+                    </Button>
+                  </span>
                 </SimpleTooltip>
-                <SimpleTooltip content={caps.canReturn ? t('quick.return') : t('quick.returnDisabled')}>
+                <SimpleTooltip content={caps.canReturn ? t('quick.return') : caps.canApprove ? t('quick.returnDisabled') : t('quick.notYourStep')}>
                   <span className="inline-flex">
                     <Button
                       size="icon-sm"
@@ -153,17 +155,19 @@ export function ApprovalsTable({
                     </Button>
                   </span>
                 </SimpleTooltip>
-                <SimpleTooltip content={t('quick.reject')}>
-                  <Button
-                    size="icon-sm"
-                    variant="ghost"
-                    className="text-danger hover:bg-danger-soft hover:text-danger"
-                    aria-label={t('quick.reject')}
-                    disabled={!caps.canReject}
-                    onClick={() => setDecision({ row: row.original, action: 'reject' })}
-                  >
-                    <XIcon />
-                  </Button>
+                <SimpleTooltip content={caps.canReject ? t('quick.reject') : t('quick.notYourStep')}>
+                  <span className="inline-flex">
+                    <Button
+                      size="icon-sm"
+                      variant="ghost"
+                      className="text-danger hover:bg-danger-soft hover:text-danger"
+                      aria-label={t('quick.reject')}
+                      disabled={!caps.canReject}
+                      onClick={() => setDecision({ row: row.original, action: 'reject' })}
+                    >
+                      <XIcon />
+                    </Button>
+                  </span>
                 </SimpleTooltip>
               </div>
             );

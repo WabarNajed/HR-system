@@ -107,6 +107,13 @@ export function applyAuditFilters<Q extends Filterable>(query: Q, params: AuditL
 export async function listAuditLogs(supabase: ServerSupabaseClient, params: AuditListParams): Promise<{ rows: AuditRow[]; total: number }> {
   const query = applyAuditFilters(supabase.from('audit_logs').select(AUDIT_COLUMNS, { count: 'exact' }), params).range(params.from, params.to);
   const { data, error, count } = await query;
+  if (error && params.from > 0) {
+    // Offset past the last row (stale `?page=` after narrowing the filters): PostgREST answers 416
+    // (PGRST103). Report the real total so the page can send the user to the last page.
+    const head = applyAuditFilters(supabase.from('audit_logs').select('id', { count: 'exact', head: true }), params, { sort: false });
+    const { count: total, error: countError } = await head;
+    if (!countError && (total ?? 0) <= params.from) return { rows: [], total: total ?? 0 };
+  }
   if (error) throw error;
   return { rows: (data ?? []) as AuditRow[], total: count ?? 0 };
 }

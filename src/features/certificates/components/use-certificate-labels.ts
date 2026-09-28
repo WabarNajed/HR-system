@@ -1,7 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 
 type Loose = ((key: string) => string) & { has: (key: string) => boolean };
 
@@ -14,10 +14,14 @@ export function useCertificateLabels() {
     const key = `${group}.${value}`;
     return t.has(key) ? t(key) : value;
   }, [t]);
-  return {
-    type: useCallback((v: string | null | undefined) => label('certificateType', v), [label]),
-    language: useCallback((v: string | null | undefined) => label('certificateLanguage', v), [label]),
-    variant: useCallback((v: string | null | undefined) => label('certificateVariant', v), [label]),
-    requestStatus: useCallback((v: string | null | undefined) => (v && ts.has(`request.${v}`) ? ts(`request.${v}`) : v ?? ''), [ts]),
-  };
+  // Stable identity: tables list this object in their column `useMemo` dependencies.
+  return useMemo(
+    () => ({
+      type: (v: string | null | undefined) => label('certificateType', v),
+      language: (v: string | null | undefined) => label('certificateLanguage', v),
+      variant: (v: string | null | undefined) => label('certificateVariant', v),
+      requestStatus: (v: string | null | undefined) => (v && ts.has(`request.${v}`) ? ts(`request.${v}`) : (v ?? '')),
+    }),
+    [label, ts],
+  );
 }

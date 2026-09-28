@@ -61,7 +61,7 @@ export function RoleBadges({
       {rest.length ? (
         <SimpleTooltip content={rest.map(label).join(locale === 'ar' ? '، ' : ', ')}>
           <Badge variant="outline" size="sm" className="numeric">
-            +{rest.length}
+            <bdi dir="ltr">+{rest.length}</bdi>
           </Badge>
         </SimpleTooltip>
       ) : null}

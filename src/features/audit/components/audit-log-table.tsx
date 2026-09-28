@@ -75,7 +75,7 @@ export function AuditLogTable({ rows, total, options, initialEvent, canExport, n
             <div className="mt-0.5 text-xs text-muted-foreground">{formatRelative(row.original.createdAt, locale, now)}</div>
           </div>
         ),
-        meta: { label: t('columns.time'), width: '11.5rem' },
+        meta: { label: t('columns.time'), width: '10.5rem' },
       },
       {
         id: 'actor_email',
@@ -107,7 +107,7 @@ export function AuditLogTable({ rows, total, options, initialEvent, canExport, n
             </div>
           );
         },
-        meta: { label: t('columns.actor'), width: '14rem' },
+        meta: { label: t('columns.actor'), width: '13rem' },
       },
       {
         id: 'action',
@@ -126,7 +126,7 @@ export function AuditLogTable({ rows, total, options, initialEvent, canExport, n
             </div>
           );
         },
-        meta: { label: t('columns.action'), width: '14rem' },
+        meta: { label: t('columns.action'), width: '13rem' },
       },
       {
         id: 'entity_type',
@@ -154,7 +154,7 @@ export function AuditLogTable({ rows, total, options, initialEvent, canExport, n
             </div>
           );
         },
-        meta: { label: t('columns.entity'), width: '11rem' },
+        meta: { label: t('columns.entity'), width: '10rem' },
       },
       {
         id: 'summary',
@@ -163,13 +163,14 @@ export function AuditLogTable({ rows, total, options, initialEvent, canExport, n
         header: () => t('columns.summary'),
         cell: ({ row }) =>
           row.original.summary ? (
-            <p className="line-clamp-2 max-w-[28rem] text-[0.8125rem] break-words whitespace-normal text-foreground/90" title={row.original.summary}>
+            <p className="line-clamp-2 min-w-48 max-w-[36rem] text-[0.8125rem] break-words whitespace-normal text-foreground/90" title={row.original.summary}>
               <bdi>{row.original.summary}</bdi>
             </p>
           ) : (
             <span className="text-faint-foreground">—</span>
           ),
-        meta: { label: t('columns.summary'), width: '22rem' },
+        // Flexible: takes the remaining width (no horizontal scroll at 1440px with the sidebar open).
+        meta: { label: t('columns.summary') },
       },
       {
         id: 'ip',

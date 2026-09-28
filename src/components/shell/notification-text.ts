@@ -56,15 +56,21 @@ export function useNotificationText() {
         documentLabel = t(`notifications.expiryKinds.${kind}`);
       }
 
+      const employeeName =
+        employeeDisplayName({ name_ar: s(p.employee_name_ar), name_en: s(p.employee_name_en) }, locale) ||
+        s(p.employee_name) ||
+        t('notifications.fallback.employee');
+      const dependentName =
+        p.subject === 'dependent' ? employeeDisplayName({ name_ar: s(p.dependent_name_ar), name_en: s(p.dependent_name_en) }, locale) : '';
+
       const values: Record<string, string | number> = {
         number: s(p.request_number) || t('notifications.fallback.number'),
         requestType:
           localized({ name_ar: s(p.request_type_name_ar), name_en: s(p.request_type_name_en) }, 'name', locale) ||
           t('notifications.fallback.requestType'),
-        employee:
-          employeeDisplayName({ name_ar: s(p.employee_name_ar), name_en: s(p.employee_name_en) }, locale) ||
-          s(p.employee_name) ||
-          t('notifications.fallback.employee'),
+        employee: employeeName,
+        /** Holder of an expiring item: the employee, or "<dependent> (dependent of <employee>)". */
+        holder: dependentName ? t('notifications.holderDependent', { dependent: dependentName, employee: employeeName }) : employeeName,
         employeeNumber: s(p.employee_number),
         actor: s(p.actor_name) || t('notifications.fallback.actor'),
         name: s(p.full_name ?? p.name ?? p.email) || t('notifications.fallback.applicant'),

@@ -46,7 +46,8 @@ const KIND_ORDER: SearchResultKind[] = ['employee', 'request', 'certificate', 'o
 
 type State =
   | { status: 'idle' }
-  | { status: 'loading'; query: string }
+  /** `results`: the previous result set, kept (dimmed) while the refined query loads. */
+  | { status: 'loading'; query: string; results?: SearchResult[] }
   | { status: 'ready'; query: string; results: SearchResult[] }
   | { status: 'error'; query: string };
 
@@ -184,7 +185,11 @@ export function GlobalSearch({ visibleNavIds }: { visibleNavIds: readonly string
 
   const runSearch = useCallback(async (q: string) => {
     const id = ++seq.current;
-    setState({ status: 'loading', query: q });
+    setState((prev) => ({
+      status: 'loading',
+      query: q,
+      results: prev.status === 'ready' ? prev.results : prev.status === 'loading' ? prev.results : undefined,
+    }));
     try {
       const result = await Promise.race([
         globalSearch({ query: q }),
@@ -240,12 +245,13 @@ export function GlobalSearch({ visibleNavIds }: { visibleNavIds: readonly string
     writeRecent(storageKey, []);
   };
 
+  const shownResults = state.status === 'ready' ? state.results : state.status === 'loading' ? (state.results ?? null) : null;
   const grouped = useMemo(() => {
-    if (state.status !== 'ready') return [];
+    if (!shownResults) return [];
     const map = new Map<SearchResultKind, SearchResult[]>();
-    for (const r of state.results) map.set(r.kind, [...(map.get(r.kind) ?? []), r]);
+    for (const r of shownResults) map.set(r.kind, [...(map.get(r.kind) ?? []), r]);
     return KIND_ORDER.filter((k) => map.has(k)).map((k) => ({ kind: k, items: map.get(k)! }));
-  }, [state]);
+  }, [shownResults]);
 
   const firstValue =
     state.status === 'ready'
@@ -416,7 +422,10 @@ export function GlobalSearch({ visibleNavIds }: { visibleNavIds: readonly string
           {grouped.map((group, gi) => (
             <Fragment key={group.kind}>
               {gi > 0 ? <CommandSeparator /> : null}
-              <CommandGroup heading={`${groupLabel(group.kind)} · ${group.items.length}`}>
+              <CommandGroup
+                heading={`${groupLabel(group.kind)} · ${group.items.length}`}
+                className={cn('transition-opacity', state.status === 'loading' && 'opacity-60')}
+              >
                 {group.items.map((r) => (
                   <CommandItem key={`${r.kind}-${r.id}`} value={`${r.kind}-${r.id}`} onSelect={() => openResult(r)} className="gap-3 py-2">
                     <ResultIcon kind={r.kind} />

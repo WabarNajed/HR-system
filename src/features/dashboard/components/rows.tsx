@@ -5,7 +5,8 @@ import { DynamicIcon } from '@/components/shared/icon-picker';
 import { SlaBadge } from '@/components/shared/sla-badge';
 import { statusTone } from '@/components/shared/status-badge';
 import { Badge, type BadgeVariant } from '@/components/ui/badge';
-import { formatRelative, slaStatus } from '@/lib/dates';
+import { daysBetween, formatRelative, slaStatus } from '@/lib/dates';
+import { intlLocale } from '@/lib/i18n/config';
 import { formatDate, formatDateRange } from '@/lib/i18n/date-format';
 import { employeeDisplayName, localized } from '@/lib/i18n/localized';
 import { fileRouteUrl } from '@/lib/storage';
@@ -100,6 +101,13 @@ export function RequestRow({ request: r, showEmployee = false, trailing = 'statu
   );
 }
 
+/** "tomorrow" / "in 12 days" / "in 3 months" until a leave starts (never repeats the absolute date). */
+function startsInLabel(start: string, today: string, locale: string): string {
+  const days = daysBetween(today, start) ?? 0;
+  const rtf = new Intl.RelativeTimeFormat(intlLocale(locale), { numeric: 'auto' });
+  return days < 60 ? rtf.format(days, 'day') : rtf.format(Math.round(days / 30), 'month');
+}
+
 type LeaveRowProps = {
   leave: DashboardLeave;
   today: string;
@@ -149,7 +157,7 @@ export function LeaveRow({ leave: l, today, showEmployee = false }: LeaveRowProp
             {t('onLeaveNow')}
           </span>
         ) : (
-          <span className="text-xs text-muted-foreground">{formatRelative(l.start_date, locale, new Date(`${today}T00:00:00Z`))}</span>
+          <span className="text-xs text-muted-foreground">{startsInLabel(l.start_date, today, locale)}</span>
         )}
       </div>
     </WidgetRow>

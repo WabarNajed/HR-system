@@ -92,14 +92,16 @@
       "title": "طلباتي الأخيرة",
       "emptyTitle": "لا توجد طلبات بعد",
       "emptyDescription": "ستظهر هنا الطلبات التي ترسلها إلى الموارد البشرية مع حالتها.",
-      "emptyAction": "طلب جديد"
+      "emptyAction": "طلب جديد",
+      "endHint": "تحتاج إلى خدمة من الموارد البشرية؟"
     },
     "upcomingLeave": {
       "title": "إجازاتي",
       "daysAvailable": "يوم متاح",
       "emptyTitle": "لا توجد إجازات قادمة",
       "emptyDescription": "ستظهر هنا الإجازات المعتمدة وتلك التي بانتظار الموافقة.",
-      "emptyAction": "طلب إجازة"
+      "emptyAction": "طلب إجازة",
+      "endHint": "تخطط لإجازتك القادمة؟"
     },
     "notifications": {
       "title": "أحدث الإشعارات",
@@ -160,6 +162,7 @@
       "expiredAgo": "{count, plural, zero {انتهت اليوم} one {انتهت منذ يوم} two {انتهت منذ يومين} few {انتهت منذ # أيام} many {انتهت منذ # يومًا} other {انتهت منذ # يوم}}",
       "expiresToday": "تنتهي اليوم",
       "expiresIn": "{count, plural, one {خلال يوم} two {خلال يومين} few {خلال # أيام} many {خلال # يومًا} other {خلال # يوم}}",
+      "dependentOf": "تابع لـ {name}",
       "kinds": {
         "iqama": "الإقامة",
         "passport": "جواز السفر",

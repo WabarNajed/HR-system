@@ -102,6 +102,7 @@
     "notUsed": "Not used by a {language} template",
     "placeholder": "Write the certificate wording…",
     "save": "Save",
+    "saveDisabled": "No changes to save.",
     "saving": "Saving…",
     "publish": "Publish",
     "publishing": "Publishing…",

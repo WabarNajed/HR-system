@@ -84,6 +84,7 @@
     "certificate": "Certificate",
     "leaveType": "Leave"
   },
+  "holderDependent": "{dependent} (dependent of {employee})",
   "expiryKinds": {
     "iqama": "Iqama",
     "passport": "Passport",
@@ -158,7 +159,7 @@
     },
     "expiry_alert": {
       "title": "{state, select, expired {{document} expired} today {{document} expires today} other {{document} expires in {days, plural, one {# day} other {# days}}}}",
-      "body": "{employee} · {state, select, expired {expired on {date}} other {expires on {date}}}"
+      "body": "{holder} · {state, select, expired {expired on {date}} other {expires on {date}}}"
     },
     "account_invited": {
       "title": "You're invited to the HR portal",

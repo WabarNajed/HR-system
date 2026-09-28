@@ -85,36 +85,61 @@ export function WidgetRow({ href, children, className }: { href?: string | null;
   );
 }
 
-/** Fills the rest of a stretched list card with a quiet "end of list" note (queues). */
-export function WidgetListEnd({ icon: Icon, label }: { icon: LucideIcon; label: ReactNode }) {
+/**
+ * Fills the rest of a stretched list card (equal-height rows) with a quiet note — "end of queue", or
+ * a follow-up action on short personal lists — instead of leaving a blank region.
+ */
+export function WidgetListEnd({ icon: Icon, label, action }: { icon: LucideIcon; label: ReactNode; action?: ReactNode }) {
   return (
-    <div className="flex min-h-12 flex-1 items-center justify-center gap-1.5 border-t border-border/60 px-4 py-3 text-xs text-faint-foreground">
-      <Icon className="size-3.5" aria-hidden />
-      {label}
+    <div className="flex min-h-12 flex-1 flex-col items-center justify-center gap-2 border-t border-border/60 px-4 py-3 text-center text-xs text-faint-foreground">
+      <span className="inline-flex items-center gap-1.5">
+        <Icon className="size-3.5" aria-hidden />
+        {label}
+      </span>
+      {action}
     </div>
   );
 }
 
-/** Row of small counters at the top of a widget (label under a number). */
-export function WidgetStrip({ items }: { items: { key: string; label: ReactNode; value: ReactNode; tone?: 'danger' | 'warning' | 'default' }[] }) {
+/** Row of small counters at the top of a widget (label under a number); cells with `href` are links. */
+export function WidgetStrip({
+  items,
+}: {
+  items: { key: string; label: ReactNode; value: ReactNode; tone?: 'danger' | 'warning' | 'default'; href?: string }[];
+}) {
   return (
     <div
       className="grid grid-cols-2 gap-px border-b border-border bg-border sm:grid-cols-[repeat(var(--strip-n),minmax(0,1fr))]"
       style={{ '--strip-n': items.length } as CSSProperties}
     >
-      {items.map((item) => (
-        <div key={item.key} className="min-w-0 bg-card px-4 py-2.5">
-          <div
-            className={cn(
-              'numeric text-lg leading-6 font-semibold',
-              item.tone === 'danger' ? 'text-danger' : item.tone === 'warning' ? 'text-warning' : 'text-foreground',
-            )}
+      {items.map((item) => {
+        const body = (
+          <>
+            <div
+              className={cn(
+                'numeric text-lg leading-6 font-semibold',
+                item.tone === 'danger' ? 'text-danger' : item.tone === 'warning' ? 'text-warning' : 'text-foreground',
+              )}
+            >
+              {item.value}
+            </div>
+            <div className="truncate text-[0.6875rem] text-muted-foreground group-hover/strip:text-foreground">{item.label}</div>
+          </>
+        );
+        return item.href ? (
+          <Link
+            key={item.key}
+            href={item.href}
+            className="group/strip block min-w-0 bg-card px-4 py-2.5 outline-none transition-colors hover:bg-accent/60 focus-visible:bg-accent"
           >
-            {item.value}
+            {body}
+          </Link>
+        ) : (
+          <div key={item.key} className="min-w-0 bg-card px-4 py-2.5">
+            {body}
           </div>
-          <div className="truncate text-[0.6875rem] text-muted-foreground">{item.label}</div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
@@ -136,7 +161,7 @@ export function WidgetEmpty({
   className?: string;
 }) {
   return (
-    <div className={cn('flex flex-col items-center justify-center px-6 py-7 text-center', className)}>
+    <div className={cn('flex flex-1 flex-col items-center justify-center px-6 py-7 text-center', className)}>
       <span
         className={cn(
           'mb-2.5 flex size-9 items-center justify-center rounded-lg',

@@ -1,4 +1,4 @@
-import { CalendarDaysIcon, CalendarPlusIcon, PalmtreeIcon } from 'lucide-react';
+import { CalendarDaysIcon, CalendarPlusIcon, PalmtreeIcon, SunIcon } from 'lucide-react';
 import Link from 'next/link';
 import { getLocale, getTranslations } from 'next-intl/server';
 import { Button } from '@/components/ui/button';
@@ -6,8 +6,8 @@ import { formatNumber } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { localized } from '@/lib/i18n/localized';
 import { LeaveRow, tintStyle } from '../components/rows';
-import { ViewAllLink, Widget, WidgetEmpty, WidgetError, WidgetList } from '../components/widget-parts';
-import { getDashboardStats, getMyUpcomingLeave } from '../queries';
+import { ViewAllLink, Widget, WidgetEmpty, WidgetError, WidgetList, WidgetListEnd } from '../components/widget-parts';
+import { getDashboardStats, getMyUpcomingLeave, MY_LEAVE_LIMIT } from '../queries';
 
 /** Own upcoming leave (approved + awaiting approval) with the balance of the main leave types. */
 export async function UpcomingLeaveWidget({ employeeId, today }: { employeeId: string; today: string }) {
@@ -60,11 +60,27 @@ export async function UpcomingLeaveWidget({ employeeId, today }: { employeeId: s
           }
         />
       ) : (
-        <WidgetList>
-          {res.data.map((l) => (
-            <LeaveRow key={l.id} leave={l} today={today} />
-          ))}
-        </WidgetList>
+        <>
+          <WidgetList>
+            {res.data.map((l) => (
+              <LeaveRow key={l.id} leave={l} today={today} />
+            ))}
+          </WidgetList>
+          {res.data.length < MY_LEAVE_LIMIT ? (
+            <WidgetListEnd
+              icon={SunIcon}
+              label={t('endHint')}
+              action={
+                <Button asChild size="sm" variant="outline" className="h-7">
+                  <Link href="/requests/new?type=leave">
+                    <CalendarPlusIcon />
+                    {t('emptyAction')}
+                  </Link>
+                </Button>
+              }
+            />
+          ) : null}
+        </>
       )}
     </Widget>
   );

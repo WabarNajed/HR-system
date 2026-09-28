@@ -241,17 +241,15 @@ function UploadForm({
   const targetId = fixedEmployee?.id ?? pickedEmployee;
   const file = files[0] ?? null;
 
+  /** Employee + file are outside the zod form; validate them together with it. */
+  const checkExtra = () => {
+    if (!targetId) setEmployeeError('documents.validation.employeeRequired');
+    if (!file) setFileError('documents.validation.fileRequired');
+    return Boolean(targetId && file);
+  };
+
   const submit = async (values: DocumentFormValues) => {
-    let invalid = false;
-    if (!targetId) {
-      setEmployeeError('documents.validation.employeeRequired');
-      invalid = true;
-    }
-    if (!file) {
-      setFileError('documents.validation.fileRequired');
-      invalid = true;
-    }
-    if (invalid || !file || !targetId) return;
+    if (!checkExtra() || !file || !targetId) return;
 
     setSubmitting(true);
     onBusyChange(true);
@@ -302,7 +300,7 @@ function UploadForm({
 
   return (
     <Form {...form}>
-      <form onSubmit={(event) => void form.handleSubmit(submit)(event)} className="flex min-h-0 flex-1 flex-col" noValidate>
+      <form onSubmit={(event) => void form.handleSubmit(submit, () => checkExtra())(event)} className="flex min-h-0 flex-1 flex-col" noValidate>
         <DialogHeader>
           <DialogTitle>{isHr && fixedEmployee ? t('upload.titleFor', { name: employeeName }) : t('upload.title')}</DialogTitle>
           <DialogDescription>{t('upload.description')}</DialogDescription>

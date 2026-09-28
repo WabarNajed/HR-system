@@ -97,7 +97,12 @@ export default async function EmployeesPage({ searchParams }: { searchParams: Pr
               value={n(stats.iqama_expiring_30)}
               icon={AlarmClockIcon}
               tone={stats.iqama_expiring_30 > 0 || stats.iqama_expired > 0 ? 'warning' : 'success'}
-              hint={t('employees.kpi.iqamaExpiringHint', { count: stats.iqama_expired })}
+              hint={
+                <>
+                  <span className="sm:hidden">{t('employees.kpi.iqamaExpiredShort', { count: stats.iqama_expired })}</span>
+                  <span className="max-sm:hidden">{t('employees.kpi.iqamaExpiringHint', { count: stats.iqama_expired })}</span>
+                </>
+              }
               href="/employees?iqama=within30&sort=iqama_expiry_date&dir=asc"
             />
             <StatCard
@@ -115,7 +120,9 @@ export default async function EmployeesPage({ searchParams }: { searchParams: Pr
               tone="neutral"
               hint={t('employees.kpi.archivedHint')}
               href="/employees?archived=only"
-              className="col-span-2 lg:col-span-1"
+              // Phones: a 2×2 grid without an orphan full-width tile (archived records stay one tap away
+              // in "More filters").
+              className="max-sm:hidden sm:max-lg:col-span-2"
             />
           </KpiGrid>
         ) : (

@@ -17,9 +17,9 @@ export async function localeCookie(context: BrowserContext): Promise<string | un
 }
 
 /** Asserts `<html lang dir>` for the locale. */
-export async function expectDocumentLocale(page: Page, locale: Locale): Promise<void> {
-  await expect(page.locator('html')).toHaveAttribute('lang', locale);
-  await expect(page.locator('html')).toHaveAttribute('dir', locale === 'ar' ? 'rtl' : 'ltr');
+export async function expectDocumentLocale(page: Page, locale: Locale, options: { timeout?: number } = {}): Promise<void> {
+  await expect(page.locator('html')).toHaveAttribute('lang', locale, options);
+  await expect(page.locator('html')).toHaveAttribute('dir', locale === 'ar' ? 'rtl' : 'ltr', options);
 }
 
 /** Fills and submits the sign-in form on the current /login page. */

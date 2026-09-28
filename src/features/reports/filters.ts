@@ -22,6 +22,9 @@ export const DATE_FROM_KEY = 'dateFrom';
 export const DATE_TO_KEY = 'dateTo';
 export const PERIOD_KEY = 'period';
 
+/** Export-only URL key: the table's visible column ids (comma separated), so exports match the screen. */
+export const EXPORT_COLUMNS_KEY = 'cols';
+
 /** All URL keys a report page may carry besides table state (export datasets read these). */
 export const REPORT_URL_KEYS: readonly string[] = [DATE_FROM_KEY, DATE_TO_KEY, PERIOD_KEY, ...FILTER_KEYS];
 

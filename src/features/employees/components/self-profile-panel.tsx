@@ -46,7 +46,8 @@ export async function SelfProfilePanel({ employeeId }: { employeeId: string | nu
   }
 
   const viewer = await getViewer(ctx);
-  const loaded = await getEmployeeRecord(employeeId, viewer);
+  // Contract: the signed-in user's OWN record only (it shows bank/dependents without HR framing).
+  const loaded = viewer.employeeId === employeeId ? await getEmployeeRecord(employeeId, viewer) : null;
   if (!loaded) {
     return (
       <EmptyState
