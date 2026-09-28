@@ -286,12 +286,14 @@ export function RolesConsole({ roles, selectedKey, members, canAdminister, isSup
               <CircleDotIcon className="size-4 shrink-0" aria-hidden />
               {t('matrix.unsaved', { count: changes })}
             </span>
-            <Button size="sm" variant="outline" onClick={() => setDraft(new Set(saved))} disabled={pending} tabIndex={dirty ? 0 : -1}>
-              {tc('discardChanges')}
-            </Button>
-            <Button size="sm" onClick={save} loading={pending} tabIndex={dirty ? 0 : -1} className="min-w-28">
-              {pending ? tc('saving') : tc('saveChanges')}
-            </Button>
+            <div className="ms-auto flex shrink-0 items-center gap-2">
+              <Button size="sm" variant="outline" onClick={() => setDraft(new Set(saved))} disabled={pending} tabIndex={dirty ? 0 : -1}>
+                {tc('discardChanges')}
+              </Button>
+              <Button size="sm" onClick={save} loading={pending} tabIndex={dirty ? 0 : -1} className="min-w-28">
+                {pending ? tc('saving') : tc('saveChanges')}
+              </Button>
+            </div>
           </div>
         </div>
       </div>
