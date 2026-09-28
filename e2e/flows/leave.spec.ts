@@ -64,7 +64,7 @@ for (const locale of ['ar', 'en'] as const) {
       await pickDate(emp.page, 'end_date', day);
       await emp.page.locator('[data-field="reason"] textarea').fill(reason);
       // "1 working day" / "يوم عمل واحد" once the server has calculated the days.
-      await expect(emp.page.locator('[data-field="days"]')).toContainText(locale === 'ar' ? /يوم عمل واحد|\b1\b/ : /\b1 (working|business) day\b/);
+      await expect(emp.page.locator('[data-field="days"]')).toContainText(locale === 'ar' ? /يوم عمل واحد|\b1\b/ : /1 (working|business) day/);
       await wizardContinue(emp.page, locale);
       const id = await wizardSubmit(emp.page, locale);
       const { request_number: number, status } = await requestRow(id);

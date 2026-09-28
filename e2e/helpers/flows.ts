@@ -205,9 +205,12 @@ export async function managerApprovesFromQueue(mgr: Actor, number: string): Prom
   await expect(page.getByRole('main').getByRole('row').filter({ hasText: number })).toHaveCount(0, { timeout: 30_000 });
 }
 
-/** Directory for artefacts a flow writes (downloaded templates, generated workbooks). */
+/**
+ * Directory for artefacts a flow writes (downloaded templates, generated workbooks). ASCII-only path:
+ * test titles contain "→", and Chromium cannot read upload files from non-ASCII paths in a C locale.
+ */
 export function workDir(testInfo: TestInfo): string {
-  const dir = testInfo.outputPath('work');
+  const dir = path.join(testInfo.project.outputDir, 'flow-work', `${testInfo.testId}-${testInfo.retry}`);
   fs.mkdirSync(dir, { recursive: true });
   return dir;
 }
