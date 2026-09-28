@@ -9,7 +9,8 @@ import { createAdminClient, isAdminClientConfigured } from '@/lib/supabase/admin
  * Auth: `Authorization: Bearer <CRON_SECRET>` (Vercel sends it automatically when the env var is
  * set). Missing/invalid secret → 401; secret or service role not configured → 503.
  * Runs `run_expiry_alerts` with the service role (idempotent per item + expiry date + threshold, so
- * re-runs and retries never duplicate alerts) and e-mails the new notifications.
+ * re-runs and retries never duplicate alerts) and e-mails the new notifications. Also removes rows of
+ * uploads that never completed (`cleanup_orphan_employee_documents`, rows older than a day).
  */
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -35,7 +36,11 @@ export async function GET(request: NextRequest) {
 
   const started = Date.now();
   try {
-    const result = await runExpiryAlerts(createAdminClient({ timeoutMs: 30_000 }), { source: 'cron', asService: true });
+    const admin = createAdminClient({ timeoutMs: 30_000 });
+    const result = await runExpiryAlerts(admin, { source: 'cron', asService: true });
+    // Housekeeping: rows of uploads that never completed (tab closed mid-upload), older than a day.
+    const orphans = await admin.rpc('cleanup_orphan_employee_documents', {});
+    if (orphans.error) console.error('[cron] orphan document cleanup failed:', orphans.error.code, orphans.error.message);
     return json(200, {
       ok: true,
       run_id: result.runId,
@@ -43,6 +48,7 @@ export async function GET(request: NextRequest) {
       notifications: result.notifications,
       documents_expired: result.documentsExpired,
       emails: result.emails,
+      orphan_documents_removed: orphans.error ? null : (orphans.data ?? 0),
       duration_ms: Date.now() - started,
     });
   } catch (error) {

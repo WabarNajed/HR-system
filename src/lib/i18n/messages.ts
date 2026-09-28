@@ -22,6 +22,7 @@ import ar_users from '../../../locales/ar/users.json';
 import ar_roles from '../../../locales/ar/roles.json';
 import ar_masterData from '../../../locales/ar/masterData.json';
 import ar_requestConfig from '../../../locales/ar/requestConfig.json';
+import ar_emailTemplates from '../../../locales/ar/emailTemplates.json';
 import ar_templates from '../../../locales/ar/templates.json';
 import ar_dataManagement from '../../../locales/ar/dataManagement.json';
 import ar_audit from '../../../locales/ar/audit.json';
@@ -53,6 +54,7 @@ import en_users from '../../../locales/en/users.json';
 import en_roles from '../../../locales/en/roles.json';
 import en_masterData from '../../../locales/en/masterData.json';
 import en_requestConfig from '../../../locales/en/requestConfig.json';
+import en_emailTemplates from '../../../locales/en/emailTemplates.json';
 import en_templates from '../../../locales/en/templates.json';
 import en_dataManagement from '../../../locales/en/dataManagement.json';
 import en_audit from '../../../locales/en/audit.json';
@@ -85,6 +87,7 @@ export const namespaces = [
   'roles',
   'masterData',
   'requestConfig',
+  'emailTemplates',
   'templates',
   'dataManagement',
   'audit',
@@ -120,6 +123,7 @@ const arMessages = {
   roles: ar_roles,
   masterData: ar_masterData,
   requestConfig: ar_requestConfig,
+  emailTemplates: ar_emailTemplates,
   templates: ar_templates,
   dataManagement: ar_dataManagement,
   audit: ar_audit,
@@ -153,6 +157,7 @@ const enMessages = {
   roles: en_roles,
   masterData: en_masterData,
   requestConfig: en_requestConfig,
+  emailTemplates: en_emailTemplates,
   templates: en_templates,
   dataManagement: en_dataManagement,
   audit: en_audit,

@@ -178,6 +178,14 @@ function UploadForm({
 
   useEffect(() => () => abortRef.current?.abort(), []);
 
+  // Leaving the page mid-upload would strand the half-created document: ask the browser to confirm.
+  useEffect(() => {
+    if (!submitting) return;
+    const warn = (event: BeforeUnloadEvent) => event.preventDefault();
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [submitting]);
+
   const loadEmployees = useCallback(
     async (query: string) => {
       const result = await searchUploadEmployees({ query });

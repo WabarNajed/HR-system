@@ -1,0 +1,260 @@
+{
+  "title": "Email templates",
+  "description": "Bilingual emails the portal sends for accounts, requests and expiry alerts, with the delivery log.",
+  "tabsLabel": "Email templates sections",
+  "tabs": {
+    "templates": "Templates",
+    "log": "Email log"
+  },
+  "kpi": {
+    "active": "Active templates",
+    "activeHint": "Inactive templates are not sent",
+    "sent": "Emails sent",
+    "last30": "Last 30 days",
+    "failed": "Not delivered",
+    "failedHint": "{failed} failed · {skipped} skipped · 30 days",
+    "provider": "Delivery provider",
+    "providerReady": "Configured on the server",
+    "providerMissing": "Emails are logged but not sent"
+  },
+  "groups": {
+    "account": "Accounts & registration",
+    "requests": "Requests",
+    "expiry": "Expiry alerts",
+    "other": "Other"
+  },
+  "list": {
+    "edit": "Edit template",
+    "search": "Search templates…",
+    "emptyTitle": "No email templates",
+    "emptyDescription": "Email templates are created with the organization’s default configuration.",
+    "columns": {
+      "template": "Template",
+      "group": "Group",
+      "subject": "Subject"
+    }
+  },
+  "log": {
+    "search": "Search recipient or subject…",
+    "noTemplate": "Direct email",
+    "noReason": "No reason recorded",
+    "emptyTitle": "No emails yet",
+    "emptyDescription": "Every email the portal sends — or skips — is recorded here.",
+    "columns": {
+      "sentAt": "Sent at",
+      "recipient": "Recipient",
+      "subject": "Subject",
+      "related": "Related record",
+      "reason": "Failure reason",
+      "type": "Type"
+    },
+    "related": {
+      "request": "Request",
+      "registration": "Registration",
+      "employee": "Employee",
+      "certificate": "Certificate",
+      "leave": "Leave",
+      "user": "User account",
+      "test": "Test email",
+      "other": "Other"
+    }
+  },
+  "provider": {
+    "title": "Email delivery",
+    "providers": {
+      "resend": "Resend",
+      "smtp": "SMTP",
+      "none": "Not configured"
+    },
+    "notConfigured": "No provider is configured on the server (RESEND_API_KEY or SMTP_HOST). Emails are logged as skipped.",
+    "fromMissing": "The sender address (EMAIL_FROM) is missing or invalid, so emails are skipped.",
+    "configured": "Emails are delivered through this provider.",
+    "from": "Sender:",
+    "sendTest": "Send test email to me",
+    "testSent": "Test email sent to {email}.",
+    "noPermission": "You need settings edit permission to send test emails.",
+    "noEmail": "Your account has no email address."
+  },
+  "toast": {
+    "saved": "Email template saved.",
+    "activated": "Template activated.",
+    "deactivated": "Template deactivated — this email won’t be sent.",
+    "testSent": "Test email sent.",
+    "testSkipped": "No email provider is configured, so nothing was sent. The attempt is in the Email log.",
+    "testSentTo": "Test email sent to {email}."
+  },
+  "errors": {
+    "noEmail": "Your account has no email address to send the test to."
+  },
+  "test": {
+    "prefix": "[Test]",
+    "footer": "This is a test email sent from the portal settings. The values shown are sample data."
+  },
+  "providerTest": {
+    "subject": "{portal}: email delivery test",
+    "body": "Email delivery from the HR portal is working. No action is needed."
+  },
+  "sample": {
+    "recipient": "Sara Alqahtani",
+    "employee": "Omar Alharbi",
+    "manager": "Khalid Alotaibi",
+    "requestType": "Leave request",
+    "comment": "Please attach the supporting document.",
+    "reason": "The submitted details could not be verified.",
+    "note": "Please confirm your employee number.",
+    "documentType": "Passport"
+  },
+  "placeholders": {
+    "recipient_name": "Name of the person receiving the email",
+    "employee_name": "Employee the request or alert is about",
+    "manager_name": "Manager or the person who acted",
+    "request_number": "Request number, e.g. HR-2026-000123",
+    "request_type": "Request type name",
+    "request_status": "Current request status",
+    "company_name": "Organization name",
+    "portal_name": "Portal name",
+    "link": "Link that opens the record in the portal",
+    "comment": "Comment left by the approver",
+    "reason": "Reason given for the decision",
+    "note": "Note from the reviewer",
+    "expiry_date": "Expiry date",
+    "days_left": "Days until expiry",
+    "document_type": "Document type",
+    "email": "Applicant’s email address",
+    "employee_number": "Employee number"
+  },
+  "editor": {
+    "required": "Enter the {language} subject and body before continuing.",
+    "updated": "Updated {date}",
+    "activeLabel": "Active",
+    "sendTest": "Send test",
+    "sendTestHint": "Sends the current (unsaved) version with sample data to {email}.",
+    "sendTestIn": "Send {language} test",
+    "inactiveNote": "This template is inactive: the matching emails are skipped and recorded in the Email log.",
+    "content": "Content",
+    "language": "Template language",
+    "subject": "Subject",
+    "placeholders": "Insert placeholder",
+    "placeholdersHint": "Click a placeholder to insert it at the cursor. Values are escaped automatically.",
+    "body": "Body (HTML)",
+    "htmlHint": "Use simple HTML: paragraphs, bold text, links and lists. The branded header, button and footer are added automatically.",
+    "unknownPlaceholders": "These placeholders aren’t available for this email and will render empty:",
+    "preview": "Preview",
+    "sampleData": "Sample data",
+    "previewFrame": "{language} email preview",
+    "sampleNote": "Preview uses sample values and your organization’s branding. Real emails use the recipient’s details.",
+    "discardTitle": "Discard changes?",
+    "discardDescription": "Unsaved changes to both languages will be lost."
+  },
+  "notifications": {
+    "title": "Notifications",
+    "description": "Choose which events notify people in the portal and by email.",
+    "summaryInApp": "{count} of {total} events in-app",
+    "summaryEmail": "{count} of {total} events by email",
+    "rule": "In-app off with email on delivers the email and files the notification as read; both off suppresses the event.",
+    "groups": {
+      "requests": "Requests & approvals",
+      "accounts": "Accounts & registration",
+      "other": "Certificates, leave & alerts"
+    },
+    "columns": {
+      "event": "Event",
+      "recipients": "Recipients"
+    },
+    "suppressed": "Suppressed",
+    "noTemplate": "There’s no email template for this event, so email can’t be turned on.",
+    "noTemplateShort": "No email template",
+    "templatesCount": "{count} expiry templates",
+    "templateInactive": "Template inactive — emails are skipped",
+    "savedState": "All changes saved",
+    "changedCount": "{count, plural, one {# event changed} other {# events changed}}",
+    "toast": {
+      "saved": "Notification settings saved."
+    }
+  },
+  "events": {
+    "request_submitted": {
+      "name": "Request submitted",
+      "description": "Confirmation to the requester when a request is submitted."
+    },
+    "approval_required": {
+      "name": "Approval required",
+      "description": "The next approver has a request waiting for a decision."
+    },
+    "request_approved": {
+      "name": "Request approved",
+      "description": "The request received its final approval."
+    },
+    "request_rejected": {
+      "name": "Request rejected",
+      "description": "An approver rejected the request."
+    },
+    "request_returned": {
+      "name": "Returned for information",
+      "description": "The request was sent back to the employee for more details."
+    },
+    "request_assigned": {
+      "name": "Request assigned",
+      "description": "A request was assigned or reassigned to someone."
+    },
+    "request_in_progress": {
+      "name": "Processing started",
+      "description": "HR started processing an approved request."
+    },
+    "request_completed": {
+      "name": "Request completed",
+      "description": "HR completed the request."
+    },
+    "request_cancelled": {
+      "name": "Request cancelled",
+      "description": "The request was cancelled by the requester or HR."
+    },
+    "request_comment": {
+      "name": "New comment",
+      "description": "Someone commented on a request you’re involved in."
+    },
+    "registration_submitted": {
+      "name": "Registration submitted",
+      "description": "A new self-registration is waiting for review."
+    },
+    "registration_approved": {
+      "name": "Registration approved",
+      "description": "The applicant’s account was approved."
+    },
+    "registration_rejected": {
+      "name": "Registration rejected",
+      "description": "The applicant’s registration was rejected."
+    },
+    "registration_info_requested": {
+      "name": "More information requested",
+      "description": "The applicant is asked to complete their registration details."
+    },
+    "account_invited": {
+      "name": "Account invitation",
+      "description": "An administrator invited a person to the portal."
+    },
+    "certificate_issued": {
+      "name": "Certificate issued",
+      "description": "A certificate was issued for the employee."
+    },
+    "leave_balance_adjusted": {
+      "name": "Leave balance adjusted",
+      "description": "HR adjusted the employee’s leave balance."
+    },
+    "expiry_alert": {
+      "name": "Expiry alert",
+      "description": "Iqama, passport, contract, insurance or document expiry reminders."
+    }
+  },
+  "recipients": {
+    "requester": "Requester",
+    "employee": "Employee",
+    "approver": "Approver",
+    "assignee": "Assignee",
+    "participants": "Participants",
+    "applicant": "Applicant",
+    "registration_reviewers": "Registration reviewers",
+    "invitee": "Invitee",
+    "hr": "HR team"
+  }
+}

@@ -3139,6 +3139,10 @@ export type Database = {
             type: string
           }[]
       }
+      cleanup_orphan_employee_documents: {
+        Args: { p_min_age?: string }
+        Returns: number
+      }
       count_leave_days: {
         Args: { p_end: string; p_leave_type_id: string; p_start: string }
         Returns: number
