@@ -183,14 +183,14 @@ export function SessionsCard({ lastLoginAt }: { lastLoginAt: string | null }) {
           <span className="text-muted-foreground">{t('lastSignIn')}</span>
           {lastLoginAt ? <RelativeTime value={lastLoginAt} className="font-medium text-foreground" /> : <span>—</span>}
         </div>
-        <div className="flex flex-col gap-2 sm:flex-row">
-          <Button variant="outline" className="flex-1" loading={pending} onClick={() => startTransition(async () => signOut())}>
+        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-1">
+          <Button variant="outline" className="w-full" loading={pending} onClick={() => startTransition(async () => signOut())}>
             {!pending ? <LogOutIcon className="rtl:-scale-x-100" /> : null}
             {t('signOut')}
           </Button>
           <ConfirmDialog
             trigger={
-              <Button variant="outline" className="flex-1 text-danger hover:bg-danger-soft hover:text-danger">
+              <Button variant="outline" className="w-full text-danger hover:bg-danger-soft hover:text-danger">
                 <LogOutIcon className="rtl:-scale-x-100" />
                 {t('signOutEverywhere')}
               </Button>

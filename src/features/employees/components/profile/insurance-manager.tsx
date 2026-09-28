@@ -51,13 +51,17 @@ export function InsuranceManager({
   policies,
   dependents,
   canEdit,
+  canCreate = canEdit,
   today,
 }: {
   employeeId: string;
   employeeName: string;
   policies: InsuranceRecord[];
   dependents: DependentRecord[];
+  /** Update/delete (org `edit`). */
   canEdit: boolean;
+  /** Add (org `create` or `edit`); defaults to `canEdit`. */
+  canCreate?: boolean;
   today: string;
 }) {
   const t = useTranslations('employees.insurance');
@@ -163,7 +167,7 @@ export function InsuranceManager({
       icon={<ShieldPlusIcon />}
       flush
       actions={
-        canEdit ? (
+        canCreate ? (
           <Button size="sm" onClick={() => setEditing('new')}>
             <PlusIcon />
             {t('add')}
@@ -186,7 +190,7 @@ export function InsuranceManager({
           icon: ShieldPlusIcon,
           title: t('emptyTitle'),
           description: t('emptyDescription'),
-          action: canEdit ? (
+          action: canCreate ? (
             <Button size="sm" variant="outline" onClick={() => setEditing('new')}>
               <PlusIcon />
               {t('add')}
@@ -211,7 +215,7 @@ export function InsuranceManager({
         }}
       />
 
-      {canEdit ? (
+      {canEdit || canCreate ? (
         <Sheet open={Boolean(editing)} onOpenChange={(open) => !open && setEditing(null)}>
           <SheetContent side="end" className="sm:max-w-xl">
           <LiftToasts />
@@ -255,7 +259,7 @@ export function InsuranceManager({
         confirmLabel={t('deleteConfirm')}
         onConfirm={async () => {
           if (!deleting) return;
-          const result = await deleteInsurance({ employeeId, id: deleting.id });
+          const result: ActionResult = await deleteInsurance({ employeeId, id: deleting.id }).catch(() => ({ ok: false, error: 'errors.generic' }));
           if (!result.ok) {
             toast.error(resolve(result.error));
             return false;

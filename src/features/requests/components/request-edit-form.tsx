@@ -110,6 +110,8 @@ export function RequestEditForm({
         toast.success(tr('toast.changesSaved'));
         router.refresh();
       }
+    } catch {
+      toast.error(resolve('errors.network'));
     } finally {
       setBusy(null);
     }
@@ -130,12 +132,15 @@ export function RequestEditForm({
   };
 
   const onResubmit = async () => {
+    if (busy) return;
     setBusy('submit');
     try {
       if (!(await save())) return;
       if (note.trim()) {
         const c = await addRequestComment({ requestId, body: note.trim(), internal: false });
         if (!c.ok) toast.error(resolve(c.error));
+        // Posted: a retry after a failed submit must not post the same note twice.
+        else setNote('');
       }
       const res = await submitRequest({ requestId });
       if (!res.ok) {
@@ -148,6 +153,8 @@ export function RequestEditForm({
       toast.success(status === 'returned' ? tr('toast.resubmitted', { number: res.data?.number ?? '' }) : tr('toast.submittedNumber', { number: res.data?.number ?? '' }));
       router.replace(`/requests/${requestId}`);
       router.refresh();
+    } catch {
+      toast.error(resolve('errors.network'));
     } finally {
       setBusy(null);
     }

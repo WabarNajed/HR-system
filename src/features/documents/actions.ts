@@ -349,6 +349,9 @@ export const archiveDocument = withAction(
     const supabase = await createClient();
     const doc = await loadDocument(supabase, documentId);
     if (doc.status === 'archived') return ok(undefined, 'documents.toast.archived');
+    // Restoring brings a document back as valid/expired, so a pending or rejected upload may never take
+    // the archive → restore detour around the review.
+    if (doc.status === 'pending_review' || doc.status === 'rejected') throw new ActionError('documents.errors.reviewState');
     const { error } = await supabase.from('employee_documents').update({ status: 'archived' }).eq('id', documentId);
     if (error) throw error;
     revalidateDocuments(doc.employee_id);

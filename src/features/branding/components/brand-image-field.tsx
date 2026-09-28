@@ -84,6 +84,8 @@ export function BrandImageField({ kind, label, description, url, lockedReason = 
       }
       const result = await setBrandImage({ kind, path });
       if (!result.ok) {
+        // Unique-name uploads would otherwise stay orphaned in the bucket (best effort).
+        if (!config.upsert) void supabase.storage.from(config.bucket).remove([path]).catch(() => undefined);
         toast.error(resolve(result.error));
         return;
       }

@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
-import { useId, useState } from 'react';
+import { useId, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { Combobox, type ComboboxOption } from '@/components/shared/combobox';
 import { Button } from '@/components/ui/button';
@@ -120,7 +120,11 @@ function DecisionForm({
   const Icon = meta.icon;
   const needsComment = meta.comment === 'required';
 
+  // Guards against a double click / Enter repeat landing before the busy state re-renders.
+  const inFlight = useRef(false);
+
   const submit = async () => {
+    if (inFlight.current) return;
     if (needsComment && !comment.trim()) {
       setError('validation.required');
       return;
@@ -129,6 +133,7 @@ function DecisionForm({
       setError('validation.selectOne');
       return;
     }
+    inFlight.current = true;
     setBusy(true);
     try {
       const res = await actOnRequest({ requestId: target.id, action, comment: comment.trim() || null, targetUserId: assignee });
@@ -143,7 +148,10 @@ function DecisionForm({
       onClose();
       onDone?.(res.data?.status ?? null);
       router.refresh();
+    } catch {
+      toast.error(resolve('errors.network'));
     } finally {
+      inFlight.current = false;
       setBusy(false);
     }
   };

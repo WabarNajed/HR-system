@@ -196,9 +196,9 @@
       "timeSearch": "اكتب الوقت، مثل 08:30"
     },
     "summary": {
-      "workingDays": "{count, plural, one {<b>يوم</b> عمل واحد} two {<b>يوما</b> عمل} few {<b>#</b> أيام عمل} many {<b>#</b> يوم عمل} other {<b>#</b> يوم عمل}}",
-      "weekendDays": "{count, plural, =0 {بلا عطلة أسبوعية} one {<b>يوم</b> عطلة واحد} two {<b>يوما</b> عطلة} few {<b>#</b> أيام عطلة} many {<b>#</b> يوم عطلة} other {<b>#</b> يوم عطلة}}",
-      "weeklyHours": "<b>{hours}</b> ساعة أسبوعيًا"
+      "workingDays": "أيام العمل: <b>{count}</b>",
+      "weekendDays": "{count, plural, =0 {بلا عطلة أسبوعية} other {أيام العطلة: <b>{count}</b>}}",
+      "weeklyHours": "ساعات العمل أسبوعيًا: <b>{hours}</b>"
     },
     "validation": {
       "phone": "أدخل رقم هاتف صحيحًا، مثل ‎+966 11 000 0000",

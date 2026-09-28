@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useRef, useState, useTransition } from 'react';
 import { toast } from 'sonner';
+import type { ActionResult } from '@/lib/action';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog';
 import { avatarTint, EmployeeAvatar } from '@/components/shared/employee-avatar';
 import { useErrorMessage } from '@/components/ui/form';
@@ -83,7 +84,7 @@ export function AvatarUploader({
         toast.error(resolve(uploaded.error));
         return;
       }
-      const result = await setEmployeeAvatar({ id: employeeId, path });
+      const result: ActionResult<{ url: string }> = await setEmployeeAvatar({ id: employeeId, path }).catch(() => ({ ok: false, error: 'errors.generic' }));
       if (!result.ok) {
         await removeFiles(supabase, BUCKETS.employeeDocuments, [path]);
         toast.error(resolve(result.error));
@@ -149,7 +150,7 @@ export function AvatarUploader({
         description={t('profile.avatar.removeDescription')}
         confirmLabel={t('actions.removePhoto')}
         onConfirm={async () => {
-          const result = await removeEmployeeAvatar({ id: employeeId });
+          const result: ActionResult = await removeEmployeeAvatar({ id: employeeId }).catch(() => ({ ok: false, error: 'errors.generic' }));
           if (!result.ok) {
             toast.error(resolve(result.error));
             return false;

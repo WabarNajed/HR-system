@@ -75,6 +75,8 @@ export function DocumentsTable({ variant, rows, total, departments = [], exportE
     if (showEmployee) {
       cols.push({
         id: 'employee',
+        // accessor makes the column sortable (server-side: `sort=employee`)
+        accessorFn: (r) => localized({ name_ar: r.employee_name_ar, name_en: r.employee_name_en }, 'name', locale),
         header: ({ column }) => <DataTableColumnHeader column={column} title={t('fields.employee')} />,
         cell: ({ row }) => {
           const r = row.original;
@@ -216,7 +218,7 @@ export function DocumentsTable({ variant, rows, total, departments = [], exportE
       meta: { label: t('fields.uploadedAt'), defaultHidden: variant === 'own' },
     });
 
-    if (variant === 'review') {
+    if (variant === 'review' && permissions.access.approve) {
       cols.push({
         id: 'review',
         header: () => null,
@@ -325,6 +327,11 @@ export function DocumentsTable({ variant, rows, total, departments = [], exportE
         ? { icon: FileStackIcon, title: t('empty.myTitle'), description: t('empty.myDescription'), action: emptyAction }
         : { icon: FileStackIcon, title: t('empty.documentsTitle'), description: t('empty.documentsDescription'), action: emptyAction };
 
+  const reviewable = (r: DocumentListRow) => {
+    const can = documentAbilities(r as DocumentSummary, permissions);
+    return can.review && !can.selfReview;
+  };
+
   return (
     <DataTable<DocumentListRow>
       tableId={`documents-${variant}`}
@@ -372,7 +379,7 @@ export function DocumentsTable({ variant, rows, total, departments = [], exportE
             </span>
             {r.expiry_date && r.status !== 'archived' && r.status !== 'rejected' ? <ExpiryBadge date={r.expiry_date} today={today} /> : null}
           </div>
-          {variant === 'review' ? (
+          {variant === 'review' && reviewable(r) ? (
             <div className="flex gap-2 pt-1">
               <Button
                 size="sm"

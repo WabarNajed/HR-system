@@ -37,7 +37,8 @@ export function toMetadataPayload(values: DocumentFormValues) {
     documentNumber: values.documentNumber.trim() || null,
     issueDate: values.issueDate || null,
     expiryDate: values.expiryDate || null,
-    isConfidential: values.isConfidential,
+    // medical reports are always confidential (also enforced by the database)
+    isConfidential: values.documentType === 'medical_report' || values.isConfidential,
     notes: values.notes.trim() || null,
   };
 }

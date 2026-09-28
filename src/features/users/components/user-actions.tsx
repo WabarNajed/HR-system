@@ -12,6 +12,7 @@ import {
   ShieldCheckIcon,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { useCallback } from 'react';
 import type { RowAction } from '@/components/data-table';
 import { StatusBadge } from '@/components/shared/status-badge';
 import { Badge } from '@/components/ui/badge';
@@ -33,7 +34,7 @@ export function toDialogUser(u: UserRow): DialogUser {
 export function useUserActions(abilities: UserAbilities) {
   const t = useTranslations('users.actions');
   const tr = useTranslations('users.reasons');
-  return (u: UserRow, open: (kind: UserActionKind, user: UserRow) => void): RowAction<UserRow>[] => {
+  return useCallback((u: UserRow, open: (kind: UserActionKind, user: UserRow) => void): RowAction<UserRow>[] => {
     const targetSuper = u.roles.includes('super_admin');
     const protectedSuper = targetSuper && !abilities.isSuperAdmin;
     const registration = u.status === 'pending' || u.status === 'info_requested' || u.status === 'rejected';
@@ -90,7 +91,7 @@ export function useUserActions(abilities: UserAbilities) {
       );
     }
     return items;
-  };
+  }, [abilities, t, tr]);
 }
 
 /** Status badge plus the "invitation pending" marker. */

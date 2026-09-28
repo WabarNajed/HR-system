@@ -122,11 +122,11 @@ export function RegistrationsView({ tab, rows, total, roles, canApprove, canAdmi
               <EmployeeAvatar name={applicantName(r)} seed={r.id} size="md" />
               <div className="min-w-0 leading-tight">
                 <div className="truncate font-medium text-foreground">{applicantName(r)}</div>
-                <bdi dir="ltr" className="mt-0.5 block truncate text-xs text-muted-foreground">
+                <bdi dir="ltr" className="mt-0.5 block truncate text-xs text-muted-foreground rtl:text-end">
                   {r.email}
                 </bdi>
                 {r.mobile ? (
-                  <bdi dir="ltr" className="block truncate text-xs text-faint-foreground numeric">
+                  <bdi dir="ltr" className="block truncate text-xs text-faint-foreground numeric rtl:text-end">
                     {r.mobile}
                   </bdi>
                 ) : null}
@@ -203,7 +203,7 @@ export function RegistrationsView({ tab, rows, total, roles, canApprove, canAdmi
                 <EmployeeAvatar name={applicantName(r)} seed={r.id} size="md" />
                 <div className="min-w-0 leading-tight">
                   <div className="truncate font-medium text-foreground">{applicantName(r)}</div>
-                  <bdi dir="ltr" className="block truncate text-xs text-muted-foreground">
+                  <bdi dir="ltr" className="block truncate text-xs text-muted-foreground rtl:text-end">
                     {r.email}
                   </bdi>
                 </div>

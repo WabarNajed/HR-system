@@ -70,7 +70,7 @@ export function UsersTable({ rows, total, roles, abilities }: UsersTableProps) {
                     </Badge>
                   ) : null}
                 </div>
-                <bdi dir="ltr" className="mt-0.5 block max-w-[14rem] truncate text-xs text-muted-foreground">
+                <bdi dir="ltr" className="mt-0.5 block max-w-[14rem] truncate text-xs text-muted-foreground rtl:text-end">
                   {u.email}
                 </bdi>
               </div>
@@ -85,7 +85,7 @@ export function UsersTable({ rows, total, roles, abilities }: UsersTableProps) {
         accessorKey: 'email',
         header: ({ column }) => <DataTableColumnHeader column={column} title={t('columns.email')} />,
         cell: ({ row }) => (
-          <bdi dir="ltr" className="block max-w-[16rem] truncate text-meta text-foreground">
+          <bdi dir="ltr" className="block max-w-[16rem] truncate text-meta text-foreground rtl:text-end">
             {row.original.email ?? '—'}
           </bdi>
         ),
@@ -138,7 +138,7 @@ export function UsersTable({ rows, total, roles, abilities }: UsersTableProps) {
           ) : (
             <span className="text-meta text-faint-foreground">{t('never')}</span>
           ),
-        meta: { label: t('columns.lastLogin') },
+        meta: { label: t('columns.lastLogin'), width: '9.5rem' },
       },
       {
         id: 'created',
@@ -211,7 +211,7 @@ export function UsersTable({ rows, total, roles, abilities }: UsersTableProps) {
               <EmployeeAvatar name={displayName(u)} seed={u.id} size="md" />
               <div className="min-w-0 leading-tight">
                 <div className="truncate font-medium text-foreground">{displayName(u)}</div>
-                <bdi dir="ltr" className="block truncate text-xs text-muted-foreground">
+                <bdi dir="ltr" className="block truncate text-xs text-muted-foreground rtl:text-end">
                   {u.email}
                 </bdi>
                 <RoleBadges roles={u.roles} label={roleLabel} max={2} className="mt-1.5" />

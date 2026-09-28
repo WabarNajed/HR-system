@@ -15,7 +15,6 @@ import type { Locale } from '@/lib/i18n/config';
 import { employeeDisplayName, localized } from '@/lib/i18n/localized';
 import { useDateFormat } from '@/lib/i18n/use-date-format';
 import { mergeSearchParams } from '@/lib/list-params';
-import { formatDays } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { gridRange, holidayOn, layoutWeek, shiftMonth, weekday, type WeekSegment } from '../calendar-utils';
 import type { CalendarEvent, CalendarHoliday, LeaveScope, Option } from '../types';
@@ -251,6 +250,7 @@ function EventBar({ seg, labelFor, showNames }: { seg: WeekSegment<CalendarEvent
 
 function EventDetails({ ev, showNames }: { ev: CalendarEvent; showNames: boolean }) {
   const t = useTranslations('leave');
+  const tc = useTranslations('common');
   const locale = useLocale() as Locale;
   const fmt = useDateFormat();
   return (
@@ -267,7 +267,7 @@ function EventDetails({ ev, showNames }: { ev: CalendarEvent; showNames: boolean
       </div>
       <div className="flex items-center justify-between gap-2 text-meta">
         <span className="numeric text-muted-foreground">{fmt.range(ev.start_date, ev.end_date)}</span>
-        <span className="font-medium numeric">{formatDays(ev.days, locale)} {t('fields.daysUnit')}</span>
+        <span className="font-medium numeric">{tc('days', { count: ev.days })}</span>
       </div>
       <div className="flex items-center justify-between gap-2">
         <StatusBadge domain="request" status={ev.status} size="sm" />
@@ -399,6 +399,7 @@ function AgendaList({
   compact?: boolean;
 }) {
   const t = useTranslations('leave');
+  const tc = useTranslations('common');
   const locale = useLocale() as Locale;
   const fmt = useDateFormat();
   const monthHolidays = holidays.filter((h) => h.end_date >= `${month}-01` && h.start_date <= `${month}-31`);
@@ -447,7 +448,7 @@ function AgendaList({
                 </div>
               </div>
               <div className="flex shrink-0 flex-col items-end gap-1">
-                <span className="text-sm font-semibold numeric">{formatDays(item.ev.days, locale)}</span>
+                <span className="text-sm font-semibold whitespace-nowrap numeric">{tc('days', { count: item.ev.days })}</span>
                 {!compact ? <StatusBadge domain="request" status={item.ev.status} size="sm" /> : item.ev.state === 'pending' ? <span className="text-xs text-warning">{t('calendar.pending')}</span> : null}
               </div>
             </Link>

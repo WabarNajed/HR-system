@@ -68,7 +68,8 @@ export default async function NewRequestPage({ searchParams }: { searchParams: P
   const manager = managerRes.data as { name_ar?: string | null; name_en?: string | null } | null;
 
   return (
-    <div className="flex flex-col gap-5">
+    // Fills the viewport so the wizard's action bar rests at the bottom even when a step is short.
+    <div className="flex min-h-[calc(100dvh-var(--spacing-header)-2rem)] flex-col gap-5 md:min-h-[calc(100dvh-var(--spacing-header)-3rem)]">
       <PageHeader
         compact
         title={draftRow ? t('wizard.continueDraftTitle') : t('wizard.title')}

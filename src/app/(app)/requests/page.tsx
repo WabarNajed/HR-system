@@ -54,7 +54,7 @@ export default async function RequestsPage({ searchParams }: { searchParams: Pro
   const canCreate = can(ctx, 'requests.create') || can(ctx, 'leave.create') || access.orgCreate;
 
   const [list, counts, kpis, departments, employees, handlers] = await Promise.all([
-    listRequests(supabase, params, { tab, access, typeIdsByKey, subtypes: subtypeMap(types) }),
+    listRequests(supabase, params, { tab, access, typeIdsByKey, subtypes: subtypeMap(types), locale: ctx.locale }),
     countRequestTabs(supabase),
     requestKpis(supabase, access),
     seesOthers ? loadDepartments(supabase) : Promise.resolve(null),

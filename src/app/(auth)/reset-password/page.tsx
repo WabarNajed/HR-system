@@ -26,10 +26,11 @@ export default async function ResetPasswordPage({ searchParams }: { searchParams
     supabase.from('profiles').select('invited_at').eq('id', state.ctx.user.id).maybeSingle(),
   ]);
   // A regular (password) session must not change the password without the current one: send active
-  // users to My profile › Account & security (re-authenticates); others see "link invalid/expired".
+  // users to My profile › Account & security (re-authenticates); others get the link handler (an
+  // implicit-flow link in the URL fragment still works, anything else shows "link invalid/expired").
   if (!isRecentLinkSession(claims?.claims as Record<string, unknown> | undefined)) {
     if (state.ctx.profile.status === 'active') redirect('/profile?tab=security');
-    return <ResetLinkHandler invalid />;
+    return <ResetLinkHandler />;
   }
 
   let invite = params.type === 'invite';

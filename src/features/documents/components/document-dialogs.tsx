@@ -31,7 +31,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogBody, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage, useErrorMessage } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, useErrorMessage } from '@/components/ui/form';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Sheet, SheetBody, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from '@/components/ui/sheet';
@@ -72,7 +72,8 @@ export function documentAbilities(doc: DocumentSummary, { access }: DocumentPerm
     replace: access.edit && !archived,
     review: access.approve && doc.status === 'pending_review',
     selfReview: own,
-    archive: access.edit && !archived,
+    // pending/rejected uploads are reviewed or deleted, never archived (restore would make them valid)
+    archive: access.edit && (doc.status === 'valid' || doc.status === 'expired'),
     restore: access.edit && archived,
     delete: access.edit,
     withdraw: !access.edit && own && doc.status === 'pending_review' && Boolean(doc.self_uploaded),
@@ -640,7 +641,6 @@ function ReviewDocumentDialog({ doc, decision, onClose }: { doc: DocumentSummary
                         autoFocus={reject}
                       />
                     </FormControl>
-                    {reject ? <FormDescription>{t('review.rejectDescription', { name: nameOf(doc) })}</FormDescription> : null}
                     <FormMessage />
                   </FormItem>
                 )}

@@ -44,10 +44,10 @@ export async function LeaveSummaryCards({ summary, year }: { summary: LeaveSumma
       tone="primary"
       hint={
         annual
-          ? t('annualHint', { total: formatDays(annual.total, locale), pending: formatDays(annual.pending, locale) })
+          ? t('annualHint', { total: annual.total, pending: formatDays(annual.pending, locale) })
           : t('annualNone', { year })
       }
-      href="/leave?tab=balances&view=mine"
+      href="/leave?tab=balances&scope=mine"
       footer={
         annual && annual.total > 0 ? (
           <Progress

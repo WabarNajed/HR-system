@@ -52,6 +52,8 @@ export function ExpiryTable({ rows, total, today, departments, exportEnabled, ca
     () => [
       {
         id: 'employee',
+        // accessor makes the column sortable (server-side: `sort=employee`)
+        accessorFn: (r) => localized({ name_ar: r.employee_name_ar, name_en: r.employee_name_en }, 'name', locale),
         header: ({ column }) => <DataTableColumnHeader column={column} title={t('fields.employee')} />,
         cell: ({ row }) => {
           const r = row.original;
@@ -80,6 +82,7 @@ export function ExpiryTable({ rows, total, today, departments, exportEnabled, ca
       },
       {
         id: 'kind',
+        accessorKey: 'kind',
         header: ({ column }) => <DataTableColumnHeader column={column} title={t('fields.item')} />,
         cell: ({ row }) => {
           const r = row.original;

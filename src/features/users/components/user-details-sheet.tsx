@@ -48,7 +48,7 @@ export function UserDetailsSheet({ user: current, roles, abilities, onOpenChange
               <div className="min-w-0 flex-1">
                 <SheetTitle className="truncate">{name}</SheetTitle>
                 <SheetDescription asChild>
-                  <bdi dir="ltr" className="block truncate">
+                  <bdi dir="ltr" className="block truncate rtl:text-end">
                     {user.email}
                   </bdi>
                 </SheetDescription>

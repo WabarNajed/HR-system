@@ -201,7 +201,16 @@ export function AdjustBalanceDialog({
                 max={365}
                 dir="ltr"
                 value={amount}
-                onChange={(e) => setAmount(e.target.value)}
+                onChange={(e) => {
+                  // A typed minus sign means "deduct": flip the direction and keep the magnitude.
+                  const raw = e.target.value;
+                  if (raw.trim().startsWith('-')) {
+                    setDirection('deduct');
+                    setAmount(raw.trim().slice(1));
+                  } else {
+                    setAmount(raw);
+                  }
+                }}
                 aria-invalid={Boolean(errors.amount) || undefined}
                 placeholder="0"
                 className="numeric"
@@ -387,6 +396,9 @@ export function BalanceHistorySheet({
     void load(balanceId);
   }, [balanceId, load]);
 
+  // Prefer the figures fetched with the history (fresh even if the list behind is still refreshing).
+  const figures = state.status === 'ready' && state.data ? state.data.balance : target;
+
   let body: ReactNode;
   if (!target || state.status === 'loading' || state.status === 'idle') {
     body = (
@@ -474,15 +486,15 @@ export function BalanceHistorySheet({
           ) : null}
         </SheetHeader>
         <SheetBody className="flex flex-col gap-5">
-          {target ? (
+          {figures ? (
             <StatStrip
               items={[
-                { label: t('fields.opening'), value: d(target.opening_balance) },
-                { label: t('fields.entitlement'), value: d(target.entitlement) },
-                { label: t('fields.adjustment'), value: d(target.adjustment) },
-                { label: t('fields.used'), value: d(target.used) },
-                { label: t('fields.pending'), value: d(target.pending) },
-                { label: t('fields.remaining'), value: d(target.remaining), strong: true },
+                { label: t('fields.opening'), value: d(figures.opening_balance) },
+                { label: t('fields.entitlement'), value: d(figures.entitlement) },
+                { label: t('fields.adjustment'), value: d(figures.adjustment) },
+                { label: t('fields.used'), value: d(figures.used) },
+                { label: t('fields.pending'), value: d(figures.pending) },
+                { label: t('fields.remaining'), value: d(figures.remaining), strong: true },
               ]}
             />
           ) : null}

@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
-import { useCallback, useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useMemo, useRef, useState, type ReactNode } from 'react';
 import { toast } from 'sonner';
 import { Combobox, type ComboboxOption } from '@/components/shared/combobox';
 import { EmptyState } from '@/components/shared/empty-state';
@@ -125,8 +125,11 @@ export function NewRequestWizard(props: NewRequestWizardProps) {
   const showGeneralAttachments = Boolean(type?.allow_attachments && !attachmentField);
 
   /* ── Employee (on behalf) ── */
+  // Only the latest pick may apply its lookups (a slow response for an earlier pick is dropped).
+  const targetSeq = useRef(0);
   const changeTarget = useCallback(
     async (next: EmployeeOption | null) => {
+      const seq = ++targetSeq.current;
       setTarget(next);
       setValues((v) => {
         const copy = { ...v };
@@ -134,13 +137,18 @@ export function NewRequestWizard(props: NewRequestWizardProps) {
         return copy;
       });
       if (!next) return;
-      const res = await loadRequestLookups({ employeeId: next.id });
-      if (res.ok && res.data) {
+      const res = await loadRequestLookups({ employeeId: next.id }).catch(() => null);
+      if (seq !== targetSeq.current) return;
+      if (!res?.ok) {
+        toast.error(resolve(res ? res.error : 'errors.network'));
+        return;
+      }
+      if (res.data) {
         setLookups({ leaveTypes: res.data.leaveTypes, dependents: res.data.dependents });
         setManager(res.data.manager);
       }
     },
-    [type],
+    [type, resolve],
   );
 
   /* ── Type selection ── */
@@ -232,6 +240,8 @@ export function NewRequestWizard(props: NewRequestWizardProps) {
     try {
       const id = await persist();
       if (id) toast.success(tr('toast.draftSaved'));
+    } catch {
+      toast.error(resolve('errors.network'));
     } finally {
       setBusy(null);
     }
@@ -258,6 +268,8 @@ export function NewRequestWizard(props: NewRequestWizardProps) {
       toast.success(tr('toast.submittedNumber', { number: res.data?.number ?? '' }));
       router.push(`/requests/${id}`);
       router.refresh();
+    } catch {
+      toast.error(resolve('errors.network'));
     } finally {
       setBusy(null);
     }
@@ -295,7 +307,7 @@ export function NewRequestWizard(props: NewRequestWizardProps) {
   const continueDisabledReason = step === 1 && !type ? t('pickTypeFirst') : targetReason;
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-1 flex-col gap-5">
       <Stepper step={step} onStep={(s) => (s < step || (s === 2 && type) ? setStep(s) : undefined)} canGoTo={(s) => s < step || (s === 2 && Boolean(type) && step === 3)} />
 
       {step === 1 ? (
@@ -334,9 +346,11 @@ export function NewRequestWizard(props: NewRequestWizardProps) {
               description={localized(type, 'description', locale) || undefined}
               icon={<TypeIcon icon={type.icon} color={type.color} size="sm" className="-m-1.5" />}
               actions={
-                <Button variant="ghost" size="sm" onClick={() => setStep(1)} disabled={Boolean(draftId)}>
-                  {t('changeType')}
-                </Button>
+                <DisabledReason reason={draftId ? t('typeLocked') : null}>
+                  <Button variant="ghost" size="sm" onClick={() => setStep(1)} disabled={Boolean(draftId)}>
+                    {t('changeType')}
+                  </Button>
+                </DisabledReason>
               }
             >
               <p className="mb-4 text-xs text-muted-foreground">{tc('form.requiredHint')}</p>
@@ -877,7 +891,7 @@ function ReviewAttachments({ type, values, general }: { type: RequestTypeDefinit
 
 function WizardFooter({ children }: { children: ReactNode }) {
   return (
-    <div className="sticky bottom-0 z-20 -mx-4 mt-1 border-t border-border bg-card/92 px-4 py-3 backdrop-blur-md supports-[backdrop-filter]:bg-card/80 md:-mx-6 md:px-6 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+    <div className="sticky bottom-0 z-20 -mx-4 -mb-4 mt-auto border-t border-border bg-card/92 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur-md supports-[backdrop-filter]:bg-card/80 md:-mx-6 md:-mb-6 md:px-6">
       <div className="flex w-full items-center justify-end gap-2">{children}</div>
     </div>
   );

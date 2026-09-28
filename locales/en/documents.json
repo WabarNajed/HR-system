@@ -161,7 +161,8 @@
     "bannerTitle": "{count, plural, one {# document is waiting for review} other {# documents are waiting for review}}",
     "bannerDescription": "Employees' uploads are added to their files once HR approves them.",
     "openQueue": "Open review queue",
-    "submittedBy": "Submitted by the employee"
+    "submittedBy": "Submitted by the employee",
+    "noPermission": "You can see uploads waiting for review. Approving or rejecting them needs the Approve documents permission."
   },
   "upload": {
     "title": "Upload document",
@@ -235,7 +236,8 @@
     "fileRequired": "Attach a file."
   },
   "errors": {
-    "archived": "Archived documents can't be changed. Restore the document first."
+    "archived": "Archived documents can't be changed. Restore the document first.",
+    "reviewState": "Pending and rejected uploads can't be archived. Review or delete them instead."
   },
   "empty": {
     "documentsTitle": "No documents yet",

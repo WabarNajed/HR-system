@@ -55,7 +55,7 @@ export default async function RequestDetailsPage({ params, searchParams }: Props
   const sp = await searchParams;
   const t = await getTranslations('requests');
   const supabase = await createClient();
-  const detail = await getRequestDetail(supabase, id, ctx.user.id);
+  const detail = await getRequestDetail(supabase, id, ctx.user.id, ctx.locale);
   if (!detail) notFound();
 
   const { row, capabilities: caps, typeDef } = detail;

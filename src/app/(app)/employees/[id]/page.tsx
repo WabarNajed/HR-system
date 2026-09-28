@@ -75,9 +75,11 @@ export default async function EmployeeProfilePage({
     personal: org ? oc('personal_data.view') : self,
     bank: org ? oc('bank.view') : self,
     dependents: org ? oc('personal_data.view') : self,
-    dependentsEdit: org && (oc('personal_data.edit') || oc('personal_data.create')),
+    dependentsCreate: org && (oc('personal_data.edit') || oc('personal_data.create')),
+    dependentsEdit: org && oc('personal_data.edit'),
     insurance: org ? oc('insurance.view') : self,
-    insuranceEdit: org && (oc('insurance.edit') || oc('insurance.create')),
+    insuranceCreate: org && (oc('insurance.edit') || oc('insurance.create')),
+    insuranceEdit: org && oc('insurance.edit'),
     leave: org ? oc('leave.view') : true,
     requests: org ? oc('requests.view') : true,
     documents: org ? oc('documents.view') : self,
@@ -151,10 +153,25 @@ export default async function EmployeeProfilePage({
       content = <EmployeeCertificatesTab employeeId={id} />;
       break;
     case 'dependents':
-      content = <DependentsTabContent employeeId={id} canEdit={caps.dependentsEdit && !archived} today={today} />;
+      content = (
+        <DependentsTabContent
+          employeeId={id}
+          canEdit={caps.dependentsEdit && !archived}
+          canCreate={caps.dependentsCreate && !archived}
+          today={today}
+        />
+      );
       break;
     case 'insurance':
-      content = <InsuranceTabContent employeeId={id} employeeName={name} canEdit={caps.insuranceEdit && !archived} today={today} />;
+      content = (
+        <InsuranceTabContent
+          employeeId={id}
+          employeeName={name}
+          canEdit={caps.insuranceEdit && !archived}
+          canCreate={caps.insuranceCreate && !archived}
+          today={today}
+        />
+      );
       break;
     case 'activity':
       content = <EmployeeActivityTab employeeId={id} />;
@@ -246,24 +263,44 @@ function Notice({ icon, tone, children, action }: { icon: ReactNode; tone: 'info
   );
 }
 
-async function DependentsTabContent({ employeeId, canEdit, today }: { employeeId: string; canEdit: boolean; today: string }) {
+async function DependentsTabContent({
+  employeeId,
+  canEdit,
+  canCreate,
+  today,
+}: {
+  employeeId: string;
+  canEdit: boolean;
+  canCreate: boolean;
+  today: string;
+}) {
   const dependents = await getDependents(employeeId);
-  return <DependentsManager employeeId={employeeId} dependents={dependents} canEdit={canEdit} today={today} />;
+  return <DependentsManager employeeId={employeeId} dependents={dependents} canEdit={canEdit} canCreate={canCreate} today={today} />;
 }
 
 async function InsuranceTabContent({
   employeeId,
   employeeName,
   canEdit,
+  canCreate,
   today,
 }: {
   employeeId: string;
   employeeName: string;
   canEdit: boolean;
+  canCreate: boolean;
   today: string;
 }) {
   const [policies, dependents] = await Promise.all([getInsurance(employeeId), getDependents(employeeId)]);
   return (
-    <InsuranceManager employeeId={employeeId} employeeName={employeeName} policies={policies} dependents={dependents} canEdit={canEdit} today={today} />
+    <InsuranceManager
+      employeeId={employeeId}
+      employeeName={employeeName}
+      policies={policies}
+      dependents={dependents}
+      canEdit={canEdit}
+      canCreate={canCreate}
+      today={today}
+    />
   );
 }

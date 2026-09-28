@@ -23,7 +23,7 @@ export async function EmployeeRequestsTab({ employeeId }: { employeeId: string }
   const [access, types] = await Promise.all([getRequestAccess(supabase, ctx.user.id), loadRequestTypes(supabase, { withFields: false })]);
   const params = parseListParams({}, { defaultSort: 'created_at', defaultDir: 'desc', defaultPageSize: 100, maxPageSize: 100 });
   const [{ rows, total }, openRes] = await Promise.all([
-    listRequests(supabase, params, { tab: 'all', access, typeIdsByKey: new Map(), employeeId, subtypes: subtypeMap(types) }),
+    listRequests(supabase, params, { tab: 'all', access, typeIdsByKey: new Map(), employeeId, subtypes: subtypeMap(types), locale: ctx.locale }),
     supabase
       .from('hr_requests')
       .select('id', { count: 'exact', head: true })

@@ -542,7 +542,11 @@ export async function getBalanceYears(currentYear: number): Promise<number[]> {
 /** Adjustments + leave requests that moved one balance. RLS: own balance, direct reports' requests, HR. */
 export async function getBalanceHistory(balanceId: string): Promise<BalanceHistory | null> {
   const supabase = await createClient();
-  const { data: bal, error } = await supabase.from('leave_balances').select('id, employee_id, leave_type_id, year').eq('id', balanceId).maybeSingle();
+  const { data: bal, error } = await supabase
+    .from('leave_balances')
+    .select('id, employee_id, leave_type_id, year, opening_balance, entitlement, adjustment, used, pending, remaining')
+    .eq('id', balanceId)
+    .maybeSingle();
   if (error) throw error;
   if (!bal) return null;
   const [adj, reqs] = await Promise.all([
@@ -563,6 +567,14 @@ export async function getBalanceHistory(balanceId: string): Promise<BalanceHisto
   ]);
   if (adj.error) throw adj.error;
   return {
+    balance: {
+      opening_balance: Number(bal.opening_balance),
+      entitlement: Number(bal.entitlement),
+      adjustment: Number(bal.adjustment),
+      used: Number(bal.used),
+      pending: Number(bal.pending),
+      remaining: Number(bal.remaining),
+    },
     adjustments: (adj.data ?? []).map((a) => {
       const changer = a.changer as unknown as { full_name: string | null; email: string | null } | null;
       return {

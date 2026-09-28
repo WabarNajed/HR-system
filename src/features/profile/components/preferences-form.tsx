@@ -22,6 +22,7 @@ function OptionCard({
   hint,
   disabled,
   lang,
+  stacked = false,
 }: {
   selected: boolean;
   onSelect: () => void;
@@ -30,6 +31,8 @@ function OptionCard({
   hint?: string;
   disabled?: boolean;
   lang?: string;
+  /** Icon above the label (narrow three-up theme cards). */
+  stacked?: boolean;
 }) {
   return (
     <button
@@ -39,7 +42,8 @@ function OptionCard({
       onClick={onSelect}
       disabled={disabled}
       className={cn(
-        'relative flex items-center gap-3 rounded-lg border px-3.5 py-3 text-start transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring/50 disabled:opacity-60',
+        'relative flex rounded-lg border text-start transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring/50 disabled:opacity-60',
+        stacked ? 'flex-col items-start gap-2.5 p-3' : 'items-center gap-3 px-3.5 py-3',
         selected ? 'border-primary bg-primary-soft/50 ring-1 ring-primary' : 'border-border bg-card hover:border-border-strong hover:bg-subtle',
       )}
     >
@@ -52,7 +56,7 @@ function OptionCard({
         </span>
         {hint && hint !== title ? <span className="block text-xs text-muted-foreground">{hint}</span> : null}
       </span>
-      {selected ? <CheckIcon className="size-4 shrink-0 text-primary" aria-hidden /> : null}
+      {selected ? <CheckIcon className={cn('size-4 shrink-0 text-primary', stacked && 'absolute end-3 top-3')} aria-hidden /> : null}
     </button>
   );
 }
@@ -133,10 +137,11 @@ export function PreferencesForm({ language, theme }: { language: Language; theme
             {t('theme')}
           </legend>
           <p className="mb-3 text-meta text-muted-foreground">{t('themeHint')}</p>
-          <div role="radiogroup" aria-label={t('theme')} className="grid gap-2.5 sm:grid-cols-3">
-            <OptionCard selected={mode === 'light'} onSelect={() => setMode('light')} icon={<SunIcon className="size-4" />} title={t('themes.light')} disabled={pending} />
-            <OptionCard selected={mode === 'dark'} onSelect={() => setMode('dark')} icon={<MoonIcon className="size-4" />} title={t('themes.dark')} disabled={pending} />
+          <div role="radiogroup" aria-label={t('theme')} className="grid grid-cols-3 gap-2.5">
+            <OptionCard stacked selected={mode === 'light'} onSelect={() => setMode('light')} icon={<SunIcon className="size-4" />} title={t('themes.light')} disabled={pending} />
+            <OptionCard stacked selected={mode === 'dark'} onSelect={() => setMode('dark')} icon={<MoonIcon className="size-4" />} title={t('themes.dark')} disabled={pending} />
             <OptionCard
+              stacked
               selected={mode === 'system'}
               onSelect={() => setMode('system')}
               icon={<MonitorIcon className="size-4" />}

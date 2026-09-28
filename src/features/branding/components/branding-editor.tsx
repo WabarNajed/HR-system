@@ -414,7 +414,7 @@ export function BrandingEditor({ defaultValues, images: initialImages, company, 
 
         {canEdit ? (
           <StickyFormFooter
-            className="mt-5"
+            className="mt-5 [&>div]:max-w-none"
             dirty={dirty}
             pending={pending}
             onCancel={dirty ? () => form.reset() : undefined}

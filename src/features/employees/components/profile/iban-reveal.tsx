@@ -4,6 +4,7 @@ import { EyeIcon, EyeOffIcon } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState, useTransition } from 'react';
 import { toast } from 'sonner';
+import type { ActionResult } from '@/lib/action';
 import { CopyButton } from '@/components/shared/copy-button';
 import { Button } from '@/components/ui/button';
 import { useErrorMessage } from '@/components/ui/form';
@@ -19,7 +20,7 @@ export function IbanReveal({ employeeId, masked, audited }: { employeeId: string
 
   const reveal = () =>
     startTransition(async () => {
-      const result = await revealEmployeeIban({ id: employeeId });
+      const result: ActionResult<{ iban: string }> = await revealEmployeeIban({ id: employeeId }).catch(() => ({ ok: false, error: 'errors.generic' }));
       if (!result.ok || !result.data) {
         toast.error(resolve(result.ok ? 'errors.generic' : result.error));
         return;

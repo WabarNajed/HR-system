@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import type { ActionResult } from '@/lib/action';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog';
 import { useErrorMessage } from '@/components/ui/form';
 import { archiveEmployee, restoreEmployee } from '../actions';
@@ -40,7 +41,10 @@ export function ArchiveEmployeeDialog({
       confirmLabel={restoring ? t('restoreConfirm') : t('confirm')}
       onConfirm={async () => {
         if (!target) return;
-        const result = restoring ? await restoreEmployee({ id: target.id }) : await archiveEmployee({ id: target.id });
+        const result: ActionResult = await (restoring ? restoreEmployee({ id: target.id }) : archiveEmployee({ id: target.id })).catch(() => ({
+          ok: false,
+          error: 'errors.generic',
+        }));
         if (!result.ok) {
           toast.error(resolve(result.error));
           return false;

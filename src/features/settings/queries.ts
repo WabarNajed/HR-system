@@ -129,12 +129,13 @@ export function monthOptions(locale: Locale): Option[] {
 }
 
 /** Weekday names 0=Sunday … 6=Saturday (short + long). */
-export function weekdayNames(locale: Locale): { short: string; long: string }[] {
+export function weekdayNames(locale: Locale): { short: string; long: string; compact: string }[] {
   const short = new Intl.DateTimeFormat(intlLocale(locale), { weekday: 'short', timeZone: 'UTC' });
   const long = new Intl.DateTimeFormat(intlLocale(locale), { weekday: 'long', timeZone: 'UTC' });
   // 2026-01-04 is a Sunday.
   return Array.from({ length: 7 }, (_, i) => {
     const d = new Date(Date.UTC(2026, 0, 4 + i));
-    return { short: short.format(d), long: long.format(d) };
+    // `compact`: phone-width label ("أربعاء" rather than "الأربعاء"; English keeps "Wed").
+    return { short: short.format(d), long: long.format(d), compact: locale === 'ar' ? long.format(d).replace(/^ال/, '') : short.format(d) };
   });
 }

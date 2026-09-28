@@ -36,6 +36,8 @@ export function MissingDocumentsTable({ rows, total, departments, canUpload, can
     () => [
       {
         id: 'employee',
+        // accessor makes the column sortable (server-side: `sort=employee`)
+        accessorFn: (r) => localized({ name_ar: r.employee_name_ar, name_en: r.employee_name_en }, 'name', locale),
         header: ({ column }) => <DataTableColumnHeader column={column} title={t('fields.employee')} />,
         cell: ({ row }) => {
           const r = row.original;
@@ -89,6 +91,7 @@ export function MissingDocumentsTable({ rows, total, departments, canUpload, can
       },
       {
         id: 'missing_count',
+        accessorKey: 'missing_count',
         header: ({ column }) => <DataTableColumnHeader column={column} title={t('fields.missing')} />,
         cell: ({ row }) => {
           const r = row.original;

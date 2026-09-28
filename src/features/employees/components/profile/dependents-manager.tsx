@@ -56,11 +56,15 @@ export function DependentsManager({
   employeeId,
   dependents,
   canEdit,
+  canCreate = canEdit,
   today,
 }: {
   employeeId: string;
   dependents: DependentRecord[];
+  /** Update/delete (org `edit`). */
   canEdit: boolean;
+  /** Add (org `create` or `edit`); defaults to `canEdit`. */
+  canCreate?: boolean;
   today: string;
 }) {
   const t = useTranslations('employees.dependents');
@@ -200,7 +204,7 @@ export function DependentsManager({
       icon={<HeartHandshakeIcon />}
       flush
       actions={
-        canEdit ? (
+        canCreate ? (
           <Button size="sm" onClick={() => setEditing('new')}>
             <PlusIcon />
             {t('add')}
@@ -223,7 +227,7 @@ export function DependentsManager({
           icon: HeartHandshakeIcon,
           title: t('emptyTitle'),
           description: t('emptyDescription'),
-          action: canEdit ? (
+          action: canCreate ? (
             <Button size="sm" variant="outline" onClick={() => setEditing('new')}>
               <PlusIcon />
               {t('add')}
@@ -251,7 +255,7 @@ export function DependentsManager({
         )}
       />
 
-      {canEdit ? (
+      {canEdit || canCreate ? (
         <DependentSheet
           employeeId={employeeId}
           target={editing}
@@ -276,7 +280,7 @@ export function DependentsManager({
         confirmLabel={t('deleteConfirm')}
         onConfirm={async () => {
           if (!deleting) return;
-          const result = await deleteDependent({ employeeId, id: deleting.id });
+          const result: ActionResult = await deleteDependent({ employeeId, id: deleting.id }).catch(() => ({ ok: false, error: 'errors.generic' }));
           if (!result.ok) {
             toast.error(resolve(result.error));
             return false;

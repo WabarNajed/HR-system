@@ -90,7 +90,8 @@ async function dynamicRoutes(page: Page): Promise<{ routes: string[]; skipped: s
 }
 
 async function visitAll(page: Page, locale: Locale, routes: string[]) {
-  test.setTimeout(300_000);
+  // ~13 routes per test; a cold `next dev` compiles each on first hit.
+  test.setTimeout(600_000);
   await setLocaleCookie(page.context(), locale);
   const health = watchPageHealth(page);
   const problems: string[] = [];

@@ -135,7 +135,7 @@ export default async function SettingsSecurityPage() {
                           </Badge>
                         ) : null}
                       </div>
-                      <bdi dir="ltr" className="block truncate text-xs text-muted-foreground">
+                      <bdi dir="ltr" className="block truncate text-xs text-muted-foreground rtl:text-end">
                         {o.email}
                       </bdi>
                     </div>

@@ -259,7 +259,7 @@ export function RolesConsole({ roles, selectedKey, members, canAdminister, isSup
                     <EmployeeAvatar name={label} seed={m.id} size="sm" />
                     <span className="min-w-0 flex-1 leading-tight">
                       <span className="block truncate text-sm font-medium text-foreground">{label}</span>
-                      <bdi dir="ltr" className="block truncate text-xs text-muted-foreground">
+                      <bdi dir="ltr" className="block truncate text-xs text-muted-foreground rtl:text-end">
                         {m.email}
                       </bdi>
                     </span>

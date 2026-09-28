@@ -295,11 +295,17 @@ function StatusWithStep({ row }: { row: RequestListRow }) {
   const pending = row.status === 'pending_manager_approval' || row.status === 'pending_hr_review';
   const stepName = row.step ? localized({ name_ar: row.step.name_ar, name_en: row.step.name_en }, 'name', locale) : '';
   const typeLabel = row.current_step_type && ts.has(row.current_step_type as never) ? ts(row.current_step_type as never) : '';
-  const detail = pending ? [stepName || typeLabel, row.approver_name].filter(Boolean).join(' · ') : '';
+  const step = pending ? stepName || typeLabel : '';
+  // The approver's name goes in the tooltip: mixed-script names truncate badly next to the step.
+  const full = [step, row.approver_name].filter(Boolean).join(' · ');
   return (
     <div className="flex max-w-52 min-w-0 flex-col items-start gap-1">
       <StatusBadge domain="request" status={row.status} />
-      {detail ? <span className="max-w-full truncate text-xs text-muted-foreground">{detail}</span> : null}
+      {step ? (
+        <SimpleTooltip content={full}>
+          <span className="max-w-full truncate text-xs text-muted-foreground">{step}</span>
+        </SimpleTooltip>
+      ) : null}
     </div>
   );
 }

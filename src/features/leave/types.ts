@@ -105,7 +105,18 @@ export type BalanceMovementRow = {
   balance_effect: string;
 };
 
+export type BalanceFigures = {
+  opening_balance: number;
+  entitlement: number;
+  adjustment: number;
+  used: number;
+  pending: number;
+  remaining: number;
+};
+
 export type BalanceHistory = {
+  /** Current figures of the balance (fresher than the row the drawer was opened from). */
+  balance: BalanceFigures;
   adjustments: AdjustmentRow[];
   movements: BalanceMovementRow[];
 };

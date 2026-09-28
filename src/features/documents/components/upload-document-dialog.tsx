@@ -147,6 +147,8 @@ function UploadForm({
   const [progress, setProgress] = useState<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
+  /** Synchronous guard: a fast double submit (Enter + click) must never create two documents. */
+  const inFlight = useRef(false);
 
   const form = useForm<DocumentFormValues>({
     resolver: zodResolver(documentFormSchema),
@@ -249,8 +251,9 @@ function UploadForm({
   };
 
   const submit = async (values: DocumentFormValues) => {
-    if (!checkExtra() || !file || !targetId) return;
+    if (!checkExtra() || !file || !targetId || inFlight.current) return;
 
+    inFlight.current = true;
     setSubmitting(true);
     onBusyChange(true);
     setProgress(0);
@@ -290,6 +293,7 @@ function UploadForm({
       if (documentId) await abortDocumentUpload({ documentId }).catch(() => undefined);
       toast.error(resolveError('errors.generic'));
     } finally {
+      inFlight.current = false;
       setSubmitting(false);
       onBusyChange(false);
       setProgress(null);

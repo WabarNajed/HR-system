@@ -63,12 +63,13 @@ export default async function ApprovalsPage({ searchParams }: { searchParams: Pr
 
   const [list, pendingCount, overdueCount, dueSoonCount, approvedCount, rejectedCount, decidedMonth, departments, employees] = await Promise.all([
     tab === 'pending'
-      ? listRequests(supabase, params, { tab: 'pending', access, typeIdsByKey, pendingForMe: true, subtypes })
+      ? listRequests(supabase, params, { tab: 'pending', access, typeIdsByKey, pendingForMe: true, subtypes, locale: ctx.locale })
       : listMyDecisions(supabase, params, {
           decisions: tab === 'approved' ? ['approved'] : ['rejected', 'returned'],
           access,
           typeIdsByKey,
           subtypes,
+          locale: ctx.locale,
         }),
     count((q) => q),
     count((q) => q.in('status', OPEN_STATUSES as string[]).lt('due_at', nowIso)),

@@ -1,7 +1,7 @@
 import { defineDataset, type AnyExportDataset } from '@/lib/export/types';
 import { employeeDisplayName, localized } from '@/lib/i18n/localized';
 import { firstFilter } from '@/lib/list-params';
-import { parseRequestTab, REQUEST_FILTER_KEYS, REQUEST_SORTS, requestSla } from './constants';
+import { FILTER_STATUSES, parseRequestTab, REQUEST_FILTER_KEYS, REQUEST_SORTS, requestSla, SLA_STATES } from './constants';
 import { getRequestAccess, listRequestsForExport, loadRequestTypes, subtypeMap } from './queries';
 import type { RequestListRow } from './types';
 
@@ -72,6 +72,7 @@ export const datasets: AnyExportDataset[] = [
         typeIdsByKey: new Map(types.map((x) => [x.key, x.id])),
         subtypes: subtypeMap(types),
         limit: ctx.limit,
+        locale: ctx.locale,
       });
     },
     describeFilters: (params, t) => {
@@ -79,10 +80,12 @@ export const datasets: AnyExportDataset[] = [
       const tab = parseRequestTab(firstFilter(params.filters, 'tab'));
       if (tab !== 'all') lines.push(`${t('requests.export.tab')}: ${t(`requests.tabs.${tab === 'in_progress' ? 'inProgress' : tab}`)}`);
       if (params.q) lines.push(`${t('common.search')}: ${params.q}`);
-      const status = params.filters.status;
-      if (status?.length) lines.push(`${t('requests.filters.status')}: ${status.map((s) => t(`statuses.request.${s}`)).join('، ')}`);
+      const sep = t.locale === 'ar' ? '، ' : ', ';
+      // Only known values are described (a hand-edited URL must not print raw message keys).
+      const status = (params.filters.status ?? []).filter((s) => (FILTER_STATUSES as readonly string[]).includes(s));
+      if (status.length) lines.push(`${t('requests.filters.status')}: ${status.map((s) => t(`statuses.request.${s}`)).join(sep)}`);
       const sla = firstFilter(params.filters, 'sla');
-      if (sla) lines.push(`${t('requests.filters.sla')}: ${t(`statuses.sla.${sla}`)}`);
+      if (sla && (SLA_STATES as readonly string[]).includes(sla)) lines.push(`${t('requests.filters.sla')}: ${t(`statuses.sla.${sla}`)}`);
       const from = firstFilter(params.filters, 'createdFrom');
       const to = firstFilter(params.filters, 'createdTo');
       if (from || to) lines.push(`${t('requests.filters.created')}: ${from ?? '…'} – ${to ?? '…'}`);

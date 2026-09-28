@@ -1,6 +1,7 @@
 import 'server-only';
 
-import { DEFAULT_TIME_ZONE } from '@/lib/i18n/config';
+import { DEFAULT_TIME_ZONE, type Locale } from '@/lib/i18n/config';
+import { employeeDisplayName } from '@/lib/i18n/localized';
 import { toIlikePattern, type ListParams } from '@/lib/list-params';
 import { fileRouteUrl } from '@/lib/storage';
 import type { ServerSupabaseClient } from '@/lib/supabase/server';
@@ -256,8 +257,8 @@ function listSelect(innerEmployee: boolean): string {
   return `${LIST_COLUMNS},
     request_type:request_types(id, key, name_ar, name_en, icon, color, category),
     employee:employees${innerEmployee ? '!inner' : ''}(id, employee_number, name_ar, name_en, avatar_path, department_id, department:departments!department_id(name_ar, name_en)),
-    assignee:profiles!assigned_to(full_name),
-    approver:profiles!current_approver_id(full_name),
+    assignee:profiles!assigned_to(full_name, employee:employees!profiles_employee_id_fkey(name_ar, name_en)),
+    approver:profiles!current_approver_id(full_name, employee:employees!profiles_employee_id_fkey(name_ar, name_en)),
     step:request_workflow_steps!current_step_id(name_ar, name_en, can_return, can_reassign)`;
 }
 
@@ -289,10 +290,24 @@ type RawListRow = {
     avatar_path: string | null;
     department: { name_ar: string | null; name_en: string | null } | null;
   } | null;
-  assignee: { full_name: string | null } | null;
-  approver: { full_name: string | null } | null;
+  assignee: RawPerson | null;
+  approver: RawPerson | null;
   step: { name_ar: string | null; name_en: string | null; can_return: boolean; can_reassign: boolean } | null;
 };
+
+/** A profile with its linked employee's bilingual name (null when RLS hides the employee row). */
+type RawPerson = { full_name: string | null; employee?: { name_ar: string | null; name_en: string | null } | null };
+
+/**
+ * Display name of a user in the viewer's language: the linked employee's localized name when the
+ * viewer may read it (HR), else the profile name. Without a locale the profile name wins.
+ */
+export function personName(p: RawPerson | null | undefined, locale?: Locale): string | null {
+  if (!p) return null;
+  const e = p.employee;
+  const local = e && locale ? (locale === 'en' ? e.name_en || e.name_ar : e.name_ar || e.name_en) : null;
+  return local || p.full_name || e?.name_en || e?.name_ar || null;
+}
 
 export type SubtypeMap = Map<string, FieldOption[]>;
 
@@ -301,7 +316,7 @@ export function subtypeMap(types: RequestTypeDefinition[]): SubtypeMap {
   return new Map(types.map((t) => [t.id, t.fields.find((f) => f.key === 'subtype')?.options ?? []]));
 }
 
-export function toListRow(raw: RawListRow, subtypes?: SubtypeMap): RequestListRow {
+export function toListRow(raw: RawListRow, subtypes?: SubtypeMap, locale?: Locale): RequestListRow {
   return {
     id: raw.id,
     request_number: raw.request_number,
@@ -331,8 +346,8 @@ export function toListRow(raw: RawListRow, subtypes?: SubtypeMap): RequestListRo
           department: raw.employee.department ?? null,
         }
       : null,
-    assignee_name: raw.assignee?.full_name ?? null,
-    approver_name: raw.approver?.full_name ?? null,
+    assignee_name: personName(raw.assignee, locale),
+    approver_name: personName(raw.approver, locale),
     step: raw.step ?? null,
   };
 }
@@ -389,6 +404,8 @@ export type RequestListOptions = {
   /** Restrict to one employee (profile tab). */
   employeeId?: string;
   now?: Date;
+  /** Viewer language (localized assignee / approver names). */
+  locale?: Locale;
 };
 
 async function applyFilters(
@@ -476,7 +493,7 @@ export async function listRequests(
     if (res && !res.error && (res.count ?? 0) <= params.from) return { rows: [], total: res.count ?? 0 };
   }
   if (error) throw error;
-  return { rows: ((data ?? []) as RawListRow[]).map((r) => toListRow(r, options.subtypes)), total: count ?? 0 };
+  return { rows: ((data ?? []) as RawListRow[]).map((r) => toListRow(r, options.subtypes, options.locale)), total: count ?? 0 };
 }
 
 /** All rows (exports), paged. */
@@ -495,7 +512,7 @@ export async function listRequestsForExport(
     const to = Math.min(from + 1000, options.limit) - 1;
     const { data, error } = await applied.q.order(sort, { ascending: params.dir === 'asc', nullsFirst: false }).order('id').range(from, to);
     if (error) throw error;
-    const rows = ((data ?? []) as RawListRow[]).map((r) => toListRow(r, options.subtypes));
+    const rows = ((data ?? []) as RawListRow[]).map((r) => toListRow(r, options.subtypes, options.locale));
     out.push(...rows);
     if (rows.length < to - from + 1) break;
   }
@@ -589,7 +606,13 @@ export async function loadRequestHandlers(supabase: ServerSupabaseClient): Promi
 export async function listMyDecisions(
   supabase: ServerSupabaseClient,
   params: ListParams<string, string>,
-  options: { decisions: ('approved' | 'rejected' | 'returned')[]; access: RequestAccess; typeIdsByKey: Map<string, string>; subtypes?: SubtypeMap },
+  options: {
+    decisions: ('approved' | 'rejected' | 'returned')[];
+    access: RequestAccess;
+    typeIdsByKey: Map<string, string>;
+    subtypes?: SubtypeMap;
+    locale?: Locale;
+  },
 ): Promise<{ rows: ApprovalDecisionRow[]; total: number }> {
   const f = params.filters as Partial<Record<RequestFilterKey, string[]>>;
   const inner = Boolean(f.department?.length || f.type?.length || f.employee?.length || params.q);
@@ -634,7 +657,7 @@ export async function listMyDecisions(
   const rows = ((data ?? []) as { decision: ApprovalDecisionRow['decision']; comment: string | null; decided_at: string | null; step_type: string | null; request: RawListRow | null }[])
     .filter((r) => r.request)
     .map((r) => ({
-      ...toListRow(r.request!, options.subtypes),
+      ...toListRow(r.request!, options.subtypes, options.locale),
       decision: r.decision,
       decision_comment: r.comment,
       decided_at: r.decided_at,
@@ -715,12 +738,12 @@ export type RequestDetail = {
   lookups: FormLookups;
 };
 
-export async function getRequestDetail(supabase: ServerSupabaseClient, id: string, userId: string): Promise<RequestDetail | null> {
+export async function getRequestDetail(supabase: ServerSupabaseClient, id: string, userId: string, locale?: Locale): Promise<RequestDetail | null> {
   if (!UUID_RE.test(id)) return null;
   const [reqRes, capsRes] = await Promise.all([
     supabase
       .from('hr_requests')
-      .select(`${listSelect(false)}, priority, requester:profiles!requester_id(full_name, employee_id)`)
+      .select(`${listSelect(false)}, priority, requester:profiles!requester_id(full_name, employee_id, employee:employees!profiles_employee_id_fkey(name_ar, name_en))`)
       .eq('id', id)
       .maybeSingle(),
     supabase.rpc('get_request_capabilities', { p_request_id: id }),
@@ -728,7 +751,7 @@ export async function getRequestDetail(supabase: ServerSupabaseClient, id: strin
   if (reqRes.error) throw reqRes.error;
   if (capsRes.error) throw capsRes.error;
   if (!reqRes.data || !capsRes.data) return null;
-  const raw = reqRes.data as unknown as RawListRow & { priority: string; requester: { full_name: string | null; employee_id: string | null } | null };
+  const raw = reqRes.data as unknown as RawListRow & { priority: string; requester: (RawPerson & { employee_id: string | null }) | null };
 
   const [typeRes, fields, valuesRes, attRes, commentsRes, historyRes, workflowRes, employeeRes] = await Promise.all([
     supabase
@@ -797,7 +820,7 @@ export async function getRequestDetail(supabase: ServerSupabaseClient, id: strin
   const lookups = await loadDetailLookups(supabase, fields, values);
 
   return {
-    row: toListRow(raw, subtypeMap([{ id: raw.request_type_id, fields } as RequestTypeDefinition])),
+    row: toListRow(raw, subtypeMap([{ id: raw.request_type_id, fields } as RequestTypeDefinition]), locale),
     priority: raw.priority,
     typeDef: (typeRes.data as RequestDetail['typeDef']) ?? null,
     fields,
@@ -819,7 +842,10 @@ export async function getRequestDetail(supabase: ServerSupabaseClient, id: strin
           avatar_url: employee.avatar_path ? fileRouteUrl('employee-documents', employee.avatar_path) : null,
         }
       : null,
-    requesterName: raw.requester?.full_name ?? null,
+    requesterName:
+      raw.requester && raw.requester.employee_id === raw.employee_id && employee && locale
+        ? employeeDisplayName(employee, locale)
+        : personName(raw.requester, locale),
     filedOnBehalf: Boolean(raw.requester && raw.requester.employee_id !== raw.employee_id),
     returnNote: lastReturn ? { note: lastReturn.note, actor: lastReturn.actor_name, at: lastReturn.created_at } : null,
     lookups,

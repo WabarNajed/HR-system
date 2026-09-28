@@ -17,7 +17,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
-import { formatCurrency, formatNumber } from '@/lib/format';
+import { formatCurrency, formatIban, formatNumber } from '@/lib/format';
 import { intlLocale, type Locale } from '@/lib/i18n/config';
 import { employeeDisplayName, localized } from '@/lib/i18n/localized';
 import { useDateFormat } from '@/lib/i18n/use-date-format';
@@ -820,6 +820,8 @@ function ReadOnlyFields({
       case 'long_text':
         return <span className="whitespace-pre-line">{String(v)}</span>;
       default:
+        // IBANs read in groups of four and stay left-to-right inside Arabic text.
+        if (field.key === 'iban' || field.key.endsWith('_iban')) return <bdi dir="ltr" className="numeric">{formatIban(String(v))}</bdi>;
         return String(v);
     }
   };

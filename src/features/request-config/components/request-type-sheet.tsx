@@ -4,8 +4,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { GitBranchIcon, InfoIcon } from 'lucide-react';
 import Link from 'next/link';
 import { useLocale, useTranslations } from 'next-intl';
-import { useEffect, useMemo, useState, useTransition } from 'react';
-import { useForm } from 'react-hook-form';
+import { useEffect, useMemo, useRef, useState, useTransition } from 'react';
+import { useForm, useWatch } from 'react-hook-form';
 import { toast } from 'sonner';
 import { ColorPicker } from '@/components/shared/color-picker';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog';
@@ -91,7 +91,7 @@ export function RequestTypeSheet({ open, onOpenChange, row, categories, nextSort
   const resolve = useErrorMessage();
   const [pending, startTransition] = useTransition();
   const [confirmDiscard, setConfirmDiscard] = useState(false);
-  const [keyEdited, setKeyEdited] = useState(false);
+  const keyEdited = useRef(false);
 
   const form = useForm<RequestTypeFormValues>({
     resolver: zodResolver(requestTypeFormSchema),
@@ -102,14 +102,14 @@ export function RequestTypeSheet({ open, onOpenChange, row, categories, nextSort
   useEffect(() => {
     if (open) {
       form.reset(toValues(row, nextSortOrder));
-      setKeyEdited(false);
+      keyEdited.current = false;
     }
   }, [open, row, nextSortOrder, form]);
 
   const categoryOptions = useMemo(() => Array.from(new Set<string>([...REQUEST_CATEGORIES, ...categories])), [categories]);
   const customSteps = row ? row.steps.filter((s) => s.step_type === 'role' || s.step_type === 'user').length : 0;
-  const mgr = form.watch('requiresManagerApproval');
-  const hr = form.watch('requiresHrApproval');
+  const mgr = useWatch({ control: form.control, name: 'requiresManagerApproval' });
+  const hr = useWatch({ control: form.control, name: 'requiresHrApproval' });
   const noApprover = !mgr && !hr && customSteps === 0;
 
   const requestClose = () => {
@@ -190,7 +190,7 @@ export function RequestTypeSheet({ open, onOpenChange, row, categories, nextSort
                               autoComplete="off"
                               onChange={(e) => {
                                 field.onChange(e);
-                                if (!row && !keyEdited) form.setValue('key', slugify(e.target.value), { shouldValidate: form.formState.isSubmitted });
+                                if (!row && !keyEdited.current) form.setValue('key', slugify(e.target.value), { shouldValidate: form.formState.isSubmitted });
                               }}
                             />
                           </FormControl>
@@ -243,7 +243,7 @@ export function RequestTypeSheet({ open, onOpenChange, row, categories, nextSort
                               readOnly={Boolean(row)}
                               className="font-mono text-[0.8125rem] read-only:bg-subtle read-only:text-muted-foreground"
                               onChange={(e) => {
-                                setKeyEdited(true);
+                                keyEdited.current = true;
                                 field.onChange(e.target.value.toLowerCase());
                               }}
                             />

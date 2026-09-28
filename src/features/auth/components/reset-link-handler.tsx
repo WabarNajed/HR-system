@@ -17,13 +17,12 @@ import { AuthHeading } from './auth-heading';
  * the session in the URL fragment, which the server never sees: establish it here, clean the URL and
  * re-render. Anything else (no tokens, `#error=…`) shows the "link invalid or expired" state.
  */
-export function ResetLinkHandler({ invalid = false }: { invalid?: boolean }) {
+export function ResetLinkHandler() {
   const t = useTranslations('auth.reset');
   const router = useRouter();
-  const [state, setState] = useState<'checking' | 'invalid'>(invalid ? 'invalid' : 'checking');
+  const [state, setState] = useState<'checking' | 'invalid'>('checking');
 
   useEffect(() => {
-    if (invalid) return;
     let cancelled = false;
     const run = async () => {
       const hash = new URLSearchParams(window.location.hash.replace(/^#/, ''));
@@ -56,7 +55,7 @@ export function ResetLinkHandler({ invalid = false }: { invalid?: boolean }) {
     return () => {
       cancelled = true;
     };
-  }, [router, invalid]);
+  }, [router]);
 
   if (state === 'checking') {
     return (

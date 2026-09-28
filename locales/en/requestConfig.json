@@ -1,4 +1,389 @@
 {
   "title": "Request configuration",
-  "description": "Request types, forms, workflows and SLAs."
+  "description": "Request types, forms, workflows and SLAs.",
+  "businessDays": "{count, plural, one {# business day} other {# business days}}",
+  "stepShort": {
+    "manager": "Manager",
+    "hr": "HR",
+    "role": "Role",
+    "user": "User"
+  },
+  "rail": {
+    "label": "Request types",
+    "title": "Request types ({count})",
+    "search": "Search request types",
+    "choose": "Choose a request type"
+  },
+  "validation": {
+    "key": "Use lowercase letters, numbers and underscores, starting with a letter.",
+    "keyTaken": "Another request type already uses this key.",
+    "optionValue": "Use letters, numbers, dots, dashes or underscores.",
+    "roleRequired": "Choose the role that approves this step.",
+    "userRequired": "Choose the user who approves this step.",
+    "approvalRequired": "Turn on manager or HR approval — every request needs at least one approver."
+  },
+  "types": {
+    "title": "Request types",
+    "description": "The catalog employees choose from: names, icons, categories, approvals and service levels.",
+    "create": "New request type",
+    "searchPlaceholder": "Search by name or key…",
+    "system": "System",
+    "systemHint": "Built-in type with automatic processing. You can edit or deactivate it, but not delete it.",
+    "inactiveFields": "(+{count} inactive)",
+    "openCount": "{count} open",
+    "fieldsCount": "{count, plural, one {# field} other {# fields}}",
+    "emptyTitle": "No request types yet",
+    "emptyDescription": "Create the first request type employees can submit.",
+    "deleteSystem": "System types can’t be deleted — deactivate them instead.",
+    "deleteInUse": "This type already has requests — deactivate it instead.",
+    "deleteTitle": "Delete request type?",
+    "deleteDescription": "“{name}”, its form and its workflow will be permanently deleted. This can’t be undone.",
+    "columns": {
+      "type": "Request type",
+      "category": "Category",
+      "approvals": "Approval path",
+      "sla": "SLA",
+      "fields": "Fields",
+      "usage": "Requests"
+    },
+    "filters": {
+      "workflow": "Workflow",
+      "managerStep": "Has manager approval"
+    },
+    "kpi": {
+      "active": "Active types",
+      "activeHint": "of {total} configured",
+      "managerApproval": "Need manager approval",
+      "customWorkflows": "{count, plural, =0 {All workflows standard} one {# custom workflow} other {# custom workflows}}",
+      "avgSla": "Average SLA",
+      "avgSlaHint": "Business days · active types",
+      "open": "Open requests",
+      "overdue": "{count} past their due date",
+      "noOverdue": "None overdue"
+    },
+    "actions": {
+      "edit": "Edit details",
+      "editForm": "Edit form",
+      "editWorkflow": "Edit approval workflow"
+    },
+    "sheet": {
+      "createTitle": "New request type",
+      "createDescription": "Define how the request appears to employees and how it is processed.",
+      "editTitle": "Edit request type",
+      "viewTitle": "Request type",
+      "identity": "Identity",
+      "processing": "Processing",
+      "workflowSync": "Manager and HR approval add or remove the matching steps in this type’s approval workflow.",
+      "workflowSyncCustom": "Manager and HR approval add or remove the matching steps. The {count, plural, one {# custom step} other {# custom steps}} in the workflow stay as they are."
+    },
+    "fields": {
+      "key": "Key",
+      "keyHint": "Permanent technical identifier, e.g. travel_request.",
+      "keyLocked": "The key can’t change after creation.",
+      "category": "Category",
+      "icon": "Icon",
+      "color": "Accent color",
+      "sla": "SLA (business days)",
+      "slaHint": "Target time to a decision. Leave empty for no SLA.",
+      "sortOrder": "Display order",
+      "sortOrderHint": "Lower numbers appear first.",
+      "managerApproval": "Manager approval",
+      "managerApprovalHint": "The employee’s direct manager approves first.",
+      "hrApproval": "HR approval",
+      "hrApprovalHint": "The HR team reviews the request.",
+      "attachments": "Allow attachments",
+      "attachmentsHint": "Employees can upload supporting files.",
+      "active": "Active",
+      "activeHint": "Inactive types are hidden from New request."
+    },
+    "toast": {
+      "created": "Request type created.",
+      "saved": "Request type saved.",
+      "duplicated": "Copy created as inactive. Review it, then activate it.",
+      "activated": "Request type activated.",
+      "deactivated": "Request type deactivated.",
+      "deleted": "Request type deleted."
+    },
+    "duplicate": {
+      "title": "Duplicate request type",
+      "description": "Creates an inactive copy of “{name}” with its form fields and approval workflow.",
+      "hint": "A new, unique key for the copy.",
+      "suffixAr": "(نسخة)",
+      "suffixEn": "(copy)"
+    }
+  },
+  "builder": {
+    "title": "Form builder",
+    "description": "Design each request form: fields, order, options and when each field appears.",
+    "noTypesTitle": "No request types",
+    "noTypesDescription": "Create a request type first, then design its form here.",
+    "modeLabel": "Builder mode",
+    "modes": {
+      "edit": "Edit",
+      "preview": "Preview"
+    },
+    "addField": "Add field",
+    "palette": {
+      "text": "Text & numbers",
+      "choice": "Choices",
+      "time": "Date & time",
+      "other": "Files & lookups"
+    },
+    "fieldsLabel": "Form fields",
+    "summary": "{fields, plural, one {# field} other {# fields}} · {required} required · {conditional} conditional",
+    "emptyTitle": "No fields yet",
+    "emptyDescription": "Add the first field to this form.",
+    "reorderHint": "Drag the handle — or focus it and use Space and the arrow keys — to reorder fields.",
+    "dragHandle": "Reorder {name} (position {position})",
+    "untitled": "Untitled field",
+    "system": "System",
+    "systemHint": "Used by built-in processing: you can relabel it, but not delete it, change its key or hide it.",
+    "conditional": "Conditional",
+    "needsAttention": "Needs attention",
+    "usedIn": "{count, plural, one {Holds data in # request} other {Holds data in # requests}}",
+    "deleteSystem": "System fields can’t be deleted.",
+    "deleteUsed": "{count, plural, one {Holds data in # request} other {Holds data in # requests}} — deactivate it instead.",
+    "deleteTitle": "Remove field?",
+    "deleteDescription": "“{name}” will be removed from the form when you save. Visibility conditions that use it are removed too.",
+    "discardTitle": "Discard changes?",
+    "discardDescription": "All unsaved changes to this form will be lost.",
+    "copySuffix": "(copy)",
+    "actions": {
+      "moveUp": "Move up",
+      "moveDown": "Move down"
+    },
+    "toast": {
+      "saved": "Form saved.",
+      "fixProblems": "{count, plural, one {# field needs attention} other {# fields need attention}} before saving."
+    },
+    "problems": {
+      "label": "Enter the label in Arabic and English.",
+      "keyDuplicate": "Another field already uses this key.",
+      "noOptions": "Add at least one option.",
+      "optionInvalid": "Every option needs a valid value and labels in both languages.",
+      "optionDuplicate": "Two options share the same value.",
+      "range": "The minimum is greater than the maximum.",
+      "rule": "A visibility condition refers to a field that isn’t on this form.",
+      "ruleValues": "Pick at least one value for each visibility condition."
+    },
+    "properties": {
+      "title": "Field properties",
+      "sheetDescription": "Changes apply when you save the form.",
+      "noneTitle": "Select a field",
+      "noneDescription": "Choose a field to edit its properties.",
+      "label": "Label",
+      "help": "Help text",
+      "placeholder": "Placeholder",
+      "definition": "Definition",
+      "key": "Key",
+      "keyHint": "Identifier stored with each request.",
+      "keyLockedHint": "Locked — requests already store data under this key.",
+      "keySystem": "System field keys can’t change.",
+      "keyUsed": "{count, plural, one {Used by # request} other {Used by # requests}}.",
+      "locked": "Locked",
+      "type": "Field type",
+      "typeLocked": "The type can’t change once the field holds data.",
+      "required": "Required",
+      "requiredHint": "Must be answered when the field is shown.",
+      "active": "Active",
+      "activeHint": "Inactive fields are hidden from new requests.",
+      "activeSystem": "System fields are always active."
+    },
+    "options": {
+      "title": "Options",
+      "description": "Values are stored with requests; labels are what employees see.",
+      "labelAr": "Option {n} Arabic label",
+      "labelEn": "Option {n} English label",
+      "value": "Value",
+      "valueOf": "Option {n} value",
+      "valueLocked": "Saved option values can’t change.",
+      "moveUp": "Move option up",
+      "moveDown": "Move option down",
+      "remove": "Remove option",
+      "empty": "No options yet.",
+      "add": "Add option",
+      "defaultLabel": "Option"
+    },
+    "limits": {
+      "title": "Allowed range",
+      "min": "Minimum",
+      "max": "Maximum"
+    },
+    "rules": {
+      "title": "Visibility",
+      "description": "Show this field only when other answers match.",
+      "always": "Always shown",
+      "conditional": "Shown when conditions match",
+      "toggle": "Show only when conditions match",
+      "noSources": "Add a choice field first to build a condition.",
+      "match": "Show when",
+      "matchAll": "all conditions match",
+      "matchAny": "any condition matches",
+      "when": "When",
+      "and": "And",
+      "or": "Or",
+      "field": "Field",
+      "operator": "Condition",
+      "in": "is one of",
+      "notIn": "is not one of",
+      "values": "Values",
+      "valuesPlaceholder": "Values separated by commas",
+      "noValues": "This field has no options yet.",
+      "pickValues": "Pick at least one value.",
+      "addCondition": "Add condition",
+      "removeCondition": "Remove condition",
+      "advanced": "This field uses an advanced rule that can’t be edited here.",
+      "reset": "Clear rule"
+    },
+    "preview": {
+      "note": "Live preview of your unsaved form — nothing is submitted.",
+      "reset": "Clear answers",
+      "language": "Preview language",
+      "empty": "No active fields to show."
+    }
+  },
+  "workflows": {
+    "title": "Approval workflows",
+    "description": "Who approves each request type, in what order, with step targets and permissions.",
+    "noTypesTitle": "No request types",
+    "noTypesDescription": "Create a request type first, then design its approval workflow here.",
+    "noSteps": "No steps",
+    "noStepsWarning": "Add at least one approval step.",
+    "kind": {
+      "standard": "Standard",
+      "custom": "Custom"
+    },
+    "counts": {
+      "standard": "{count, plural, one {# type uses a standard workflow} other {# types use a standard workflow}}",
+      "custom": "{count, plural, =0 {No custom workflows} one {# custom workflow} other {# custom workflows}}"
+    },
+    "summary": "{steps, plural, one {# approval step} other {# approval steps}}",
+    "typeSla": "SLA {count, plural, one {# business day} other {# business days}}",
+    "stepSlaTotal": "steps add up to {count} days",
+    "canvasLabel": "Workflow canvas",
+    "flowLabel": "Approval steps",
+    "inFlight": "{count, plural, one {# open request} other {# open requests}} of this type will follow the updated workflow from their next step.",
+    "insertHere": "Add a step here",
+    "addStep": "Add approval step",
+    "moveUp": "Move step up",
+    "moveDown": "Move step down",
+    "removeStep": "Remove step",
+    "lastStep": "A workflow needs at least one step.",
+    "stepSla": "{count}d",
+    "canReturnShort": "Return",
+    "canReassignShort": "Reassign",
+    "discardTitle": "Discard changes?",
+    "discardDescription": "All unsaved changes to this workflow will be lost.",
+    "nodes": {
+      "start": {
+        "title": "Employee submission",
+        "description": "The employee submits the request"
+      },
+      "end": {
+        "title": "Completed",
+        "description": "Final approval, then HR processes and completes it"
+      }
+    },
+    "types": {
+      "manager": {
+        "label": "Direct manager",
+        "hint": "The employee’s line manager approves. Skipped when there is no manager."
+      },
+      "hr": {
+        "label": "HR review",
+        "hint": "Any HR team member with approval rights can act."
+      },
+      "role": {
+        "label": "Specific role",
+        "hint": "Anyone holding the chosen role can act. Skipped when nobody holds it."
+      },
+      "user": {
+        "label": "Specific user",
+        "hint": "One named user approves. Skipped when they submitted the request."
+      }
+    },
+    "approver": {
+      "manager": "Employee’s direct manager",
+      "hr": "HR team queue",
+      "role": "Holders of “{role}”",
+      "roleMissing": "Choose a role",
+      "user": "{name}",
+      "userMissing": "Choose a user"
+    },
+    "properties": {
+      "title": "Step properties",
+      "description": "Changes apply when you save the workflow.",
+      "sheetDescription": "Changes apply when you save the workflow.",
+      "noneTitle": "Select a step",
+      "noneDescription": "Choose a step on the canvas to edit it.",
+      "type": "Approver",
+      "role": "Role",
+      "rolePlaceholder": "Choose a role",
+      "roleHint": "Organization-wide roles review in the HR queue; others in the approvals queue.",
+      "user": "User",
+      "userPlaceholder": "Choose a user",
+      "userSearch": "Search by name or email…",
+      "userHint": "Only active portal users can be chosen.",
+      "name": "Step name",
+      "sla": "Step target (business days)",
+      "slaHint": "Shown to approvers as the target for this step.",
+      "canReturn": "Can return for information",
+      "canReturnHint": "The approver can send the request back to the employee.",
+      "canReassign": "Can reassign",
+      "canReassignHint": "The approver can hand the step to someone else."
+    },
+    "problems": {
+      "name": "Enter the step name in Arabic and English."
+    },
+    "toast": {
+      "saved": "Workflow saved.",
+      "fixProblems": "Some steps need attention before saving."
+    }
+  },
+  "sla": {
+    "title": "Service levels (SLA)",
+    "description": "Target decision time for each request type in business days, with live performance.",
+    "notSet": "Not set",
+    "daysUnit": "business days",
+    "daysShort": "{count}d",
+    "inputLabel": "SLA for {name}",
+    "noData": "No decisions yet",
+    "ofResolved": "of {count}",
+    "mobileOpen": "{count} open",
+    "columns": {
+      "target": "SLA target",
+      "steps": "Step targets",
+      "open": "Open",
+      "overdue": "Overdue",
+      "onTime": "On time"
+    },
+    "kpi": {
+      "coverage": "Types with an SLA",
+      "coverageHint": "Active request types",
+      "average": "Average target",
+      "averageHint": "Business days",
+      "onTime": "Decided on time",
+      "onTimeHint": "Across {count} decided requests",
+      "onTimeEmpty": "No decided requests yet",
+      "overdue": "Overdue now",
+      "overdueHint": "Of {count} open requests"
+    },
+    "howTitle": "How due dates are calculated",
+    "howDescription": "Due date = submission time + the SLA in business days, at the end of that working day ({time}). Weekends and public holidays are skipped.",
+    "workingDays": "Working days",
+    "weekend": "Weekend",
+    "holidays": "Public holidays",
+    "holidaysValue": "{year} this year · {upcoming} upcoming",
+    "resubmitNote": "Returned requests get a new due date when resubmitted.",
+    "linkOrganization": "Working days & hours",
+    "linkHolidays": "Public holidays",
+    "filters": {
+      "state": "Show",
+      "hasOverdue": "Has overdue requests",
+      "noSla": "No SLA"
+    },
+    "toast": {
+      "saved": "SLA updated."
+    }
+  }
 }

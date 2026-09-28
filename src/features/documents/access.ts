@@ -35,7 +35,8 @@ export const getDocumentAccess = cache(async (ctx: SessionContext): Promise<Docu
     view: actions.has('view'),
     create: actions.has('create'),
     edit: actions.has('edit'),
-    approve: actions.has('approve') || actions.has('edit'),
+    // Reviewing self-uploads is its own permission (the seeded HR Officer can edit but not approve).
+    approve: actions.has('approve'),
     export: actions.has('export') && ctx.permissions.has('documents.export'),
     ownEmployeeId,
   };

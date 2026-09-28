@@ -37,7 +37,7 @@ export default async function ProfilePage({ searchParams }: { searchParams: Prom
   return (
     <div className="flex flex-col gap-5">
       <header className="overflow-hidden rounded-lg border border-border bg-card shadow-card">
-        <div aria-hidden className="h-16 bg-gradient-to-l from-primary/15 via-primary/5 to-secondary/10 sm:h-20" />
+        <div aria-hidden className="h-16 bg-gradient-to-l from-primary/15 via-primary/5 to-secondary/10 sm:h-20 ltr:bg-gradient-to-r" />
         <div className="-mt-9 flex flex-col gap-4 px-5 pb-4 sm:-mt-10 sm:flex-row sm:items-end sm:gap-5">
           <EmployeeAvatar name={name} seed={employee?.id ?? ctx.user.id} src={employee?.avatar ?? null} size="xl" ring className="size-[4.5rem] text-xl sm:size-20" />
           <div className="min-w-0 flex-1">
@@ -118,7 +118,7 @@ export default async function ProfilePage({ searchParams }: { searchParams: Prom
       ) : null}
 
       {tab === 'preferences' ? (
-        <PreferencesForm language={ctx.profile.preferredLanguage ?? locale} theme={ctx.profile.theme} />
+        <PreferencesForm language={locale} theme={ctx.profile.theme} />
       ) : null}
     </div>
   );

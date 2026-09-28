@@ -35,7 +35,8 @@ export default async function EmployeesPage({ searchParams }: { searchParams: Pr
   // Stale `?page=` beyond the last page (e.g. after narrowing the filters): jump to the last page.
   if (!page.rows.length && params.page > 1) {
     const last = pageCount(page.total, params.pageSize);
-    redirect(`/employees?${mergeSearchParams(sp, { page: last > 1 ? last : null }).toString()}`);
+    const qs = mergeSearchParams(sp, { page: last > 1 ? last : null }).toString();
+    redirect(qs ? `/employees?${qs}` : '/employees');
   }
 
   const orgView = viewer.isOrgViewer;
